@@ -102,6 +102,7 @@ var _slow_sources := {}  # source -> Vector2(speed_mult, jump_mult)
 
 @onready var visual: Node2D = $Visual
 @onready var art = $Visual/Art
+@onready var sword = $Visual/Sword
 @onready var hurtbox: Area2D = $Hurtbox
 
 
@@ -281,6 +282,7 @@ func _handle_attack_input() -> void:
 	_attack_pogoed = false
 	_attack_recoiled = false
 	_spawn_slash()
+	sword.swing(_attack_dir)
 
 
 ## Hold-to-charge, Hollow Knight "nail art" style: the press already did a
@@ -316,6 +318,7 @@ func _release_wave() -> void:
 	velocity.x -= facing * wave_recoil
 	_squash = Vector2(1.25, 0.8)
 	_shake(0.3)
+	sword.thrust()
 
 
 ## Returns [center (local), size] of the current slash hitbox.
@@ -490,6 +493,8 @@ func _update_visuals(delta: float) -> void:
 	art.stuck = _slow_mult().x < 1.0
 	art.charge = clampf((_charge - charge_show_delay) / (charge_time - charge_show_delay), 0.0, 1.0) if _charge >= 0.0 else 0.0
 	art.charge_ready = _charge_ready
+	sword.charge = art.charge
+	sword.charge_ready = _charge_ready
 	var col := Color.WHITE
 	if _dash_timer > 0.0:
 		col = Color(1.5, 1.5, 1.8)

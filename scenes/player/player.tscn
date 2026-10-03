@@ -4,6 +4,7 @@
 [ext_resource type="Script" path="res://scripts/camera/game_camera.gd" id="2_camera"]
 [ext_resource type="Shader" path="res://shaders/character_outline.gdshader" id="3_outline"]
 [ext_resource type="Script" path="res://scripts/player/player_visual.gd" id="4_visual"]
+[ext_resource type="PackedScene" path="res://scenes/player/sword.tscn" id="5_sword"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
 size = Vector2(26, 52)
@@ -32,6 +33,8 @@ fit_margin = 12.0
 
 [node name="Art" type="Node2D" parent="Visual"]
 script = ExtResource("4_visual")
+
+[node name="Sword" parent="Visual" instance=ExtResource("5_sword")]
 
 [node name="Hurtbox" type="Area2D" parent="."]
 collision_layer = 0
