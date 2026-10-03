@@ -12,3 +12,4 @@ grow_vertical = 2
 script = ExtResource("1_cs")
 cutscene_id = "page3"
 next_scene = ""
+music = "boss"

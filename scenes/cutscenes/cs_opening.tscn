@@ -12,3 +12,4 @@ grow_vertical = 2
 script = ExtResource("1_cs")
 cutscene_id = "opening"
 next_scene = "res://scenes/levels/test_level.tscn"
+music = "lit"

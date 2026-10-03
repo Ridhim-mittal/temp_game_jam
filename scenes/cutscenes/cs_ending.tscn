@@ -12,3 +12,4 @@ grow_vertical = 2
 script = ExtResource("1_cs")
 cutscene_id = "ending"
 next_scene = ""
+music = "ending"

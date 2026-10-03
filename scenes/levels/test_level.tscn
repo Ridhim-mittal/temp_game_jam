@@ -8,6 +8,8 @@
 [ext_resource type="PackedScene" path="res://scenes/background/comic_background.tscn" id="6_background"]
 [ext_resource type="Script" path="res://scripts/world/goo_pool.gd" id="7_goo"]
 
+[ext_resource type="Script" path="res://scripts/audio/level_music.gd" id="8_music"]
+
 [node name="TestLevel" type="Node2D"]
 
 [node name="ComicBackground" parent="." instance=ExtResource("6_background")]
@@ -98,3 +100,6 @@ theme_override_colors/font_color = Color(0.97, 0.95, 0.9, 1)
 theme_override_colors/font_outline_color = Color(0.06, 0.03, 0.13, 1)
 theme_override_constants/outline_size = 6
 text = "Move: A/D or Arrows   Jump: Space/Z (hold = higher)   Attack: J/X (+W up, +S down in air = pogo)   Dash: K/C/Shift   Restart: R"
+
+[node name="LevelMusic" type="Node" parent="."]
+script = ExtResource("8_music")

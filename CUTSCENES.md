@@ -37,3 +37,11 @@ All text and art is in `scripts/cutscenes/cutscene_data.gd`. Each panel is a
 rectangle, a list of draw ops and a list of captions. The draw ops are listed
 in `cutscene_panel.gd` (`_op`). To use Ridhim's art later, add a `"sprite"`
 op there that draws a texture, and swap it into the panels.
+
+## Music
+Four tracks in `audio/music/`, all built on one melody: `lit` (warm),
+`margins` (slow, minor), `boss` (fast, minor), `ending` (plays once).
+The `Music` autoload plays them: `Music.play("boss")`, `Music.stop()`.
+Each cutscene scene has a `music` property, and a level picks its track
+with a `LevelMusic` node (`scripts/audio/level_music.gd`).
+`tools/make_music.py` regenerates the tracks (needs Python, numpy, scipy, ffmpeg).

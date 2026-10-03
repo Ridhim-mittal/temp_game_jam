@@ -25,6 +25,8 @@ const PAPER := {
 ## Pause the rest of the game while the cutscene plays (for overlays).
 @export var pause_game := true
 @export var chars_per_second := 48.0
+## Music track to switch to when the cutscene starts ("" = leave it alone).
+@export var music := ""
 
 var _pages: Array = []
 var _page := -1
@@ -42,6 +44,9 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if pause_game:
 		get_tree().paused = true
+	var music_player := get_node_or_null("/root/Music")
+	if music_player and music != "":
+		music_player.play(music)
 	_pages = Data.CUTSCENES.get(cutscene_id, [])
 	if _pages.is_empty():
 		push_warning("Cutscene '%s' not found in cutscene_data.gd" % cutscene_id)
