@@ -1,0 +1,74 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/clearing/clearing_player.gd" id="1_player"]
+[ext_resource type="Script" path="res://scripts/player/player_visual.gd" id="2_visual"]
+[ext_resource type="Shader" path="res://shaders/character_outline.gdshader" id="3_outline"]
+[ext_resource type="Shader" path="res://shaders/clearing/blob_shadow.gdshader" id="4_blob"]
+[ext_resource type="PackedScene" path="res://scenes/player/sword.tscn" id="5_sword"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
+radius = 0.35
+height = 1.2
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_outline"]
+shader = ExtResource("3_outline")
+shader_parameter/pop_color = Color(1, 0.98, 0.9, 1)
+shader_parameter/ink_width = 2.0
+shader_parameter/pop_width = 5.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_blob"]
+render_priority = -1
+shader = ExtResource("4_blob")
+
+[sub_resource type="QuadMesh" id="QuadMesh_blob"]
+size = Vector2(1.3, 1.3)
+orientation = 1
+
+[node name="ClearingPlayer" type="CharacterBody3D"]
+collision_layer = 2
+collision_mask = 1
+floor_snap_length = 0.3
+script = ExtResource("1_player")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("CapsuleShape3D_body")
+
+[node name="ArtViewport" type="SubViewport" parent="."]
+transparent_bg = true
+size = Vector2i(320, 320)
+render_target_update_mode = 4
+
+[node name="Visual" type="CanvasGroup" parent="ArtViewport"]
+material = SubResource("ShaderMaterial_outline")
+position = Vector2(160, 280)
+scale = Vector2(2, 2)
+fit_margin = 12.0
+
+[node name="Art" type="Node2D" parent="ArtViewport/Visual"]
+script = ExtResource("2_visual")
+
+[node name="Sword" parent="ArtViewport/Visual" instance=ExtResource("5_sword")]
+
+[node name="Visual3D" type="Node3D" parent="."]
+top_level = true
+
+[node name="Sprite" type="Sprite3D" parent="Visual3D"]
+offset = Vector2(0, 120)
+pixel_size = 0.0145
+billboard = 1
+shaded = false
+alpha_cut = 1
+texture_filter = 1
+
+[node name="BlobShadow" type="MeshInstance3D" parent="Visual3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.03, 0)
+cast_shadow = 0
+mesh = SubResource("QuadMesh_blob")
+surface_material_override/0 = SubResource("ShaderMaterial_blob")
+
+[node name="Ember" type="OmniLight3D" parent="Visual3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0.3)
+light_color = Color(1, 0.62, 0.3, 1)
+light_energy = 1.1
+omni_range = 3.6

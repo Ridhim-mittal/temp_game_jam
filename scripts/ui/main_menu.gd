@@ -26,6 +26,7 @@ const ENTRIES := [
 	["Begin", "res://scenes/cutscenes/cs_opening.tscn", "play"],
 	["Skip to the level", "res://scenes/levels/test_level.tscn", "skip"],
 	["Monster test", "res://scenes/levels/monster_test.tscn", "eye"],
+	["2.5D clearing", "res://scenes/clearing/clearing.tscn", "map"],
 	["Quit", "", "x"],
 ]
 const SFX := ["SHNK!", "KRAK!", "SLASH!", "THWACK!"]
@@ -297,6 +298,9 @@ func _draw_icon(kind: String, c: Vector2, col: Color) -> void:
 		"eye":
 			draw_circle(c, 7.0, col)
 			draw_circle(c, 3.5, RED)
+		"map":  # a little plateau seen from above, like the clearing
+			draw_colored_polygon(PackedVector2Array([c + Vector2(-8, 1), c + Vector2(0, -5), c + Vector2(8, 1), c + Vector2(0, 7)]), col)
+			draw_circle(c + Vector2(0, 1), 2.5, RED)
 		_:
 			draw_line(c + Vector2(-6, -6), c + Vector2(6, 6), col, 3.0)
 			draw_line(c + Vector2(6, -6), c + Vector2(-6, 6), col, 3.0)
