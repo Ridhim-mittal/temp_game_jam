@@ -427,6 +427,8 @@ func _check_hurtbox() -> void:
 		if body.is_in_group("enemy") and not ("dead" in body and body.dead):
 			var dmg: int = body.contact_damage if "contact_damage" in body else 1
 			take_damage(dmg, body.global_position)
+			if body.has_method("on_hit_player"):
+				body.on_hit_player()  # projectiles pop instead of flying on
 			return
 
 

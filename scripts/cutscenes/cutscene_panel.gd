@@ -247,11 +247,11 @@ func _lamp(p: Vector2, angle: float, u: float) -> void:
 
 
 func _vesper(p: Vector2, sc: float, pose: String, flip: float) -> void:
-	# Matches scripts/player/player_visual.gd: dark cloak, pale mask, ember scarf.
-	var cloak_c := Color(0.1, 0.09, 0.2)
-	var rim_c := Color(0.3, 0.33, 0.62)
+	# Matches scripts/player/player_visual.gd: wide hat, coat with a torn-page hem, red scarf.
+	var cloak_c := Color(0.14, 0.11, 0.16)
+	var rim_c := Color(0.36, 0.3, 0.42)
 	var mask_c := Color(0.98, 0.96, 0.9)
-	var scarf_c := Color(1.0, 0.58, 0.14)
+	var scarf_c := Color(0.92, 0.3, 0.2)
 	var line_c := INK
 	var fill := true
 	var rot := 0.0
@@ -264,8 +264,8 @@ func _vesper(p: Vector2, sc: float, pose: String, flip: float) -> void:
 			rot = flip * (1.1 + 0.05 * sin(t * 11.0))
 			at += Vector2(sin(t * 11.0) * 1.5 * sc, -10.0 * sc)
 		"torn":
-			cloak_c = Color(0.16, 0.16, 0.3)
-			scarf_c = Color(0.8, 0.42, 0.12)
+			cloak_c = Color(0.22, 0.19, 0.27)
+			scarf_c = Color(0.7, 0.25, 0.18)
 			line_c = PAL["line"]
 		"ghost":
 			fill = false
@@ -281,7 +281,7 @@ func _vesper(p: Vector2, sc: float, pose: String, flip: float) -> void:
 		cloak = PackedVector2Array([h + Vector2(-10, -20), h + Vector2(10, -20), h + Vector2(13, 0),
 			h + Vector2(8, -6), h + Vector2(4, 3), h + Vector2(0, -5), h + Vector2(-5, 3),
 			h + Vector2(-9, -4), h + Vector2(-14, 1)])
-	var mask := _round_rect(Rect2(-11, -61, 23, 23), 7.0)
+	var mask := _round_rect(Rect2(-10, -59, 21, 21), 9.0)
 	var leg_c := INK if line_c == INK else line_c
 	for sx in [-3.0, 3.0]:
 		draw_line(Vector2(sx, -15), Vector2(sx, 0), leg_c, 4.0, true)
@@ -299,14 +299,28 @@ func _vesper(p: Vector2, sc: float, pose: String, flip: float) -> void:
 	if fill:
 		draw_colored_polygon(_round_rect(Rect2(-11, -39, 22, 6), 3.0), scarf_c)
 		draw_colored_polygon(mask, mask_c)
-		var eye := PackedVector2Array()
-		for i in 12:
-			eye.append(Vector2(5.5 + cos(TAU * i / 12.0) * 3.0, -50.0 + sin(TAU * i / 12.0) * 5.5))
-		draw_colored_polygon(eye, INK)
+		for ex in [1.5, 8.0]:
+			var eye := PackedVector2Array()
+			for i in 12:
+				eye.append(Vector2(ex + cos(TAU * i / 12.0) * 1.8, -48.0 + sin(TAU * i / 12.0) * 3.8))
+			draw_colored_polygon(eye, INK)
 	else:
 		draw_line(Vector2(2.5, -54), Vector2(8.5, -46), line_c, 1.5)
 		draw_line(Vector2(8.5, -54), Vector2(2.5, -46), line_c, 1.5)
 	_outline(mask, line_c, 2.0)
+	# wide-brimmed hat
+	var brim := PackedVector2Array()
+	for i in 20:
+		brim.append(Vector2(1.0 + cos(TAU * i / 20.0) * 21.0, -56.0 + sin(TAU * i / 20.0) * 4.8))
+	var crown := PackedVector2Array([Vector2(-9, -58), Vector2(-7, -73), Vector2(10, -71), Vector2(12, -58)])
+	if fill:
+		draw_colored_polygon(crown, cloak_c)
+		draw_colored_polygon(brim, cloak_c)
+		draw_line(Vector2(-9, -60.5), Vector2(12, -60.5), scarf_c, 3.0)
+		# torn-page hem
+		draw_line(h + Vector2(-13, 1.5), h + Vector2(13, 1.5), Color(0.92, 0.89, 0.8), 3.0)
+	_outline(crown, line_c, 2.0)
+	_outline(brim, line_c, 2.0)
 	if pose == "torn":
 		draw_circle(Vector2(-5, -27), 3.5, INK)
 		draw_circle(Vector2(5, -20), 2.5, INK)

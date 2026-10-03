@@ -1,6 +1,7 @@
 extends Node2D
-## Procedural Vesper art + animation: run cycle (alternating legs, body bob,
-## forward lean, fluttering cloak hem, streaming ember scarf, footstep dust),
+## Procedural Vesper art + animation ("Wanderer" look: wide hat, long coat
+## with a torn-page hem, red scarf, pencil sword on his back): run cycle
+## (alternating legs, body bob, forward lean, fluttering hem, streaming scarf, footstep dust),
 ## idle breathing, jump tuck, fall billow and dash stretch.
 ## Origin is at the feet, faces +X; the parent CanvasGroup (outline shader)
 ## flips and squashes it. player.gd feeds the state vars every frame.
@@ -8,11 +9,14 @@ extends Node2D
 const INK := Color(0.05, 0.03, 0.1)
 const DUST := Color(0.97, 0.94, 0.86)
 
-@export var cloak_color := Color(0.1, 0.09, 0.2)
-@export var cloak_rim := Color(0.3, 0.33, 0.62)
+@export var cloak_color := Color(0.14, 0.11, 0.16)
+@export var cloak_rim := Color(0.36, 0.3, 0.42)
 @export var mask_color := Color(0.98, 0.96, 0.9)
 ## Warm "ember" accent: the one warm saturated colour on a cool background.
-@export var scarf_color := Color(1.0, 0.58, 0.14)
+@export var scarf_color := Color(0.92, 0.3, 0.2)
+## Torn comic-page lining that shows along the coat hem.
+@export var page_color := Color(0.92, 0.89, 0.8)
+@export var pencil_color := Color(0.96, 0.76, 0.2)
 ## Run-cycle radians per pixel travelled (bigger = shorter, quicker steps).
 @export var stride := 0.07
 
@@ -94,6 +98,7 @@ func _draw() -> void:
 	# upper body leans around the hips
 	_upper = Transform2D(lean, hips)
 	draw_set_transform_matrix(_upper)
+	_draw_pencil()
 	_draw_scarf_tail(fall)
 	_draw_cloak(fall)
 	_draw_head()
@@ -136,23 +141,46 @@ func _foot(k: int, hips: Vector2, fall: float) -> Vector2:
 	return stance.lerp(run, _run)
 
 
+func _draw_pencil() -> void:
+	# pencil sword slung across the back, tip up
+	var grip := Vector2(-13, 3)
+	var tip := Vector2(7, -47)
+	var dir := (tip - grip).normalized()
+	draw_line(grip, tip, INK, 6.5)
+	draw_line(grip, tip - dir * 2.0, pencil_color, 3.5)
+	draw_line(grip, grip + dir * 5.0, Color(0.9, 0.5, 0.55), 3.5)  # eraser end
+	draw_colored_polygon(PackedVector2Array([tip - dir.orthogonal() * 3.0, tip + dir * 8.0,
+		tip + dir.orthogonal() * 3.0]), Color(0.9, 0.8, 0.65))
+	draw_line(tip + dir * 5.0, tip + dir * 8.0, INK, 2.0)
+
+
 func _draw_cloak(fall: float) -> void:
 	var trail := 7.0 * _run + (8.0 if dashing else 0.0)
 	var flutter := sin(_time * 16.0) * 1.6 * maxf(_run, absf(fall))
 	var lift := -6.0 * maxf(fall, 0.0)  # hem billows up while falling
-	var hem_y := 0.0
-	var cloak := PackedVector2Array([
-		Vector2(-10, -20), Vector2(10, -20),
-		Vector2(13, hem_y + lift * 0.4),
-		Vector2(6, hem_y + 3 + lift * 0.5),
-		Vector2(0, hem_y + lift * 0.7 + flutter * 0.5),
-		Vector2(-7, hem_y + 3 + lift + flutter),
-		Vector2(-14 - trail, hem_y - trail * 0.3 + lift + flutter),
+	# hem points, front to back
+	var hem := PackedVector2Array([
+		Vector2(14, lift * 0.4),
+		Vector2(6, lift * 0.5),
+		Vector2(0, lift * 0.7 + flutter * 0.5),
+		Vector2(-7, lift + flutter),
+		Vector2(-15 - trail, -trail * 0.3 + lift + flutter),
 	])
-	draw_colored_polygon(cloak, cloak_color)
-	# front rim light so the dark cloak keeps some form
+	# torn-page lining: a zigzag strip hanging below the hem
+	var page := PackedVector2Array()
+	for p in hem:
+		page.append(p + Vector2(0, -3))
+	for i in range(hem.size() - 1, -1, -1):
+		page.append(hem[i] + Vector2(0, 2.5))
+		if i > 0:
+			page.append((hem[i] + hem[i - 1]) * 0.5 + Vector2(0, 7.0 + flutter * 0.4))
+	draw_colored_polygon(page, page_color)
+	var coat := PackedVector2Array([Vector2(-10, -20), Vector2(10, -20)])
+	coat.append_array(hem)
+	draw_colored_polygon(coat, cloak_color)
+	# front rim light so the dark coat keeps some form
 	draw_colored_polygon(PackedVector2Array([Vector2(6, -20), Vector2(10, -20),
-		Vector2(13, hem_y + lift * 0.4), Vector2(8, hem_y + 1.5 + lift * 0.45)]), cloak_rim)
+		hem[0], Vector2(9, lift * 0.45)]), cloak_rim)
 
 
 func _draw_scarf_tail(fall: float) -> void:
@@ -173,13 +201,22 @@ func _draw_head() -> void:
 	# scarf wrap around the neck
 	draw_colored_polygon(_round_rect(Rect2(-11, -24, 22, 6), 3.0), scarf_color)
 	draw_line(Vector2(-9, -19.5), Vector2(9, -19.5), scarf_color.darkened(0.35), 1.5)
-	# mask
-	draw_colored_polygon(_round_rect(Rect2(-11, -46, 23, 23), 7.0), mask_color)
-	draw_line(Vector2(-8, -25.5), Vector2(8, -25.5), mask_color.darkened(0.18), 2.0)
-	# eye (blinks)
+	# round pale face
+	draw_colored_polygon(_round_rect(Rect2(-10, -44, 21, 21), 9.0), mask_color)
+	# two eyes (blink together)
 	var open := 1.0 if _blink <= 0.0 else 0.15
-	draw_set_transform_matrix(_upper * Transform2D(0.0, Vector2(1.0, open), 0.0, Vector2(5.5, -35)))
-	draw_colored_polygon(_ellipse(3.0, 5.5), INK)
+	for ex in [1.5, 8.0]:
+		draw_set_transform_matrix(_upper * Transform2D(0.0, Vector2(1.0, open), 0.0, Vector2(ex, -33)))
+		draw_colored_polygon(_ellipse(1.8, 3.8), INK)
+	draw_set_transform_matrix(_upper)
+	# wide-brimmed hat with a scarf-red band; the brim tips with speed
+	var tip := clampf(velocity.x * facing / max_speed, -1.0, 1.0) * -0.06
+	draw_set_transform_matrix(_upper * Transform2D(tip, Vector2(1, -41)))
+	draw_colored_polygon(_ellipse(21.0, 4.8), cloak_color)
+	draw_colored_polygon(PackedVector2Array([Vector2(-10, -2), Vector2(-8, -17), Vector2(9, -15),
+		Vector2(11, -2)]), cloak_color)
+	draw_line(Vector2(-10, -4.5), Vector2(11, -4.5), scarf_color, 3.0)
+	draw_line(Vector2(-16, -1.5), Vector2(8, -2.5), cloak_rim, 1.5)
 	draw_set_transform_matrix(_upper)
 
 

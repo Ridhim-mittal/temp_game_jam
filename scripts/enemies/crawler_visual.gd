@@ -1,7 +1,8 @@
 extends Node2D
-## Procedural crawler art: shell, animated legs, tracking eye, and messy
-## black hair that reacts to movement (streams back when running, flies up
-## when falling, bristles when angry). Faces +X; parent flips via scale.x.
+## Procedural crawler art ("Ink Beetle"): glossy shell, animated legs,
+## tracking eye, ink spines along the back that rise when it is angry and
+## sweep back when it runs, and mandibles that open before it spits.
+## Faces +X; parent flips via scale.x.
 ## All the public vars below are driven every frame by crawler.gd.
 
 const INK := Color(0.06, 0.05, 0.06)
@@ -103,38 +104,29 @@ func _draw_face() -> void:
 
 
 func _draw_hair() -> void:
-	for i in STRANDS:
-		var t := float(i) / (STRANDS - 1)
-		var theta := lerpf(-1.35, 0.55, t)  # angle from straight up, along the shell
-		var root := Vector2(sin(theta) * 20.0, -6.0 - cos(theta) * 20.0)
-		var ang := theta * lerpf(0.9, 0.3, bristle)
-		var seg_len := _strand_len[i] * (1.0 + 0.5 * bristle)
-		var pts := PackedVector2Array([root])
-		var p := root
-		for s in 4:
-			var outward := -1.0 if ang < 0.0 else 1.0
-			var droop := (1.0 - bristle) * 0.22 * outward * clampf(1.0 - lift, 0.0, 2.0)
-			var wobble := sin(_time * 7.0 + i * 1.7 + s) * 0.07 * (1.0 + trail * 2.5)
-			ang += droop - trail * 0.32 - lift * 0.05 * outward + wobble
-			p += Vector2(sin(ang), -cos(ang)) * seg_len
-			pts.append(p)
-		for s in pts.size() - 1:
-			draw_line(pts[s], pts[s + 1], HAIR, lerpf(4.0, 1.4, float(s) / 3.0), true)
+	# Ink spines along the shell (drawn behind it, so only the tips show).
+	for i in STRANDS / 2:
+		var t := float(i) / (STRANDS / 2 - 1)
+		var theta := lerpf(-1.25, 0.35, t)  # angle from straight up
+		var root := Vector2(sin(theta) * 19.0, -6.0 - cos(theta) * 19.0)
+		var length := _strand_len[i] * (1.1 + 1.3 * bristle) + 4.0
+		var ang := theta - trail * 0.45 - lift * 0.25 + sin(_time * 9.0 + i) * 0.05 * (1.0 + bristle)
+		var dir := Vector2(sin(ang), -cos(ang))
+		var side := dir.orthogonal() * 4.5
+		draw_colored_polygon(PackedVector2Array([root - side, root + dir * length, root + side]), HAIR)
 
 
 func _draw_fringe() -> void:
-	# Messy bangs hanging forward over the eye.
-	for i in 3:
-		var root := Vector2(6.0 + i * 3.5, -26.0 + i * 1.5)
-		var ang := 1.7 + i * 0.15 - bristle * 0.9
-		var p := root
-		var pts := PackedVector2Array([p])
-		for s in 3:
-			ang += 0.18 + sin(_time * 6.0 + i * 2.0 + s) * 0.08 * (1.0 + trail * 2.0) - trail * 0.25
-			p += Vector2(sin(ang), -cos(ang)) * 4.5
-			pts.append(p)
-		for s in pts.size() - 1:
-			draw_line(pts[s], pts[s + 1], HAIR, lerpf(3.0, 1.2, float(s) / 2.0), true)
+	# Mandibles: open wide while winding up a spit, twitch when angry.
+	var gape := 0.25 + mouth_open * 0.9 + (0.12 * sin(_time * 14.0) if aggro else 0.0)
+	for s in [-1.0, 1.0]:
+		var base := Vector2(19, -7 + s * 2.0)
+		var ang: float = s * gape
+		var mid := base + Vector2(cos(ang), sin(ang)) * 7.0
+		var tip := mid + Vector2(cos(ang - s * 0.9), sin(ang - s * 0.9)) * 6.0
+		draw_polyline(PackedVector2Array([base, mid, tip]), INK, 3.0)
+	# glossy highlight on the shell
+	draw_arc(Vector2(0, -6), 13.0, PI + 0.55, PI + 1.05, 6, Color(1, 1, 1, 0.45), 2.5)
 
 
 func _draw_alert() -> void:
