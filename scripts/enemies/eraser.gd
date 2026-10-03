@@ -17,7 +17,7 @@ enum State { WALK, WINDUP, LUNGE, TIRED, RUB }
 var state := State.WALK
 var _timer := 0.0
 var _cooldown := 1.5
-var _player_hp := 0
+var _player_hp := 0.0
 var _target: Node2D
 
 
@@ -52,7 +52,7 @@ func _tick(delta: float) -> void:
 			if _timer <= 0.0:
 				state = State.LUNGE
 				_timer = 0.55
-				_player_hp = _player.health if _player else 0
+				_player_hp = _player.health if _player else 0.0
 		State.LUNGE:
 			velocity.x = facing * lunge_speed
 			var hit_wall := hitting_wall()
@@ -161,3 +161,7 @@ func paint(c: CanvasItem) -> void:
 	if state == State.LUNGE:
 		for k in 3:
 			c.draw_line(Vector2(-40, -14.0 - k * 20.0), Vector2(-62, -14.0 - k * 20.0), pink.darkened(0.1), 3.0)
+
+
+func damage_default() -> float:
+	return 35.0  # mini-boss charge

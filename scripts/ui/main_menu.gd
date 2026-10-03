@@ -64,6 +64,9 @@ func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	get_tree().paused = false
 	Engine.time_scale = 1.0
+	var state := get_node_or_null("/root/GameState")
+	if state:
+		state.reset()  # the menu starts a fresh run: no checkpoint, no banked coins
 
 	var bg := ColorRect.new()
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)

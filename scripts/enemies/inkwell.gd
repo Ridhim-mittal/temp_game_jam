@@ -68,3 +68,7 @@ func paint(c: CanvasItem) -> void:
 	if _aim > 0.0:
 		c.draw_circle(Vector2(0, -52), 6.0 * (1.0 - _aim / 0.4) + 2.0, ink)
 	c.draw_set_transform(Vector2.ZERO)
+
+
+func damage_default() -> float:
+	return 15.0  # touching the bottle (its blobs deal 14)

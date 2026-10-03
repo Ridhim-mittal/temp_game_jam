@@ -22,6 +22,8 @@
 [ext_resource type="PackedScene" path="res://scenes/enemies/inkwell.tscn" id="24_inkwell"]
 [ext_resource type="PackedScene" path="res://scenes/enemies/eraser.tscn" id="25_eraser"]
 [ext_resource type="Script" path="res://scripts/world/level_mood.gd" id="30_mood"]
+[ext_resource type="Script" path="res://scripts/world/checkpoint_pen.gd" id="18_pen"]
+[ext_resource type="Script" path="res://scripts/world/health_heart.gd" id="19_heart"]
 [ext_resource type="Script" path="res://scripts/world/stone_block.gd" id="16_stone"]
 [ext_resource type="Script" path="res://scripts/world/level_exit.gd" id="17_exit"]
 
@@ -218,6 +220,50 @@ position = Vector2(6250, 600)
 script = ExtResource("17_exit")
 target_scene = "res://scenes/ui/main_menu.tscn"
 label = "BACK TO THE MENU"
+
+[node name="Checkpoint1" type="Area2D" parent="World"]
+position = Vector2(1300, 600)
+script = ExtResource("18_pen")
+
+[node name="Checkpoint2" type="Area2D" parent="World"]
+position = Vector2(2280, 600)
+script = ExtResource("18_pen")
+
+[node name="Checkpoint3" type="Area2D" parent="World"]
+position = Vector2(3400, 600)
+script = ExtResource("18_pen")
+
+[node name="Checkpoint4" type="Area2D" parent="World"]
+position = Vector2(4150, -370)
+script = ExtResource("18_pen")
+
+[node name="Checkpoint5" type="Area2D" parent="World"]
+position = Vector2(5700, 600)
+script = ExtResource("18_pen")
+
+[node name="Heart1" type="Area2D" parent="World"]
+position = Vector2(1100, 470)
+script = ExtResource("19_heart")
+
+[node name="Heart2" type="Area2D" parent="World"]
+position = Vector2(2560, 540)
+script = ExtResource("19_heart")
+
+[node name="Heart3" type="Area2D" parent="World"]
+position = Vector2(3830, 345)
+script = ExtResource("19_heart")
+
+[node name="Heart4" type="Area2D" parent="World"]
+position = Vector2(4400, -410)
+script = ExtResource("19_heart")
+
+[node name="Heart5" type="Area2D" parent="World"]
+position = Vector2(4650, 555)
+script = ExtResource("19_heart")
+
+[node name="Heart6" type="Area2D" parent="World"]
+position = Vector2(5900, 560)
+script = ExtResource("19_heart")
 
 [node name="Coins" type="Node2D" parent="."]
 

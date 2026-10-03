@@ -101,3 +101,7 @@ func paint(c: CanvasItem) -> void:
 			var y := -12.0 + k * 12.0
 			c.draw_line(Vector2(-30, y), Vector2(-44, y), INK, 2.0)
 	c.draw_set_transform(Vector2.ZERO)
+
+
+func damage_default() -> float:
+	return 22.0  # rolling armoured ball

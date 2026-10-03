@@ -28,6 +28,10 @@ func _ready() -> void:
 	_time = position.x * 0.013  # neighbours spin out of phase
 	if Engine.is_editor_hint():
 		return
+	var state := get_node_or_null("/root/GameState")
+	if state and state.collected.has(state.id_of(self)):
+		queue_free()  # already banked before a death / restart
+		return
 	var cs := CollisionShape2D.new()
 	var circle := CircleShape2D.new()
 	circle.radius = radius + 4.0
@@ -41,6 +45,9 @@ func _on_body_entered(body: Node2D) -> void:
 		return
 	_collected = true
 	set_deferred("monitoring", false)
+	var state := get_node_or_null("/root/GameState")
+	if state:
+		state.collected[state.id_of(self)] = true
 	body.add_coins(value)
 	var pop := ComicText.new()
 	pop.text = "CLINK!"

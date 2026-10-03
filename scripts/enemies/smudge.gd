@@ -82,3 +82,7 @@ func paint(c: CanvasItem) -> void:
 		c.draw_colored_polygon(pts([8, -13 - rise, 15, -15 - rise, 13, -9 - rise]), PALE)
 		c.draw_colored_polygon(pts([19, -12 - rise, 25, -9 - rise, 20, -6 - rise]), PALE)
 		c.draw_polyline(pts([8, -4, 12, -2, 16, -4, 20, -2, 24, -4]), PALE, 1.5)
+
+
+func damage_default() -> float:
+	return 18.0  # ambush lunge
