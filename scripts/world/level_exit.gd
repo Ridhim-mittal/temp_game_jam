@@ -5,6 +5,7 @@ extends Area2D
 ## Origin = floor contact point.
 
 const INK := Color(0.02, 0.02, 0.03)
+const OnScreen = preload("res://scripts/core/on_screen.gd")
 
 @export_file("*.tscn") var target_scene := ""
 @export var label := "ONWARD"
@@ -41,7 +42,8 @@ func _process(delta: float) -> void:
 		if _leaving > 0.35:
 			get_tree().change_scene_to_file(target_scene)
 			_leaving = -100.0
-	queue_redraw()
+	if _leaving >= 0.0 or OnScreen.near(self, 200.0):
+		queue_redraw()
 
 
 func _draw() -> void:

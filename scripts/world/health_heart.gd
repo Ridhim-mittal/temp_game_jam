@@ -6,6 +6,7 @@ extends Area2D
 
 const INK := Color(0.05, 0.03, 0.1)
 const ComicText = preload("res://scripts/effects/comic_text.gd")
+const OnScreen = preload("res://scripts/core/on_screen.gd")
 
 @export var amount := 30.0
 @export var heart_color := Color(1.0, 0.36, 0.42)
@@ -55,7 +56,8 @@ func _collect() -> void:
 
 func _process(delta: float) -> void:
 	_time += delta
-	queue_redraw()
+	if OnScreen.near(self, 80.0):
+		queue_redraw()
 
 
 func _heart(c: Vector2, s: float) -> PackedVector2Array:

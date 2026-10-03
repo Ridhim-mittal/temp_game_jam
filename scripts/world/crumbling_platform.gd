@@ -4,6 +4,7 @@ extends StaticBody2D
 ## `warn_time`, falls apart (no collision) and reforms after `respawn_time`.
 
 const INK := Color(0.05, 0.03, 0.1)
+const OnScreen = preload("res://scripts/core/on_screen.gd")
 const ComicText = preload("res://scripts/effects/comic_text.gd")
 
 @export var size := Vector2(140, 22):
@@ -63,7 +64,8 @@ func _physics_process(delta: float) -> void:
 			if _timer <= 0.0 and not _player_inside():
 				_state = State.SOLID
 				_shape.set_deferred("disabled", false)
-	queue_redraw()
+	if OnScreen.near(self, size.x):
+		queue_redraw()
 
 
 func _get_player() -> Node2D:

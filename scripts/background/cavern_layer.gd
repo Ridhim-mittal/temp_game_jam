@@ -11,6 +11,7 @@ extends Node2D
 ## Coordinates are screen space at the reference camera (floor at y ~446).
 
 const ComicView = preload("res://scripts/background/comic_view.gd")
+const TriBatch = preload("res://scripts/background/tri_batch.gd")
 const INK := Color(0.02, 0.02, 0.03)
 
 enum Style { COILS, ARCHES, SHELLS, SACS, FOREGROUND }
@@ -29,6 +30,7 @@ enum Style { COILS, ARCHES, SHELLS, SACS, FOREGROUND }
 
 var _time := 0.0
 var _last_xf := Transform2D()
+var _b: TriBatch  # whole layer = one draw call
 
 
 func _process(delta: float) -> void:
@@ -42,6 +44,7 @@ func _process(delta: float) -> void:
 
 func _draw() -> void:
 	var rect: Rect2 = ComicView.local_view(self).rect
+	_b = TriBatch.new()
 	var i0 := floori(rect.position.x / slot_width) - 1
 	var i1 := mini(ceili(rect.end.x / slot_width) + 1, i0 + 80)
 	for i in range(i0, i1):
@@ -56,6 +59,20 @@ func _draw() -> void:
 			Style.SHELLS: _draw_shells(x, rng)
 			Style.SACS: _draw_sac(x, rng)
 			Style.FOREGROUND: _draw_foreground(x, rng)
+	_b.flush(self)
+
+
+func _arc(c: Vector2, r: float, a0: float, a1: float, n: int, col: Color, w: float) -> void:
+	var pts := PackedVector2Array()
+	for j in n + 1:
+		pts.append(c + Vector2.from_angle(lerpf(a0, a1, float(j) / n)) * r)
+	_b.polyline(pts, col, w)
+
+
+## Quad strip between two matching edges (concave ribbons: ribs, trunks).
+func _strip(a: PackedVector2Array, b: PackedVector2Array, col: Color) -> void:
+	for j in mini(a.size(), b.size()) - 1:
+		_b.quad(a[j], a[j + 1], b[j + 1], b[j], col)
 
 
 func _c(shade := 0.0) -> Color:
@@ -101,32 +118,31 @@ func _draw_segment(c: Vector2, s: Vector2) -> void:
 	for j in 24:
 		var a := TAU * j / 24.0
 		pts.append(c + Vector2(cos(a) * s.x * 0.5, sin(a) * s.y * 0.5))
-	draw_colored_polygon(pts, _c())
+	_b.convex(pts, _c())
 	# shadowed underside (cylinder volume)
-	var shade := PackedVector2Array()
+	var outer := PackedVector2Array()
+	var inner := PackedVector2Array()
 	for j in 13:
 		var a := PI * j / 12.0
-		shade.append(c + Vector2(cos(a) * s.x * 0.5, sin(a) * s.y * 0.5))
-	for j in range(12, -1, -1):
-		var a := PI * j / 12.0
-		shade.append(c + Vector2(cos(a) * s.x * 0.42, sin(a) * s.y * 0.12))
-	draw_colored_polygon(shade, _c(-0.35))
+		outer.append(c + Vector2(cos(a) * s.x * 0.5, sin(a) * s.y * 0.5))
+		inner.append(c + Vector2(cos(a) * s.x * 0.42, sin(a) * s.y * 0.12))
+	_strip(outer, inner, _c(-0.35))
 	pts.append(pts[0])
-	draw_polyline(pts, _ink(), outline_width)
+	_b.polyline(pts, _ink(), outline_width)
 	# rib + rim light
-	draw_arc(c - Vector2(0, s.y * 0.05), s.x * 0.34, PI * 1.12, PI * 1.88, 10, _c(-0.2), outline_width * 0.8)
-	draw_arc(c - Vector2(s.x * 0.1, s.y * 0.14), s.x * 0.26, PI * 1.2, PI * 1.55, 8, _c(0.22), 1.5)
+	_arc(c - Vector2(0, s.y * 0.05), s.x * 0.34, PI * 1.12, PI * 1.88, 10, _c(-0.2), outline_width * 0.8)
+	_arc(c - Vector2(s.x * 0.1, s.y * 0.14), s.x * 0.26, PI * 1.2, PI * 1.55, 8, _c(0.22), 1.5)
 
 
 func _draw_spiral(c: Vector2, r: float, fill: Color, line: Color) -> void:
-	draw_circle(c, r, fill)
-	draw_arc(c, r, 0, TAU, 32, line, outline_width)
+	_b.circle(c, r, fill)
+	_arc(c, r, 0, TAU, 32, line, outline_width)
 	var pts := PackedVector2Array()
 	for j in 60:
 		var t := j / 59.0
 		var a := t * TAU * 2.6
 		pts.append(c + Vector2.from_angle(a) * r * (1.0 - t * 0.92))
-	draw_polyline(pts, line, outline_width * 0.9, true)
+	_b.polyline(pts, line, outline_width * 0.9)
 
 
 # --------------------------------------------------------------- arches
@@ -142,8 +158,8 @@ func _draw_arch(x: float, rng: RandomNumberGenerator) -> void:
 		# inner rib
 		_draw_rib(foot + Vector2(-side * 16, 0), ctrl + Vector2(-side * 18, 10), apex + Vector2(0, 26), 8.0, 3.0)
 	# ribbed capital where the ribs meet
-	draw_circle(apex + Vector2(0, 8), 12.0, _c(0.08))
-	draw_arc(apex + Vector2(0, 8), 12.0, 0, TAU, 16, _ink(), outline_width)
+	_b.circle(apex + Vector2(0, 8), 12.0, _c(0.08))
+	_arc(apex + Vector2(0, 8), 12.0, 0, TAU, 16, _ink(), outline_width)
 	# tendrils dangling from the arch, swaying
 	for k in rng.randi_range(2, 4):
 		var root := apex + Vector2(rng.randf_range(-half * 0.6, half * 0.6), rng.randf_range(20.0, 80.0))
@@ -154,8 +170,8 @@ func _draw_arch(x: float, rng: RandomNumberGenerator) -> void:
 			var t := j / 11.0
 			var sway := sin(_time * 0.8 + ph + t * 2.5) * 14.0 * t
 			pts.append(root + Vector2(sway + sin(t * 6.0 + ph) * 6.0, t * length))
-		draw_polyline(pts, _ink(), 4.0, true)
-		draw_polyline(pts, _c(-0.05), 2.0, true)
+		_b.polyline(pts, _ink(), 4.0)
+		_b.polyline(pts, _c(-0.05), 2.0)
 
 
 func _draw_rib(a: Vector2, ctrl: Vector2, b: Vector2, w0: float, w1: float) -> void:
@@ -170,14 +186,12 @@ func _draw_rib(a: Vector2, ctrl: Vector2, b: Vector2, w0: float, w1: float) -> v
 		var nrm := Vector2(-dir.y, dir.x) * lerpf(w0, w1, t) * 0.5
 		left.append(p + nrm)
 		right.append(p - nrm)
-	right.reverse()
-	var poly := left + right
-	draw_colored_polygon(poly, _c())
-	poly.append(poly[0])
-	draw_polyline(poly, _ink(), outline_width)
+	_strip(left, right, _c())
+	_b.polyline(left, _ink(), outline_width)
+	_b.polyline(right, _ink(), outline_width)
 	# segment rings along the rib (the ribbed look)
 	for j in range(2, n, 3):
-		draw_line(left[j], right[n - j], _c(-0.2), 1.5)
+		_b.line(left[j], right[j], _c(-0.2), 1.5)
 
 
 # --------------------------------------------------------------- shells
@@ -195,8 +209,8 @@ func _draw_shells(x: float, rng: RandomNumberGenerator) -> void:
 		for j in 10:
 			var t := j / 9.0
 			pts.append(Vector2(x + sin(t * 3.0 + ph) * 26.0, floor_y + 30.0 - t * rng.randf_range(260.0, 420.0)))
-		draw_polyline(pts, _ink(), 18.0, true)
-		draw_polyline(pts, _c(-0.08), 11.0, true)
+		_b.polyline(pts, _ink(), 18.0)
+		_b.polyline(pts, _c(-0.08), 11.0)
 	if rng.randf() < 0.45:
 		var r := rng.randf_range(30.0, 50.0)
 		_draw_spiral(Vector2(x + rng.randf_range(-60, 60), floor_y - rng.randf_range(560.0, 700.0)), r, _c(), _ink())
@@ -211,19 +225,19 @@ func _draw_sac(x: float, rng: RandomNumberGenerator) -> void:
 	var c := Vector2(x, floor_y - r * 1.05) if not hanging else Vector2(x, floor_y - rng.randf_range(300.0, 420.0))
 	var pulse := 0.8 + 0.2 * sin(_time * 1.6 + x * 0.01)
 	for k in 4:  # glow halo in flat comic bands
-		draw_circle(c, r * (1.6 + k * 0.7) * pulse, Color(amber, 0.07 - k * 0.014))
+		_b.circle(c, r * (1.6 + k * 0.7) * pulse, Color(amber, 0.07 - k * 0.014))
 	if hanging:
-		draw_line(c - Vector2(0, r), c - Vector2(0, r + 260.0), INK, 4.0)
+		_b.line(c - Vector2(0, r), c - Vector2(0, r + 260.0), INK, 4.0)
 	var body := PackedVector2Array()
 	for j in 24:
 		var a := TAU * j / 24.0
 		body.append(c + Vector2(cos(a) * r * 0.82, sin(a) * r * (1.0 + 0.12 * sin(a))))
-	draw_colored_polygon(body, amber.darkened(0.15))
-	draw_circle(c + Vector2(-r * 0.15, -r * 0.2), r * 0.5, amber.lightened(0.25))
-	draw_circle(c + Vector2(r * 0.2, r * 0.25), r * 0.14, amber.darkened(0.35))  # spots
-	draw_circle(c + Vector2(-r * 0.35, r * 0.35), r * 0.1, amber.darkened(0.35))
+	_b.convex(body, amber.darkened(0.15))
+	_b.circle(c + Vector2(-r * 0.15, -r * 0.2), r * 0.5, amber.lightened(0.25))
+	_b.circle(c + Vector2(r * 0.2, r * 0.25), r * 0.14, amber.darkened(0.35))  # spots
+	_b.circle(c + Vector2(-r * 0.35, r * 0.35), r * 0.1, amber.darkened(0.35))
 	body.append(body[0])
-	draw_polyline(body, INK, 2.5)
+	_b.polyline(body, INK, 2.5)
 
 
 # ----------------------------------------------------------- foreground
@@ -243,14 +257,13 @@ func _draw_foreground(x: float, rng: RandomNumberGenerator) -> void:
 				var y := floor_y + 120.0 - t * 1100.0
 				left.append(Vector2(cx - w, y))
 				right.append(Vector2(cx + w, y))
-			right.reverse()
-			draw_colored_polygon(left + right, black)
+			_strip(left, right, black)
 		1:  # spiky grass tuft along the bottom, swaying
 			for k in rng.randi_range(6, 11):
 				var bx := x + rng.randf_range(-110.0, 110.0)
 				var h := rng.randf_range(60.0, 170.0)
 				var sway := sin(_time * 1.2 + bx * 0.05) * 8.0
-				draw_colored_polygon(PackedVector2Array([Vector2(bx - 6, floor_y + 60), Vector2(bx + sway, floor_y + 60 - h),
+				_b.convex(PackedVector2Array([Vector2(bx - 6, floor_y + 60), Vector2(bx + sway, floor_y + 60 - h),
 					Vector2(bx + 6, floor_y + 60)]), black)
 		_:  # vines hanging from the roof
 			for k in rng.randi_range(2, 4):
@@ -261,4 +274,4 @@ func _draw_foreground(x: float, rng: RandomNumberGenerator) -> void:
 				for j in 12:
 					var t := j / 11.0
 					pts.append(Vector2(vx + sin(_time * 0.7 + ph + t * 2.0) * 16.0 * t, floor_y - 700.0 + t * length))
-				draw_polyline(pts, black, lerpf(10.0, 5.0, 0.5), true)
+				_b.polyline(pts, black, lerpf(10.0, 5.0, 0.5))

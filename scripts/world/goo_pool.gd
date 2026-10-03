@@ -7,6 +7,7 @@ extends Area2D
 
 const ComicText = preload("res://scripts/effects/comic_text.gd")
 const INK := Color(0.05, 0.03, 0.1)
+const OnScreen = preload("res://scripts/core/on_screen.gd")
 
 @export var size := Vector2(200, 16):
 	set(value):
@@ -68,7 +69,8 @@ func _process(delta: float) -> void:
 	for b in _bubbles:
 		b.age += delta
 	_bubbles = _bubbles.filter(func(b): return b.age < 1.0)
-	queue_redraw()
+	if OnScreen.near(self, size.x):
+		queue_redraw()
 
 
 func _surface_y(x: float) -> float:

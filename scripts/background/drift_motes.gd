@@ -5,6 +5,7 @@ extends Node2D
 ## floating-particle depth cue). Wraps around the view, so it never runs out.
 
 const ComicView = preload("res://scripts/background/comic_view.gd")
+const TriBatch = preload("res://scripts/background/tri_batch.gd")
 
 @export var seed := 11
 @export var count := 60
@@ -41,6 +42,7 @@ func _process(delta: float) -> void:
 func _draw() -> void:
 	var rect: Rect2 = ComicView.local_view(self).rect
 	var origin := rect.get_center() - tile * 0.5
+	var b := TriBatch.new()
 	for m in _motes:
 		var p: Vector2 = m.p + m.v * _time + Vector2(sin(_time * 0.7 + m.ph), cos(_time * 0.5 + m.ph)) * 12.0
 		p = origin + (p - origin).posmodv(tile)
@@ -52,7 +54,9 @@ func _draw() -> void:
 			var star := PackedVector2Array([
 				p + Vector2(0, -r), p + Vector2(q, -q), p + Vector2(r, 0), p + Vector2(q, q),
 				p + Vector2(0, r), p + Vector2(-q, q), p + Vector2(-r, 0), p + Vector2(-q, -q)])
-			draw_colored_polygon(star, Color(color, twinkle))
+			b.fan(p, star, Color(color, twinkle))
 		else:
-			draw_circle(p, s + 1.2, Color(ink, ink.a * twinkle))
-			draw_circle(p, s, Color(color, twinkle))
+			if ink.a > 0.0:
+				b.circle(p, s + 1.2, Color(ink, ink.a * twinkle), 8)
+			b.circle(p, s, Color(color, twinkle), 8)
+	b.flush(self)

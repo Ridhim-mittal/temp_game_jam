@@ -4,6 +4,7 @@ extends Node2D
 ## that thickens toward the bottom. Use with the comic_halftone material.
 
 const ComicView = preload("res://scripts/background/comic_view.gd")
+const TriBatch = preload("res://scripts/background/tri_batch.gd")
 
 @export var seed := 5
 @export var base_y := 420.0
@@ -38,6 +39,7 @@ func height_at(x: float) -> float:
 
 func _draw() -> void:
 	var rect: Rect2 = ComicView.local_view(self).rect
+	var b := TriBatch.new()
 	var bottom := maxf(rect.end.y, base_y) + 8.0
 	var crest_c := ComicView.halftone(_hz(color), shade.x)
 	var foot_c := ComicView.halftone(_hz(color), shade.y)
@@ -46,13 +48,13 @@ func _draw() -> void:
 	while x <= rect.end.x + step:
 		var y := height_at(x)
 		var y2 := height_at(x + step)
-		draw_primitive(
-			PackedVector2Array([Vector2(x, y), Vector2(x + step, y2), Vector2(x + step, bottom), Vector2(x, bottom)]),
-			PackedColorArray([crest_c, crest_c, foot_c, foot_c]), PackedVector2Array())
+		b.quad_colors(Vector2(x, y), Vector2(x + step, y2), Vector2(x + step, bottom), Vector2(x, bottom),
+			crest_c, crest_c, foot_c, foot_c)
 		crest.append(Vector2(x, y))
 		x += step
 	if crest.size() > 1:
-		draw_polyline(crest, _hz(ink), outline_width)
+		b.polyline(crest, _hz(ink), outline_width)
+	b.flush(self)
 
 
 func _hz(c: Color) -> Color:

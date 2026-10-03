@@ -10,6 +10,7 @@ extends Area2D
 
 const INK := Color(0.05, 0.03, 0.1)
 const ComicText = preload("res://scripts/effects/comic_text.gd")
+const OnScreen = preload("res://scripts/core/on_screen.gd")
 
 @export var sleep_color := Color(0.42, 0.46, 0.66)
 @export var awake_color := Color(0.36, 0.86, 0.46)
@@ -68,7 +69,8 @@ func _enter_tree() -> void:
 func _process(delta: float) -> void:
 	_time += delta
 	_bounce = move_toward(_bounce, 0.0, delta * 2.2)
-	queue_redraw()
+	if OnScreen.near(self, 160.0):
+		queue_redraw()
 
 
 func _draw() -> void:

@@ -4,6 +4,7 @@ extends Area2D
 
 const INK := Color(0.05, 0.03, 0.1)
 const ComicText = preload("res://scripts/effects/comic_text.gd")
+const OnScreen = preload("res://scripts/core/on_screen.gd")
 
 @export var launch_speed := 1250.0
 @export var cap_color := Color(0.95, 0.25, 0.2)
@@ -47,7 +48,8 @@ func _on_body_entered(body: Node2D) -> void:
 
 func _process(delta: float) -> void:
 	_squash = move_toward(_squash, 0.0, delta * 5.0)
-	queue_redraw()
+	if OnScreen.near(self, 80.0):
+		queue_redraw()
 
 
 func _draw() -> void:

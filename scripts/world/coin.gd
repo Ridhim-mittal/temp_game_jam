@@ -12,6 +12,7 @@ const OUTLINE := Color(1.0, 0.98, 0.9)  # cream = friendly (same as Vesper)
 const GOLD := Color(1.0, 0.8, 0.22)
 const GOLD_DARK := Color(0.78, 0.46, 0.1)
 const GOLD_LIGHT := Color(1.0, 0.95, 0.65)
+const OnScreen = preload("res://scripts/core/on_screen.gd")
 
 @export var value := 1
 @export var radius := 13.0
@@ -66,7 +67,8 @@ func _on_body_entered(body: Node2D) -> void:
 
 func _process(delta: float) -> void:
 	_time += delta
-	queue_redraw()
+	if OnScreen.near(self, 80.0):
+		queue_redraw()
 
 
 func _draw() -> void:
