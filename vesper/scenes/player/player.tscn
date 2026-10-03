@@ -1,0 +1,47 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/player/player.gd" id="1_player"]
+[ext_resource type="Script" path="res://scripts/camera/game_camera.gd" id="2_camera"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
+size = Vector2(26, 52)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hurt"]
+size = Vector2(20, 44)
+
+[node name="Player" type="CharacterBody2D" groups=["player"]]
+collision_layer = 2
+collision_mask = 1
+script = ExtResource("1_player")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_body")
+
+[node name="Visual" type="Node2D" parent="."]
+position = Vector2(0, 26)
+
+[node name="Cloak" type="Polygon2D" parent="Visual"]
+color = Color(0.2, 0.24, 0.42, 1)
+polygon = PackedVector2Array(-13, -34, 13, -34, 16, 0, -16, 0)
+
+[node name="Head" type="Polygon2D" parent="Visual"]
+color = Color(0.97, 0.95, 0.9, 1)
+polygon = PackedVector2Array(-11, -54, 11, -54, 12, -32, -12, -32)
+
+[node name="Eye" type="Polygon2D" parent="Visual"]
+color = Color(0.08, 0.08, 0.1, 1)
+polygon = PackedVector2Array(3, -47, 8, -47, 8, -39, 3, -39)
+
+[node name="Hurtbox" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 12
+monitoring = false
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
+shape = SubResource("RectangleShape2D_hurt")
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position_smoothing_enabled = true
+position_smoothing_speed = 8.0
+script = ExtResource("2_camera")
