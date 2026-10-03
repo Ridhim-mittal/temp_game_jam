@@ -33,6 +33,7 @@ var _blink := 0.0
 var _blink_timer := 2.5
 var _dust: Array = []
 var _goo := 0.0  # 1 while in goo, fades after leaving (drips off)
+var shoulder := Vector2(2, -33)  # sword arm pivot, read by sword.gd
 var _upper := Transform2D()  # hips + lean, for the upper-body parts
 
 
@@ -93,6 +94,7 @@ func _draw() -> void:
 
 	# upper body leans around the hips
 	_upper = Transform2D(lean, hips)
+	shoulder = _upper * Vector2(2, -17)
 	draw_set_transform_matrix(_upper)
 	_draw_scarf_tail(fall)
 	_draw_cloak(fall)
