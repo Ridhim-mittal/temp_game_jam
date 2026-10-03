@@ -10,6 +10,7 @@ extends CharacterBody2D
 
 signal health_changed(current: int, maximum: int)
 signal died
+signal coins_changed(total: int)
 
 const SlashEffect = preload("res://scripts/effects/slash_effect.gd")
 const ComicText = preload("res://scripts/effects/comic_text.gd")
@@ -72,6 +73,7 @@ const BODY_HALF_HEIGHT := 26.0
 
 var facing := 1
 var health := 0
+var coins := 0
 var can_dash := true
 var is_jumping := false
 var dead := false
@@ -209,6 +211,11 @@ func _handle_jump() -> void:
 	if is_jumping and velocity.y < 0.0 and not Input.is_action_pressed("jump"):
 		velocity.y *= jump_cut_mult
 		is_jumping = false
+
+
+func add_coins(amount: int) -> void:
+	coins += amount
+	coins_changed.emit(coins)
 
 
 ## Called by slowing obstacles (e.g. goo_pool.gd). Multipliers of 1 remove

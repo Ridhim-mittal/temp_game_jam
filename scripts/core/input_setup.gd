@@ -10,7 +10,8 @@ func _enter_tree() -> void:
 	_add_keys("jump", [KEY_SPACE, KEY_Z])
 	_add_keys("attack", [KEY_X])  # keyboard fallback (trackpads)
 	_add_mouse_button("attack", MOUSE_BUTTON_LEFT)
-	_add_keys("dash", [KEY_K, KEY_C, KEY_SHIFT])
+	_add_keys("dash", [KEY_C, KEY_SHIFT])  # keyboard fallbacks
+	_add_mouse_button("dash", MOUSE_BUTTON_RIGHT)
 	_add_keys("restart", [KEY_R])
 
 	_add_joy_button("jump", JOY_BUTTON_A)
