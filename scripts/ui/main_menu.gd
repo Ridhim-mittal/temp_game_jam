@@ -25,6 +25,7 @@ const DIM := Color(0.62, 0.6, 0.62)
 const ENTRIES := [
 	["Begin", "res://scenes/cutscenes/cs_opening.tscn", "play"],
 	["Skip to the level", "res://scenes/levels/test_level.tscn", "skip"],
+	["The Ink Cavern", "res://scenes/levels/ink_cavern.tscn", "skip"],
 	["Monster test", "res://scenes/levels/monster_test.tscn", "eye"],
 	["2.5D clearing", "res://scenes/clearing/clearing.tscn", "map"],
 	["Quit", "", "x"],
@@ -32,7 +33,7 @@ const ENTRIES := [
 const SFX := ["SHNK!", "KRAK!", "SLASH!", "THWACK!"]
 const BAR_POS := Vector2(70, 336)
 const BAR_SIZE := Vector2(400, 50)
-const BAR_GAP := 64.0
+const BAR_GAP := 58.0
 
 @export var music := "margins"
 
