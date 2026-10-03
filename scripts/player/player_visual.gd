@@ -23,6 +23,8 @@ var on_floor := true
 var dashing := false
 var max_speed := 300.0
 var stuck := false  # wading through goo: boots get gooey
+var charge := 0.0  # 0..1 charged-attack build-up
+var charge_ready := false
 
 var _phase := 0.0
 var _time := 0.0
@@ -101,6 +103,23 @@ func _draw() -> void:
 		for i in 3:
 			var y := -10.0 - i * 13.0
 			draw_line(Vector2(-22 - i * 6, y), Vector2(-58 - i * 10, y), Color(DUST, 0.9), 3.0)
+	if charge > 0.0:
+		_draw_charge()
+
+
+## Ember sparks spiral in while charging; a pulsing ring when ready to fire.
+func _draw_charge() -> void:
+	var c := Vector2(10, -24)
+	if charge_ready:
+		var pulse := 0.5 + 0.5 * sin(_time * 22.0)
+		draw_arc(c, 15.0 + pulse * 3.0, 0, TAU, 20, scarf_color, 3.0)
+		draw_circle(c, 5.0 + pulse * 1.5, scarf_color.lightened(0.5))
+		return
+	var r := lerpf(34.0, 8.0, charge)
+	for k in 6:
+		var a := TAU * k / 6.0 + _time * 7.0
+		var p := c + Vector2(cos(a), sin(a)) * r
+		draw_circle(p, 1.5 + 2.0 * charge, scarf_color)
 
 
 func _foot(k: int, hips: Vector2, fall: float) -> Vector2:

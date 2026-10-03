@@ -97,4 +97,4 @@ offset_bottom = 700.0
 theme_override_colors/font_color = Color(0.97, 0.95, 0.9, 1)
 theme_override_colors/font_outline_color = Color(0.06, 0.03, 0.13, 1)
 theme_override_constants/outline_size = 6
-text = "Move: A/D or Arrows   Jump: Space/Z (hold = higher)   Attack: J/X (+W up, +S down in air = pogo)   Dash: K/C/Shift   Restart: R"
+text = "Move: A/D or Arrows   Jump: Space/Z (hold = higher)   Attack: Left Click (+W up, +S down in air = pogo; hold = ink wave)   Dash: K/C/Shift   Restart: R"

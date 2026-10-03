@@ -8,7 +8,8 @@ func _enter_tree() -> void:
 	_add_keys("up", [KEY_W, KEY_UP])
 	_add_keys("down", [KEY_S, KEY_DOWN])
 	_add_keys("jump", [KEY_SPACE, KEY_Z])
-	_add_keys("attack", [KEY_J, KEY_X])
+	_add_keys("attack", [KEY_X])  # keyboard fallback (trackpads)
+	_add_mouse_button("attack", MOUSE_BUTTON_LEFT)
 	_add_keys("dash", [KEY_K, KEY_C, KEY_SHIFT])
 	_add_keys("restart", [KEY_R])
 
@@ -36,6 +37,13 @@ func _add_keys(action: String, keys: Array) -> void:
 		var ev := InputEventKey.new()
 		ev.physical_keycode = key
 		InputMap.action_add_event(action, ev)
+
+
+func _add_mouse_button(action: String, button: MouseButton) -> void:
+	_ensure_action(action)
+	var ev := InputEventMouseButton.new()
+	ev.button_index = button
+	InputMap.action_add_event(action, ev)
 
 
 func _add_joy_button(action: String, button: JoyButton) -> void:

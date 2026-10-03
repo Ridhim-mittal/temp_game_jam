@@ -13,6 +13,7 @@ signal died
 
 const SlashEffect = preload("res://scripts/effects/slash_effect.gd")
 const ComicText = preload("res://scripts/effects/comic_text.gd")
+const InkWave = preload("res://scripts/effects/ink_wave.gd")
 
 const MASK_ENEMY := 4   # physics layer 3
 const MASK_HAZARD := 8  # physics layer 4
@@ -53,6 +54,16 @@ const BODY_HALF_HEIGHT := 26.0
 @export var recoil_speed := 280.0
 @export var recoil_time := 0.09
 
+@export_group("Charged Attack")
+## Hold attack this long (after the normal slash) to charge the ink wave.
+@export var charge_time := 0.6
+## Holding shorter than this shows no charge effect (it was just a tap).
+@export var charge_show_delay := 0.15
+@export var wave_damage := 2
+@export var wave_speed := 1100.0
+@export var wave_range := 520.0
+@export var wave_recoil := 160.0
+
 @export_group("Health")
 @export var max_health := 5
 @export var invuln_time := 1.2
@@ -83,6 +94,8 @@ var _hurt_timer := 0.0
 var _was_on_floor := false
 var _squash := Vector2.ONE
 var _last_safe_position := Vector2.ZERO
+var _charge := -1.0  # seconds attack has been held; -1 = not charging
+var _charge_ready := false
 var _slow_sources := {}  # source -> Vector2(speed_mult, jump_mult)
 
 @onready var visual: Node2D = $Visual
@@ -109,6 +122,9 @@ func _physics_process(delta: float) -> void:
 		_jump_buffer_timer = jump_buffer_time
 	if Input.is_action_just_pressed("attack"):
 		_attack_buffer_timer = attack_buffer_time
+		_charge = 0.0
+		_charge_ready = false
+	_update_charge(delta)
 
 	# Hit-stun: no control, just fall with knockback.
 	if _hurt_timer > 0.0:
@@ -220,6 +236,7 @@ func _start_dash(input_x: float) -> void:
 	is_jumping = false
 	_attack_timer = 0.0
 	_recoil_timer = 0.0
+	_cancel_charge()
 	_squash = Vector2(1.3, 0.75)
 
 
@@ -257,6 +274,41 @@ func _handle_attack_input() -> void:
 	_attack_pogoed = false
 	_attack_recoiled = false
 	_spawn_slash()
+
+
+## Hold-to-charge, Hollow Knight "nail art" style: the press already did a
+## normal slash, keep holding to charge, release when charged to fire.
+func _update_charge(delta: float) -> void:
+	if _charge < 0.0:
+		return
+	if Input.is_action_pressed("attack"):
+		_charge += delta
+		if not _charge_ready and _charge >= charge_time:
+			_charge_ready = true
+			_squash = Vector2(1.1, 0.92)
+		return
+	if _charge_ready:
+		_release_wave()
+	_cancel_charge()
+
+
+func _cancel_charge() -> void:
+	_charge = -1.0
+	_charge_ready = false
+
+
+func _release_wave() -> void:
+	var wave := InkWave.new()
+	wave.direction = facing
+	wave.speed = wave_speed
+	wave.max_range = wave_range
+	wave.damage = wave_damage
+	wave.position = global_position + Vector2(facing * 30.0, -4.0)
+	get_tree().current_scene.add_child(wave)
+	_pop_text(global_position + Vector2(facing * 30.0, -60), "KA-SHOOM!", Color(1.0, 0.58, 0.14))
+	velocity.x -= facing * wave_recoil
+	_squash = Vector2(1.25, 0.8)
+	_shake(0.3)
 
 
 ## Returns [center (local), size] of the current slash hitbox.
@@ -375,6 +427,7 @@ func take_damage(amount: int, source_pos: Vector2, from_hazard := false) -> void
 	if dead or (_invuln_timer > 0.0 and not from_hazard):
 		return
 	health = maxi(health - amount, 0)
+	_cancel_charge()
 	health_changed.emit(health, max_health)
 	_invuln_timer = invuln_time
 	_hurt_timer = hurt_stun_time
@@ -426,6 +479,8 @@ func _update_visuals(delta: float) -> void:
 	art.dashing = _dash_timer > 0.0
 	art.max_speed = max_speed
 	art.stuck = _slow_mult().x < 1.0
+	art.charge = clampf((_charge - charge_show_delay) / (charge_time - charge_show_delay), 0.0, 1.0) if _charge >= 0.0 else 0.0
+	art.charge_ready = _charge_ready
 	var col := Color.WHITE
 	if _dash_timer > 0.0:
 		col = Color(1.5, 1.5, 1.8)
