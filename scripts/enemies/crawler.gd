@@ -60,7 +60,7 @@ var _lost_sight_timer := 0.0
 var _squash := Vector2.ONE
 var _player: Node2D
 
-@onready var visual = $Visual
+@onready var visual = $Outline/Visual
 @onready var body_shape: CollisionShape2D = $CollisionShape2D
 
 

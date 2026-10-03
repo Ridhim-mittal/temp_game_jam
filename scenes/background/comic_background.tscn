@@ -9,6 +9,7 @@
 [ext_resource type="Script" path="res://scripts/background/comic_skyline.gd" id="7_skyline"]
 [ext_resource type="Script" path="res://scripts/background/drift_motes.gd" id="8_motes"]
 [ext_resource type="Script" path="res://scripts/background/comic_foreground.gd" id="9_foreground"]
+[ext_resource type="Script" path="res://scripts/background/depth_fog.gd" id="10_fog"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_sky"]
 shader = ExtResource("1_sky")
@@ -154,6 +155,10 @@ outline_width = 4.0
 street_color = Color(0.1, 0.06, 0.2, 1)
 window_size = Vector2(0, 0)
 detail_chance = 0.85
+
+[node name="DepthFog" type="Node2D" parent="."]
+z_index = -10
+script = ExtResource("10_fog")
 
 [node name="Motes" type="Parallax2D" parent="."]
 z_index = -10

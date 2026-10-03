@@ -85,6 +85,7 @@ var _squash := Vector2.ONE
 var _last_safe_position := Vector2.ZERO
 
 @onready var visual: Node2D = $Visual
+@onready var art = $Visual/Art
 @onready var hurtbox: Area2D = $Hurtbox
 
 
@@ -402,6 +403,11 @@ func _reload() -> void:
 func _update_visuals(delta: float) -> void:
 	_squash = _squash.lerp(Vector2.ONE, 1.0 - exp(-14.0 * delta))
 	visual.scale = Vector2(facing * _squash.x, _squash.y)
+	art.velocity = velocity
+	art.facing = facing
+	art.on_floor = is_on_floor()
+	art.dashing = _dash_timer > 0.0
+	art.max_speed = max_speed
 	var col := Color.WHITE
 	if _dash_timer > 0.0:
 		col = Color(1.5, 1.5, 1.8)

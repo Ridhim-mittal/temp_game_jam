@@ -2,9 +2,16 @@
 
 [ext_resource type="Script" path="res://scripts/enemies/crawler.gd" id="1_crawler"]
 [ext_resource type="Script" path="res://scripts/enemies/crawler_visual.gd" id="2_visual"]
+[ext_resource type="Shader" path="res://shaders/character_outline.gdshader" id="3_outline"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
 size = Vector2(44, 28)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_outline"]
+shader = ExtResource("3_outline")
+shader_parameter/pop_color = Color(1, 0.86, 0.2, 1)
+shader_parameter/ink_width = 2.0
+shader_parameter/pop_width = 5.0
 
 [node name="Crawler" type="CharacterBody2D"]
 collision_layer = 4
@@ -14,6 +21,10 @@ script = ExtResource("1_crawler")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("RectangleShape2D_body")
 
-[node name="Visual" type="Node2D" parent="."]
+[node name="Outline" type="CanvasGroup" parent="."]
+material = SubResource("ShaderMaterial_outline")
 position = Vector2(0, 14)
+fit_margin = 12.0
+
+[node name="Visual" type="Node2D" parent="Outline"]
 script = ExtResource("2_visual")
