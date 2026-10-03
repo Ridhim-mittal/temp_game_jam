@@ -11,6 +11,7 @@
 [ext_resource type="Script" path="res://scripts/background/comic_foreground.gd" id="9_foreground"]
 [ext_resource type="Script" path="res://scripts/background/depth_fog.gd" id="10_fog"]
 
+[ext_resource type="Script" path="res://scripts/background/dark_veil.gd" id="20_veil"]
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_sky"]
 shader = ExtResource("1_sky")
 
@@ -167,6 +168,10 @@ script = ExtResource("5_parallax")
 
 [node name="Drawer" type="Node2D" parent="Motes"]
 script = ExtResource("8_motes")
+
+[node name="DarkVeil" type="Node2D" parent="."]
+z_index = -10
+script = ExtResource("20_veil")
 
 [node name="Foreground" type="Parallax2D" parent="."]
 z_index = 50

@@ -10,6 +10,7 @@
 [ext_resource type="Script" path="res://scripts/world/coin.gd" id="9_coin"]
 
 [ext_resource type="Script" path="res://scripts/audio/level_music.gd" id="8_music"]
+[ext_resource type="Script" path="res://scripts/world/level_mood.gd" id="30_mood"]
 
 [node name="TestLevel" type="Node2D"]
 
@@ -190,3 +191,10 @@ text = "Move: A/D or Arrows   Jump: Space/Z (hold = higher)   Attack: Left Click
 
 [node name="LevelMusic" type="Node" parent="."]
 script = ExtResource("8_music")
+
+[node name="LevelMood" type="Node" parent="."]
+script = ExtResource("30_mood")
+darker_as_you_go = true
+end_darkness = 0.8
+start_x = 200.0
+end_x = 2300.0

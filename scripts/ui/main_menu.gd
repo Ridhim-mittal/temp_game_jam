@@ -78,7 +78,7 @@ func _ready() -> void:
 	_buttons[0].grab_focus()
 
 	var hint := Label.new()
-	hint.text = "W / S or arrows: choose      Space / Enter / click: accept"
+	hint.text = "W / S or arrows: choose      Space / Enter / click: accept      Esc in game: back here"
 	hint.position = Vector2(600, 676)
 	hint.add_theme_font_size_override("font_size", 15)
 	hint.add_theme_color_override("font_color", DIM)
