@@ -1,0 +1,184 @@
+[gd_scene format=3]
+
+[ext_resource type="Shader" path="res://shaders/comic_sky.gdshader" id="1_sky"]
+[ext_resource type="Shader" path="res://shaders/comic_halftone.gdshader" id="2_halftone"]
+[ext_resource type="Shader" path="res://shaders/comic_overlay.gdshader" id="3_overlay"]
+[ext_resource type="Script" path="res://scripts/background/screen_shader_rect.gd" id="4_rect"]
+[ext_resource type="Script" path="res://scripts/background/comic_parallax.gd" id="5_parallax"]
+[ext_resource type="Script" path="res://scripts/background/comic_hills.gd" id="6_hills"]
+[ext_resource type="Script" path="res://scripts/background/comic_skyline.gd" id="7_skyline"]
+[ext_resource type="Script" path="res://scripts/background/drift_motes.gd" id="8_motes"]
+[ext_resource type="Script" path="res://scripts/background/comic_foreground.gd" id="9_foreground"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_sky"]
+shader = ExtResource("1_sky")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ht_hills"]
+shader = ExtResource("2_halftone")
+shader_parameter/dot_spacing = 3.5
+shader_parameter/dot_darkness = 0.3
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ht_far"]
+shader = ExtResource("2_halftone")
+shader_parameter/dot_spacing = 4.0
+shader_parameter/dot_darkness = 0.32
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ht_mid"]
+shader = ExtResource("2_halftone")
+shader_parameter/dot_spacing = 5.0
+shader_parameter/dot_darkness = 0.38
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ht_near"]
+shader = ExtResource("2_halftone")
+shader_parameter/dot_spacing = 6.0
+shader_parameter/dot_darkness = 0.42
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ht_roof"]
+shader = ExtResource("2_halftone")
+shader_parameter/dot_spacing = 7.0
+shader_parameter/dot_darkness = 0.45
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_overlay"]
+shader = ExtResource("3_overlay")
+
+[node name="ComicBackground" type="Node2D"]
+
+[node name="Sky" type="CanvasLayer" parent="."]
+layer = -100
+
+[node name="SkyRect" type="ColorRect" parent="Sky"]
+material = SubResource("ShaderMaterial_sky")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("4_rect")
+
+[node name="Hills" type="Parallax2D" parent="."]
+z_index = -10
+scroll_scale = Vector2(0.06, 0.06)
+script = ExtResource("5_parallax")
+
+[node name="Drawer" type="Node2D" parent="Hills"]
+material = SubResource("ShaderMaterial_ht_hills")
+script = ExtResource("6_hills")
+base_y = 432.0
+amplitude = 115.0
+wavelength = 700.0
+
+[node name="SkylineFar" type="Parallax2D" parent="."]
+z_index = -10
+scroll_scale = Vector2(0.14, 0.14)
+script = ExtResource("5_parallax")
+
+[node name="Drawer" type="Node2D" parent="SkylineFar"]
+material = SubResource("ShaderMaterial_ht_far")
+script = ExtResource("7_skyline")
+seed = 101
+slot_width = 105.0
+width_range = Vector2(0.45, 0.9)
+height_range = Vector2(150, 330)
+street_y = 434.0
+depth_range = Vector2(0.04, 0.08)
+palette = PackedColorArray(0.45, 0.42, 0.85, 1, 0.58, 0.4, 0.82, 1, 0.38, 0.56, 0.9, 1)
+outline_width = 1.5
+street_color = Color(0.3, 0.3, 0.6, 1)
+haze = 0.55
+side_shade = Vector2(0.3, 0.7)
+window_size = Vector2(3, 4)
+window_gap = Vector2(4, 5)
+lit_chance = 0.2
+side_windows = false
+detail_chance = 0.5
+
+[node name="SkylineMid" type="Parallax2D" parent="."]
+z_index = -10
+scroll_scale = Vector2(0.28, 0.28)
+script = ExtResource("5_parallax")
+
+[node name="Drawer" type="Node2D" parent="SkylineMid"]
+material = SubResource("ShaderMaterial_ht_mid")
+script = ExtResource("7_skyline")
+seed = 202
+slot_width = 140.0
+width_range = Vector2(0.55, 0.95)
+height_range = Vector2(110, 270)
+street_y = 437.0
+depth_range = Vector2(0.07, 0.12)
+palette = PackedColorArray(0.62, 0.3, 0.75, 1, 0.86, 0.42, 0.7, 1, 0.36, 0.42, 0.86, 1, 0.3, 0.64, 0.86, 1)
+outline_width = 2.5
+street_color = Color(0.22, 0.16, 0.45, 1)
+haze = 0.3
+window_size = Vector2(5, 8)
+window_gap = Vector2(5, 7)
+lit_chance = 0.25
+
+[node name="SkylineNear" type="Parallax2D" parent="."]
+z_index = -10
+scroll_scale = Vector2(0.45, 0.45)
+script = ExtResource("5_parallax")
+
+[node name="Drawer" type="Node2D" parent="SkylineNear"]
+material = SubResource("ShaderMaterial_ht_near")
+script = ExtResource("7_skyline")
+seed = 303
+slot_width = 220.0
+width_range = Vector2(0.5, 0.9)
+height_range = Vector2(80, 250)
+street_y = 441.0
+depth_range = Vector2(0.11, 0.18)
+palette = PackedColorArray(0.9, 0.34, 0.6, 1, 0.97, 0.52, 0.7, 1, 0.56, 0.3, 0.72, 1, 0.96, 0.56, 0.5, 1, 0.3, 0.4, 0.86, 1)
+outline_width = 3.5
+haze = 0.06
+lit_chance = 0.32
+
+[node name="Rooftops" type="Parallax2D" parent="."]
+z_index = -10
+scroll_scale = Vector2(0.75, 0.75)
+script = ExtResource("5_parallax")
+
+[node name="Drawer" type="Node2D" parent="Rooftops"]
+material = SubResource("ShaderMaterial_ht_roof")
+script = ExtResource("7_skyline")
+seed = 404
+slot_width = 300.0
+width_range = Vector2(0.18, 0.45)
+height_range = Vector2(30, 120)
+street_y = 444.0
+depth_range = Vector2(0.18, 0.28)
+palette = PackedColorArray(0.4, 0.27, 0.58, 1, 0.33, 0.24, 0.52, 1, 0.48, 0.3, 0.6, 1)
+ink = Color(0.06, 0.03, 0.13, 1)
+outline_width = 4.0
+street_color = Color(0.1, 0.06, 0.2, 1)
+window_size = Vector2(0, 0)
+detail_chance = 0.85
+
+[node name="Motes" type="Parallax2D" parent="."]
+z_index = -10
+scroll_scale = Vector2(0.85, 0.85)
+script = ExtResource("5_parallax")
+
+[node name="Drawer" type="Node2D" parent="Motes"]
+script = ExtResource("8_motes")
+
+[node name="Foreground" type="Parallax2D" parent="."]
+z_index = 50
+scroll_scale = Vector2(1.35, 1.35)
+script = ExtResource("5_parallax")
+
+[node name="Drawer" type="Node2D" parent="Foreground"]
+script = ExtResource("9_foreground")
+
+[node name="PanelOverlay" type="CanvasLayer" parent="."]
+
+[node name="Overlay" type="ColorRect" parent="PanelOverlay"]
+material = SubResource("ShaderMaterial_overlay")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("4_rect")

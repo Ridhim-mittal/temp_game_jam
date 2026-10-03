@@ -8,7 +8,7 @@ extends StaticBody2D
 	set(value):
 		size = value
 		queue_redraw()
-@export var color := Color(0.16, 0.14, 0.13):
+@export var color := Color(0.12, 0.09, 0.17):
 	set(value):
 		color = value
 		queue_redraw()
