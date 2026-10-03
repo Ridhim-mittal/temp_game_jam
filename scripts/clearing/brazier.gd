@@ -20,6 +20,9 @@ const FLAME_SHADER = preload("res://shaders/clearing/flame.gdshader")
 		_rebuild()
 @export var light_energy := 1.9
 @export var light_range := 6.0
+## Radius of the pool that counts as light for the monsters (the design
+## doc's light rules: Crumples unfold, Crossed-Out X's burn, Smudges show).
+@export var light_radius := 3.2
 
 var _light: OmniLight3D
 var _time := 0.0
@@ -27,7 +30,14 @@ var _time := 0.0
 
 func _ready() -> void:
 	_time = randf() * 10.0
+	if not Engine.is_editor_hint():
+		add_to_group("light_3d")
 	_rebuild()
+
+
+func lights(point: Vector3) -> bool:
+	var d := point - global_position
+	return Vector2(d.x, d.z).length() < light_radius and absf(d.y) < 2.0
 
 
 func _rebuild() -> void:

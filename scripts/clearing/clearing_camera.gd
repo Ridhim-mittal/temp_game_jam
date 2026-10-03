@@ -88,6 +88,9 @@ func _update_shake(delta: float) -> void:
 
 func _target_focus() -> Vector3:
 	var p: Vector3 = _target.smooth_position if "smooth_position" in _target else _target.global_position
+	# follow the ground under the target, not its jumps
+	if "ground_height" in _target:
+		p.y = _target.ground_height
 	return p + Vector3(0.0, 0.8, 0.0)
 
 

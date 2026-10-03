@@ -1,8 +1,1 @@
-res://scripts/clearing/clearing_camera.gd
-res://scripts/clearing/clearing_player.gd
-res://scripts/clearing/stairs.gd
-res://scripts/clearing/grass_field.gd
-res://scripts/cutscenes/cutscene_panel.gd
-res://scripts/enemies/crawler_visual.gd
-res://scripts/player/player.gd
-res://scripts/player/player_visual.gd
+res://_mech_tmp.gd

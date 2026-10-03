@@ -18,6 +18,12 @@
 [ext_resource type="Script" path="res://scripts/background/screen_shader_rect.gd" id="16_rect"]
 [ext_resource type="Script" path="res://scripts/audio/level_music.gd" id="17_music"]
 [ext_resource type="PackedScene" path="res://scenes/clearing/scribble.tscn" id="18_scribble"]
+[ext_resource type="PackedScene" path="res://scenes/clearing/monsters/crumple.tscn" id="19_crumple"]
+[ext_resource type="PackedScene" path="res://scenes/clearing/monsters/crossed_out.tscn" id="20_crossed"]
+[ext_resource type="PackedScene" path="res://scenes/clearing/monsters/smudge.tscn" id="21_smudge"]
+[ext_resource type="PackedScene" path="res://scenes/clearing/monsters/inkwell.tscn" id="22_inkwell"]
+[ext_resource type="PackedScene" path="res://scenes/clearing/monsters/eraser.tscn" id="23_eraser"]
+[ext_resource type="Script" path="res://scripts/clearing/clearing_hud.gd" id="24_hud"]
 
 [sub_resource type="Environment" id="Environment_night"]
 background_mode = 1
@@ -393,6 +399,27 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0.05, -7)
 [node name="Scribble5" parent="Enemies" instance=ExtResource("18_scribble")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 0.05, 6)
 
+[node name="Crumple" parent="Enemies" instance=ExtResource("19_crumple")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.5, 0.05, -3)
+
+[node name="CrossedOut" parent="Enemies" instance=ExtResource("20_crossed")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.5, 0.05, -8.2)
+
+[node name="Smudge1" parent="Enemies" instance=ExtResource("21_smudge")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.5, 0.05, 5.5)
+
+[node name="Smudge2" parent="Enemies" instance=ExtResource("21_smudge")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.5, 0.05, 4.5)
+
+[node name="Inkwell1" parent="Enemies" instance=ExtResource("22_inkwell")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.2, 0.05, -8.0)
+
+[node name="Inkwell2" parent="Enemies" instance=ExtResource("22_inkwell")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0, -17.0)
+
+[node name="Eraser" parent="Enemies" instance=ExtResource("23_eraser")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.5, 0.05, -5.5)
+
 [node name="Player" parent="." instance=ExtResource("13_player")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0, 3)
 
@@ -415,6 +442,16 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("16_rect")
 
+[node name="HUD" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("24_hud")
+
 [node name="Controls" type="Label" parent="UI"]
 offset_left = 24.0
 offset_top = 676.0
@@ -423,7 +460,7 @@ offset_bottom = 704.0
 theme_override_colors/font_color = Color(0.97, 0.95, 0.9, 1)
 theme_override_colors/font_outline_color = Color(0.06, 0.03, 0.13, 1)
 theme_override_constants/outline_size = 6
-text = "Move: WASD / Arrows   Attack: Left Click (aims at mouse) / X - tap 3x for a combo   Dash: Shift / Right Click"
+text = "Move: WASD   Jump: Space   Attack: Left Click / X (3x combo, in the air = strike from above)   Dash: Shift / Right Click"
 
 [node name="LevelMusic" type="Node" parent="."]
 script = ExtResource("17_music")

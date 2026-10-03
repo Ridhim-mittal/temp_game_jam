@@ -1,10 +1,12 @@
 extends CharacterBody3D
 ## Top-down (Cult of the Lamb style) controller for the 2.5D clearing.
-## Moves on the ground plane with WASD / stick, dashes on Shift / right
-## click, attacks on left click / X: a three-hit combo (the third hit is a
-## heavier finisher) aimed at the mouse cursor, or along the movement
-## direction from the keyboard or a gamepad. The character is the same procedural Vesper art as the platformer
-## (player_visual.gd), drawn into a SubViewport and shown on a billboard.
+## Moves on the ground plane with WASD / stick, jumps on Space, dashes on
+## Shift / right click, attacks on left click / X: a three-hit combo (the
+## third hit is a heavier finisher) aimed at the mouse cursor, or along the
+## movement direction from the keyboard or a gamepad. Attacking in the air
+## strikes from above: it gets past a Crossed-Out's shield and bounces you
+## off what you hit. The character is the same procedural Vesper art as the
+## platformer (player_visual.gd), drawn into a SubViewport on a billboard.
 ##
 ## Smoothness:
 ##  - the body moves on physics ticks, but the visuals ($Visual3D, top
@@ -13,8 +15,12 @@ extends CharacterBody3D
 ##  - turning around squashes the art through zero instead of snapping
 ##  - constant speed on slopes and floor snapping keep stairs even
 
+signal health_changed(current: int, maximum: int)
+signal died
+
 const Fx = preload("res://scripts/clearing/clearing_fx.gd")
 const ART_RUN_SPEED := 300.0  # player_visual.gd's full-run speed, px/s
+const MASK_WORLD := 1
 const MASK_ENEMY := 4  # physics layer 3
 const HIT_WORDS := ["THWACK!", "SLASH!", "POW!", "WHAM!", "SHNK!"]
 
@@ -41,6 +47,23 @@ const STYLE_NAMES := ["Ink slash (clearing)", "Nib-sword (platformer)", "Both"]
 ## Below this height the player fell off the map and is put back.
 @export var kill_height := -12.0
 
+@export_group("Jump")
+@export var jump_velocity := 9.5
+## Gravity is stronger on the way down, so jumps feel snappy, not floaty.
+@export var fall_gravity_mult := 1.5
+## Releasing jump early keeps this much of the upward speed (short hop).
+@export var jump_cut := 0.45
+@export var coyote_time := 0.1
+@export var jump_buffer_time := 0.12
+## Upward bounce after an air attack connects.
+@export var pogo_velocity := 8.5
+
+@export_group("Health")
+@export var max_health := 5
+@export var invuln_time := 1.0
+@export var hurt_knockback := 7.0
+@export var hurt_hop := 4.0
+
 @export_group("Attack")
 @export var attack_style := AttackStyle.INK_SLASH
 @export var attack_damage := 1
@@ -58,8 +81,13 @@ const STYLE_NAMES := ["Ink slash (clearing)", "Nib-sword (platformer)", "Both"]
 @export var attack_buffer_time := 0.15
 
 var facing := 1
+var health := 0
+var dead := false
 ## Interpolated position of the visuals; the camera follows this.
 var smooth_position := Vector3.ZERO
+## Height of the ground under the player (the shadow and camera use it, so
+## jumping doesn't bob the view).
+var ground_height := 0.0
 
 var _dash_timer := 0.0
 var _dash_cooldown_timer := 0.0
@@ -74,9 +102,16 @@ var _attack_timer := 0.0
 var _attack_buffer := 0.0
 var _combo := 0
 var _combo_timer := 0.0
+var _coyote := 0.0
+var _jump_buffer := 0.0
+var _jumping := false
+var _invuln := 0.0
+var _hurt_timer := 0.0
+var _slow_sources := {}  # source -> Vector2(speed_mult, jump_mult)
 
 @onready var visual_3d: Node3D = $Visual3D
 @onready var sprite: Sprite3D = $Visual3D/Sprite
+@onready var shadow: MeshInstance3D = $Visual3D/BlobShadow
 @onready var art_viewport: SubViewport = $ArtViewport
 @onready var visual: Node2D = $ArtViewport/Visual
 @onready var art = $ArtViewport/Visual/Art
@@ -91,6 +126,8 @@ func _ready() -> void:
 	Engine.time_scale = 1.0
 	add_to_group("player")
 	_spawn = global_position
+	ground_height = global_position.y
+	health = max_health
 	_art_scale = visual.scale.y
 	sprite.texture = art_viewport.get_texture()
 	floor_constant_speed = true
@@ -99,6 +136,7 @@ func _ready() -> void:
 	_snap_visuals()
 	Fx.prewarm.call_deferred(get_tree(), global_position)
 	_apply_attack_style()
+	health_changed.emit.call_deferred(health, max_health)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -117,7 +155,7 @@ func _apply_attack_style() -> void:
 		if ui == null:
 			return
 		_style_label = Label.new()
-		_style_label.position = Vector2(24, 18)
+		_style_label.position = Vector2(24, 76)
 		_style_label.add_theme_font_size_override("font_size", 18)
 		_style_label.add_theme_color_override("font_color", Color(0.97, 0.95, 0.9))
 		_style_label.add_theme_color_override("font_outline_color", Color(0.06, 0.03, 0.13))
@@ -127,31 +165,55 @@ func _apply_attack_style() -> void:
 
 
 func _physics_process(delta: float) -> void:
-	_dash_timer = maxf(_dash_timer - delta, 0.0)
-	_dash_cooldown_timer = maxf(_dash_cooldown_timer - delta, 0.0)
+	_tick_timers(delta)
+	if dead:
+		velocity = Vector3.ZERO
+		_prev_tick_pos = _tick_pos
+		return
 	var input := Input.get_vector("move_left", "move_right", "up", "down")
 	var dir := Vector3(input.x, 0.0, input.y)
-	if absf(input.x) > 0.2 and _attack_timer <= 0.0:
+	var in_control := _hurt_timer <= 0.0
+	if not in_control:
+		dir = Vector3.ZERO
+	if absf(input.x) > 0.2 and _attack_timer <= 0.0 and in_control:
 		facing = 1 if input.x > 0.0 else -1
 
+	if in_control:
+		if Input.is_action_just_pressed("attack"):
+			_attack_buffer = attack_buffer_time
+		if Input.is_action_just_pressed("jump"):
+			_jump_buffer = jump_buffer_time
+		if Input.is_action_just_pressed("dash") and _dash_cooldown_timer <= 0.0:
+			_dash_dir = dir.normalized() if dir != Vector3.ZERO else Vector3(facing, 0, 0)
+			_dash_timer = dash_time
+			_dash_cooldown_timer = dash_cooldown
+			_attack_timer = 0.0  # a dash cancels a swing
+			_squash = Vector2(1.3, 0.75)
+		if _attack_buffer > 0.0 and _attack_timer <= 0.0 and _dash_timer <= 0.0:
+			_start_attack(dir)
+
+	_update_planar(dir, delta)
+	_update_vertical(delta)
+	move_and_slide()
+	_post_move()
+
+
+func _tick_timers(delta: float) -> void:
+	_dash_timer = maxf(_dash_timer - delta, 0.0)
+	_dash_cooldown_timer = maxf(_dash_cooldown_timer - delta, 0.0)
 	_attack_timer = maxf(_attack_timer - delta, 0.0)
 	_attack_buffer = maxf(_attack_buffer - delta, 0.0)
 	_combo_timer = maxf(_combo_timer - delta, 0.0)
-	if Input.is_action_just_pressed("attack"):
-		_attack_buffer = attack_buffer_time
+	_jump_buffer = maxf(_jump_buffer - delta, 0.0)
+	_invuln = maxf(_invuln - delta, 0.0)
+	_hurt_timer = maxf(_hurt_timer - delta, 0.0)
 
-	if Input.is_action_just_pressed("dash") and _dash_cooldown_timer <= 0.0:
-		_dash_dir = dir.normalized() if dir != Vector3.ZERO else Vector3(facing, 0, 0)
-		_dash_timer = dash_time
-		_dash_cooldown_timer = dash_cooldown
-		_attack_timer = 0.0  # a dash cancels a swing
-		_squash = Vector2(1.3, 0.75)
 
-	if _attack_buffer > 0.0 and _attack_timer <= 0.0 and _dash_timer <= 0.0:
-		_start_attack(dir)
-
+func _update_planar(dir: Vector3, delta: float) -> void:
 	var planar := Vector3(velocity.x, 0.0, velocity.z)
-	if _attack_timer > 0.0:
+	if _hurt_timer > 0.0:
+		planar = planar.move_toward(Vector3.ZERO, 12.0 * delta)  # knocked back
+	elif _attack_timer > 0.0:
 		# rooted during a swing: the lunge slides out quickly
 		planar = planar.move_toward(Vector3.ZERO, 32.0 * delta)
 	elif _dash_timer > 0.0:
@@ -159,7 +221,7 @@ func _physics_process(delta: float) -> void:
 		var t := 1.0 - _dash_timer / dash_time
 		planar = _dash_dir * lerpf(dash_speed, max_speed, t * t)
 	elif dir != Vector3.ZERO:
-		var target := dir * max_speed
+		var target := dir * max_speed * _slow_mult().x
 		var rate := accel
 		if planar.length() > 0.5 and planar.normalized().dot(dir.normalized()) < 0.3:
 			rate = turn_accel
@@ -168,15 +230,37 @@ func _physics_process(delta: float) -> void:
 		planar = planar.move_toward(Vector3.ZERO, decel * delta)
 	velocity.x = planar.x
 	velocity.z = planar.z
-	if is_on_floor():
-		velocity.y = 0.0
-	else:
-		velocity.y -= gravity * delta
-	move_and_slide()
 
-	if is_on_floor() and not _was_on_floor and velocity.y < -3.0:
-		_squash = Vector2(1.2, 0.85)
+
+func _update_vertical(delta: float) -> void:
+	if is_on_floor():
+		_coyote = coyote_time
+	else:
+		_coyote = maxf(_coyote - delta, 0.0)
+	if _jump_buffer > 0.0 and _coyote > 0.0 and _attack_timer <= 0.0:
+		velocity.y = jump_velocity * _slow_mult().y
+		_jumping = true
+		_jump_buffer = 0.0
+		_coyote = 0.0
+		_squash = Vector2(0.75, 1.25)
+	elif is_on_floor() and velocity.y <= 0.0:
+		velocity.y = 0.0
+		_jumping = false
+	else:
+		var g := gravity * (fall_gravity_mult if velocity.y < 0.0 else 1.0)
+		velocity.y -= g * delta
+		# variable height: letting go of jump on the way up cuts it short
+		if _jumping and velocity.y > 0.0 and not Input.is_action_pressed("jump"):
+			velocity.y *= jump_cut
+			_jumping = false
+
+
+func _post_move() -> void:
+	if is_on_floor() and not _was_on_floor:
+		_squash = Vector2(1.25, 0.8)
 	_was_on_floor = is_on_floor()
+	_probe_ground()
+	_check_contact_damage()
 	if global_position.y < kill_height:
 		global_position = _spawn
 		velocity = Vector3.ZERO
@@ -185,9 +269,24 @@ func _physics_process(delta: float) -> void:
 	_tick_pos = global_position
 
 
+func _probe_ground() -> void:
+	if is_on_floor():
+		ground_height = global_position.y
+		return
+	var from := global_position + Vector3(0, 0.2, 0)
+	var q := PhysicsRayQueryParameters3D.create(from, from + Vector3(0, -30, 0), MASK_WORLD, [get_rid()])
+	var hit := get_world_3d().direct_space_state.intersect_ray(q)
+	if not hit.is_empty():
+		ground_height = hit.position.y
+
+
 func _process(delta: float) -> void:
 	smooth_position = _prev_tick_pos.lerp(_tick_pos, Engine.get_physics_interpolation_fraction())
 	visual_3d.global_position = smooth_position
+	# the shadow stays on the ground and shrinks as you rise
+	var height := maxf(smooth_position.y - ground_height, 0.0)
+	shadow.position.y = -height + 0.03
+	shadow.scale = Vector3.ONE * clampf(1.0 - height * 0.25, 0.45, 1.0)
 	_update_art(delta)
 
 
@@ -242,28 +341,43 @@ func _aim_direction(move_dir: Vector3) -> Vector3:
 
 
 func _hit_in_front(dir: Vector3, finisher: bool) -> void:
+	var aerial := not is_on_floor()
 	var center := global_position + dir * attack_reach
 	var radius := attack_radius * (1.25 if finisher else 1.0)
+	# airborne swings reach a bit lower, to catch things you jumped over
+	var probe_y := -0.3 if aerial else 0.5
 	var shape := SphereShape3D.new()
 	shape.radius = radius
 	var params := PhysicsShapeQueryParameters3D.new()
 	params.shape = shape
-	params.transform = Transform3D(Basis(), center + Vector3(0.0, 0.5, 0.0))
+	params.transform = Transform3D(Basis(), center + Vector3(0.0, probe_y, 0.0))
 	params.collision_mask = MASK_ENEMY
 	var hits := 0
 	for result in get_world_3d().direct_space_state.intersect_shape(params, 16):
 		var target: Object = result.collider
 		if target and target.has_method("take_hit") and not ("dead" in target and target.dead):
-			target.take_hit(finisher_damage if finisher else attack_damage, dir)
+			var landed = target.take_hit(finisher_damage if finisher else attack_damage, dir, aerial)
+			if landed == false:
+				continue  # blocked: the monster shows its own reaction
 			hits += 1
 			var word: String = "KA-POW!" if finisher else HIT_WORDS.pick_random()
 			Fx.pop_text(get_tree(), target.global_position + Vector3(0, 1.3, 0), word)
+	# ink blobs can be cut out of the air
+	for blob in get_tree().get_nodes_in_group("ink_blob"):
+		if blob.global_position.distance_to(center + Vector3(0, 0.6, 0)) < radius + 0.4:
+			blob.slash()
+			hits += 1
 	var cut := 0
 	for grass in get_tree().get_nodes_in_group("grass"):
 		cut += grass.cut(center, radius * 0.9)
 	if cut > 0:
 		Fx.burst(get_tree(), center + Vector3(0, 0.3, 0), Color(0.42, 0.62, 0.42), mini(cut * 3, 18), 3.0)
 	if hits > 0:
+		if aerial:
+			# pogo: bounce off what you hit, ready to strike again
+			velocity.y = pogo_velocity
+			_jumping = false
+			_squash = Vector2(0.8, 1.2)
 		_hitstop(0.09 if finisher else 0.05)
 		_shake(0.45 if finisher else 0.28)
 	elif finisher:
@@ -282,11 +396,98 @@ func _shake(amount: float) -> void:
 		cam.add_trauma(amount)
 
 
+# ------------------------------------------------------------------ damage
+
+## Touching a harmful monster hurts (jumping over it, or dashing through it,
+## avoids that).
+func _check_contact_damage() -> void:
+	if _invuln > 0.0 or _dash_timer > 0.0:
+		return
+	var shape := SphereShape3D.new()
+	shape.radius = 0.42
+	var params := PhysicsShapeQueryParameters3D.new()
+	params.shape = shape
+	params.transform = Transform3D(Basis(), global_position + Vector3(0, 0.6, 0))
+	params.collision_mask = MASK_ENEMY
+	for result in get_world_3d().direct_space_state.intersect_shape(params, 8):
+		var body: Object = result.collider
+		if body and body.has_method("is_harmful") and body.is_harmful():
+			take_damage(body.contact_damage, body.global_position)
+			return
+
+
+func take_damage(amount: int, from_pos: Vector3) -> void:
+	if dead or _invuln > 0.0 or _dash_timer > 0.0:
+		return
+	health = maxi(health - amount, 0)
+	health_changed.emit(health, max_health)
+	_invuln = invuln_time
+	_hurt_timer = 0.2
+	_attack_timer = 0.0
+	_jumping = false
+	var away := global_position - from_pos
+	away.y = 0.0
+	away = away.normalized() if away.length() > 0.01 else Vector3(-facing, 0, 0)
+	velocity = away * hurt_knockback + Vector3(0, hurt_hop, 0)
+	_squash = Vector2(1.3, 0.7)
+	Fx.pop_text(get_tree(), global_position + Vector3(0, 1.6, 0), "OOF!", Color(1.0, 0.4, 0.35))
+	_hitstop(0.08)
+	_shake(0.55)
+	if health <= 0:
+		_die()
+
+
+## Pushed back without damage (a hit bounced off something rubbery).
+func bounce_back(dir: Vector3) -> void:
+	var d := Vector3(dir.x, 0.0, dir.z).normalized()
+	velocity.x = d.x * 6.0
+	velocity.z = d.z * 6.0
+	_hurt_timer = 0.12
+	_attack_timer = 0.0
+
+
+func _die() -> void:
+	dead = true
+	died.emit()
+	Fx.splat(get_tree(), global_position, 2.0)
+	Fx.pop_text(get_tree(), global_position + Vector3(0, 1.8, 0), "THE END?", Color(0.98, 0.96, 0.9), 40)
+	create_tween().tween_property(sprite, "modulate:a", 0.0, 0.5)
+	await get_tree().create_timer(1.6).timeout
+	global_position = _spawn
+	velocity = Vector3.ZERO
+	health = max_health
+	health_changed.emit(health, max_health)
+	_invuln = 1.5
+	_slow_sources.clear()
+	dead = false
+	_snap_visuals()
+	sprite.modulate.a = 1.0
+
+
+## Called by slowing things (ink puddles). Multipliers of 1 remove the
+## source; overlapping sources use the strongest slow.
+func set_slowed(source: Object, speed_mult := 1.0, jump_mult := 1.0) -> void:
+	if speed_mult >= 1.0 and jump_mult >= 1.0:
+		_slow_sources.erase(source)
+	else:
+		_slow_sources[source] = Vector2(speed_mult, jump_mult)
+
+
+func _slow_mult() -> Vector2:
+	var m := Vector2.ONE
+	for v in _slow_sources.values():
+		m = m.min(v)
+	return m
+
+
+# ------------------------------------------------------------------ visuals
+
 ## Jump the visuals straight to the body (spawn, respawn, teleports).
 func _snap_visuals() -> void:
 	_prev_tick_pos = global_position
 	_tick_pos = global_position
 	smooth_position = global_position
+	ground_height = global_position.y
 	if visual_3d:
 		visual_3d.global_position = global_position
 
@@ -306,3 +507,7 @@ func _update_art(delta: float) -> void:
 	art.on_floor = is_on_floor()
 	art.dashing = _dash_timer > 0.0
 	art.max_speed = ART_RUN_SPEED
+	art.stuck = _slow_mult().x < 1.0
+	# blink while invulnerable after a hit
+	if not dead:
+		sprite.modulate.a = 0.35 if _invuln > 0.0 and fmod(_invuln, 0.16) < 0.08 else 1.0

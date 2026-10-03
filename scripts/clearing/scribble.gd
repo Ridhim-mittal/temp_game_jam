@@ -108,7 +108,7 @@ func _pick_wander_target() -> void:
 	_timer = randf_range(1.5, 3.5)
 
 
-func take_hit(damage: int, dir: Vector3) -> void:
+func take_hit(damage: int, dir: Vector3, _aerial := false) -> void:
 	if dead:
 		return
 	health -= damage
