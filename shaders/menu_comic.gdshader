@@ -13,6 +13,8 @@ uniform vec4 glow : source_color = vec4(0.85, 0.22, 0.14, 1.0);
 uniform vec4 dot_color : source_color = vec4(0.62, 0.1, 0.1, 1.0);
 uniform float ray_count = 34.0;  // whole number
 uniform float rotation_speed = 0.004;
+// Driven by main_menu.gd: 1 = steady, spikes when the light flickers.
+uniform float flare = 1.0;
 
 float hash(vec2 p) {
 	return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
@@ -57,8 +59,8 @@ void fragment() {
 	float aa = ray_count / (rect_size.y * max(r, 0.002) * TAU);
 	float ray = (1.0 - smoothstep(half_w - aa, half_w + aa, abs(f - 0.5))) * step(0.45, hash1(id + 7.0));
 	vec3 col = ink.rgb;
-	col = mix(col, ray_red.rgb, ray * smoothstep(1.3, 0.2, r) * 0.9);
-	col = mix(col, glow.rgb, exp(-r * r / 0.03) * 0.55);
+	col = mix(col, ray_red.rgb, ray * smoothstep(1.3, 0.2, r) * clamp(0.9 * flare, 0.0, 1.0));
+	col = mix(col, glow.rgb, clamp(exp(-r * r / 0.03) * 0.55 * flare, 0.0, 1.0));
 
 	// halftone screen, denser in the rays
 	vec2 g = mat2(vec2(0.7071, 0.7071), vec2(-0.7071, 0.7071)) * px / 8.0;

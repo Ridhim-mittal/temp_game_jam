@@ -1,9 +1,11 @@
 extends Control
 ## Main menu, comic edition (layout after the reference: title on a pale
 ## paint strip at the left, diamond-icon menu bars, the hero squaring up to
-## red-eyed monsters on the right, a hint bar along the bottom).
+## red-eyed monsters on the right), dressed with botched ink: splatters,
+## scratch bundles, blinking red marks, corner blots in the foreground.
 ## Everything moves a little: letters bob and "line-boil", bars slide in and
-## pop on hover, the burst turns, Vesper slashes now and then.
+## pop on hover, the burst turns and flickers, embers rise, layers shift with
+## the mouse (parallax), Vesper slashes now and then.
 ## Built in code; edit ENTRIES to change the options (logic is Kalp's).
 
 const MenuShader = preload("res://shaders/menu_comic.gdshader")
@@ -27,7 +29,7 @@ const ENTRIES := [
 	["Quit", "", "x"],
 ]
 const SFX := ["SHNK!", "KRAK!", "SLASH!", "THWACK!"]
-const BAR_POS := Vector2(70, 372)
+const BAR_POS := Vector2(70, 336)
 const BAR_SIZE := Vector2(400, 50)
 const BAR_GAP := 64.0
 
@@ -45,6 +47,15 @@ var _sfx: Array = []
 var _next_slash := 2.0
 var _leaving := ""
 var _leave_t := -1.0
+var _bg_mat: ShaderMaterial
+var _parallax := Vector2.ZERO  # -1..1, eased toward the mouse
+var _flare := 1.0
+var _flicker_t := 0.0
+var _splats: Array = []     # botched ink blots (back layer)
+var _blots: Array = []      # big dark blots framing the corners (front layer)
+var _scratches: Array = []  # bundles of thin bright scratches
+var _marks: Array = []      # tiny blinking red glyphs
+var _embers: Array = []
 
 
 func _ready() -> void:
@@ -60,6 +71,8 @@ func _ready() -> void:
 	bg.material = mat
 	bg.show_behind_parent = true
 	add_child(bg)
+	_bg_mat = mat
+	_build_decor()
 
 	_build_tableau()
 
@@ -98,12 +111,14 @@ func _build_tableau() -> void:
 	_sword = SwordScene.instantiate()
 	_hero.add_child(_sword)
 	add_child(_hero)
+	_hero.set_meta("base", _hero.position)
 	for spot in [Vector2(925, 600), Vector2(1110, 586)]:
 		var g := _outlined_group(spot, Vector2(-3.2, 3.2), RED)
 		var v := Node2D.new()
 		v.set_script(CrawlerVisual)
 		g.add_child(v)
 		add_child(g)
+		g.set_meta("base", spot)
 		_beetles.append(v)
 
 
@@ -122,6 +137,7 @@ func _outlined_group(pos: Vector2, scl: Vector2, pop: Color) -> CanvasGroup:
 func _process(delta: float) -> void:
 	_time += delta
 	_boil = int(_time * 8.0)
+	_update_atmosphere(delta)
 	var focused := get_viewport().gui_get_focus_owner()
 	for i in _buttons.size():
 		var target := 1.0 if _buttons[i] == focused else 0.0
@@ -193,8 +209,9 @@ func _jitter(seed_i: int, amount: float) -> Vector2:
 
 func _draw() -> void:
 	_draw_ledge()
+	_draw_back_decor()
 	_draw_title()
-	_draw_caption()
+	_draw_menu_links()
 	for i in _buttons.size():
 		_draw_bar(i)
 
@@ -232,17 +249,6 @@ func _draw_title() -> void:
 		var t := k / 23.0
 		pts.append(Vector2(76 + t * 400.0, 254 + sin(t * 9.0 + _time * 2.0) * 2.5) + _jitter(100 + k, 1.2))
 	draw_polyline(pts, INK, 6.0, true)
-
-
-func _draw_caption() -> void:
-	# yellow narrator caption box, swaying
-	var rot := -0.035 + sin(_time * 1.1) * 0.012
-	draw_set_transform(Vector2(84, 280), rot)
-	var r := Rect2(Vector2.ZERO, Vector2(380, 40))
-	draw_rect(r.grow(3.0), INK)
-	draw_rect(r, Color(1.0, 0.9, 0.45))
-	draw_string(TITLE_FONT, Vector2(14, 29), "HE WAS MEANT TO DIE ON PAGE THREE...", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, INK)
-	draw_set_transform(Vector2.ZERO)
 
 
 func _draw_bar(i: int) -> void:
@@ -317,8 +323,8 @@ func _draw_overlay() -> void:
 		o.draw_string_outline(TITLE_FONT, Vector2(-50, 0), s.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 46, 10, Color(INK, a))
 		o.draw_string(TITLE_FONT, Vector2(-50, 0), s.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 46, Color(GOLD, a))
 	o.draw_set_transform(Vector2.ZERO)
+	_draw_front_decor(o)
 	_draw_cover_badge(o)
-	_draw_hint_bar(o)
 	if _leave_t >= 0.0:
 		_draw_wipe(o)
 
@@ -350,21 +356,6 @@ func _draw_cover_badge(o: Node2D) -> void:
 	o.draw_set_transform(Vector2.ZERO)
 
 
-func _draw_hint_bar(o: Node2D) -> void:
-	o.draw_rect(Rect2(0, 682, 1280, 38), Color(INK, 0.92))
-	o.draw_line(Vector2(0, 682), Vector2(1280, 682), Color(RED, 0.8), 2.0)
-	var x := 70.0
-	for hint in [["W/S", "CHOOSE"], ["ENTER / CLICK", "ACCEPT"], ["ESC", "IN GAME: BACK HERE"]]:
-		var c := Vector2(x, 701)
-		var d := 11.0
-		o.draw_colored_polygon(PackedVector2Array([c + Vector2(0, -d), c + Vector2(d, 0), c + Vector2(0, d), c + Vector2(-d, 0)]), RED)
-		o.draw_string(TITLE_FONT, c + Vector2(18, 8), hint[0], HORIZONTAL_ALIGNMENT_LEFT, -1, 20, PAPER)
-		var kw := TITLE_FONT.get_string_size(hint[0], HORIZONTAL_ALIGNMENT_LEFT, -1, 20).x
-		o.draw_string(TITLE_FONT, c + Vector2(24 + kw, 8), hint[1], HORIZONTAL_ALIGNMENT_LEFT, -1, 20, DIM)
-		x += 70.0 + kw + TITLE_FONT.get_string_size(hint[1], HORIZONTAL_ALIGNMENT_LEFT, -1, 20).x
-	o.draw_string(TITLE_FONT, Vector2(1030, 709), "A CD PROJECT BLAXK COMIC", HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color(PAPER, 0.6))
-
-
 func _draw_wipe(o: Node2D) -> void:
 	# ink diamond bursting out of the chosen entry, covering the screen
 	var i := maxi(_buttons.find(get_viewport().gui_get_focus_owner()), 0)
@@ -377,3 +368,198 @@ func _draw_wipe(o: Node2D) -> void:
 	for p in dm:
 		inner.append(c + (p - c) * 0.92)
 	o.draw_colored_polygon(inner, INK)
+
+
+# ------------------------------------------------------------ atmosphere
+
+func _build_decor() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 7
+	# [centre, radius, kind]: black ink on the pale strip, faint pale/red ink in the dark
+	var spots := [
+		[Vector2(118, 470), 46.0, 0], [Vector2(330, 120), 30.0, 0], [Vector2(40, 300), 38.0, 0],
+		[Vector2(250, 650), 34.0, 0], [Vector2(560, 160), 26.0, 1], [Vector2(980, 230), 40.0, 1],
+		[Vector2(760, 90), 22.0, 2], [Vector2(1150, 330), 24.0, 2], [Vector2(620, 470), 18.0, 2],
+		[Vector2(470, 40), 16.0, 0], [Vector2(1240, 520), 30.0, 1],
+	]
+	for sp in spots:
+		_splats.append(_make_splat(rng, sp[0], sp[1], sp[2], 0.25))
+	for sp in [[Vector2(-40, 790), 175.0], [Vector2(1340, 790), 185.0], [Vector2(-50, -60), 120.0]]:
+		_blots.append(_make_splat(rng, sp[0], sp[1], 3, 1.6, 0.3))
+	for c in [[Vector2(40, 140), -1.15], [Vector2(150, 610), -1.25], [Vector2(1120, 160), 1.95],
+			[Vector2(520, 690), -0.35], [Vector2(880, 40), 2.6]]:
+		_scratches.append({"c": c[0], "a": c[1], "seed": rng.randi()})
+	for i in 26:
+		_marks.append({"p": Vector2(rng.randf_range(480, 1260), rng.randf_range(30, 560)),
+			"k": rng.randi() % 4, "s": rng.randf_range(3.0, 7.0), "ph": rng.randf() * TAU,
+			"rate": rng.randf_range(0.6, 2.4)})
+	for i in 46:
+		_embers.append(_new_ember(rng, true))
+
+
+## Irregular ink splat, like ink hitting paper: a lumpy pool ringed with
+## many thin splash spikes, streaks flung outward ending in droplets, a
+## spray of loose droplets and a few thin drips running down.
+## kind: 0 black, 1 pale, 2 red, 3 deep ink.
+func _make_splat(rng: RandomNumberGenerator, c: Vector2, r: float, kind: int, depth: float, spray := 1.0) -> Dictionary:
+	var body := PackedVector2Array()
+	var ph := [rng.randf() * TAU, rng.randf() * TAU, rng.randf() * TAU]
+	var n := 72
+	var streaks: Array = []
+	var drops: Array = []
+	for i in n:
+		var a := TAU * i / n
+		var k: float = 1.0 + 0.16 * sin(3.0 * a + ph[0]) + 0.1 * sin(5.0 * a + ph[1]) + 0.05 * sin(11.0 * a + ph[2])
+		if i % 2 == 1 and rng.randf() < 0.55:
+			k *= rng.randf_range(1.12, 1.45)  # thin splash spike (one vertex wide)
+		body.append(c + Vector2.from_angle(a) * r * k)
+	for i in rng.randi_range(5, 9):
+		# streak flung outward, thick at the pool, thin at the end, droplet on the tip
+		var a := rng.randf() * TAU
+		var from := c + Vector2.from_angle(a) * r * 0.85
+		var to := c + Vector2.from_angle(a + rng.randf_range(-0.08, 0.08)) * r * (1.0 + spray * rng.randf_range(0.6, 1.6))
+		var w := r * rng.randf_range(0.06, 0.12)
+		streaks.append([from, to, w])
+		drops.append([to, w * rng.randf_range(0.9, 1.5)])
+	for i in rng.randi_range(10, 18):
+		var d := 1.0 + spray * rng.randf_range(0.3, 2.2)
+		drops.append([c + Vector2.from_angle(rng.randf() * TAU) * r * d, r * rng.randf_range(0.025, 0.09) / sqrt(d)])
+	var drips: Array = []
+	for i in rng.randi_range(2, 4):
+		var x := c.x + rng.randf_range(-0.7, 0.7) * r
+		drips.append([Vector2(x, c.y + r * 0.7), rng.randf_range(0.4, 1.6) * r, rng.randf_range(0.035, 0.07) * r, rng.randf() * TAU])
+	return {"body": body, "streaks": streaks, "drops": drops, "drips": drips, "kind": kind, "depth": depth}
+
+
+func _new_ember(rng: RandomNumberGenerator, anywhere: bool) -> Dictionary:
+	return {"p": Vector2(rng.randf_range(480, 1280), rng.randf_range(80, 720) if anywhere else 730.0),
+		"v": rng.randf_range(18.0, 55.0), "s": rng.randf_range(1.2, 3.2), "ph": rng.randf() * TAU,
+		"life": rng.randf_range(4.0, 9.0), "age": rng.randf() * 4.0 if anywhere else 0.0}
+
+
+func _update_atmosphere(delta: float) -> void:
+	# parallax toward the mouse
+	var m := (get_local_mouse_position() / size - Vector2(0.5, 0.5)) * 2.0
+	_parallax = _parallax.lerp(m.clamp(Vector2(-1, -1), Vector2(1, 1)), 1.0 - exp(-3.0 * delta))
+	_hero.position = _hero.get_meta("base") + _parallax * -10.0
+	for v in _beetles:
+		var g: Node2D = v.get_parent()
+		g.position = g.get_meta("base") + _parallax * -12.0
+	# failing light: mostly steady, with sudden flickers and surges
+	_flicker_t -= delta
+	if _flicker_t <= 0.0:
+		var burst := randf() < 0.3
+		_flicker_t = randf_range(0.05, 0.12) if burst else randf_range(1.5, 4.0)
+		_flare = randf_range(0.35, 1.5) if burst else 1.0
+	_bg_mat.set_shader_parameter("flare", _flare)
+	# embers drift up and respawn at the bottom
+	var rng := RandomNumberGenerator.new()
+	for e in _embers:
+		e.age += delta
+		e.p.y -= e.v * delta
+		e.p.x += sin(_time * 1.3 + e.ph) * 12.0 * delta
+		if e.age > e.life or e.p.y < -10.0:
+			rng.randomize()
+			var fresh := _new_ember(rng, false)
+			for key in fresh:
+				e[key] = fresh[key]
+
+
+func _splat_color(kind: int) -> Color:
+	match kind:
+		0: return Color(INK, 0.82)
+		1: return Color(PAPER, 0.1)
+		2: return Color(RED, 0.3)
+	return Color(0.02, 0.015, 0.025, 0.96)
+
+
+func _draw_splat(ci: CanvasItem, sp: Dictionary, offset: Vector2) -> void:
+	var col := _splat_color(sp.kind)
+	ci.draw_set_transform(offset)
+	ci.draw_colored_polygon(sp.body, col)
+	for st in sp.streaks:
+		var dir: Vector2 = (st[1] - st[0]).normalized()
+		var nrm := Vector2(-dir.y, dir.x)
+		ci.draw_colored_polygon(PackedVector2Array([st[0] + nrm * st[2], st[1] + nrm * st[2] * 0.3,
+			st[1] - nrm * st[2] * 0.3, st[0] - nrm * st[2]]), col)
+	for d in sp.drops:
+		ci.draw_circle(d[0], d[1], col)
+	for d in sp.drips:
+		# drips slowly creep down and back
+		var len: float = d[1] * (0.85 + 0.15 * sin(_time * 0.5 + d[3]))
+		ci.draw_line(d[0], d[0] + Vector2(0, len), col, d[2] * 2.0)
+		ci.draw_circle(d[0] + Vector2(0, len), d[2] * 1.4, col)
+	ci.draw_set_transform(Vector2.ZERO)
+
+
+func _draw_back_decor() -> void:
+	var off := _parallax * 4.0
+	for sp in _splats:
+		_draw_splat(self, sp, off * sp.depth * 4.0)
+	# scratch bundles, re-scratched every ~1.5 s
+	var epoch := int(_time / 1.5)
+	for sc in _scratches:
+		var rng := RandomNumberGenerator.new()
+		rng.seed = hash(Vector2i(sc.seed, epoch))
+		for k in rng.randi_range(5, 11):
+			var a: float = sc.a + rng.randf_range(-0.12, 0.12)
+			var start: Vector2 = sc.c + off + Vector2(rng.randf_range(-40, 40), rng.randf_range(-40, 40))
+			var len := rng.randf_range(80.0, 330.0)
+			var dir := Vector2.from_angle(a)
+			var c := Color(PAPER, rng.randf_range(0.25, 0.85))
+			draw_line(start, start + dir * len, c, rng.randf_range(0.8, 1.8), true)
+			if rng.randf() < 0.3:  # splintered tail
+				var mid := start + dir * len * 0.7
+				draw_line(mid, mid + Vector2.from_angle(a + 0.25) * len * 0.3, Color(c, c.a * 0.6), 0.8, true)
+	# blinking red glyphs in the dark
+	for m in _marks:
+		if sin(_time * m.rate + m.ph) < -0.3:
+			continue
+		var p: Vector2 = m.p + off * 2.0 + _jitter(300 + int(m.ph * 100.0), 1.5)
+		var s: float = m.s
+		var c := Color(RED, 0.75)
+		match m.k:
+			0:
+				draw_rect(Rect2(p, Vector2(s * 2.2, s * 0.5)), c)
+			1:
+				draw_polyline(PackedVector2Array([p + Vector2(-s, s * 0.6), p + Vector2(0, -s), p + Vector2(s, s * 0.6), p + Vector2(-s, s * 0.6)]), c, 1.5)
+			2:
+				draw_line(p + Vector2(-s, -s), p + Vector2(s, s), c, 1.5)
+				draw_line(p + Vector2(s, -s), p + Vector2(-s, s), c, 1.5)
+			_:
+				draw_rect(Rect2(p, Vector2(s * 0.6, s * 0.6)), c)
+
+
+## Red dashed line threading the menu diamonds (node-map look), with a
+## teal run down to the focused one.
+func _draw_menu_links() -> void:
+	var intro := clampf((_time - 0.9) / 0.5, 0.0, 1.0)
+	if intro <= 0.0:
+		return
+	var x := BAR_POS.x + 26.0
+	var top := BAR_POS.y + BAR_SIZE.y * 0.5
+	var bottom := lerpf(top, top + (ENTRIES.size() - 1) * BAR_GAP, intro)
+	var dash := 8.0
+	var y := top + fmod(_time * 20.0, dash * 2.0) - dash * 2.0
+	while y < bottom:
+		var a := maxf(y, top)
+		var b := minf(y + dash, bottom)
+		if b > a:
+			draw_line(Vector2(x, a), Vector2(x, b), Color(RED, 0.55), 2.0)
+		y += dash * 2.0
+	var fi := _buttons.find(get_viewport().gui_get_focus_owner())
+	if fi > 0:
+		draw_line(Vector2(x - 4, top), Vector2(x - 4, top + fi * BAR_GAP), Color(0.38, 0.85, 0.7, 0.7), 2.0)
+
+
+func _draw_front_decor(o: Node2D) -> void:
+	# embers in front of the fight
+	for e in _embers:
+		var a := clampf(e.age / 0.8, 0.0, 1.0) * clampf((e.life - e.age) / 1.5, 0.0, 1.0)
+		var flick := 0.6 + 0.4 * sin(_time * 9.0 + e.ph * 5.0)
+		var p: Vector2 = e.p + _parallax * -16.0
+		o.draw_circle(p, e.s * 2.4, Color(RED, 0.15 * a * flick))
+		o.draw_circle(p, e.s, Color(1.0, 0.55, 0.3, 0.85 * a * flick))
+	# big dark corner blots, closest to the camera = most parallax
+	for b in _blots:
+		_draw_splat(o, b, _parallax * -22.0)
