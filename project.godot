@@ -17,6 +17,7 @@ config/features=PackedStringArray("4.7")
 [autoload]
 
 InputSetup="*res://scripts/core/input_setup.gd"
+Music="*res://scripts/audio/music.gd"
 
 [display]
 
