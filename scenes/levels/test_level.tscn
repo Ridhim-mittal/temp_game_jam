@@ -6,6 +6,7 @@
 [ext_resource type="Script" path="res://scripts/world/spikes.gd" id="4_spikes"]
 [ext_resource type="Script" path="res://scripts/ui/hud.gd" id="5_hud"]
 [ext_resource type="PackedScene" path="res://scenes/background/comic_background.tscn" id="6_background"]
+[ext_resource type="Script" path="res://scripts/world/goo_pool.gd" id="7_goo"]
 
 [node name="TestLevel" type="Node2D"]
 
@@ -52,6 +53,12 @@ size = Vector2(160, 120)
 position = Vector2(1650, 588)
 script = ExtResource("4_spikes")
 size = Vector2(260, 24)
+
+[node name="GooPool" type="Area2D" parent="World"]
+z_index = 1
+position = Vector2(1330, 590)
+script = ExtResource("7_goo")
+size = Vector2(220, 20)
 
 [node name="Enemies" type="Node2D" parent="."]
 

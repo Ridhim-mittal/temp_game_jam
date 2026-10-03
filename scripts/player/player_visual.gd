@@ -22,6 +22,7 @@ var facing := 1
 var on_floor := true
 var dashing := false
 var max_speed := 300.0
+var stuck := false  # wading through goo: boots get gooey
 
 var _phase := 0.0
 var _time := 0.0
@@ -29,11 +30,13 @@ var _run := 0.0  # 0 = standing .. 1 = full-speed run (smoothed)
 var _blink := 0.0
 var _blink_timer := 2.5
 var _dust: Array = []
+var _goo := 0.0  # 1 while in goo, fades after leaving (drips off)
 var _upper := Transform2D()  # hips + lean, for the upper-body parts
 
 
 func _process(delta: float) -> void:
 	_time += delta
+	_goo = 1.0 if stuck else maxf(_goo - delta * 1.2, 0.0)
 	var speed := clampf(absf(velocity.x) / max_speed, 0.0, 1.0)
 	_run = move_toward(_run, speed if on_floor and not dashing else 0.0, delta * 8.0)
 	if on_floor and not dashing:
@@ -81,6 +84,10 @@ func _draw() -> void:
 		draw_set_transform(foot + Vector2(1.5, 0))
 		draw_colored_polygon(_ellipse(4.5, 3.0), col)  # boot
 		draw_set_transform(Vector2.ZERO)
+		if _goo > 0.0:
+			var goo := Color(0.58, 0.95, 0.28)
+			draw_circle(foot + Vector2(1, -1), 4.0 * _goo + 1.0, goo)
+			draw_circle(foot + Vector2(-2, 2.0 + 4.0 * (1.0 - _goo)), 2.0 * _goo, goo)  # drip
 
 	# upper body leans around the hips
 	_upper = Transform2D(lean, hips)

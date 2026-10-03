@@ -83,6 +83,7 @@ var _hurt_timer := 0.0
 var _was_on_floor := false
 var _squash := Vector2.ONE
 var _last_safe_position := Vector2.ZERO
+var _slow_sources := {}  # source -> Vector2(speed_mult, jump_mult)
 
 @onready var visual: Node2D = $Visual
 @onready var art = $Visual/Art
@@ -162,7 +163,7 @@ func _update_horizontal(input_x: float, delta: float) -> void:
 	# Facing is locked while a slash is active.
 	if input_x != 0.0 and _attack_timer <= 0.0:
 		facing = 1 if input_x > 0.0 else -1
-	var target := input_x * max_speed
+	var target := input_x * max_speed * _slow_mult().x
 	var accelerating := absf(target) > 0.01
 	var rate: float
 	if is_on_floor():
@@ -183,7 +184,7 @@ func _apply_gravity(delta: float) -> void:
 
 func _handle_jump() -> void:
 	if _jump_buffer_timer > 0.0 and _coyote_timer > 0.0:
-		velocity.y = jump_velocity
+		velocity.y = jump_velocity * _slow_mult().y
 		is_jumping = true
 		_jump_buffer_timer = 0.0
 		_coyote_timer = 0.0
@@ -192,6 +193,22 @@ func _handle_jump() -> void:
 	if is_jumping and velocity.y < 0.0 and not Input.is_action_pressed("jump"):
 		velocity.y *= jump_cut_mult
 		is_jumping = false
+
+
+## Called by slowing obstacles (e.g. goo_pool.gd). Multipliers of 1 remove
+## the source; overlapping sources use the strongest slow.
+func set_slowed(source: Object, speed_mult := 1.0, jump_mult := 1.0) -> void:
+	if speed_mult >= 1.0 and jump_mult >= 1.0:
+		_slow_sources.erase(source)
+	else:
+		_slow_sources[source] = Vector2(speed_mult, jump_mult)
+
+
+func _slow_mult() -> Vector2:
+	var m := Vector2.ONE
+	for v in _slow_sources.values():
+		m = m.min(v)
+	return m
 
 
 func _start_dash(input_x: float) -> void:
@@ -408,6 +425,7 @@ func _update_visuals(delta: float) -> void:
 	art.on_floor = is_on_floor()
 	art.dashing = _dash_timer > 0.0
 	art.max_speed = max_speed
+	art.stuck = _slow_mult().x < 1.0
 	var col := Color.WHITE
 	if _dash_timer > 0.0:
 		col = Color(1.5, 1.5, 1.8)
