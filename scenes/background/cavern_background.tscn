@@ -1,0 +1,144 @@
+[gd_scene format=3]
+
+[ext_resource type="Shader" path="res://shaders/cavern_backdrop.gdshader" id="1_backdrop"]
+[ext_resource type="Shader" path="res://shaders/comic_overlay.gdshader" id="2_overlay"]
+[ext_resource type="Script" path="res://scripts/background/screen_shader_rect.gd" id="3_rect"]
+[ext_resource type="Script" path="res://scripts/background/comic_parallax.gd" id="4_parallax"]
+[ext_resource type="Script" path="res://scripts/background/cavern_layer.gd" id="5_layer"]
+[ext_resource type="Script" path="res://scripts/background/drift_motes.gd" id="6_motes"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_backdrop"]
+shader = ExtResource("1_backdrop")
+shader_parameter/mist = Color(0.72, 0.72, 0.76, 1)
+shader_parameter/glow_strength = 0.75
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_overlay"]
+shader = ExtResource("2_overlay")
+shader_parameter/ink_color = Color(0, 0, 0, 1)
+shader_parameter/vignette_start = 0.7
+shader_parameter/vignette_strength = 0.35
+shader_parameter/grain = 0.04
+
+[node name="CavernBackground" type="Node2D"]
+
+[node name="Backdrop" type="CanvasLayer" parent="."]
+layer = -100
+
+[node name="Fog" type="ColorRect" parent="Backdrop"]
+material = SubResource("ShaderMaterial_backdrop")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("3_rect")
+
+[node name="FarCoils" type="Parallax2D" parent="."]
+z_index = -10
+scroll_scale = Vector2(0.12, 0.12)
+script = ExtResource("4_parallax")
+
+[node name="Drawer" type="Node2D" parent="FarCoils"]
+script = ExtResource("5_layer")
+seed = 11
+slot_width = 520.0
+tone = Color(0.2, 0.2, 0.22, 1)
+mist = Color(0.42, 0.42, 0.46, 1)
+haze = 0.4
+empty_chance = 0.3
+outline_width = 1.5
+floor_y = 440.0
+
+[node name="MidArches" type="Parallax2D" parent="."]
+z_index = -10
+scroll_scale = Vector2(0.3, 0.3)
+script = ExtResource("4_parallax")
+
+[node name="Drawer" type="Node2D" parent="MidArches"]
+script = ExtResource("5_layer")
+style = 1
+seed = 22
+slot_width = 460.0
+tone = Color(0.13, 0.13, 0.15, 1)
+mist = Color(0.4, 0.4, 0.44, 1)
+haze = 0.2
+floor_y = 445.0
+empty_chance = 0.25
+
+[node name="NearShells" type="Parallax2D" parent="."]
+z_index = -10
+scroll_scale = Vector2(0.6, 0.6)
+script = ExtResource("4_parallax")
+
+[node name="Drawer" type="Node2D" parent="NearShells"]
+script = ExtResource("5_layer")
+style = 2
+seed = 33
+slot_width = 380.0
+tone = Color(0.08, 0.08, 0.09, 1)
+haze = 0.0
+outline_width = 3.0
+floor_y = 450.0
+
+[node name="GlowSacs" type="Parallax2D" parent="."]
+z_index = -10
+scroll_scale = Vector2(0.8, 0.8)
+script = ExtResource("4_parallax")
+
+[node name="Drawer" type="Node2D" parent="GlowSacs"]
+script = ExtResource("5_layer")
+style = 3
+seed = 44
+slot_width = 700.0
+floor_y = 448.0
+empty_chance = 0.35
+
+[node name="Spores" type="Parallax2D" parent="."]
+z_index = -10
+scroll_scale = Vector2(0.85, 0.85)
+script = ExtResource("4_parallax")
+
+[node name="Dark" type="Node2D" parent="Spores"]
+script = ExtResource("6_motes")
+count = 45
+drift = Vector2(4, 22)
+size_range = Vector2(1.5, 3.5)
+color = Color(0.02, 0.02, 0.03, 1)
+ink = Color(0.02, 0.02, 0.03, 0)
+sparkle_chance = 0.0
+
+[node name="Pale" type="Node2D" parent="Spores"]
+script = ExtResource("6_motes")
+seed = 5
+count = 14
+drift = Vector2(-3, -10)
+size_range = Vector2(1, 2.2)
+color = Color(0.85, 0.85, 0.9, 1)
+ink = Color(0, 0, 0, 0)
+sparkle_chance = 0.15
+
+[node name="Foreground" type="Parallax2D" parent="."]
+z_index = 50
+scroll_scale = Vector2(1.35, 1.35)
+script = ExtResource("4_parallax")
+
+[node name="Drawer" type="Node2D" parent="Foreground"]
+script = ExtResource("5_layer")
+style = 4
+seed = 55
+slot_width = 520.0
+floor_y = 760.0
+empty_chance = 0.3
+
+[node name="Overlay" type="CanvasLayer" parent="."]
+
+[node name="Vignette" type="ColorRect" parent="Overlay"]
+material = SubResource("ShaderMaterial_overlay")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("3_rect")

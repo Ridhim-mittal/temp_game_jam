@@ -96,3 +96,7 @@ func paint(c: CanvasItem) -> void:
 		c.draw_line(a, b, red, 6.0, true)
 		c.draw_line(Vector2(b.x, a.y), Vector2(a.x, b.y), red, 6.0, true)
 	c.draw_set_transform(Vector2.ZERO)
+
+
+func damage_default() -> float:
+	return 20.0  # shove

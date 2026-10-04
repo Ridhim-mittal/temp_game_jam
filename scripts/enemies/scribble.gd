@@ -101,3 +101,7 @@ func paint(c: CanvasItem) -> void:
 	var look := (to_player().normalized() if _player else Vector2.RIGHT) * Vector2(facing, 1)
 	draw_eye(c, mid + shake + Vector2(-4, -1), 3.6, look)
 	draw_eye(c, mid + shake + Vector2(5, -1), 3.6, look)
+
+
+func damage_default() -> float:
+	return 8.0  # weak, but they come in swarms

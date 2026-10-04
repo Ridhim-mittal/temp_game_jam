@@ -8,7 +8,7 @@ extends CharacterBody2D
 ##  - down-slash pogo off enemies and hazards, side-slash recoil
 ##  - damage, knockback, i-frames, hazard respawn to last safe ground
 
-signal health_changed(current: int, maximum: int)
+signal health_changed(current: float, maximum: float)
 signal died
 signal coins_changed(total: int)
 
@@ -20,6 +20,7 @@ const MASK_ENEMY := 4   # physics layer 3
 const MASK_HAZARD := 8  # physics layer 4
 const HIT_WORDS := ["THWACK!", "SLASH!", "POW!", "WHAM!", "SHNK!"]
 const BODY_HALF_HEIGHT := 26.0
+const HAZARD_DAMAGE := 20.0
 
 @export_group("Run")
 @export var max_speed := 300.0
@@ -66,13 +67,15 @@ const BODY_HALF_HEIGHT := 26.0
 @export var wave_recoil := 160.0
 
 @export_group("Health")
-@export var max_health := 5
+## Continuous health in HP. Monsters deal different amounts (see their
+## damage_default()); spikes deal HAZARD_DAMAGE.
+@export var max_health := 100.0
 @export var invuln_time := 1.2
 @export var hurt_knockback := Vector2(320, -380)
 @export var hurt_stun_time := 0.22
 
 var facing := 1
-var health := 0
+var health := 0.0
 var coins := 0
 var can_dash := true
 var is_jumping := false
@@ -108,8 +111,15 @@ var _slow_sources := {}  # source -> Vector2(speed_mult, jump_mult)
 
 func _ready() -> void:
 	health = max_health
+	var state := get_node_or_null("/root/GameState")
+	if state:
+		var spawn = state.spawn_point(get_tree())
+		if spawn != null:
+			global_position = spawn  # respawn at the last checkpoint pen
+		coins = state.coins
 	_last_safe_position = global_position
 	health_changed.emit(health, max_health)
+	coins_changed.emit(coins)
 
 
 func _physics_process(delta: float) -> void:
@@ -216,7 +226,19 @@ func _handle_jump() -> void:
 
 func add_coins(amount: int) -> void:
 	coins += amount
+	var state := get_node_or_null("/root/GameState")
+	if state:
+		state.coins = coins  # banked: kept when you die
 	coins_changed.emit(coins)
+
+
+## Restores HP (health pickups). Returns false when already at full health.
+func heal(amount: float) -> bool:
+	if dead or health >= max_health:
+		return false
+	health = minf(health + amount, max_health)
+	health_changed.emit(health, max_health)
+	return true
 
 
 ## Called by slowing obstacles (e.g. goo_pool.gd). Multipliers of 1 remove
@@ -423,22 +445,26 @@ func _check_hurtbox() -> void:
 	for body in _hurtbox_overlaps():
 		# Hazards always hurt, even during i-frames (Hollow Knight spikes).
 		if body.is_in_group("hazard"):
-			take_damage(1, body.global_position, true)
+			take_damage(HAZARD_DAMAGE, body.global_position, true)
 			return
 		if _invuln_timer > 0.0 or _dash_timer > 0.0:
 			continue  # dash i-frames protect from enemies only
 		if body.is_in_group("enemy") and not ("dead" in body and body.dead):
-			var dmg: int = body.contact_damage if "contact_damage" in body else 1
+			var dmg := 15.0
+			if body.has_method("get_damage"):
+				dmg = body.get_damage()
+			elif "contact_damage" in body:
+				dmg = body.contact_damage
 			take_damage(dmg, body.global_position)
 			if body.has_method("on_hit_player"):
 				body.on_hit_player()  # projectiles pop instead of flying on
 			return
 
 
-func take_damage(amount: int, source_pos: Vector2, from_hazard := false) -> void:
+func take_damage(amount: float, source_pos: Vector2, from_hazard := false) -> void:
 	if dead or (_invuln_timer > 0.0 and not from_hazard):
 		return
-	health = maxi(health - amount, 0)
+	health = maxf(health - amount, 0.0)
 	_cancel_charge()
 	health_changed.emit(health, max_health)
 	_invuln_timer = invuln_time
@@ -451,7 +477,7 @@ func take_damage(amount: int, source_pos: Vector2, from_hazard := false) -> void
 	_hitstop(0.12, 0.02)
 	_shake(0.6)
 
-	if health <= 0:
+	if health <= 0.0:
 		_die()
 		return
 	if from_hazard:

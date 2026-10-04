@@ -1,0 +1,530 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="1_player"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/crawler.tscn" id="2_crawler"]
+[ext_resource type="Script" path="res://scripts/world/solid_block.gd" id="3_block"]
+[ext_resource type="Script" path="res://scripts/world/spikes.gd" id="4_spikes"]
+[ext_resource type="Script" path="res://scripts/ui/hud.gd" id="5_hud"]
+[ext_resource type="PackedScene" path="res://scenes/background/cavern_background.tscn" id="6_background"]
+[ext_resource type="Script" path="res://scripts/world/goo_pool.gd" id="7_goo"]
+[ext_resource type="Script" path="res://scripts/audio/level_music.gd" id="8_music"]
+[ext_resource type="Script" path="res://scripts/world/coin.gd" id="9_coin"]
+[ext_resource type="Script" path="res://scripts/world/light_zone.gd" id="10_light"]
+[ext_resource type="Script" path="res://scripts/world/one_way_platform.gd" id="11_oneway"]
+[ext_resource type="Script" path="res://scripts/world/moving_platform.gd" id="12_moving"]
+[ext_resource type="Script" path="res://scripts/world/crumbling_platform.gd" id="13_crumble"]
+[ext_resource type="Script" path="res://scripts/world/spring_pad.gd" id="14_spring"]
+[ext_resource type="Script" path="res://scripts/world/building_block.gd" id="15_building"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/scribble.tscn" id="20_scribble"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/crumple.tscn" id="21_crumple"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/crossed_out.tscn" id="22_crossed"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/smudge.tscn" id="23_smudge"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/inkwell.tscn" id="24_inkwell"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/eraser.tscn" id="25_eraser"]
+[ext_resource type="Script" path="res://scripts/world/level_mood.gd" id="30_mood"]
+[ext_resource type="Script" path="res://scripts/world/checkpoint_pen.gd" id="18_pen"]
+[ext_resource type="Script" path="res://scripts/world/health_heart.gd" id="19_heart"]
+[ext_resource type="Script" path="res://scripts/world/stone_block.gd" id="16_stone"]
+[ext_resource type="Script" path="res://scripts/world/level_exit.gd" id="17_exit"]
+
+[node name="InkCavern" type="Node2D"]
+
+[node name="ComicBackground" parent="." instance=ExtResource("6_background")]
+
+[node name="World" type="Node2D" parent="."]
+
+[node name="Wall1" type="StaticBody2D" parent="World"]
+position = Vector2(-200, -150)
+script = ExtResource("16_stone")
+size = Vector2(80, 2500)
+
+[node name="Wall2" type="StaticBody2D" parent="World"]
+position = Vector2(6440, -150)
+script = ExtResource("16_stone")
+size = Vector2(80, 2500)
+
+[node name="Floor1" type="StaticBody2D" parent="World"]
+position = Vector2(580, 850)
+script = ExtResource("16_stone")
+size = Vector2(1640, 500)
+
+[node name="Ceiling1" type="StaticBody2D" parent="World"]
+position = Vector2(570, -600)
+script = ExtResource("16_stone")
+size = Vector2(1460, 1600)
+tiles_below = true
+
+[node name="Ledge1" type="StaticBody2D" parent="World"]
+position = Vector2(550, 515)
+script = ExtResource("16_stone")
+size = Vector2(200, 30)
+tiles_below = true
+
+[node name="Ledge2" type="StaticBody2D" parent="World"]
+position = Vector2(850, 425)
+script = ExtResource("16_stone")
+size = Vector2(180, 30)
+tiles_below = true
+
+[node name="Ceiling2" type="StaticBody2D" parent="World"]
+position = Vector2(1800, -760)
+script = ExtResource("16_stone")
+size = Vector2(1000, 1280)
+tiles_below = true
+
+[node name="PitFloor1" type="StaticBody2D" parent="World"]
+position = Vector2(1800, 1000)
+script = ExtResource("16_stone")
+size = Vector2(800, 200)
+
+[node name="PitSpikes" type="StaticBody2D" parent="World"]
+position = Vector2(1800, 888)
+script = ExtResource("4_spikes")
+size = Vector2(800, 24)
+
+[node name="Pillar1" type="StaticBody2D" parent="World"]
+position = Vector2(1520, 730)
+script = ExtResource("16_stone")
+size = Vector2(90, 340)
+
+[node name="Pillar2" type="StaticBody2D" parent="World"]
+position = Vector2(1800, 710)
+script = ExtResource("16_stone")
+size = Vector2(90, 380)
+
+[node name="Pillar3" type="StaticBody2D" parent="World"]
+position = Vector2(2080, 730)
+script = ExtResource("16_stone")
+size = Vector2(90, 340)
+
+[node name="Crumble1" type="StaticBody2D" parent="World"]
+position = Vector2(1660, 551)
+script = ExtResource("13_crumble")
+size = Vector2(110, 22)
+stone = Color(0.5, 0.5, 0.53, 1)
+
+[node name="Crumble2" type="StaticBody2D" parent="World"]
+position = Vector2(1940, 551)
+script = ExtResource("13_crumble")
+size = Vector2(110, 22)
+stone = Color(0.5, 0.5, 0.53, 1)
+
+[node name="Floor2" type="StaticBody2D" parent="World"]
+position = Vector2(2850, 850)
+script = ExtResource("16_stone")
+size = Vector2(1300, 500)
+
+[node name="Ceiling3" type="StaticBody2D" parent="World"]
+position = Vector2(2850, -625)
+script = ExtResource("16_stone")
+size = Vector2(1100, 1550)
+tiles_below = true
+
+[node name="Light1" type="Node2D" parent="World"]
+position = Vector2(2450, 560)
+script = ExtResource("10_light")
+radius = 115
+color = Color(1, 0.72, 0.38, 0.13)
+
+[node name="Light2" type="Node2D" parent="World"]
+position = Vector2(2900, 560)
+script = ExtResource("10_light")
+radius = 115
+color = Color(1, 0.72, 0.38, 0.13)
+
+[node name="Light3" type="Node2D" parent="World"]
+position = Vector2(3330, 560)
+script = ExtResource("10_light")
+radius = 115
+color = Color(1, 0.72, 0.38, 0.13)
+
+[node name="Floor3" type="StaticBody2D" parent="World"]
+position = Vector2(4500, 850)
+script = ExtResource("16_stone")
+size = Vector2(2000, 500)
+
+[node name="Ledge3" type="StaticBody2D" parent="World"]
+position = Vector2(3550, 502.5)
+script = ExtResource("16_stone")
+size = Vector2(200, 25)
+tiles_below = true
+
+[node name="Ledge4" type="StaticBody2D" parent="World"]
+position = Vector2(3770, 392.5)
+script = ExtResource("16_stone")
+size = Vector2(180, 25)
+tiles_below = true
+
+[node name="Girder1" type="AnimatableBody2D" parent="World"]
+position = Vector2(3540, 280)
+script = ExtResource("12_moving")
+size = Vector2(130, 20)
+travel = Vector2(0, -320)
+period = 5
+steel = Color(0.3, 0.3, 0.34, 1)
+
+[node name="Crumble3" type="StaticBody2D" parent="World"]
+position = Vector2(3770, -139)
+script = ExtResource("13_crumble")
+size = Vector2(140, 22)
+stone = Color(0.5, 0.5, 0.53, 1)
+
+[node name="Ledge5" type="StaticBody2D" parent="World"]
+position = Vector2(3630, -237.5)
+script = ExtResource("16_stone")
+size = Vector2(180, 25)
+tiles_below = true
+
+[node name="GalleryFloor1" type="StaticBody2D" parent="World"]
+position = Vector2(4600, -335)
+script = ExtResource("16_stone")
+size = Vector2(1600, 70)
+tiles_below = true
+
+[node name="Ceiling4" type="StaticBody2D" parent="World"]
+position = Vector2(4600, -1045)
+script = ExtResource("16_stone")
+size = Vector2(1800, 710)
+tiles_below = true
+
+[node name="Light4" type="Node2D" parent="World"]
+position = Vector2(4600, -410)
+script = ExtResource("10_light")
+radius = 90
+color = Color(1, 0.72, 0.38, 0.13)
+
+[node name="TunnelStep1" type="StaticBody2D" parent="World"]
+position = Vector2(5420, 560)
+script = ExtResource("16_stone")
+size = Vector2(40, 80)
+
+[node name="Floor4" type="StaticBody2D" parent="World"]
+position = Vector2(5990, 850)
+script = ExtResource("16_stone")
+size = Vector2(980, 500)
+
+[node name="Ceiling5" type="StaticBody2D" parent="World"]
+position = Vector2(6010, -650)
+script = ExtResource("16_stone")
+size = Vector2(780, 1500)
+tiles_below = true
+
+[node name="Ledge6" type="StaticBody2D" parent="World"]
+position = Vector2(5750, 482.5)
+script = ExtResource("16_stone")
+size = Vector2(200, 25)
+tiles_below = true
+
+[node name="Exit" type="Area2D" parent="World"]
+position = Vector2(6250, 600)
+script = ExtResource("17_exit")
+target_scene = "res://scenes/ui/main_menu.tscn"
+label = "BACK TO THE MENU"
+
+[node name="Checkpoint1" type="Area2D" parent="World"]
+position = Vector2(1300, 600)
+script = ExtResource("18_pen")
+
+[node name="Checkpoint2" type="Area2D" parent="World"]
+position = Vector2(2280, 600)
+script = ExtResource("18_pen")
+
+[node name="Checkpoint3" type="Area2D" parent="World"]
+position = Vector2(3400, 600)
+script = ExtResource("18_pen")
+
+[node name="Checkpoint4" type="Area2D" parent="World"]
+position = Vector2(4150, -370)
+script = ExtResource("18_pen")
+
+[node name="Checkpoint5" type="Area2D" parent="World"]
+position = Vector2(5700, 600)
+script = ExtResource("18_pen")
+
+[node name="Heart1" type="Area2D" parent="World"]
+position = Vector2(1100, 470)
+script = ExtResource("19_heart")
+
+[node name="Heart2" type="Area2D" parent="World"]
+position = Vector2(2560, 540)
+script = ExtResource("19_heart")
+
+[node name="Heart3" type="Area2D" parent="World"]
+position = Vector2(3830, 345)
+script = ExtResource("19_heart")
+
+[node name="Heart4" type="Area2D" parent="World"]
+position = Vector2(4400, -410)
+script = ExtResource("19_heart")
+
+[node name="Heart5" type="Area2D" parent="World"]
+position = Vector2(4650, 555)
+script = ExtResource("19_heart")
+
+[node name="Heart6" type="Area2D" parent="World"]
+position = Vector2(5900, 560)
+script = ExtResource("19_heart")
+
+[node name="Coins" type="Node2D" parent="."]
+
+[node name="Coin1" type="Area2D" parent="Coins"]
+position = Vector2(200, 562)
+script = ExtResource("9_coin")
+
+[node name="Coin2" type="Area2D" parent="Coins"]
+position = Vector2(250, 562)
+script = ExtResource("9_coin")
+
+[node name="Coin3" type="Area2D" parent="Coins"]
+position = Vector2(300, 562)
+script = ExtResource("9_coin")
+
+[node name="Coin4" type="Area2D" parent="Coins"]
+position = Vector2(350, 562)
+script = ExtResource("9_coin")
+
+[node name="Coin5" type="Area2D" parent="Coins"]
+position = Vector2(500, 462)
+script = ExtResource("9_coin")
+
+[node name="Coin6" type="Area2D" parent="Coins"]
+position = Vector2(600, 462)
+script = ExtResource("9_coin")
+
+[node name="Coin7" type="Area2D" parent="Coins"]
+position = Vector2(810, 372)
+script = ExtResource("9_coin")
+
+[node name="Coin8" type="Area2D" parent="Coins"]
+position = Vector2(890, 372)
+script = ExtResource("9_coin")
+
+[node name="Coin9" type="Area2D" parent="Coins"]
+position = Vector2(1520, 520)
+script = ExtResource("9_coin")
+
+[node name="Coin10" type="Area2D" parent="Coins"]
+position = Vector2(1660, 500)
+script = ExtResource("9_coin")
+
+[node name="Coin11" type="Area2D" parent="Coins"]
+position = Vector2(1800, 480)
+script = ExtResource("9_coin")
+
+[node name="Coin12" type="Area2D" parent="Coins"]
+position = Vector2(1940, 500)
+script = ExtResource("9_coin")
+
+[node name="Coin13" type="Area2D" parent="Coins"]
+position = Vector2(2080, 520)
+script = ExtResource("9_coin")
+
+[node name="Coin14" type="Area2D" parent="Coins"]
+position = Vector2(2440, 562)
+script = ExtResource("9_coin")
+
+[node name="Coin15" type="Area2D" parent="Coins"]
+position = Vector2(2880, 562)
+script = ExtResource("9_coin")
+
+[node name="Coin16" type="Area2D" parent="Coins"]
+position = Vector2(2920, 562)
+script = ExtResource("9_coin")
+
+[node name="Coin17" type="Area2D" parent="Coins"]
+position = Vector2(2600, 520)
+script = ExtResource("9_coin")
+
+[node name="Coin18" type="Area2D" parent="Coins"]
+position = Vector2(2690, 520)
+script = ExtResource("9_coin")
+
+[node name="Coin19" type="Area2D" parent="Coins"]
+position = Vector2(2780, 520)
+script = ExtResource("9_coin")
+
+[node name="Coin20" type="Area2D" parent="Coins"]
+position = Vector2(3030, 520)
+script = ExtResource("9_coin")
+
+[node name="Coin21" type="Area2D" parent="Coins"]
+position = Vector2(3115, 520)
+script = ExtResource("9_coin")
+
+[node name="Coin22" type="Area2D" parent="Coins"]
+position = Vector2(3200, 520)
+script = ExtResource("9_coin")
+
+[node name="Coin23" type="Area2D" parent="Coins"]
+position = Vector2(3550, 452)
+script = ExtResource("9_coin")
+
+[node name="Coin24" type="Area2D" parent="Coins"]
+position = Vector2(3770, 342)
+script = ExtResource("9_coin")
+
+[node name="Coin25" type="Area2D" parent="Coins"]
+position = Vector2(3540, 120)
+script = ExtResource("9_coin")
+
+[node name="Coin26" type="Area2D" parent="Coins"]
+position = Vector2(3540, 10)
+script = ExtResource("9_coin")
+
+[node name="Coin27" type="Area2D" parent="Coins"]
+position = Vector2(3770, -190)
+script = ExtResource("9_coin")
+
+[node name="Coin28" type="Area2D" parent="Coins"]
+position = Vector2(3630, -290)
+script = ExtResource("9_coin")
+
+[node name="Coin29" type="Area2D" parent="Coins"]
+position = Vector2(4050, -410)
+script = ExtResource("9_coin")
+
+[node name="Coin30" type="Area2D" parent="Coins"]
+position = Vector2(4117, -410)
+script = ExtResource("9_coin")
+
+[node name="Coin31" type="Area2D" parent="Coins"]
+position = Vector2(4183, -410)
+script = ExtResource("9_coin")
+
+[node name="Coin32" type="Area2D" parent="Coins"]
+position = Vector2(4250, -410)
+script = ExtResource("9_coin")
+
+[node name="Coin33" type="Area2D" parent="Coins"]
+position = Vector2(4500, -410)
+script = ExtResource("9_coin")
+
+[node name="Coin34" type="Area2D" parent="Coins"]
+position = Vector2(4567, -410)
+script = ExtResource("9_coin")
+
+[node name="Coin35" type="Area2D" parent="Coins"]
+position = Vector2(4633, -410)
+script = ExtResource("9_coin")
+
+[node name="Coin36" type="Area2D" parent="Coins"]
+position = Vector2(4700, -410)
+script = ExtResource("9_coin")
+
+[node name="Coin37" type="Area2D" parent="Coins"]
+position = Vector2(5000, -410)
+script = ExtResource("9_coin")
+
+[node name="Coin38" type="Area2D" parent="Coins"]
+position = Vector2(5100, -410)
+script = ExtResource("9_coin")
+
+[node name="Coin39" type="Area2D" parent="Coins"]
+position = Vector2(5200, -410)
+script = ExtResource("9_coin")
+
+[node name="Coin40" type="Area2D" parent="Coins"]
+position = Vector2(5300, -410)
+script = ExtResource("9_coin")
+
+[node name="Coin41" type="Area2D" parent="Coins"]
+position = Vector2(4100, 562)
+script = ExtResource("9_coin")
+
+[node name="Coin42" type="Area2D" parent="Coins"]
+position = Vector2(4320, 562)
+script = ExtResource("9_coin")
+
+[node name="Coin43" type="Area2D" parent="Coins"]
+position = Vector2(4540, 562)
+script = ExtResource("9_coin")
+
+[node name="Coin44" type="Area2D" parent="Coins"]
+position = Vector2(4760, 562)
+script = ExtResource("9_coin")
+
+[node name="Coin45" type="Area2D" parent="Coins"]
+position = Vector2(4980, 562)
+script = ExtResource("9_coin")
+
+[node name="Coin46" type="Area2D" parent="Coins"]
+position = Vector2(5200, 562)
+script = ExtResource("9_coin")
+
+[node name="Coin47" type="Area2D" parent="Coins"]
+position = Vector2(5700, 432)
+script = ExtResource("9_coin")
+
+[node name="Coin48" type="Area2D" parent="Coins"]
+position = Vector2(5800, 432)
+script = ExtResource("9_coin")
+
+[node name="Enemies" type="Node2D" parent="."]
+
+[node name="Crawler1" parent="Enemies" instance=ExtResource("2_crawler")]
+position = Vector2(1050, 580)
+
+[node name="Scribble1" parent="Enemies" instance=ExtResource("20_scribble")]
+position = Vector2(1650, 330)
+
+[node name="Scribble2" parent="Enemies" instance=ExtResource("20_scribble")]
+position = Vector2(1950, 280)
+
+[node name="Smudge1" parent="Enemies" instance=ExtResource("23_smudge")]
+position = Vector2(2680, 588)
+
+[node name="Smudge2" parent="Enemies" instance=ExtResource("23_smudge")]
+position = Vector2(3110, 588)
+
+[node name="Crossed1" parent="Enemies" instance=ExtResource("22_crossed")]
+position = Vector2(3250, 570)
+
+[node name="Inkwell1" parent="Enemies" instance=ExtResource("24_inkwell")]
+position = Vector2(3900, -396)
+
+[node name="Crawler2" parent="Enemies" instance=ExtResource("2_crawler")]
+position = Vector2(4350, -390)
+
+[node name="Crossed2" parent="Enemies" instance=ExtResource("22_crossed")]
+position = Vector2(4800, -400)
+
+[node name="Crawler3" parent="Enemies" instance=ExtResource("2_crawler")]
+position = Vector2(5150, -390)
+start_direction = 1
+
+[node name="Crumple1" parent="Enemies" instance=ExtResource("21_crumple")]
+position = Vector2(4600, 575)
+
+[node name="Player" parent="." instance=ExtResource("1_player")]
+position = Vector2(100, 570)
+
+[node name="UI" type="CanvasLayer" parent="."]
+layer = 2
+
+[node name="HUD" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("5_hud")
+
+[node name="Controls" type="Label" parent="UI/HUD"]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 640.0
+offset_right = 1260.0
+offset_bottom = 700.0
+theme_override_colors/font_color = Color(0.97, 0.95, 0.9, 1)
+theme_override_colors/font_outline_color = Color(0.06, 0.03, 0.13, 1)
+theme_override_constants/outline_size = 6
+text = "Move: A/D or Arrows   Jump: Space/Z (hold = higher)   Attack: Left Click (+W up, +S down in air = pogo; hold = ink wave)   Dash: Right Click   Restart: R"
+
+[node name="LevelMusic" type="Node" parent="."]
+script = ExtResource("8_music")
+track = "margins"
+
+[node name="LevelMood" type="Node" parent="."]
+script = ExtResource("30_mood")

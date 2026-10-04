@@ -12,6 +12,7 @@ const OUTLINE := Color(1.0, 0.98, 0.9)  # cream = friendly (same as Vesper)
 const GOLD := Color(1.0, 0.8, 0.22)
 const GOLD_DARK := Color(0.78, 0.46, 0.1)
 const GOLD_LIGHT := Color(1.0, 0.95, 0.65)
+const OnScreen = preload("res://scripts/core/on_screen.gd")
 
 @export var value := 1
 @export var radius := 13.0
@@ -28,6 +29,10 @@ func _ready() -> void:
 	_time = position.x * 0.013  # neighbours spin out of phase
 	if Engine.is_editor_hint():
 		return
+	var state := get_node_or_null("/root/GameState")
+	if state and state.collected.has(state.id_of(self)):
+		queue_free()  # already banked before a death / restart
+		return
 	var cs := CollisionShape2D.new()
 	var circle := CircleShape2D.new()
 	circle.radius = radius + 4.0
@@ -41,6 +46,9 @@ func _on_body_entered(body: Node2D) -> void:
 		return
 	_collected = true
 	set_deferred("monitoring", false)
+	var state := get_node_or_null("/root/GameState")
+	if state:
+		state.collected[state.id_of(self)] = true
 	body.add_coins(value)
 	var pop := ComicText.new()
 	pop.text = "CLINK!"
@@ -59,7 +67,8 @@ func _on_body_entered(body: Node2D) -> void:
 
 func _process(delta: float) -> void:
 	_time += delta
-	queue_redraw()
+	if OnScreen.near(self, 80.0):
+		queue_redraw()
 
 
 func _draw() -> void:

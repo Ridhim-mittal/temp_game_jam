@@ -6,7 +6,7 @@ const InkPuddle = preload("res://scripts/world/ink_puddle.gd")
 const INK := Color(0.07, 0.06, 0.14)
 
 var dead := false
-var contact_damage := 1
+var contact_damage := 14.0  # HP
 var gravity := 1400.0
 var _time := 0.0
 

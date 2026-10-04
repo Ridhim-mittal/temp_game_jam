@@ -25,15 +25,16 @@ const DIM := Color(0.62, 0.6, 0.62)
 const ENTRIES := [
 	["Begin", "res://scenes/cutscenes/cs_opening.tscn", "play"],
 	["Skip to the level", "res://scenes/levels/test_level.tscn", "skip"],
+	["The Ink Cavern", "res://scenes/levels/ink_cavern.tscn", "skip"],
 	["Monster test", "res://scenes/levels/monster_test.tscn", "eye"],
 	["Begin in the Margins", "res://scenes/clearing/clearing.tscn", "map"],
 	["Settings", "res://scenes/ui/settings.tscn", "gear"],
 	["Quit", "", "x"],
 ]
 const SFX := ["SHNK!", "KRAK!", "SLASH!", "THWACK!"]
-const BAR_POS := Vector2(70, 336)
+const BAR_POS := Vector2(70, 318)
 const BAR_SIZE := Vector2(400, 50)
-const BAR_GAP := 56.0
+const BAR_GAP := 54.0  # seven entries fit above the bottom edge
 
 @export var music := "margins"
 
@@ -64,6 +65,9 @@ func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	get_tree().paused = false
 	Engine.time_scale = 1.0
+	var state := get_node_or_null("/root/GameState")
+	if state:
+		state.reset()  # the menu starts a fresh run: no checkpoint, no banked coins
 
 	var bg := ColorRect.new()
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)

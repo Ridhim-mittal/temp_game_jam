@@ -1,5 +1,6 @@
 @tool
 extends StaticBody2D
+const OnScreen = preload("res://scripts/core/on_screen.gd")
 ## Spike hazard. Player passes through it (hazard layer), takes damage and is
 ## returned to the last safe ground. Can be pogo'd with a down-slash.
 
@@ -36,7 +37,8 @@ func _process(delta: float) -> void:
 	if Engine.is_editor_hint():
 		return
 	_time += delta
-	queue_redraw()  # travelling glint
+	if OnScreen.near(self, size.x):
+		queue_redraw()  # travelling glint
 
 
 func _draw() -> void:

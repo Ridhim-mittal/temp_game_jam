@@ -11,6 +11,7 @@ extends Node2D
 ## Coordinates are "screen space at the reference camera" (see ComicParallax).
 
 const ComicView = preload("res://scripts/background/comic_view.gd")
+const TriBatch = preload("res://scripts/background/tri_batch.gd")
 const MAX_BUILDINGS := 160
 
 @export var seed := 1
@@ -43,20 +44,27 @@ const MAX_BUILDINGS := 160
 @export_group("Roofs")
 @export_range(0.0, 1.0) var detail_chance := 0.55
 
+## Redraw only after the view moved this many local pixels: side walls
+## change by depth x movement, so a few px is invisible but saves most redraws.
+@export var redraw_step := 3.0
+
 var _cache := {}
-var _last_xf := Transform2D()
+var _last_key := Vector2i(1 << 30, 0)
+var _b: TriBatch  # everything is batched into one draw call
 
 
 func _process(_delta: float) -> void:
-	var xf := get_global_transform_with_canvas()
-	if Engine.is_editor_hint() or xf != _last_xf:
-		_last_xf = xf
+	var o := get_global_transform_with_canvas().origin / maxf(redraw_step, 0.01)
+	var key := Vector2i(roundi(o.x), roundi(o.y))
+	if Engine.is_editor_hint() or key != _last_key:
+		_last_key = key
 		queue_redraw()
 
 
 func _draw() -> void:
 	if palette.is_empty() or slot_width < 4.0:
 		return
+	_b = TriBatch.new()
 	if Engine.is_editor_hint() or _cache.size() > 1024:
 		_cache.clear()
 	var view := ComicView.local_view(self)
@@ -70,7 +78,7 @@ func _draw() -> void:
 	var bottom := maxf(rect.end.y, street_y) + 8.0
 	var street_top := ComicView.recede(Vector2(0, street_y), vp, depth_range.y).y
 	if bottom > street_top:
-		draw_rect(Rect2(rect.position.x - 8.0, street_top, rect.size.x + 16.0, bottom - street_top), _hz(street_color))
+		_b.rect(Rect2(rect.position.x - 8.0, street_top, rect.size.x + 16.0, bottom - street_top), _hz(street_color))
 
 	# Painter's order: buildings farthest from the centre line first, so the
 	# ones nearer the centre cover the side walls that recede behind them.
@@ -80,6 +88,7 @@ func _draw() -> void:
 	list.sort_custom(func(a, b): return absf(a.cx - vp.x) > absf(b.cx - vp.x))
 	for b in list:
 		_draw_building(b, vp)
+	_b.flush(self)
 
 
 # ------------------------------------------------------------------ data
@@ -123,9 +132,9 @@ func _draw_building(b: Dictionary, vp: Vector2) -> void:
 		1:  # antenna
 			var ax: float = b.x + b.w * rng.randf_range(0.25, 0.75)
 			var top := front.position.y - rng.randf_range(28.0, 70.0)
-			draw_line(Vector2(ax, front.position.y), Vector2(ax, top), _hz(ink), maxf(outline_width * 0.7, 1.0))
-			draw_line(Vector2(ax - 6, top + 12), Vector2(ax + 6, top + 12), _hz(ink), maxf(outline_width * 0.5, 1.0))
-			draw_circle(Vector2(ax, top), maxf(outline_width, 2.0), _hz(Color(1.0, 0.35, 0.35)))
+			_b.line(Vector2(ax, front.position.y), Vector2(ax, top), _hz(ink), maxf(outline_width * 0.7, 1.0))
+			_b.line(Vector2(ax - 6, top + 12), Vector2(ax + 6, top + 12), _hz(ink), maxf(outline_width * 0.5, 1.0))
+			_b.circle(Vector2(ax, top), maxf(outline_width, 2.0), _hz(Color(1.0, 0.35, 0.35)))
 		2:  # water tower
 			_draw_water_tower(Vector2(b.x + b.w * rng.randf_range(0.25, 0.75), front.position.y), b.w, vp, b.depth)
 		3:  # art-deco spire
@@ -135,9 +144,9 @@ func _draw_building(b: Dictionary, vp: Vector2) -> void:
 			var tri := PackedVector2Array([
 				Vector2(sx, front.position.y), Vector2(sx + sw * 0.5, front.position.y - sh),
 				Vector2(sx + sw, front.position.y)])
-			draw_colored_polygon(tri, _hz(col.lightened(0.12)))
+			_b.convex(tri, _hz(col.lightened(0.12)))
 			tri.append(tri[0])
-			draw_polyline(tri, _hz(ink), outline_width)
+			_b.polyline(tri, _hz(ink), outline_width)
 
 
 ## Front rectangle + the one side wall visible from the centre line.
@@ -156,17 +165,17 @@ func _draw_box(front: Rect2, depth: float, col: Color, vp: Vector2, window_style
 		var sc := _hz(col.darkened(0.38))
 		var top_c := ComicView.halftone(sc, side_shade.x)
 		var bot_c := ComicView.halftone(sc, side_shade.y)
-		draw_polygon(PackedVector2Array([ft, bt, bb, fb]), PackedColorArray([top_c, top_c, bot_c, bot_c]))
+		_b.convex_colors(PackedVector2Array([ft, bt, bb, fb]), PackedColorArray([top_c, top_c, bot_c, bot_c]))
 		if side_windows and window_style >= 0 and window_size.x > 0.0 and absf(bt.x - ft.x) > 14.0:
 			_draw_side_windows(ft, fb, bt, bb, front, sc, rng)
-		draw_polyline(PackedVector2Array([ft, bt, bb]), ink_c, outline_width * 0.75)
+		_b.polyline(PackedVector2Array([ft, bt, bb]), ink_c, outline_width * 0.75)
 
-	draw_rect(front, _hz(col))
+	_b.rect(front, _hz(col))
 	# sky-reflection rim along the roof line
-	draw_rect(Rect2(front.position, Vector2(front.size.x, minf(4.0, front.size.y))), _hz(col.lightened(0.25)))
+	_b.rect(Rect2(front.position, Vector2(front.size.x, minf(4.0, front.size.y))), _hz(col.lightened(0.25)))
 	if window_style >= 0 and window_size.x > 0.0:
 		_draw_front_windows(front, col, window_style, rng)
-	draw_rect(front, ink_c, false, outline_width)
+	_b.rect_outline(front, ink_c, outline_width)
 
 
 func _draw_front_windows(front: Rect2, col: Color, style: int, rng: RandomNumberGenerator) -> void:
@@ -183,16 +192,16 @@ func _draw_front_windows(front: Rect2, col: Color, style: int, rng: RandomNumber
 		1:  # vertical strips
 			for c in cols:
 				var h := rows * cell.y - window_gap.y
-				draw_rect(Rect2(x0 + c * cell.x, y0, window_size.x, h), lit if rng.randf() < lit_chance * 0.6 else dark)
+				_b.rect(Rect2(x0 + c * cell.x, y0, window_size.x, h), lit if rng.randf() < lit_chance * 0.6 else dark)
 		2:  # horizontal bands
 			var w := cols * cell.x - window_gap.x
 			for r in rows:
-				draw_rect(Rect2(x0, y0 + r * cell.y, w, window_size.y * 0.6), lit if rng.randf() < lit_chance * 0.6 else dark)
+				_b.rect(Rect2(x0, y0 + r * cell.y, w, window_size.y * 0.6), lit if rng.randf() < lit_chance * 0.6 else dark)
 		_:  # grid
 			for r in rows:
 				for c in cols:
 					var on := rng.randf() < lit_chance
-					draw_rect(Rect2(x0 + c * cell.x, y0 + r * cell.y, window_size.x, window_size.y), lit if on else dark)
+					_b.rect(Rect2(x0 + c * cell.x, y0 + r * cell.y, window_size.x, window_size.y), lit if on else dark)
 
 
 ## Windows mapped bilinearly onto the receding side wall, so they foreshorten.
@@ -211,7 +220,7 @@ func _draw_side_windows(ft: Vector2, fb: Vector2, bt: Vector2, bb: Vector2, fron
 			var quad := PackedVector2Array([
 				_bilerp(ft, fb, bt, bb, u0, v0), _bilerp(ft, fb, bt, bb, u1, v0),
 				_bilerp(ft, fb, bt, bb, u1, v1), _bilerp(ft, fb, bt, bb, u0, v1)])
-			draw_colored_polygon(quad, lit if rng.randf() < lit_chance else dark)
+			_b.convex(quad, lit if rng.randf() < lit_chance else dark)
 
 
 func _draw_water_tower(base: Vector2, bw: float, vp: Vector2, depth: float) -> void:
@@ -220,16 +229,16 @@ func _draw_water_tower(base: Vector2, bw: float, vp: Vector2, depth: float) -> v
 	var tank := Rect2(base.x - r, base.y - leg_h - r * 1.8, r * 2.0, r * 1.8)
 	var ink_c := _hz(ink)
 	var lw := maxf(outline_width * 0.6, 1.0)
-	draw_line(Vector2(tank.position.x + 2, tank.end.y), Vector2(tank.position.x, base.y), ink_c, lw)
-	draw_line(Vector2(tank.end.x - 2, tank.end.y), Vector2(tank.end.x, base.y), ink_c, lw)
+	_b.line(Vector2(tank.position.x + 2, tank.end.y), Vector2(tank.position.x, base.y), ink_c, lw)
+	_b.line(Vector2(tank.end.x - 2, tank.end.y), Vector2(tank.end.x, base.y), ink_c, lw)
 	var wood := Color(0.62, 0.38, 0.3)
 	_draw_box(tank, depth * 0.5, wood, vp, -1, null)
 	var roof := PackedVector2Array([
 		Vector2(tank.position.x - 3, tank.position.y), Vector2(base.x, tank.position.y - r),
 		Vector2(tank.end.x + 3, tank.position.y)])
-	draw_colored_polygon(roof, _hz(wood.darkened(0.3)))
+	_b.convex(roof, _hz(wood.darkened(0.3)))
 	roof.append(roof[0])
-	draw_polyline(roof, ink_c, lw)
+	_b.polyline(roof, ink_c, lw)
 
 
 func _bilerp(ft: Vector2, fb: Vector2, bt: Vector2, bb: Vector2, u: float, v: float) -> Vector2:

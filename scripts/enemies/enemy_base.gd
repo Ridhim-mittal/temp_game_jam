@@ -19,7 +19,9 @@ const INK := Color(0.05, 0.03, 0.1)
 const PALE := Color(0.98, 0.96, 0.9)
 const DANGER := Color(1.0, 0.86, 0.2)
 
-@export var contact_damage := 1
+## HP taken from the player on contact. 0 = this monster's default
+## (damage_default(), overridden per monster).
+@export var contact_damage := 0.0
 @export var gravity := 2000.0
 @export var knockback_speed := 260.0
 
@@ -32,6 +34,16 @@ var art: Node2D
 var outline: CanvasGroup
 var body_size := Vector2(40, 40)
 var _player: Node2D
+
+
+## Damage this monster deals; read by player.gd.
+func get_damage() -> float:
+	return contact_damage if contact_damage > 0.0 else damage_default()
+
+
+## Per-monster default damage (HP). Override in the monster script.
+func damage_default() -> float:
+	return 15.0
 
 
 func setup(size: Vector2, hp: int) -> void:

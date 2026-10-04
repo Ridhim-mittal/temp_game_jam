@@ -6,6 +6,7 @@ extends Node2D
 ## All the public vars below are driven every frame by crawler.gd.
 
 const INK := Color(0.06, 0.05, 0.06)
+const OnScreen = preload("res://scripts/core/on_screen.gd")
 const HAIR := Color(0.03, 0.03, 0.04)
 
 @export var shell_color := Color(0.75, 0.27, 0.2)
@@ -40,7 +41,8 @@ func _process(delta: float) -> void:
 		_blink_timer = randf_range(1.5, 4.0)
 	_blink = maxf(_blink - delta, 0.0)
 	alert = maxf(alert - delta, 0.0)
-	queue_redraw()
+	if OnScreen.near(self, 200.0):
+		queue_redraw()
 
 
 func _draw() -> void:
