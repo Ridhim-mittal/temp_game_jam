@@ -22,6 +22,7 @@ var _lunge_dir := Vector3.RIGHT
 
 
 func _ready() -> void:
+	lumens = 25
 	hp = maxi(hp, 10)  # a scene can make it tougher (the arena does)
 	sight = 11.0
 	knockback = 2.0

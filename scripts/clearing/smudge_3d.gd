@@ -22,6 +22,7 @@ var _lunge_dir := Vector3.RIGHT
 
 
 func _ready() -> void:
+	lumens = 2
 	hp = 2
 	sight = 10.0
 	setup_monster("res://scenes/enemies/smudge.tscn", 224, 40, true)

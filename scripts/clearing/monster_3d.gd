@@ -15,6 +15,7 @@ extends CharacterBody3D
 const Fx = preload("res://scripts/clearing/clearing_fx.gd")
 const Puppet = preload("res://scripts/clearing/monster_puppet.gd")
 const Light = preload("res://scripts/world25/light.gd")
+const Lumen = preload("res://scripts/world25/lumen.gd")
 const DANGER := Color(1.0, 0.86, 0.2)
 const PALE := Color(0.98, 0.96, 0.9)
 
@@ -25,6 +26,8 @@ const PALE := Color(0.98, 0.96, 0.9)
 @export var sight := 9.0
 ## Seconds before a defeated monster scribbles itself back (0 = never).
 @export var respawn_time := 8.0
+## Lumens (shop money) it drops when beaten.
+@export var lumens := 2
 
 var health := 0
 var dead := false
@@ -44,6 +47,10 @@ func setup_monster(art_scene: String, viewport_size := 256, feet_margin := 40, b
 	add_to_group("enemy")
 	collision_layer = 4
 	collision_mask = 5
+	var settings := get_node_or_null("/root/Settings")
+	if settings and settings.get_value("difficulty") == "hard":
+		hp = int(ceil(hp * 1.5))
+		contact_damage += 1
 	health = hp
 	_home = global_position
 	puppet = Puppet.new()
@@ -198,6 +205,8 @@ func _die() -> void:
 	collision_layer = 0
 	Fx.splat(get_tree(), global_position)
 	Fx.burst(get_tree(), global_position + Vector3(0, 0.6, 0), Color(0.08, 0.05, 0.12), 18, 4.5)
+	if lumens > 0 and global_position.y > _home.y - 4.0:
+		Lumen.spill(get_tree(), Vector3(global_position.x, _home.y if not flying else _home.y - 1.3, global_position.z), lumens)
 	var t := create_tween()
 	t.tween_property(puppet, "scale", Vector3(1.5, 0.1, 1.5), 0.1)
 	t.tween_callback(func(): puppet.visible = false)

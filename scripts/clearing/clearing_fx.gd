@@ -22,7 +22,7 @@ static func prewarm(tree: SceneTree, pos: Vector3) -> void:
 
 
 ## Ink crescent swept on the ground around `pos`, facing `dir`.
-static func slash(tree: SceneTree, pos: Vector3, dir: Vector3, mirror: bool, big: bool) -> void:
+static func slash(tree: SceneTree, pos: Vector3, dir: Vector3, mirror: bool, big: bool, rim := Color(1.0, 0.58, 0.14)) -> void:
 	var q := QuadMesh.new()
 	q.orientation = PlaneMesh.FACE_Y
 	var size := 4.4 if big else 3.6
@@ -31,6 +31,7 @@ static func slash(tree: SceneTree, pos: Vector3, dir: Vector3, mirror: bool, big
 	mat.shader = SLASH_SHADER
 	mat.set_shader_parameter("mirror", -1.0 if mirror else 1.0)
 	mat.set_shader_parameter("arc_deg", 190.0 if big else 150.0)
+	mat.set_shader_parameter("rim", rim)
 	var mi := MeshInstance3D.new()
 	mi.mesh = q
 	mi.material_override = mat
@@ -46,6 +47,9 @@ static func slash(tree: SceneTree, pos: Vector3, dir: Vector3, mirror: bool, big
 ## Comic sound-effect word ("THWACK!"): the platformer's own 2D pop text,
 ## drawn on the scene's UI layer and pinned over the 3D point.
 static func pop_text(tree: SceneTree, pos: Vector3, text: String, color := Color(1.0, 0.82, 0.15), size := 34) -> void:
+	var settings := tree.root.get_node_or_null("Settings")
+	if settings and settings.get_value("hit_text") == "off":
+		return
 	var layer: Node = tree.current_scene.get_node_or_null("UI")
 	if layer == null:
 		layer = tree.current_scene

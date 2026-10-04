@@ -35,6 +35,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("CapsuleShape3D_body")
 
 [node name="ArtViewport" type="SubViewport" parent="."]
+process_mode = 3
 transparent_bg = true
 size = Vector2i(320, 320)
 render_target_update_mode = 4

@@ -23,6 +23,8 @@ var _shown := 0.0
 var _hold := 0.0
 var _alpha := 0.0
 var _time := 0.0
+var _toast := ""
+var _toast_t := 0.0
 var _boss: Node
 var _boss_name := ""
 var _boss_max := 1
@@ -32,6 +34,12 @@ var _boss_shown := 1.0  # health bar eases down after hits
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+
+## A short banner near the bottom of the screen (rewards, tips).
+func toast(text: String) -> void:
+	_toast = text
+	_toast_t = 3.2
 
 
 ## Shows a boss health bar (reads the monster's `health`, `hp`, `dead`).
@@ -80,6 +88,19 @@ func _draw() -> void:
 	_draw_title()
 	_draw_caption()
 	_draw_boss()
+	_draw_toast()
+
+
+func _draw_toast() -> void:
+	if _toast_t <= 0.0:
+		return
+	_toast_t -= get_process_delta_time()
+	var a := clampf(_toast_t / 0.4, 0.0, 1.0) * clampf((3.2 - _toast_t) / 0.2, 0.0, 1.0)
+	var w := TITLE_FONT.get_string_size(_toast, HORIZONTAL_ALIGNMENT_LEFT, -1, 30).x
+	var pos := Vector2((size.x - w) * 0.5, size.y - 130.0)
+	draw_rect(Rect2(pos - Vector2(18, 32), Vector2(w + 36, 44)), Color(INK, 0.85 * a))
+	draw_rect(Rect2(pos - Vector2(18, 32), Vector2(w + 36, 44)), Color(CAPTION, a), false, 2.0)
+	draw_string(TITLE_FONT, pos, _toast, HORIZONTAL_ALIGNMENT_LEFT, -1, 30, Color(CAPTION, a))
 
 
 func _draw_boss() -> void:

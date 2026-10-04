@@ -19,6 +19,8 @@ enum State { WANDER, CHASE, STUNNED, DEAD, WINDUP, POUNCE }
 @export var pounce_speed := 7.0
 @export var pounce_cooldown := 1.2
 @export var contact_damage := 1
+## Lumens (shop money) it drops when beaten.
+@export var lumens := 1
 @export var knockback := 9.0
 @export var stun_time := 0.3
 @export var respawn_time := 5.0
@@ -54,6 +56,9 @@ func _ready() -> void:
 	visual.material_override = _mat
 	_mat.set_shader_parameter("seed", randf() * 100.0)
 	_home = global_position
+	if settings and settings.get_value("difficulty") == "hard":
+		max_health += 1
+		contact_damage += 1
 	health = max_health
 	_pick_wander_target()
 
@@ -190,6 +195,8 @@ func _die() -> void:
 	remove_from_group("enemy")
 	collision_layer = 0
 	Fx.splat(get_tree(), global_position)
+	if lumens > 0 and global_position.y > _home.y - 4.0:
+		preload("res://scripts/world25/lumen.gd").spill(get_tree(), Vector3(global_position.x, _home.y, global_position.z), lumens)
 	Fx.burst(get_tree(), global_position + Vector3(0, 0.6, 0), Color(0.08, 0.05, 0.12), 16, 4.5)
 	var t := create_tween()
 	t.tween_property(visual, "scale", Vector3(1.6, 0.1, 1.6), 0.08)

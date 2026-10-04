@@ -21,6 +21,7 @@ signal died
 
 const Fx = preload("res://scripts/clearing/clearing_fx.gd")
 const FlashScript = preload("res://scripts/world25/flash.gd")
+const InkWave = preload("res://scripts/world25/ink_wave_3d.gd")
 const ART_RUN_SPEED := 300.0  # player_visual.gd's full-run speed, px/s
 const MASK_WORLD := 1
 const MASK_ENEMY := 4  # physics layer 3
@@ -131,6 +132,13 @@ var _slow_sources := {}  # source -> Vector2(speed_mult, jump_mult)
 var _channel := -1.0  # seconds spent channelling a heal; -1 = not healing
 var _safe_pos := Vector3.ZERO
 var _safe_timer := 0.0
+# loadout (skills, gear, difficulty), set by _apply_loadout()
+var _flash_radius_mult := 1.0
+var _aerial_bonus := 0
+var _ink_wave := false
+var _seal_ready := false
+var _last_drop_ready := false
+var _slash_rim := Color(1.0, 0.58, 0.14)
 
 @onready var visual_3d: Node3D = $Visual3D
 @onready var sprite: Sprite3D = $Visual3D/Sprite
@@ -150,8 +158,9 @@ func _ready() -> void:
 	add_to_group("player")
 	_spawn = global_position
 	ground_height = global_position.y
+	_apply_loadout()
 	health = max_health
-	fuel = start_fuel
+	fuel = minf(start_fuel, max_fuel)
 	_safe_pos = global_position
 	add_to_group("light_3d")
 	_art_scale = visual.scale.y
@@ -320,7 +329,14 @@ func _start_attack(move_dir: Vector3) -> void:
 	_combo_timer = _attack_timer + combo_window
 	_squash = Vector2(1.25, 0.8) if finisher else Vector2(1.15, 0.88)
 	if attack_style != AttackStyle.NIB_SWORD:
-		Fx.slash(get_tree(), global_position, dir, _combo == 2, finisher)
+		Fx.slash(get_tree(), global_position, dir, _combo == 2, finisher, _slash_rim)
+	if finisher and _ink_wave:
+		var wave := InkWave.new()
+		wave.direction = dir
+		wave.rim = _slash_rim
+		wave.damage = finisher_damage
+		get_tree().current_scene.add_child(wave)
+		wave.global_position = Vector3(global_position.x, ground_height, global_position.z) + dir * 0.6
 	if attack_style != AttackStyle.INK_SLASH:
 		sword.swing(_sword_direction(dir))
 	_hit_in_front(dir, finisher)
@@ -370,7 +386,8 @@ func _hit_in_front(dir: Vector3, finisher: bool) -> void:
 	for result in get_world_3d().direct_space_state.intersect_shape(params, 16):
 		var target: Object = result.collider
 		if target and target.has_method("take_hit") and not ("dead" in target and target.dead):
-			var landed = target.take_hit(finisher_damage if finisher else attack_damage, dir, aerial)
+			var dmg: int = (finisher_damage if finisher else attack_damage) + (_aerial_bonus if aerial else 0)
+			var landed = target.take_hit(dmg, dir, aerial)
 			if landed == false:
 				continue  # blocked: the monster shows its own reaction
 			hits += 1
@@ -416,6 +433,91 @@ func _shake(amount: float) -> void:
 		cam.add_trauma(amount)
 
 
+# ----------------------------------------------------------------- loadout
+
+## Applies skills (Ink Points), shop gear and the difficulty setting on top
+## of the exported base values. Runs once per spawn (each room).
+const LOADOUT_STATS := ["max_health", "invuln_time", "max_speed", "dash_speed", "dash_cooldown", "attack_reach",
+	"attack_radius", "attack_damage", "finisher_damage", "attack_time", "finisher_time", "pogo_velocity", "max_fuel",
+	"glow_radius_full", "fuel_per_hit", "flash_cost", "heal_time", "heal_cost"]
+var _base_stats := {}
+
+
+func _apply_loadout() -> void:
+	# start from the exported values every time, so re-applying never stacks
+	if _base_stats.is_empty():
+		for k in LOADOUT_STATS:
+			_base_stats[k] = get(k)
+	else:
+		for k in LOADOUT_STATS:
+			set(k, _base_stats[k])
+	var profile := get_node_or_null("/root/Profile")
+	var settings := get_node_or_null("/root/Settings")
+	var diff: String = settings.get_value("difficulty") if settings else "normal"
+	if diff == "relaxed":
+		max_health += 2
+		invuln_time *= 1.5
+	if profile == null:
+		return
+	max_health += int(profile.effect("health_bonus", 0))
+	max_speed *= profile.effect("speed_mult", 1.0)
+	dash_speed *= profile.effect("dash_mult", 1.0)
+	dash_cooldown *= profile.effect("dash_cd_mult", 1.0)
+	attack_reach *= profile.effect("reach_mult", 1.0)
+	attack_radius *= profile.effect("radius_mult", 1.0)
+	var dmg := int(profile.effect("damage_bonus", 0))
+	attack_damage += dmg
+	finisher_damage += dmg + int(profile.effect("finisher_bonus", 0))
+	attack_time *= profile.effect("swing_mult", 1.0)
+	finisher_time *= profile.effect("swing_mult", 1.0)
+	pogo_velocity *= profile.effect("pogo_mult", 1.0)
+	_aerial_bonus = int(profile.effect("aerial_bonus", 0))
+	_ink_wave = profile.effect("ink_wave", false)
+	var extra_fuel: float = profile.effect("fuel_bonus", 0.0)
+	max_fuel += extra_fuel
+	glow_radius_full += extra_fuel * 0.024
+	fuel_per_hit *= profile.effect("fuel_hit_mult", 1.0)
+	_flash_radius_mult = profile.effect("flash_radius_mult", 1.0)
+	flash_cost += profile.effect("flash_cost_delta", 0.0)
+	heal_time *= profile.effect("heal_time_mult", 1.0)
+	heal_cost += profile.effect("heal_cost_delta", 0.0)
+	invuln_time *= profile.effect("invuln_mult", 1.0)
+	_seal_ready = profile.effect("seal", false)
+	_last_drop_ready = profile.effect("last_drop", false)
+	_apply_look(profile.look())
+
+
+## After the shop or skill tree: re-apply everything, keeping health and
+## fuel (topped up by any new maximum).
+func refresh_loadout() -> void:
+	var old_max := max_health
+	var old_fuel_max := max_fuel
+	_apply_loadout()
+	health = clampi(health + maxi(max_health - old_max, 0), 1, max_health)
+	fuel = clampf(fuel + maxf(max_fuel - old_fuel_max, 0.0), 0.0, max_fuel)
+	health_changed.emit(health, max_health)
+	ember_changed.emit(fuel, max_fuel)
+
+
+## Restyles Vesper and her sword from the equipped gear.
+func _apply_look(look: Dictionary) -> void:
+	if look.has("scarf"):
+		art.scarf_color = look.scarf
+	if look.has("mask"):
+		art.mask_color = look.mask
+	if look.has("cloak"):
+		art.cloak_color = look.cloak
+		sword.cloak_color = look.cloak
+	if look.has("cloak_rim"):
+		art.cloak_rim = look.cloak_rim
+	if look.has("blade_length"):
+		sword.blade_length = look.blade_length
+	if look.has("grip"):
+		sword.grip_color = look.grip
+	if look.has("slash_rim"):
+		_slash_rim = look.slash_rim
+
+
 # ------------------------------------------------------------------- ember
 
 func add_fuel(amount: float) -> void:
@@ -441,6 +543,7 @@ func _flash() -> void:
 		return
 	add_fuel(-flash_cost)
 	var f := FlashScript.new()
+	f.radius *= _flash_radius_mult
 	get_tree().current_scene.add_child(f)
 	f.global_position = Vector3(global_position.x, ground_height, global_position.z)
 	Fx.pop_text(get_tree(), global_position + Vector3(0, 1.9, 0), "FLASH!", Color(1.0, 0.85, 0.45), 34)
@@ -488,6 +591,17 @@ func _check_contact_damage() -> void:
 func take_damage(amount: int, from_pos: Vector3) -> void:
 	if dead or _invuln > 0.0 or _dash_timer > 0.0:
 		return
+	if _seal_ready:
+		# Wax-Seal Mantle: the first hit in a room cracks the seal instead
+		_seal_ready = false
+		_invuln = invuln_time
+		Fx.pop_text(get_tree(), global_position + Vector3(0, 1.8, 0), "SEAL CRACKED!", Color(0.95, 0.35, 0.3), 30)
+		Fx.burst(get_tree(), global_position + Vector3(0, 0.9, 0), Color(0.8, 0.15, 0.15), 14, 3.0)
+		return
+	if health - amount <= 0 and _last_drop_ready:
+		_last_drop_ready = false
+		amount = health - 1
+		Fx.pop_text(get_tree(), global_position + Vector3(0, 2.2, 0), "LAST DROP!", Color(0.55, 0.65, 1.0), 34)
 	health = maxi(health - amount, 0)
 	health_changed.emit(health, max_health)
 	_invuln = invuln_time
@@ -612,5 +726,9 @@ func _update_art(delta: float) -> void:
 	ember_light.light_energy = lerpf(0.55, 1.35, k)
 	# whiten as a searchlight erases her; blink while invulnerable
 	if not dead:
+		# (a dark flicker rather than fading out: the sprite is alpha-cut, so a
+		# faded frame would vanish entirely, e.g. if the game pauses on it)
 		var w := 1.0 + erase * 1.6
-		sprite.modulate = Color(w, w, w, 0.35 if _invuln > 0.0 and fmod(_invuln, 0.16) < 0.08 else 1.0)
+		if _invuln > 0.0 and fmod(_invuln, 0.16) < 0.08:
+			w *= 0.45
+		sprite.modulate = Color(w, w, w * 1.1, 1.0)

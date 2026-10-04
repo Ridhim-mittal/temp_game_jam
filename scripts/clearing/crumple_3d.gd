@@ -23,6 +23,7 @@ var _angle := 0.0
 
 
 func _ready() -> void:
+	lumens = 3
 	hp = 3
 	sight = 8.5
 	setup_monster("res://scenes/enemies/crumple.tscn", 224, 40)

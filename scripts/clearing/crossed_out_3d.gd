@@ -25,6 +25,7 @@ var _shield := 1.0
 
 
 func _ready() -> void:
+	lumens = 3
 	hp = 3
 	sight = 10.0
 	knockback = 4.0

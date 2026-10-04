@@ -17,6 +17,8 @@ godot --path . res://scenes/clearing/clearing.tscn
 | Dash | Shift (or C) |
 | Flash (Ember burst: stuns, reveals, lights drawn things) | Right click or Q |
 | Heal (fuel into an ink drop, stand still) | Hold F |
+| Talk / shop / shrine | E |
+| Pause (skill tree, settings, main menu) | Esc |
 | Back to the menu | Esc |
 
 ## The story path
@@ -98,3 +100,19 @@ The design doc's rules of light now work in 2.5D (`scripts/world25/light.gd`):
 
 Fixed on the way: rooms' east/west gates were mirrored by the room generator (you could arrive over
 the void). Every gate is now checked to face out with its arrival point on solid ground.
+
+## Progression (added after the light phase)
+
+- **Lumens** (gold coins) drop from monsters (Scribble 1 … Eraser 25) and fly to you; the count is
+  under the minimap. Spend them at **Patch's Paper Goods**, the paper dog's stall in the hub's
+  garden (press E).
+- **Shop** (`scripts/ui/shop.gd`): weapons (Quill Rapier faster, Brush Maul heavier, Compass Edge
+  more fuel), armor (Cardboard Vest +1 drop, Blotter Coat longer safety, Wax-Seal Mantle blocks the
+  first hit per room), looks (scarf/mask colours). Live preview of Vesper; Enter buys or equips.
+- **Skill tree** (`scripts/ui/skill_tree.gd`, Esc → Skill Tree, or the shrine circle up the hub
+  stairs): Blade / Ember / Ink branches, 4 skills each, paid with **Ink Points** from clearing a room
+  for the first time (arena 3). A full story gives 14 of the 18 needed: choose.
+- **Settings**: volume, fullscreen, screen shake, hit words, controls hint, difficulty
+  (Relaxed: +2 drops; Hard: monsters +50% health and +1 damage), Scribble style, reset progress.
+- Progress is saved in `user://profile.cfg` and survives new runs. All numbers live in
+  `scripts/core/catalog.gd`.

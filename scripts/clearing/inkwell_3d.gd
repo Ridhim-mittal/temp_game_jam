@@ -17,6 +17,7 @@ var _aim := 0.0
 
 
 func _ready() -> void:
+	lumens = 3
 	hp = 4
 	sight = 11.0
 	knockback = 0.0

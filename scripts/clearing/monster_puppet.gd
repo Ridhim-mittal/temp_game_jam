@@ -33,6 +33,7 @@ func setup(scene_path: String, size := 256, feet_margin := 40, blend := false) -
 	_viewport.transparent_bg = true
 	_viewport.size = Vector2i(size, size)
 	_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	_viewport.process_mode = Node.PROCESS_MODE_ALWAYS  # keep drawing while paused
 	add_child(_viewport)
 	_holder = Node2D.new()
 	_holder.position = Vector2(size * 0.5, size - feet_margin)

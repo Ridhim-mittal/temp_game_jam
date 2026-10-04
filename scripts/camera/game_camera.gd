@@ -16,6 +16,9 @@ func _ready() -> void:
 
 
 func add_trauma(amount: float) -> void:
+	var settings := get_node_or_null("/root/Settings")
+	if settings:
+		amount *= settings.shake_mult()  # Settings -> Screen shake
 	trauma = minf(trauma + amount, 1.0)
 
 

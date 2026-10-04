@@ -3,6 +3,8 @@ extends Control
 ## top-left, and the Ember's fuel as a flame and bar beside them. A drop
 ## that is lost pops and empties; notches on the bar mark a Flash's cost.
 
+const Coin = preload("res://scripts/world/coin.gd")
+const TITLE_FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
 const INK := Color(0.06, 0.04, 0.09)
 const PAPER := Color(0.97, 0.95, 0.9)
 const LOST := Color(1.0, 0.4, 0.35)
@@ -15,12 +17,18 @@ var flash_cost := 25.0
 
 var _pops := {}  # drop index -> 1..0 pop animation
 var _fuel_shown := 60.0
+var _lumens := 0
+var _lumen_bump := 0.0
 var _time := 0.0
 
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	set_anchors_preset(Control.PRESET_FULL_RECT)
+	var profile := get_node_or_null("/root/Profile")
+	if profile:
+		_lumens = profile.lumens
+		profile.changed.connect(_on_profile_changed)
 	await get_tree().process_frame
 	var player := get_tree().get_first_node_in_group("player")
 	if player and player.has_signal("health_changed"):
@@ -40,6 +48,13 @@ func _on_health_changed(cur: int, max_hp: int) -> void:
 	maximum = max_hp
 
 
+func _on_profile_changed() -> void:
+	var profile := get_node_or_null("/root/Profile")
+	if profile and profile.lumens > _lumens:
+		_lumen_bump = 1.0
+	_lumens = profile.lumens if profile else 0
+
+
 func _on_ember_changed(f: float, max_f: float) -> void:
 	fuel = f
 	max_fuel = max_f
@@ -48,6 +63,7 @@ func _on_ember_changed(f: float, max_f: float) -> void:
 func _process(delta: float) -> void:
 	_time += delta
 	_fuel_shown = move_toward(_fuel_shown, fuel, delta * 80.0)
+	_lumen_bump = maxf(_lumen_bump - delta * 4.0, 0.0)
 	for i in _pops.keys():
 		_pops[i] -= delta * 3.0
 		if _pops[i] <= 0.0:
@@ -70,6 +86,19 @@ func _draw() -> void:
 			draw_polyline(drop + PackedVector2Array([drop[0]]), INK, 5.0)
 			draw_polyline(drop + PackedVector2Array([drop[0]]), col, 2.0)
 	_draw_ember(Vector2(36, 86))
+	_draw_lumens()
+
+
+## Lumen coins (shop money), under the minimap.
+func _draw_lumens() -> void:
+	var text := "%d" % _lumens
+	var fs := 30 + int(8.0 * _lumen_bump)
+	var right := size.x - 36.0
+	var w := TITLE_FONT.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var base := Vector2(right - w, 124.0)
+	Coin.draw_coin(self, Vector2(base.x - 26.0, 113.0), 13.0 * (1.0 + 0.2 * _lumen_bump), _time * 2.0 + _lumen_bump * 6.0)
+	draw_string_outline(TITLE_FONT, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 8, INK)
+	draw_string(TITLE_FONT, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(1.0, 0.85, 0.3))
 
 
 ## Flame icon and fuel bar (orange like the ember on Vesper's scarf).

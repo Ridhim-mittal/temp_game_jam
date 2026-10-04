@@ -22,6 +22,7 @@ var _shadow: MeshInstance3D
 
 
 func _ready() -> void:
+	lumens = 1
 	hp = 2
 	flying = true
 	knockback = 5.0

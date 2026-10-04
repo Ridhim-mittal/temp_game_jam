@@ -76,6 +76,9 @@ func _process(delta: float) -> void:
 ## Trauma-based shake (same idea as the platformer's game_camera.gd),
 ## applied through the lens offset so it never disturbs the follow.
 func add_trauma(amount: float) -> void:
+	var settings := get_node_or_null("/root/Settings")
+	if settings:
+		amount *= settings.shake_mult()
 	_trauma = minf(_trauma + amount, 1.0)
 
 

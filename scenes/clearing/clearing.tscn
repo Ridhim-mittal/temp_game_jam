@@ -4,6 +4,8 @@
 [ext_resource type="Script" path="res://scripts/world25/room.gd" id="25_room"]
 [ext_resource type="Script" path="res://scripts/world25/gate.gd" id="26_gate"]
 [ext_resource type="Script" path="res://scripts/world25/biome_props.gd" id="28_bprops"]
+[ext_resource type="Script" path="res://scripts/world25/patch_npc.gd" id="29_patch"]
+[ext_resource type="Script" path="res://scripts/world25/interactable.gd" id="30_interact"]
 [ext_resource type="Resource" path="res://data/biomes/darkwood.tres" id="27_darkwood"]
 [ext_resource type="Script" path="res://scripts/clearing/stairs.gd" id="2_stairs"]
 [ext_resource type="Script" path="res://scripts/clearing/bridge.gd" id="3_bridge"]
@@ -196,7 +198,7 @@ island_path = NodePath("../Island")
 area = Rect2(-31, -12, 45, 22)
 count = 900
 size_range = Vector2(0.55, 0.95)
-keep_clear = PackedVector3Array(-1, -2.5, 3.2, 0, -9.5, 2.6, 0, 6.5, 2.8, -8, -9.8, 1.8, 6.5, -10, 1.8, 11.6, -8, 1.6, -3.6, -10.4, 0.8, 3.6, -10.4, 0.8, -10.5, 1.5, 0.8, 13, -5.2, 0.8, 2.5, 3, 1.2, -22, 1, 5, -25.5, -5, 2.8, -18.5, -2.5, 0.8)
+keep_clear = PackedVector3Array(-1, -2.5, 3.2, 0, -9.5, 2.6, 0, 6.5, 2.8, -8, -9.8, 1.8, 6.5, -10, 1.8, 11.6, -8, 1.6, -3.6, -10.4, 0.8, 3.6, -10.4, 0.8, -10.5, 1.5, 0.8, 13, -5.2, 0.8, 2.5, 3, 1.2, -22, 1, 5, -25.5, -5, 2.8, -18.5, -2.5, 0.8, -17, -6.6, 2.4)
 
 [node name="ReedsEast" type="Node3D" parent="."]
 script = ExtResource("8_grass")
@@ -659,6 +661,18 @@ size = 1.2
 color = Color(0.6, 0.58, 0.56, 1)
 seed = 31
 solid = true
+
+[node name="Patch" type="Node3D" parent="Props"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17, 0, -6.6)
+script = ExtResource("29_patch")
+
+[node name="SkillShrine" type="Node3D" parent="Props/Shrine"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.88, -24)
+script = ExtResource("30_interact")
+action = "skills"
+prompt = "SKILL TREE"
+radius = 3.5
+prompt_height = 1.6
 
 [node name="Enemies" type="Node3D" parent="."]
 

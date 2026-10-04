@@ -20,6 +20,10 @@ const StoryUI = preload("res://scripts/world25/story_ui.gd")
 const OVERLAY_SHADER = preload("res://shaders/comic_overlay.gdshader")
 const RectScript = preload("res://scripts/background/screen_shader_rect.gd")
 const DEFAULT_BIOME = preload("res://data/biomes/darkwood.tres")
+const PauseMenu = preload("res://scripts/ui/pause_menu.gd")
+const SkillTree = preload("res://scripts/ui/skill_tree.gd")
+const Shop = preload("res://scripts/ui/shop.gd")
+const SettingsMenu = preload("res://scripts/ui/settings_menu.gd")
 
 @export var room_id := "room"
 @export var biome: Resource:
@@ -68,6 +72,7 @@ var _env: Environment
 var _sun: DirectionalLight3D
 var _motes: CPUParticles3D
 var _cleared := false
+var _overlay: Control
 var _check_timer := 0.0
 var _music_b := false
 
@@ -225,12 +230,15 @@ func _build_ui() -> void:
 	ui.set_script(StoryUI)
 	layer.add_child(ui)
 	var controls := Label.new()
+	controls.name = "Controls"
 	controls.position = Vector2(24, 684)
 	controls.add_theme_font_size_override("font_size", 15)
 	controls.add_theme_color_override("font_color", Color(0.97, 0.95, 0.9, 0.85))
 	controls.add_theme_color_override("font_outline_color", Color(0.06, 0.03, 0.13))
 	controls.add_theme_constant_override("outline_size", 5)
-	controls.text = "WASD move   Space jump   Left click / X attack (3x combo, in the air = strike down)   Shift / right click dash   Esc menu"
+	controls.text = "WASD move   Space jump   Click / X attack   Shift dash   Right click / Q flash   Hold F heal   E interact   Esc pause"
+	var settings := get_node_or_null("/root/Settings")
+	controls.visible = settings == null or settings.get_value("controls_hint") == "on"
 	layer.add_child(controls)
 
 
@@ -295,6 +303,72 @@ func _gates() -> Array:
 	return out
 
 
+# --------------------------------------------------------------- overlays
+
+func _unhandled_input(event: InputEvent) -> void:
+	if Engine.is_editor_hint() or _overlay != null:
+		return
+	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_ESCAPE:
+		get_viewport().set_input_as_handled()  # pause here instead of leaving
+		open_overlay("pause")
+
+
+## Opens a full-screen menu over the room and pauses the game:
+## "pause", "skills", "shop" or "settings".
+func open_overlay(action: String) -> void:
+	if _overlay != null or player == null or player.dead:
+		return
+	var layer := get_node("UI")
+	match action:
+		"pause":
+			_overlay = Control.new()
+			_overlay.set_script(PauseMenu)
+			_overlay.chosen.connect(_on_pause_choice)
+		"skills":
+			_overlay = Control.new()
+			_overlay.set_script(SkillTree)
+			_overlay.closed.connect(_on_overlay_closed)
+		"shop":
+			_overlay = Control.new()
+			_overlay.set_script(Shop)
+			_overlay.closed.connect(_on_overlay_closed)
+		"settings":
+			_overlay = Control.new()
+			_overlay.set_script(SettingsMenu)
+			_overlay.overlay = true
+			_overlay.closed.connect(_on_overlay_closed)
+		_:
+			return
+	layer.add_child(_overlay)
+	get_tree().paused = true
+
+
+func _on_overlay_closed() -> void:
+	_overlay = null
+	get_tree().paused = false
+	if player:
+		player.refresh_loadout()
+	var settings := get_node_or_null("/root/Settings")
+	var controls := get_node_or_null("UI/Controls")
+	if settings and controls:
+		controls.visible = settings.get_value("controls_hint") == "on"
+
+
+func _on_pause_choice(action: String) -> void:
+	var menu := _overlay
+	_overlay = null
+	menu.queue_free()
+	match action:
+		"resume":
+			_on_overlay_closed()
+		"skills", "settings":
+			get_tree().paused = false
+			open_overlay(action)
+		"menu":
+			get_tree().paused = false
+			get_tree().change_scene_to_file("res://scenes/ui/main_menu.tscn")
+
+
 # ------------------------------------------------------------------- live
 
 func _process(delta: float) -> void:
@@ -328,6 +402,11 @@ func _on_cleared() -> void:
 	var world := get_node_or_null("/root/World25")
 	if world:
 		world.mark_cleared(room_id)
+	var profile := get_node_or_null("/root/Profile")
+	if profile:
+		var pts: int = profile.record_clear(room_id)
+		if pts > 0:
+			ui.toast("+%d INK POINT%s   ESC: SKILL TREE" % [pts, "" if pts == 1 else "S"])
 	var i := 0
 	for g in _gates():
 		get_tree().create_timer(0.25 * i).timeout.connect(g.open)
