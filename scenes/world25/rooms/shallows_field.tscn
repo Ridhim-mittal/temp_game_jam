@@ -1,0 +1,255 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/world25/room.gd" id="room"]
+[ext_resource type="Script" path="res://scripts/clearing/island.gd" id="island"]
+[ext_resource type="Script" path="res://scripts/world25/gate.gd" id="gate"]
+[ext_resource type="Script" path="res://scripts/world25/biome_props.gd" id="bprops"]
+[ext_resource type="Script" path="res://scripts/clearing/grass_field.gd" id="grass"]
+[ext_resource type="Script" path="res://scripts/clearing/pine.gd" id="pine"]
+[ext_resource type="Script" path="res://scripts/clearing/trunk.gd" id="trunk"]
+[ext_resource type="Script" path="res://scripts/clearing/brazier.gd" id="brazier"]
+[ext_resource type="Script" path="res://scripts/clearing/scatter_props.gd" id="scatter"]
+[ext_resource type="Script" path="res://scripts/clearing/watcher_eyes.gd" id="eyes"]
+[ext_resource type="Script" path="res://scripts/clearing/altar.gd" id="altar"]
+[ext_resource type="PackedScene" path="res://scenes/clearing/scribble.tscn" id="scribble"]
+[ext_resource type="PackedScene" path="res://scenes/clearing/monsters/crumple.tscn" id="crumple"]
+[ext_resource type="PackedScene" path="res://scenes/clearing/monsters/crossed_out.tscn" id="crossed_out"]
+[ext_resource type="PackedScene" path="res://scenes/clearing/monsters/smudge.tscn" id="smudge"]
+[ext_resource type="PackedScene" path="res://scenes/clearing/monsters/inkwell.tscn" id="inkwell"]
+[ext_resource type="PackedScene" path="res://scenes/clearing/monsters/eraser.tscn" id="eraser"]
+[ext_resource type="Script" path="res://scripts/world25/drawn_bridge.gd" id="bridge"]
+[ext_resource type="Script" path="res://scripts/world25/searchlight.gd" id="searchlight"]
+[ext_resource type="PackedScene" path="res://scenes/clearing/monsters/scribble_diver.tscn" id="scribble_diver"]
+[ext_resource type="Resource" path="res://data/biomes/darkwood.tres" id="b_darkwood"]
+[ext_resource type="Resource" path="res://data/biomes/shallows.tres" id="b_shallows"]
+[ext_resource type="Resource" path="res://data/biomes/wastes.tres" id="b_wastes"]
+[ext_resource type="Resource" path="res://data/biomes/arena.tres" id="b_arena"]
+
+[node name="ShallowsField" type="Node3D"]
+script = ExtResource("room")
+room_id = "shallows_field"
+biome = ExtResource("b_shallows")
+map_cell = Vector2i(-5, -2)
+camera_bounds = Rect2(-9.5, -7, 19, 14)
+default_spawn = Vector3(0, 0.05, 0)
+title = "The Lamplit Field"
+subtitle = "Inkwell Shallows"
+enter_captions = "~I can't see you down there. But I can look.|Shadows hide you from the lamp. And anything crossed out that it catches... burns."
+clear_captions = "~Where did you GO?"
+
+[node name="Island" type="Node3D" parent="."]
+script = ExtResource("island")
+polygon = PackedVector2Array(-12.50, -10.00, -8.93, -10.23, -5.36, -10.52, -1.79, -10.11, 1.79, -9.68, 5.36, -10.15, 8.93, -9.97, 15.00, -7.50, 15.00, -2.80, 15.00, 0.80, 14.53, 3.75, 12.50, 10.00, 8.93, 10.37, 5.36, 10.30, 1.79, 9.59, -1.79, 9.73, -5.36, 9.77, -8.93, 9.69, -15.00, 7.50, -14.48, 3.75, -15.00, 0.80, -15.00, -2.80)
+open_edges = PackedInt32Array(8, 20)
+
+[node name="Grass" type="Node3D" parent="."]
+script = ExtResource("grass")
+island_path = NodePath("../Island")
+area = Rect2(-15, -10, 30, 20)
+count = 240
+size_range = Vector2(0.55, 0.95)
+seed = 18
+keep_clear = PackedVector3Array(0.0, 0.0, 2.1, 13.8, -0.9, 1.5, 11.0, -0.7, 1.5, 8.3, -0.6, 1.5, 5.5, -0.4, 1.5, 2.8, -0.2, 1.5, 0.0, -0.0, 1.5, -13.8, -0.9, 1.5, -11.0, -0.7, 1.5, -8.3, -0.6, 1.5, -5.5, -0.4, 1.5, -2.8, -0.2, 1.5, -0.0, -0.0, 1.5, -6.0, -2.5, 0.9, -1.5, 2.5, 0.9, 3.0, -2.5, 0.9, 7.5, 2.5, 0.9, -10.0, 2.0, 0.9, 11.0, -1.5, 0.9, -4.0, 0.0, 0.8, 5.0, 0.0, 0.8, -8.0, -5.0, 0.8, 9.0, 5.0, 0.8, -12.4, 6.0, 0.6, -1.7, -7.7, 0.6, 11.9, 3.8, 0.8, 4.8, -5.0, 0.8, -9.1, 6.8, 0.6, 7.5, -4.7, 0.6)
+
+[node name="GateEast" type="Node3D" parent="."]
+transform = Transform3D(0.0000, 0, -1.0000, 0, 1, 0, 1.0000, 0, 0.0000, 15.00, 0.00, -1.00)
+script = ExtResource("gate")
+gate_id = "east"
+target_scene = "res://scenes/world25/rooms/shallows_2.tscn"
+target_gate = "west"
+
+[node name="GateWest" type="Node3D" parent="."]
+transform = Transform3D(0.0000, 0, 1.0000, 0, 1, 0, -1.0000, 0, 0.0000, -15.00, 0.00, -1.00)
+script = ExtResource("gate")
+gate_id = "west"
+target_scene = "res://scenes/world25/rooms/wastes_1.tscn"
+target_gate = "east"
+
+[node name="Lamp" type="Node3D" parent="."]
+
+[node name="Searchlight" type="Node3D" parent="Lamp"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 0.00, 16.00, -15.00)
+script = ExtResource("searchlight")
+patrol = PackedVector2Array(-9, -5, 9, -5, 9, 4, -9, 4)
+speed = 3.0
+spot_radius = 2.8
+
+[node name="Props" type="Node3D" parent="."]
+
+[node name="CoverPillar1" type="Node3D" parent="Props"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -6.00, 0.00, -2.50)
+script = ExtResource("bprops")
+kind = 6
+size = 1.3
+seed = 120
+solid = true
+
+[node name="CoverPillar2" type="Node3D" parent="Props"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -1.50, 0.00, 2.50)
+script = ExtResource("bprops")
+kind = 6
+size = 1.3
+seed = 121
+solid = true
+
+[node name="CoverPillar3" type="Node3D" parent="Props"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 3.00, 0.00, -2.50)
+script = ExtResource("bprops")
+kind = 6
+size = 1.3
+seed = 122
+solid = true
+
+[node name="CoverPillar4" type="Node3D" parent="Props"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 7.50, 0.00, 2.50)
+script = ExtResource("bprops")
+kind = 6
+size = 1.3
+seed = 123
+solid = true
+
+[node name="CoverPillar5" type="Node3D" parent="Props"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -10.00, 0.00, 2.00)
+script = ExtResource("bprops")
+kind = 6
+size = 1.3
+seed = 124
+solid = true
+
+[node name="CoverPillar6" type="Node3D" parent="Props"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 11.00, 0.00, -1.50)
+script = ExtResource("bprops")
+kind = 6
+size = 1.3
+seed = 125
+solid = true
+
+[node name="Coral1" type="Node3D" parent="Props"]
+transform = Transform3D(-0.1543, 0, 0.9880, 0, 1, 0, -0.9880, 0, -0.1543, -12.39, 0.00, 6.03)
+script = ExtResource("bprops")
+kind = 9
+count = 5
+radius = 1.1
+solid = true
+seed = 740
+
+[node name="Coral2" type="Node3D" parent="Props"]
+transform = Transform3D(-0.3189, 0, 0.9478, 0, 1, 0, -0.9478, 0, -0.3189, -1.68, 0.00, -7.69)
+script = ExtResource("bprops")
+kind = 9
+count = 5
+radius = 1.1
+solid = true
+seed = 70
+
+[node name="InkPool1" type="Node3D" parent="Props"]
+transform = Transform3D(-0.9918, 0, -0.1278, 0, 1, 0, 0.1278, 0, -0.9918, 11.93, 0.00, 3.78)
+script = ExtResource("bprops")
+kind = 11
+radius = 1.5
+seed = 40
+
+[node name="InkPool2" type="Node3D" parent="Props"]
+transform = Transform3D(0.9751, 0, 0.2217, 0, 1, 0, -0.2217, 0, 0.9751, 4.80, 0.00, -5.03)
+script = ExtResource("bprops")
+kind = 11
+radius = 1.5
+seed = 17
+
+[node name="TubePlant1" type="Node3D" parent="Props"]
+transform = Transform3D(0.0429, 0, -0.9991, 0, 1, 0, 0.9991, 0, 0.0429, -9.14, 0.00, 6.80)
+script = ExtResource("bprops")
+kind = 10
+count = 5
+seed = 172
+
+[node name="TubePlant2" type="Node3D" parent="Props"]
+transform = Transform3D(-0.7663, 0, -0.6424, 0, 1, 0, 0.6424, 0, -0.7663, 7.50, 0.00, -4.68)
+script = ExtResource("bprops")
+kind = 10
+count = 5
+seed = 556
+
+[node name="Deep" type="Node3D" parent="."]
+
+[node name="Deep1" type="Node3D" parent="Deep"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 18.15, -4.50, 4.14)
+script = ExtResource("bprops")
+kind = 9
+size = 2.4
+count = 7
+radius = 1.8
+seed = 77
+
+[node name="Deep2" type="Node3D" parent="Deep"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 4.21, -6.00, 13.65)
+script = ExtResource("bprops")
+kind = 10
+size = 2.4
+count = 7
+radius = 1.8
+seed = 40
+
+[node name="Deep3" type="Node3D" parent="Deep"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -13.94, -4.50, 9.51)
+script = ExtResource("bprops")
+kind = 9
+size = 2.4
+count = 7
+radius = 1.8
+seed = 18
+
+[node name="Deep5" type="Node3D" parent="Deep"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -4.21, -4.50, -13.65)
+script = ExtResource("bprops")
+kind = 9
+size = 2.4
+count = 7
+radius = 1.8
+seed = 7
+
+[node name="Deep6" type="Node3D" parent="Deep"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 13.94, -6.00, -9.51)
+script = ExtResource("bprops")
+kind = 10
+size = 2.4
+count = 7
+radius = 1.8
+seed = 89
+
+[node name="RuinPillar1" type="Node3D" parent="Deep"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -18.00, -6.00, -11.50)
+script = ExtResource("bprops")
+kind = 6
+size = 2.4
+seed = 40
+
+[node name="RuinPillar2" type="Node3D" parent="Deep"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 18.00, -6.00, -11.50)
+script = ExtResource("bprops")
+kind = 6
+size = 2.4
+seed = 41
+
+[node name="Eyes1" type="Node3D" parent="Deep"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -0.99, -4.00, 13.00)
+script = ExtResource("eyes")
+color = Color(0.4, 1, 0.85, 1)
+
+[node name="Enemies" type="Node3D" parent="."]
+
+[node name="CrossedOut1" parent="Enemies" instance=ExtResource("crossed_out")]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -4.00, 0.05, 0.00)
+
+
+[node name="CrossedOut2" parent="Enemies" instance=ExtResource("crossed_out")]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 5.00, 0.05, 0.00)
+
+
+[node name="Smudge3" parent="Enemies" instance=ExtResource("smudge")]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -8.00, 0.05, -5.00)
+
+
+[node name="Smudge4" parent="Enemies" instance=ExtResource("smudge")]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 9.00, 0.05, 5.00)
+

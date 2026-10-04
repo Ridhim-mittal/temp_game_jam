@@ -14,19 +14,21 @@ godot --path . res://scenes/clearing/clearing.tscn
 |---|---|
 | Move / jump | WASD · Space |
 | Attack | Left click (aims at the mouse) or X · tap 3× for a combo · attack in the air to strike down |
-| Dash | Shift or right click |
+| Dash | Shift (or C) |
+| Flash (Ember burst: stuns, reveals, lights drawn things) | Right click or Q |
+| Heal (fuel into an ink drop, stand still) | Hold F |
 | Back to the menu | Esc |
 
 ## The story path
 
 ```
 The Clearing (hub, now ~2x bigger)
-  └─ cave ─► Darkwood Margins 1 ─► 2 ─► 3 "Where the Ink Pools" (forest melts into water)
-                                          └─► Inkwell Shallows 1 ─► 2 "The Drowned Circle"
-                                                └─► Crumple Wastes 1 ─► 2 "The Pinboard"
-                                                      └─► The Rubbing Room (THE ERASER, boss)
-                                                            └─► reveal cutscene ─► menu
+  └─ cave ─► Darkwood Margins 1 ─► 2 ─► The Unlit Bridge* ─► 3 "Where the Ink Pools"
+                 └─► Inkwell Shallows 1 ─► 2 "The Drowned Circle" ─► The Lamplit Field*
+                       └─► Crumple Wastes 1 ─► 2 "The Pinboard" ─► The Torn Page*
+                             └─► The Rubbing Room (THE ERASER, boss) ─► reveal cutscene ─► menu
 ```
+\* light puzzle rooms (added in the light phase, see below)
 
 - **Gates** are sealed with a red X until every monster in the room is beaten, then they open.
 - **Two kinds of transition**: rune gates between rooms (with an ink-wipe), and a biome blend
@@ -74,3 +76,25 @@ git checkout main
 git merge overnight-2.5d-biomes
 git push origin main
 ```
+
+## Light phase (added after the first night)
+
+The design doc's rules of light now work in 2.5D (`scripts/world25/light.gd`):
+
+- **The Ember**: Vesper's own glow (fuel bar under the ink drops). Hits refill it; low fuel shrinks
+  the glow. **Flash** (right click / Q, 25 fuel) stuns monsters, unfolds Crumples, drags Smudges
+  up, scatters Dive-bombers, scorches Crossed-Out shields, lights lanterns, and its afterglow keeps
+  drawn things solid. **Heal** (hold F, 33 fuel) turns fuel into an ink drop.
+- **Drawn bridges** (`drawn_bridge.gd`): planks solid only while lit (Ember, lanterns, braziers,
+  Flash, searchlight); unlit planks are dashed ghosts. They flicker before vanishing. Falling
+  returns you to the last safe ground for one drop.
+- **Lanterns**: unlit braziers you light by hitting them or with a Flash; they stay lit.
+- **The searchlight** (`searchlight.gd`): the Writer's green lamp. Patrols, investigates Flashes
+  ("Where did you go?"), locks on ("There."). Standing in it fills the erase meter (Vesper whitens)
+  and costs a drop. Solid props cast shadows you can hide in. It erases monsters it catches, and
+  makes drawn bridges real.
+- **New rooms**: The Unlit Bridge (Darkwood), The Lamplit Field (Shallows), The Torn Page
+  (Wastes, a bridge the searchlight sweeps along).
+
+Fixed on the way: rooms' east/west gates were mirrored by the room generator (you could arrive over
+the void). Every gate is now checked to face out with its arrival point on solid ground.

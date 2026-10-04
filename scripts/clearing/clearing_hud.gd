@@ -69,7 +69,7 @@ func _draw() -> void:
 			var col := LOST if pop > 0.0 else Color(PAPER, 0.55)
 			draw_polyline(drop + PackedVector2Array([drop[0]]), INK, 5.0)
 			draw_polyline(drop + PackedVector2Array([drop[0]]), col, 2.0)
-	_draw_ember(Vector2(40 + maximum * 40 + 14, 42))
+	_draw_ember(Vector2(36, 86))
 
 
 ## Flame icon and fuel bar (orange like the ember on Vesper's scarf).

@@ -5,7 +5,7 @@ monsters, props and the Writer's captions. Rooms are deterministic (seeded),
 so re-running gives the same layout. Re-running overwrites hand edits."""
 import sys, math
 sys.path.insert(0, __file__.rsplit("/", 1)[0])
-from rooms import Room, forest_ring, KIND
+from rooms import Room, forest_ring, KIND, rect_polygon
 
 R = "res://scenes/world25/rooms/"
 HUB = "res://scenes/clearing/clearing.tscn"
@@ -54,7 +54,7 @@ r.write("Darkwood Margins", "1 / 3",
 # ------------------------------------------------------------ Darkwood 2
 r = Room("darkwood_2", "darkwood", (-1, -1), 14, 9.5, seed=23)
 r.gate("south", R + "darkwood_1.tscn", "north", offset=-3)
-r.gate("west", R + "darkwood_3.tscn", "east", offset=1)
+r.gate("west", R + "darkwood_bridge.tscn", "east", offset=1)
 r.enemy("crumple", 6, -3)
 r.enemy("crumple", -5, -4)
 r.enemy("scribble", 0, 2)
@@ -71,8 +71,8 @@ r.write("Darkwood Margins", "2 / 3",
         "The wood is thinning out. Can you smell the ink?")
 
 # ------------------------------------------------------------ Darkwood 3: forest melting into the Shallows
-r = Room("darkwood_3", "darkwood", (-2, -1), 15, 9.5, seed=37, biome_b="shallows", blend=((5, 0), (-6, 0)))
-r.gate("east", R + "darkwood_2.tscn", "west", offset=1)
+r = Room("darkwood_3", "darkwood", (-3, -1), 15, 9.5, seed=37, biome_b="shallows", blend=((5, 0), (-6, 0)))
+r.gate("east", R + "darkwood_bridge.tscn", "west", offset=1)
 r.gate("west", R + "shallows_1.tscn", "east", offset=0)
 r.enemy("scribble", 6, -3)
 r.enemy("scribble", 7, 4)
@@ -131,7 +131,7 @@ def shallows_ring(r):
 SPIRIT = dict(flame_color="Color(0.25, 0.55, 1, 1)", core_color="Color(0.75, 0.92, 1, 1)")
 
 # ------------------------------------------------------------ Shallows 1
-r = Room("shallows_1", "shallows", (-3, -1), 13, 9.5, seed=51)
+r = Room("shallows_1", "shallows", (-4, -1), 13, 9.5, seed=51)
 r.gate("east", R + "darkwood_3.tscn", "west", offset=0)
 r.gate("north", R + "shallows_2.tscn", "south", offset=2)
 r.enemy("inkwell", -9, -5.5)
@@ -148,9 +148,9 @@ r.write("Inkwell Shallows", "1 / 2",
         "Still here? Fine. Keep going.")
 
 # ------------------------------------------------------------ Shallows 2: the circle
-r = Room("shallows_2", "shallows", (-3, -2), 14, 10, seed=63)
+r = Room("shallows_2", "shallows", (-4, -2), 14, 10, seed=63)
 r.gate("south", R + "shallows_1.tscn", "north", offset=2)
-r.gate("west", R + "wastes_1.tscn", "east", offset=-1)
+r.gate("west", R + "shallows_field.tscn", "east", offset=-1)
 r.prop("bprops", 0, -1.5, name="Circle", kind=KIND["RITUAL_CIRCLE"], radius=5.0)
 r.clear_zones.append((0, -1.5, 5.0))
 for i in range(5):
@@ -196,8 +196,8 @@ def wastes_ring(r):
 EMBER = dict(flame_color="Color(1, 0.3, 0.45, 1)", core_color="Color(1, 0.8, 0.85, 1)")
 
 # ------------------------------------------------------------ Wastes 1
-r = Room("wastes_1", "wastes", (-4, -2), 13.5, 9.5, seed=71)
-r.gate("east", R + "shallows_2.tscn", "west", offset=-1)
+r = Room("wastes_1", "wastes", (-6, -2), 13.5, 9.5, seed=71)
+r.gate("east", R + "shallows_field.tscn", "west", offset=-1)
 r.gate("north", R + "wastes_2.tscn", "south", offset=-2)
 r.enemy("crumple", -7, 2)
 r.enemy("crumple", 6, -4)
@@ -213,9 +213,9 @@ r.write("Crumple Wastes", "1 / 2",
         "~Why won't you just STAY on the page?")
 
 # ------------------------------------------------------------ Wastes 2
-r = Room("wastes_2", "wastes", (-4, -3), 14.5, 10, seed=83)
+r = Room("wastes_2", "wastes", (-6, -3), 14.5, 10, seed=83)
 r.gate("south", R + "wastes_1.tscn", "north", offset=-2)
-r.gate("west", R + "arena.tscn", "east", offset=0)
+r.gate("west", R + "wastes_gap.tscn", "east", offset=0)
 r.enemy("crumple", -6, -4)
 r.enemy("crumple", 7, 3)
 r.enemy("inkwell", -10, 6)
@@ -252,8 +252,8 @@ class Arena(Room):
         return pts, [k]
 
 
-r = Arena("arena", "arena", (-5, -3), 12, 10, seed=97)
-r.gate("east", R + "wastes_2.tscn", "west", offset=0)
+r = Arena("arena", "arena", (-8, -3), 12, 10, seed=97)
+r.gate("east", R + "wastes_gap.tscn", "west", offset=0)
 r.enemy("eraser", -3, 0, hp=16)
 for i in range(8):
     a = math.radians(i * 45 + 22.5)
@@ -273,3 +273,116 @@ r.write("The Rubbing Room", "",
         "~...That isn't how this goes.|~That isn't how ANY of this goes.",
         cutscene="res://scenes/cutscenes/cs_reveal.tscn",
         extra_room_props='boss_path = NodePath("Enemies/Eraser1")\nboss_name = "THE ERASER"')
+
+
+
+# ======================================================== light puzzle rooms
+
+class ChasmRoom(Room):
+    """Two islands either side of a chasm (|x| < gap), joined by a drawn
+    bridge along z = 0. Gates sit on the outer east and west edges."""
+    gap = 4.0
+
+    def polygon(self):
+        east_gaps = {"west": (self.gap, 0)}
+        west_gaps = {"east": (-self.gap, 0)}
+        if "east" in self.gates:
+            east_gaps["east"] = self.gate_pos("east")
+        if "west" in self.gates:
+            west_gaps["west"] = self.gate_pos("west")
+        east, east_open = rect_polygon(self.rng, self.gap, self.hw, -self.hd, self.hd, east_gaps)
+        west, west_open = rect_polygon(self.rng, -self.hw, -self.gap, -self.hd, self.hd, west_gaps)
+        self.extra_islands = [("WestIsland", west, west_open)]
+        return east, east_open
+
+    def inside(self, x, z, margin=1.6):
+        return super().inside(x, z, margin) and abs(x) > self.gap + margin
+
+    def add_bridge(self):
+        self.nodes.append(("Bridge", "DrawnBridge", "bridge", (self.gap, 0, 0), 90, {"length": self.gap * 2, "width": 3.0}))
+        self.clear_zones.append((self.gap + 1.5, 0, 2.0))
+        self.clear_zones.append((-self.gap - 1.5, 0, 2.0))
+
+
+def chasm_depths(r, kind_list, y=-7):
+    """Things rising out of the chasm below the bridge, for depth."""
+    for i, (k, x, z) in enumerate(kind_list):
+        r.nodes.append(("Deep", f"Chasm{i + 1}", k[0], (x, y, z), 0, k[1]))
+
+
+# ------------------------------------------------------------ The Unlit Bridge (Darkwood)
+r = ChasmRoom("darkwood_bridge", "darkwood", (-2, -1), 15, 8.5, seed=101)
+r.gate("east", R + "darkwood_2.tscn", "west", offset=1)
+r.gate("west", R + "darkwood_3.tscn", "east", offset=1)
+r.add_bridge()
+r.clear_path_to_gates()
+r.prop("brazier", 5.3, 2.2, name="LanternEast", lit=False, light_radius=4.2, flame_color="Color(1, 0.55, 0.2, 1)")
+r.prop("brazier", -5.3, -2.2, name="LanternWest", lit=False, light_radius=4.2, flame_color="Color(1, 0.55, 0.2, 1)")
+r.clear_zones += [(5.3, 2.2, 1.2), (-5.3, -2.2, 1.2)]
+r.enemy("scribble", 9, -4)
+r.enemy("scribble", 10, 4)
+r.enemy("scribble_diver", 0, -3.5)
+r.enemy("scribble_diver", 0, 3.5)
+r.enemy("crumple", -10, 2)
+r.scatter("TOMBSTONE", 3, solid=True)
+r.scatter("STUMP", 2, solid=True)
+for i in range(2):
+    spot = r.free_spot()
+    if spot:
+        r.prop("scatter", spot[0], spot[1], name=f"Mushrooms{i + 1}", count=5, seed=r.rng.randint(1, 99))
+forest_ring(r, canopies=2)
+chasm_depths(r, [(("pine", {"height": 12.0, "radius": 2.4, "color": "Color(0.06, 0.06, 0.11, 1)"}), 0, 7),
+                 (("pine", {"height": 11.0, "radius": 2.0, "color": "Color(0.06, 0.06, 0.11, 1)"}), 1.5, -6.5),
+                 (("eyes", {}), 0, 2)], y=-9)
+r.write("The Unlit Bridge", "Darkwood",
+        "That bridge only exists where light touches it.|Your ember will carry you across. Keep it fed: every hit stokes the flame.|Strike the old lanterns to light them. Light stays where you leave it.",
+        "...Clever little thing.")
+
+# ------------------------------------------------------------ The Lamplit Field (Shallows)
+r = Room("shallows_field", "shallows", (-5, -2), 15, 10, seed=113)
+r.gate("east", R + "shallows_2.tscn", "west", offset=-1)
+r.gate("west", R + "wastes_1.tscn", "east", offset=-1)
+r.clear_path_to_gates()
+r.nodes.append(("Lamp", "Searchlight", "searchlight", (0, 16, -15), 0, {
+    "patrol": "PackedVector2Array(-9, -5, 9, -5, 9, 4, -9, 4)", "speed": 3.0, "spot_radius": 2.8}))
+for i, (x, z) in enumerate([(-6, -2.5), (-1.5, 2.5), (3, -2.5), (7.5, 2.5), (-10, 2), (11, -1.5)]):
+    r.prop("bprops", x, z, name=f"CoverPillar{i + 1}", kind=KIND["PILLAR"], size=1.3, seed=i + 120, solid=True)
+    r.clear_zones.append((x, z, 1.3))
+r.enemy("crossed_out", -4, 0)
+r.enemy("crossed_out", 5, 0)
+r.enemy("smudge", -8, -5)
+r.enemy("smudge", 9, 5)
+r.scatter("CORAL", 2, count=5, radius=1.1, solid=True)
+r.scatter("INK_POOL", 2, radius=1.5)
+r.scatter("TUBE_PLANT", 2, count=5)
+shallows_ring(r)
+r.write("The Lamplit Field", "Inkwell Shallows",
+        "~I can't see you down there. But I can look.|Shadows hide you from the lamp. And anything crossed out that it catches... burns.",
+        "~Where did you GO?")
+
+# ------------------------------------------------------------ The Torn Page (Wastes)
+r = ChasmRoom("wastes_gap", "wastes", (-7, -3), 15, 9, seed=127)
+r.gap = 5.0
+r.gate("east", R + "wastes_2.tscn", "west", offset=0)
+r.gate("west", R + "arena.tscn", "east", offset=0)
+r.add_bridge()
+r.clear_path_to_gates()
+r.nodes.append(("Lamp", "Searchlight", "searchlight", (0, 17, -14), 0, {
+    "patrol": "PackedVector2Array(9, 0, -9, 0)", "speed": 2.6, "spot_radius": 2.6}))
+r.prop("brazier", 6.3, 2.2, name="LanternEast", lit=False, light_radius=4.2, **EMBER)
+r.prop("brazier", -6.3, -2.2, name="LanternWest", lit=False, light_radius=4.2, **EMBER)
+r.clear_zones += [(6.3, 2.2, 1.2), (-6.3, -2.2, 1.2)]
+r.enemy("crumple", 10, -4)
+r.enemy("crossed_out", 10, 4)
+r.enemy("inkwell", -11, -5)
+r.enemy("inkwell", -11, 5)
+r.enemy("scribble_diver", 0, 4)
+r.scatter("CRYSTAL", 3, count=4, radius=1.1, solid=True)
+r.scatter("PINS", 2, count=6, radius=1.1)
+r.scatter("PAPER_MOUND", 2, count=4, radius=1.2, solid=True)
+wastes_ring(r)
+chasm_depths(r, [(("bprops", {"kind": KIND["CRYSTAL"], "size": 3.0, "count": 5, "radius": 1.6, "seed": 7}), 0, 7),
+                 (("bprops", {"kind": KIND["PENCIL_TOTEM"], "size": 3.0, "seed": 8}), 1, -7)], y=-8)
+r.write("The Torn Page", "Crumple Wastes",
+        "~My lamp makes that bridge real too. Funny, isn't it?|~The only way across is my light... and my light hurts you.",
+        "~Stop. Please. You don't want to see the last page.")

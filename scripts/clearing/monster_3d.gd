@@ -59,6 +59,9 @@ func _physics_process(delta: float) -> void:
 	_player = get_tree().get_first_node_in_group("player")
 	if _player and "dead" in _player and _player.dead:
 		_player = null
+	if global_position.y < _home.y - 8.0:
+		_die()  # fell into the void (off a vanished bridge)
+		return
 	if stun > 0.0:
 		stun -= delta
 		_slow_to_stop(18.0, delta)

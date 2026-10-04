@@ -28,6 +28,9 @@ EXT = [
     ("PackedScene", "res://scenes/clearing/monsters/smudge.tscn", "smudge"),
     ("PackedScene", "res://scenes/clearing/monsters/inkwell.tscn", "inkwell"),
     ("PackedScene", "res://scenes/clearing/monsters/eraser.tscn", "eraser"),
+    ("Script", "res://scripts/world25/drawn_bridge.gd", "bridge"),
+    ("Script", "res://scripts/world25/searchlight.gd", "searchlight"),
+    ("PackedScene", "res://scenes/clearing/monsters/scribble_diver.tscn", "scribble_diver"),
     ("Resource", "res://data/biomes/darkwood.tres", "b_darkwood"),
     ("Resource", "res://data/biomes/shallows.tres", "b_shallows"),
     ("Resource", "res://data/biomes/wastes.tres", "b_wastes"),
@@ -38,8 +41,11 @@ ROT = {"north": 0, "south": 180, "east": -90, "west": 90}
 
 
 def T(x, y, z, rot_y=0.0):
+    """Scene transform: position plus a rotation of rot_y degrees about Y,
+    the same as setting rotation_degrees.y (local -Z then points along
+    (-sin, 0, -cos)). Godot's text format lists the basis row by row."""
     c, s = math.cos(math.radians(rot_y)), math.sin(math.radians(rot_y))
-    return f"Transform3D({c:.4f}, 0, {-s:.4f}, 0, 1, 0, {s:.4f}, 0, {c:.4f}, {x:.2f}, {y:.2f}, {z:.2f})"
+    return f"Transform3D({c:.4f}, 0, {s:.4f}, 0, 1, 0, {-s:.4f}, 0, {c:.4f}, {x:.2f}, {y:.2f}, {z:.2f})"
 
 
 def fmt(v):
@@ -59,6 +65,7 @@ class Room:
         self.clear_zones = [(0, 0, 3.0)]
         self.props = {}
         self.story = {}
+        self.extra_islands = []  # (name, points, open_edges)
 
     def gate(self, side, target, target_gate, offset=0.0, always_open=False):
         self.gates[side] = (target, target_gate, offset, always_open)
@@ -70,48 +77,8 @@ class Room:
 
     # ---- polygon with gaps at the gates
     def polygon(self):
-        hw, hd, c = self.hw, self.hd, 2.5
-        corners = [(-hw + c, -hd), (hw - c, -hd), (hw, -hd + c), (hw, hd - c), (hw - c, hd), (-hw + c, hd), (-hw, hd - c), (-hw, -hd + c)]
-        sides = [("north", corners[0], corners[1]), ("east", corners[2], corners[3]), ("south", corners[4], corners[5]), ("west", corners[6], corners[7])]
-        pts, open_edges = [], []
-        for name, a, b in sides:
-            pts.append(a)
-            length = math.dist(a, b)
-            d = ((b[0] - a[0]) / length, (b[1] - a[1]) / length)
-            outward = (d[1], -d[0])  # clockwise order in (x, z): right-hand normal points out
-            gap = None
-            if name in self.gates:
-                g = self.gate_pos(name)
-                t = (g[0] - a[0]) * d[0] + (g[1] - a[1]) * d[1]
-                gap = (t - 1.8, t + 1.8)
-            n = max(int(length / 3.5), 1)
-            for i in range(1, n):
-                t = length * i / n
-                if gap and gap[0] - 1.2 < t < gap[1] + 1.2:
-                    continue
-                j = self.rng.uniform(-0.6, 0.6)
-                pts.append((a[0] + d[0] * t + outward[0] * j, a[1] + d[1] * t + outward[1] * j))
-            if gap:
-                # insert the gap points in order along the edge
-                before = [p for p in pts[pts.index(a):] ]
-                g0 = (a[0] + d[0] * gap[0], a[1] + d[1] * gap[0])
-                g1 = (a[0] + d[0] * gap[1], a[1] + d[1] * gap[1])
-                # find insertion index: after last point whose t < gap[0]
-                seg = pts[pts.index(a):]
-                ts = [((p[0] - a[0]) * d[0] + (p[1] - a[1]) * d[1]) for p in seg]
-                k = pts.index(a) + sum(1 for t in ts if t < gap[0])
-                pts[k:k] = [g0, g1]
-                open_edges.append(k)
-        # open edge indices must be recomputed after all insertions
-        open_edges = []
-        for name in self.gates:
-            g = self.gate_pos(name)
-            for i in range(len(pts)):
-                p, q = pts[i], pts[(i + 1) % len(pts)]
-                mid = ((p[0] + q[0]) / 2, (p[1] + q[1]) / 2)
-                if math.dist(mid, g) < 0.05:
-                    open_edges.append(i)
-        return pts, open_edges
+        gaps = {side: self.gate_pos(side) for side in self.gates}
+        return rect_polygon(self.rng, -self.hw, self.hw, -self.hd, self.hd, gaps)
 
     def inside(self, x, z, margin=1.6):
         return abs(x) < self.hw - margin and abs(z) < self.hd - margin and not (abs(x) > self.hw - 2.5 - margin + 1.0 and abs(z) > self.hd - 2.5 - margin + 1.0)
@@ -175,6 +142,13 @@ class Room:
         pstr = ", ".join(f"{x:.2f}, {z:.2f}" for x, z in pts)
         oe = ", ".join(str(i) for i in open_edges)
         lines.append(f'[node name="Island" type="Node3D" parent="."]\nscript = ExtResource("island")\npolygon = PackedVector2Array({pstr})\nopen_edges = PackedInt32Array({oe})\n')
+        for k, (ename, epts, eopen) in enumerate(self.extra_islands):
+            estr = ", ".join(f"{x:.2f}, {z:.2f}" for x, z in epts)
+            lines.append(f'[node name="{ename}" type="Node3D" parent="."]\nscript = ExtResource("island")\npolygon = PackedVector2Array({estr})\nopen_edges = PackedInt32Array({", ".join(str(i) for i in eopen)})\n')
+            xs = [p[0] for p in epts]; zs = [p[1] for p in epts]
+            lines.append(f'[node name="Grass{ename}" type="Node3D" parent="."]\nscript = ExtResource("grass")\nisland_path = NodePath("../{ename}")\n'
+                         f"area = Rect2({min(xs)}, {min(zs)}, {max(xs) - min(xs)}, {max(zs) - min(zs)})\ncount = {int((max(xs) - min(xs)) * (max(zs) - min(zs)) * 0.4)}\nsize_range = Vector2(0.55, 0.95)\nseed = {self.rng.randint(1, 99)}\n"
+                         f"keep_clear = PackedVector3Array({', '.join(f'{x:.1f}, {z:.1f}, {r * 0.7:.1f}' for x, z, r in self.clear_zones[:40])})\n")
         lines.append(f'[node name="Grass" type="Node3D" parent="."]\nscript = ExtResource("grass")\nisland_path = NodePath("../Island")\n'
                      f"area = Rect2({-hw}, {-hd}, {2 * hw}, {2 * hd})\ncount = {int(hw * hd * 1.6)}\nsize_range = Vector2(0.55, 0.95)\nseed = {self.rng.randint(1, 99)}\n"
                      f"keep_clear = PackedVector3Array({', '.join(f'{x:.1f}, {z:.1f}, {r * 0.7:.1f}' for x, z, r in self.clear_zones[:40])})\n")
@@ -203,6 +177,45 @@ class Room:
             lines.append(f'[node name="{kind.title().replace("_", "")}{i + 1}" parent="Enemies" instance=ExtResource("{kind}")]\ntransform = {T(x, 0.05, z)}\n{body}\n')
         open(os.path.join(OUT, f"{self.rid}.tscn"), "w").write("\n".join(lines))
         print("wrote", self.rid, "gates", list(self.gates), "open edges", open_edges, "enemies", len(self.enemies))
+
+
+def rect_polygon(rng, x0, x1, z0, z1, gaps, gap_half=1.8):
+    """Rounded-rectangle island outline (x, z) with jittered edges and an
+    open edge (no invisible wall) centred on each gap point. gaps: side ->
+    (x, z) on that side. Returns (points, open_edge_indices)."""
+    c = 2.5
+    corners = [(x0 + c, z0), (x1 - c, z0), (x1, z0 + c), (x1, z1 - c), (x1 - c, z1), (x0 + c, z1), (x0, z1 - c), (x0, z0 + c)]
+    sides = [("north", corners[0], corners[1]), ("east", corners[2], corners[3]), ("south", corners[4], corners[5]), ("west", corners[6], corners[7])]
+    pts = []
+    for name, a, b in sides:
+        pts.append(a)
+        length = math.dist(a, b)
+        d = ((b[0] - a[0]) / length, (b[1] - a[1]) / length)
+        outward = (d[1], -d[0])
+        gap = None
+        if name in gaps:
+            g = gaps[name]
+            t = (g[0] - a[0]) * d[0] + (g[1] - a[1]) * d[1]
+            gap = (t - gap_half, t + gap_half)
+        n = max(int(length / 3.5), 1)
+        for i in range(1, n):
+            t = length * i / n
+            if gap and gap[0] - 1.2 < t < gap[1] + 1.2:
+                continue
+            j = rng.uniform(-0.6, 0.6)
+            pts.append((a[0] + d[0] * t + outward[0] * j, a[1] + d[1] * t + outward[1] * j))
+        if gap:
+            a_i = pts.index(a)
+            ts = [((p[0] - a[0]) * d[0] + (p[1] - a[1]) * d[1]) for p in pts[a_i:]]
+            k = a_i + sum(1 for t in ts if t < gap[0])
+            pts[k:k] = [(a[0] + d[0] * gap[0], a[1] + d[1] * gap[0]), (a[0] + d[0] * gap[1], a[1] + d[1] * gap[1])]
+    open_edges = []
+    for g in gaps.values():
+        for i in range(len(pts)):
+            p, q = pts[i], pts[(i + 1) % len(pts)]
+            if math.dist(((p[0] + q[0]) / 2, (p[1] + q[1]) / 2), g) < 0.05:
+                open_edges.append(i)
+    return pts, open_edges
 
 
 def forest_ring(r, n_pines=10, void_pines=4, canopies=2):

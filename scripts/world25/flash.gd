@@ -42,6 +42,9 @@ func _ready() -> void:
 	for m in get_tree().get_nodes_in_group("enemy"):
 		if m is Node3D and m.has_method("on_flash") and _flat_dist(m.global_position) < radius:
 			m.on_flash(global_position)
+	for l in get_tree().get_nodes_in_group("lantern"):
+		if _flat_dist(l.global_position) < radius:
+			l.on_flash(global_position)
 	get_tree().call_group("searchlight", "hear", global_position)
 	var cam := get_viewport().get_camera_3d()
 	if cam and cam.has_method("add_trauma"):

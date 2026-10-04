@@ -104,6 +104,10 @@ var ground_height := 0.0
 var fuel := 60.0
 ## The Ember only makes drawn things real; it doesn't burn monsters.
 var monster_light := false
+## 0..1: how close a searchlight is to erasing Vesper (searchlight.gd fills
+## it; she whitens as it rises).
+var erase := 0.0
+var erase_source: Node
 
 var _dash_timer := 0.0
 var _dash_cooldown_timer := 0.0
@@ -372,6 +376,11 @@ func _hit_in_front(dir: Vector3, finisher: bool) -> void:
 			hits += 1
 			var word: String = "KA-POW!" if finisher else HIT_WORDS.pick_random()
 			Fx.pop_text(get_tree(), target.global_position + Vector3(0, 1.3, 0), word)
+	# unlit lanterns catch when struck
+	for l in get_tree().get_nodes_in_group("lantern"):
+		if not l.lit and Vector2(l.global_position.x - center.x, l.global_position.z - center.z).length() < radius + 0.6:
+			l.ignite()
+			hits += 1
 	# ink blobs can be cut out of the air
 	for blob in get_tree().get_nodes_in_group("ink_blob"):
 		if blob.global_position.distance_to(center + Vector3(0, 0.6, 0)) < radius + 0.4:
@@ -601,6 +610,7 @@ func _update_art(delta: float) -> void:
 	var k := fuel / max_fuel
 	ember_light.omni_range = lerpf(2.4, 4.6, k)
 	ember_light.light_energy = lerpf(0.55, 1.35, k)
-	# blink while invulnerable after a hit
+	# whiten as a searchlight erases her; blink while invulnerable
 	if not dead:
-		sprite.modulate.a = 0.35 if _invuln > 0.0 and fmod(_invuln, 0.16) < 0.08 else 1.0
+		var w := 1.0 + erase * 1.6
+		sprite.modulate = Color(w, w, w, 0.35 if _invuln > 0.0 and fmod(_invuln, 0.16) < 0.08 else 1.0)

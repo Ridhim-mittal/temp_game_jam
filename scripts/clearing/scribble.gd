@@ -61,6 +61,9 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	if dead:
 		return
+	if global_position.y < _home.y - 8.0:
+		_die()  # fell into the void
+		return
 	_player = get_tree().get_first_node_in_group("player")
 	_timer -= delta
 	_pounce_cd -= delta

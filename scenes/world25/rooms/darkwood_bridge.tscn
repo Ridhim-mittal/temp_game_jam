@@ -1,0 +1,297 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/world25/room.gd" id="room"]
+[ext_resource type="Script" path="res://scripts/clearing/island.gd" id="island"]
+[ext_resource type="Script" path="res://scripts/world25/gate.gd" id="gate"]
+[ext_resource type="Script" path="res://scripts/world25/biome_props.gd" id="bprops"]
+[ext_resource type="Script" path="res://scripts/clearing/grass_field.gd" id="grass"]
+[ext_resource type="Script" path="res://scripts/clearing/pine.gd" id="pine"]
+[ext_resource type="Script" path="res://scripts/clearing/trunk.gd" id="trunk"]
+[ext_resource type="Script" path="res://scripts/clearing/brazier.gd" id="brazier"]
+[ext_resource type="Script" path="res://scripts/clearing/scatter_props.gd" id="scatter"]
+[ext_resource type="Script" path="res://scripts/clearing/watcher_eyes.gd" id="eyes"]
+[ext_resource type="Script" path="res://scripts/clearing/altar.gd" id="altar"]
+[ext_resource type="PackedScene" path="res://scenes/clearing/scribble.tscn" id="scribble"]
+[ext_resource type="PackedScene" path="res://scenes/clearing/monsters/crumple.tscn" id="crumple"]
+[ext_resource type="PackedScene" path="res://scenes/clearing/monsters/crossed_out.tscn" id="crossed_out"]
+[ext_resource type="PackedScene" path="res://scenes/clearing/monsters/smudge.tscn" id="smudge"]
+[ext_resource type="PackedScene" path="res://scenes/clearing/monsters/inkwell.tscn" id="inkwell"]
+[ext_resource type="PackedScene" path="res://scenes/clearing/monsters/eraser.tscn" id="eraser"]
+[ext_resource type="Script" path="res://scripts/world25/drawn_bridge.gd" id="bridge"]
+[ext_resource type="Script" path="res://scripts/world25/searchlight.gd" id="searchlight"]
+[ext_resource type="PackedScene" path="res://scenes/clearing/monsters/scribble_diver.tscn" id="scribble_diver"]
+[ext_resource type="Resource" path="res://data/biomes/darkwood.tres" id="b_darkwood"]
+[ext_resource type="Resource" path="res://data/biomes/shallows.tres" id="b_shallows"]
+[ext_resource type="Resource" path="res://data/biomes/wastes.tres" id="b_wastes"]
+[ext_resource type="Resource" path="res://data/biomes/arena.tres" id="b_arena"]
+
+[node name="DarkwoodBridge" type="Node3D"]
+script = ExtResource("room")
+room_id = "darkwood_bridge"
+biome = ExtResource("b_darkwood")
+map_cell = Vector2i(-2, -1)
+camera_bounds = Rect2(-9.5, -5.5, 19, 11.0)
+default_spawn = Vector3(0, 0.05, 0)
+title = "The Unlit Bridge"
+subtitle = "Darkwood"
+enter_captions = "That bridge only exists where light touches it.|Your ember will carry you across. Keep it fed: every hit stokes the flame.|Strike the old lanterns to light them. Light stays where you leave it."
+clear_captions = "...Clever little thing."
+
+[node name="Island" type="Node3D" parent="."]
+script = ExtResource("island")
+polygon = PackedVector2Array(6.50, -8.50, 15.00, -6.00, 15.35, -2.00, 15.00, -0.80, 15.00, 2.80, 12.50, 8.50, 4.00, 6.00, 4.00, 1.80, 4.00, -1.80)
+open_edges = PackedInt32Array(7, 3)
+
+[node name="WestIsland" type="Node3D" parent="."]
+script = ExtResource("island")
+polygon = PackedVector2Array(-12.50, -8.50, -4.00, -6.00, -4.00, -1.80, -4.00, 1.80, -6.50, 8.50, -15.00, 6.00, -15.00, 2.80, -15.00, -0.80, -15.22, -2.00)
+open_edges = PackedInt32Array(2, 6)
+
+[node name="GrassWestIsland" type="Node3D" parent="."]
+script = ExtResource("grass")
+island_path = NodePath("../WestIsland")
+area = Rect2(-15.220089514653669, -8.5, 11.220089514653669, 17.0)
+count = 76
+size_range = Vector2(0.55, 0.95)
+seed = 30
+keep_clear = PackedVector3Array(0.0, 0.0, 2.1, 5.5, 0.0, 1.4, -5.5, 0.0, 1.4, 13.8, 0.9, 1.5, 11.0, 0.7, 1.5, 8.3, 0.6, 1.5, 5.5, 0.4, 1.5, 2.8, 0.2, 1.5, 0.0, 0.0, 1.5, -13.8, 0.9, 1.5, -11.0, 0.7, 1.5, -8.3, 0.6, 1.5, -5.5, 0.4, 1.5, -2.8, 0.2, 1.5, -0.0, 0.0, 1.5, 5.3, 2.2, 0.8, -5.3, -2.2, 0.8, 9.0, -4.0, 0.8, 10.0, 4.0, 0.8, 0.0, -3.5, 0.8, 0.0, 3.5, 0.8, -10.0, 2.0, 0.8, -7.5, -3.7, 0.6, 8.4, 6.5, 0.6, -11.5, -4.7, 0.6, -7.9, 5.8, 0.6, -5.8, 4.3, 0.6)
+
+[node name="Grass" type="Node3D" parent="."]
+script = ExtResource("grass")
+island_path = NodePath("../Island")
+area = Rect2(-15, -8.5, 30, 17.0)
+count = 204
+size_range = Vector2(0.55, 0.95)
+seed = 14
+keep_clear = PackedVector3Array(0.0, 0.0, 2.1, 5.5, 0.0, 1.4, -5.5, 0.0, 1.4, 13.8, 0.9, 1.5, 11.0, 0.7, 1.5, 8.3, 0.6, 1.5, 5.5, 0.4, 1.5, 2.8, 0.2, 1.5, 0.0, 0.0, 1.5, -13.8, 0.9, 1.5, -11.0, 0.7, 1.5, -8.3, 0.6, 1.5, -5.5, 0.4, 1.5, -2.8, 0.2, 1.5, -0.0, 0.0, 1.5, 5.3, 2.2, 0.8, -5.3, -2.2, 0.8, 9.0, -4.0, 0.8, 10.0, 4.0, 0.8, 0.0, -3.5, 0.8, 0.0, 3.5, 0.8, -10.0, 2.0, 0.8, -7.5, -3.7, 0.6, 8.4, 6.5, 0.6, -11.5, -4.7, 0.6, -7.9, 5.8, 0.6, -5.8, 4.3, 0.6)
+
+[node name="GateEast" type="Node3D" parent="."]
+transform = Transform3D(0.0000, 0, -1.0000, 0, 1, 0, 1.0000, 0, 0.0000, 15.00, 0.00, 1.00)
+script = ExtResource("gate")
+gate_id = "east"
+target_scene = "res://scenes/world25/rooms/darkwood_2.tscn"
+target_gate = "west"
+
+[node name="GateWest" type="Node3D" parent="."]
+transform = Transform3D(0.0000, 0, 1.0000, 0, 1, 0, -1.0000, 0, 0.0000, -15.00, 0.00, 1.00)
+script = ExtResource("gate")
+gate_id = "west"
+target_scene = "res://scenes/world25/rooms/darkwood_3.tscn"
+target_gate = "east"
+
+[node name="Bridge" type="Node3D" parent="."]
+
+[node name="DrawnBridge" type="Node3D" parent="Bridge"]
+transform = Transform3D(0.0000, 0, 1.0000, 0, 1, 0, -1.0000, 0, 0.0000, 4.00, 0.00, 0.00)
+script = ExtResource("bridge")
+length = 8.0
+width = 3.0
+
+[node name="Props" type="Node3D" parent="."]
+
+[node name="LanternEast" type="Node3D" parent="Props"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 5.30, 0.00, 2.20)
+script = ExtResource("brazier")
+lit = false
+light_radius = 4.2
+flame_color = Color(1, 0.55, 0.2, 1)
+
+[node name="LanternWest" type="Node3D" parent="Props"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -5.30, 0.00, -2.20)
+script = ExtResource("brazier")
+lit = false
+light_radius = 4.2
+flame_color = Color(1, 0.55, 0.2, 1)
+
+[node name="Tombstone1" type="Node3D" parent="Props"]
+transform = Transform3D(-0.9958, 0, 0.0912, 0, 1, 0, -0.0912, 0, -0.9958, -7.54, 0.00, -3.73)
+script = ExtResource("bprops")
+kind = 1
+solid = true
+seed = 296
+
+[node name="Tombstone2" type="Node3D" parent="Props"]
+transform = Transform3D(0.4210, 0, 0.9071, 0, 1, 0, -0.9071, 0, 0.4210, 8.43, 0.00, 6.51)
+script = ExtResource("bprops")
+kind = 1
+solid = true
+seed = 443
+
+[node name="Tombstone3" type="Node3D" parent="Props"]
+transform = Transform3D(0.9984, 0, -0.0572, 0, 1, 0, 0.0572, 0, 0.9984, -11.46, 0.00, -4.68)
+script = ExtResource("bprops")
+kind = 1
+solid = true
+seed = 702
+
+[node name="Stump1" type="Node3D" parent="Props"]
+transform = Transform3D(-0.9440, 0, 0.3300, 0, 1, 0, -0.3300, 0, -0.9440, -7.90, 0.00, 5.80)
+script = ExtResource("bprops")
+kind = 2
+solid = true
+seed = 561
+
+[node name="Stump2" type="Node3D" parent="Props"]
+transform = Transform3D(-0.1881, 0, 0.9822, 0, 1, 0, -0.9822, 0, -0.1881, -5.84, 0.00, 4.35)
+script = ExtResource("bprops")
+kind = 2
+solid = true
+seed = 93
+
+[node name="Mushrooms1" type="Node3D" parent="Props"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 12.60, 0.00, -4.34)
+script = ExtResource("scatter")
+count = 5
+seed = 2
+
+[node name="Mushrooms2" type="Node3D" parent="Props"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 6.20, 0.00, -3.47)
+script = ExtResource("scatter")
+count = 5
+seed = 56
+
+[node name="Forest" type="Node3D" parent="."]
+
+[node name="Pine1" type="Node3D" parent="Forest"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -1.35, 0.00, -11.74)
+script = ExtResource("pine")
+height = 7.1
+radius = 1.8
+
+[node name="Pine2" type="Node3D" parent="Forest"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 19.35, 0.00, -2.91)
+script = ExtResource("pine")
+height = 9.0
+radius = 2.0
+
+[node name="Pine3" type="Node3D" parent="Forest"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -18.01, 0.00, -8.07)
+script = ExtResource("pine")
+height = 9.7
+radius = 2.4
+
+[node name="Pine4" type="Node3D" parent="Forest"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -19.81, 0.00, -7.76)
+script = ExtResource("pine")
+height = 8.2
+radius = 2.1
+
+[node name="Pine5" type="Node3D" parent="Forest"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 19.43, 0.00, 3.67)
+script = ExtResource("pine")
+height = 8.5
+radius = 2.3
+
+[node name="Pine7" type="Node3D" parent="Forest"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 19.01, 0.00, -6.95)
+script = ExtResource("pine")
+height = 7.3
+radius = 2.2
+
+[node name="Pine9" type="Node3D" parent="Forest"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -0.91, 0.00, -13.44)
+script = ExtResource("pine")
+height = 7.3
+radius = 1.8
+
+[node name="VoidPine1" type="Node3D" parent="Forest"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -12.12, -9.00, 11.96)
+script = ExtResource("pine")
+height = 11.0
+radius = 2.2
+color = Color(0.06, 0.06, 0.11, 1)
+
+[node name="VoidPine2" type="Node3D" parent="Forest"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -9.23, -9.00, 11.82)
+script = ExtResource("pine")
+height = 11.0
+radius = 2.2
+color = Color(0.06, 0.06, 0.11, 1)
+
+[node name="VoidPine3" type="Node3D" parent="Forest"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 6.90, -9.00, 12.67)
+script = ExtResource("pine")
+height = 11.0
+radius = 2.2
+color = Color(0.06, 0.06, 0.11, 1)
+
+[node name="VoidPine4" type="Node3D" parent="Forest"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 4.94, -9.00, 13.30)
+script = ExtResource("pine")
+height = 11.0
+radius = 2.2
+color = Color(0.06, 0.06, 0.11, 1)
+
+[node name="TrunkL" type="Node3D" parent="Forest"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -18.50, -8.00, 7.50)
+script = ExtResource("trunk")
+height = 26.0
+radius = 1.6
+
+[node name="TrunkR" type="Node3D" parent="Forest"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 18.50, -8.00, 7.50)
+script = ExtResource("trunk")
+height = 26.0
+radius = 1.6
+
+[node name="Canopy1" type="Node3D" parent="Forest"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -9.00, 0.00, -10.70)
+script = ExtResource("bprops")
+kind = 0
+size = 1.11
+seed = 5
+
+[node name="Canopy2" type="Node3D" parent="Forest"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 9.00, 0.00, -10.70)
+script = ExtResource("bprops")
+kind = 0
+size = 1.25
+seed = 67
+
+[node name="Eyes1" type="Node3D" parent="Forest"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 13.26, -4.00, 11.50)
+script = ExtResource("eyes")
+
+
+[node name="Deep" type="Node3D" parent="."]
+
+[node name="Chasm1" type="Node3D" parent="Deep"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 0.00, -9.00, 7.00)
+script = ExtResource("pine")
+height = 12.0
+radius = 2.4
+color = Color(0.06, 0.06, 0.11, 1)
+
+[node name="Chasm2" type="Node3D" parent="Deep"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 1.50, -9.00, -6.50)
+script = ExtResource("pine")
+height = 11.0
+radius = 2.0
+color = Color(0.06, 0.06, 0.11, 1)
+
+[node name="Chasm3" type="Node3D" parent="Deep"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 0.00, -9.00, 2.00)
+script = ExtResource("eyes")
+
+
+[node name="Enemies" type="Node3D" parent="."]
+
+[node name="Scribble1" parent="Enemies" instance=ExtResource("scribble")]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 9.00, 0.05, -4.00)
+
+
+[node name="Scribble2" parent="Enemies" instance=ExtResource("scribble")]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 10.00, 0.05, 4.00)
+
+
+[node name="ScribbleDiver3" parent="Enemies" instance=ExtResource("scribble_diver")]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 0.00, 0.05, -3.50)
+
+
+[node name="ScribbleDiver4" parent="Enemies" instance=ExtResource("scribble_diver")]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 0.00, 0.05, 3.50)
+
+
+[node name="Crumple5" parent="Enemies" instance=ExtResource("crumple")]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -10.00, 0.05, 2.00)
+
