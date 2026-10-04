@@ -2,12 +2,14 @@ extends Control
 ## Draws the continuous health bar (top left) and the Lumen coin counter
 ## (top right). The bar has a trailing "damage ghost" that drains after a
 ## hit (shows how much it took), shakes on damage, flashes green on heals
-## and pulses when health is low.
+## and pulses when health is low. Under it, the Ember meter (ember.gd):
+## glows while raised, greys out and shakes when snuffed.
 
 const Coin = preload("res://scripts/world/coin.gd")
 const INK := Color(0.05, 0.03, 0.1)
 const FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
 const BAR := Rect2(84, 30, 280, 26)
+const EMBER_BAR := Rect2(100, 66, 200, 13)
 
 var current := 100.0
 var maximum := 100.0
@@ -19,6 +21,7 @@ var _healed := 0.0    # 1 on heal, decays: green flash
 
 var _time := 0.0
 var _bump := 0.0  # 1 right after a pickup, decays: counter pops
+var _ember: Node
 
 
 func _ready() -> void:
@@ -26,6 +29,7 @@ func _ready() -> void:
 	var player := get_tree().get_first_node_in_group("player")
 	if player:
 		player.health_changed.connect(_on_health_changed)
+		_ember = player.get_node_or_null("Ember")
 		_on_health_changed(player.health, player.max_health)
 		if player.has_signal("coins_changed"):
 			player.coins_changed.connect(_on_coins_changed)
@@ -64,7 +68,40 @@ func _on_coins_changed(total: int) -> void:
 
 func _draw() -> void:
 	_draw_health()
+	_draw_ember()
 	_draw_coin_counter()
+
+
+func _draw_ember() -> void:
+	if not is_instance_valid(_ember):
+		return
+	var frac: float = clampf(_ember.meter / maxf(_ember.max_meter, 1.0), 0.0, 1.0)
+	var snuffed: bool = _ember.snuffed
+	var raised: bool = _ember.raised
+	var shake := Vector2(randf_range(-1, 1), randf_range(-1, 1)) * (2.0 if snuffed else 0.0)
+	var r := Rect2(EMBER_BAR.position + shake, EMBER_BAR.size)
+	_slanted(r.grow(3.0), INK)
+	_slanted(r, Color(0.14, 0.1, 0.12))
+	if frac > 0.0:
+		var fill := Color(1.0, 0.62, 0.18) if not snuffed else Color(0.55, 0.55, 0.6)
+		if raised:
+			fill = fill.lerp(Color(1.0, 0.92, 0.6), 0.35 + 0.15 * sin(_time * 14.0))
+		if _ember.in_lantern:
+			fill = fill.lerp(Color(1.0, 0.95, 0.75), 0.4)
+		_slanted(Rect2(r.position, Vector2(r.size.x * frac, r.size.y)), fill)
+		_slanted(Rect2(r.position + Vector2(0, 2), Vector2(r.size.x * frac, 3)), fill.lightened(0.4))
+	# relight mark: below it a snuffed Ember stays out
+	var rx: float = r.position.x + r.size.x * _ember.relight_at / _ember.max_meter
+	draw_line(Vector2(rx + 2, r.position.y), Vector2(rx - 2, r.end.y), Color(INK, 0.6), 2.0)
+	# flame icon
+	var c := Vector2(r.position.x - 14, r.position.y + 6)
+	var s := 1.0 + (0.25 if raised else 0.0) + 0.08 * sin(_time * 10.0)
+	var flame := PackedVector2Array([c + Vector2(0, -11) * s, c + Vector2(6, -2) * s, c + Vector2(5, 5) * s,
+		c + Vector2(0, 8) * s, c + Vector2(-5, 5) * s, c + Vector2(-6, -2) * s])
+	for poly in Geometry2D.offset_polygon(flame, 2.5, Geometry2D.JOIN_ROUND):
+		draw_colored_polygon(poly, INK)
+	draw_colored_polygon(flame, Color(1.0, 0.62, 0.18) if not snuffed else Color(0.55, 0.55, 0.6))
+	draw_circle(c + Vector2(0, 3) * s, 2.5 * s, Color(1.0, 0.95, 0.7))
 
 
 func _draw_health() -> void:

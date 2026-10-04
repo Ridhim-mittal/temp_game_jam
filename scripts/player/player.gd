@@ -7,6 +7,7 @@ extends CharacterBody2D
 ##  - directional slashes (side / up / down-in-air)
 ##  - down-slash pogo off enemies and hazards, side-slash recoil
 ##  - damage, knockback, i-frames, hazard respawn to last safe ground
+##  - the Ember (ember.gd): hold Q/E to raise a light that makes sketches real
 
 signal health_changed(current: float, maximum: float)
 signal died
@@ -16,6 +17,7 @@ const SlashEffect = preload("res://scripts/effects/slash_effect.gd")
 const ComicText = preload("res://scripts/effects/comic_text.gd")
 const InkWave = preload("res://scripts/effects/ink_wave.gd")
 const DeathScreen = preload("res://scripts/ui/death_screen.gd")
+const Ember = preload("res://scripts/player/ember.gd")
 
 const MASK_ENEMY := 4   # physics layer 3
 const MASK_HAZARD := 8  # physics layer 4
@@ -121,10 +123,14 @@ var _slow_sources := {}  # source -> Vector2(speed_mult, jump_mult)
 @onready var art = $Visual/Art
 @onready var sword = $Visual/Sword
 @onready var hurtbox: Area2D = $Hurtbox
+var ember: Node2D
 
 
 func _ready() -> void:
 	health = max_health
+	ember = Ember.new()
+	ember.name = "Ember"
+	add_child(ember)
 	var state := get_node_or_null("/root/GameState")
 	if state:
 		var spawn = state.spawn_point(get_tree())
@@ -335,7 +341,7 @@ func _post_move(delta: float) -> void:
 			is_jumping = false
 		if not _was_on_floor:
 			_squash = Vector2(1.25, 0.8)
-		if not _touching_hazard():
+		if not _touching_hazard() and _on_stable_floor():
 			_last_safe_position = global_position
 	_was_on_floor = on_floor
 	_check_hurtbox()
@@ -486,6 +492,20 @@ func _hurtbox_overlaps(grow := Vector2.ZERO) -> Array:
 		if result.collider is Node:
 			out.append(result.collider)
 	return out
+
+
+## False while standing on something light holds up (an un-inked sketch,
+## shadow ink): it may vanish, so it is no place to respawn after spikes.
+func _on_stable_floor() -> bool:
+	for i in get_slide_collision_count():
+		var c := get_slide_collision(i)
+		if c.get_normal().y > -0.7:
+			continue
+		var body := c.get_collider()
+		if body is CollisionObject2D and body.collision_layer & 16:
+			if not (body.has_method("is_stable_at") and body.is_stable_at(c.get_position())):
+				return false
+	return true
 
 
 ## True if a hazard is within `margin` px - used so the respawn checkpoint

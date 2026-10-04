@@ -4,6 +4,7 @@ extends Node2D
 ## of light. Anything in the group "light" with a lights(point) method counts
 ## as light for the monsters (see enemy_base.gd), so the real lamp and ember
 ## only need to join that group and implement the same method.
+## Also holds sketch platforms up (group "drawn_light", see lights.gd).
 
 @export var radius := 150.0:
 	set(value):
@@ -17,11 +18,16 @@ extends Node2D
 
 func _ready() -> void:
 	add_to_group("light")
+	add_to_group("drawn_light")
 	z_index = -1
 
 
 func lights(point: Vector2) -> bool:
 	return global_position.distance_to(point) <= radius
+
+
+func reaches(point: Vector2) -> bool:
+	return lights(point)
 
 
 func _draw() -> void:

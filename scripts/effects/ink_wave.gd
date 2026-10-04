@@ -2,6 +2,9 @@ extends Node2D
 ## Charged attack projectile: a big ink crescent with an ember edge that
 ## flies forward, pierces enemies (each one is hit once) and splatters on
 ## walls. Spawned by player.gd when a fully charged attack is released.
+## Its ember edge is light while it flies (scripts/world/lights.gd): it
+## holds sketch platforms up for a moment and monsters flinch from it, and
+## it switches lanterns on and off from range.
 
 const ComicText = preload("res://scripts/effects/comic_text.gd")
 const HIT_WORDS := ["KA-SHOOM!", "SPLAT!", "KRAK!"]
@@ -15,6 +18,7 @@ var max_range := 520.0
 var damage := 2
 var edge_color := Color(1.0, 0.58, 0.14)
 var hit_size := Vector2(56, 44)
+var light_radius := 110.0
 
 var _travelled := 0.0
 var _hit: Array = []
@@ -24,6 +28,16 @@ var _dying := false
 func _ready() -> void:
 	z_index = 10
 	scale = Vector2(direction, 1.0)
+	add_to_group("drawn_light")
+	add_to_group("light")
+
+
+func reaches(point: Vector2) -> bool:
+	return not _dying and global_position.distance_to(point) <= light_radius
+
+
+func lights(point: Vector2) -> bool:
+	return reaches(point)
 
 
 func _physics_process(delta: float) -> void:

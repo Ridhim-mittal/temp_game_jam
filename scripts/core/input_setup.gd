@@ -18,6 +18,8 @@ func _enter_tree() -> void:
 	_add_mouse_button("flash", MOUSE_BUTTON_RIGHT)
 	_add_keys("heal", [KEY_F])
 	_add_keys("interact", [KEY_E])
+	# platformer Ember: hold to raise it (light makes sketches real)
+	_add_keys("ember", [KEY_Q, KEY_E])
 
 	_add_joy_button("jump", JOY_BUTTON_A)
 	_add_joy_button("attack", JOY_BUTTON_X)
@@ -25,6 +27,7 @@ func _enter_tree() -> void:
 	_add_joy_button("flash", JOY_BUTTON_Y)
 	_add_joy_button("heal", JOY_BUTTON_B)
 	_add_joy_button("interact", JOY_BUTTON_LEFT_SHOULDER)
+	_add_joy_button("ember", JOY_BUTTON_Y)
 	_add_joy_button("move_left", JOY_BUTTON_DPAD_LEFT)
 	_add_joy_button("move_right", JOY_BUTTON_DPAD_RIGHT)
 	_add_joy_button("up", JOY_BUTTON_DPAD_UP)

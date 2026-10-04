@@ -50,7 +50,7 @@ func setup(size: Vector2, hp: int) -> void:
 	body_size = size
 	health = hp
 	collision_layer = 4  # enemy
-	collision_mask = 1   # world
+	collision_mask = 1 | 16  # world + sketch platforms / shadow ink (lights.gd)
 	add_to_group("enemy")
 	var cs := CollisionShape2D.new()
 	var rect := RectangleShape2D.new()

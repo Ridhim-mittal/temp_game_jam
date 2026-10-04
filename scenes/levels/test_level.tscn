@@ -9,7 +9,6 @@
 [ext_resource type="Script" path="res://scripts/world/goo_pool.gd" id="7_goo"]
 [ext_resource type="Script" path="res://scripts/audio/level_music.gd" id="8_music"]
 [ext_resource type="Script" path="res://scripts/world/coin.gd" id="9_coin"]
-[ext_resource type="Script" path="res://scripts/world/light_zone.gd" id="10_light"]
 [ext_resource type="Script" path="res://scripts/world/one_way_platform.gd" id="11_oneway"]
 [ext_resource type="Script" path="res://scripts/world/moving_platform.gd" id="12_moving"]
 [ext_resource type="Script" path="res://scripts/world/crumbling_platform.gd" id="13_crumble"]
@@ -26,6 +25,10 @@
 [ext_resource type="Script" path="res://scripts/world/health_heart.gd" id="19_heart"]
 [ext_resource type="Script" path="res://scripts/world/level_exit.gd" id="17_exit"]
 [ext_resource type="Script" path="res://scripts/world/trapdoor.gd" id="20_trapdoor"]
+[ext_resource type="Script" path="res://scripts/world/lantern.gd" id="40_lantern"]
+[ext_resource type="Script" path="res://scripts/world/sketch_platform.gd" id="41_sketch"]
+[ext_resource type="Script" path="res://scripts/world/shadow_caster.gd" id="42_caster"]
+[ext_resource type="Script" path="res://scripts/world/caption.gd" id="43_caption"]
 
 [node name="TestLevel" type="Node2D"]
 
@@ -44,12 +47,17 @@ script = ExtResource("3_block")
 size = Vector2(800, 340)
 
 [node name="Ground2" type="StaticBody2D" parent="World"]
-position = Vector2(6775, 850)
+position = Vector2(6460, 850)
 script = ExtResource("3_block")
-size = Vector2(4550, 500)
+size = Vector2(3920, 500)
 
 [node name="Ground3" type="StaticBody2D" parent="World"]
-position = Vector2(9315, 850)
+position = Vector2(12045, 850)
+script = ExtResource("3_block")
+size = Vector2(1210, 500)
+
+[node name="Ground4" type="StaticBody2D" parent="World"]
+position = Vector2(12915, 850)
 script = ExtResource("3_block")
 size = Vector2(250, 500)
 
@@ -59,7 +67,7 @@ script = ExtResource("3_block")
 size = Vector2(80, 2500)
 
 [node name="Wall2" type="StaticBody2D" parent="World"]
-position = Vector2(9400, -150)
+position = Vector2(13000, -150)
 script = ExtResource("3_block")
 size = Vector2(80, 2500)
 
@@ -119,15 +127,21 @@ position = Vector2(3560, 498)
 script = ExtResource("11_oneway")
 size = Vector2(160, 16)
 
-[node name="Light1" type="Node2D" parent="World"]
+[node name="Lantern1" type="Node2D" parent="World"]
 position = Vector2(3100, 200)
-script = ExtResource("10_light")
+script = ExtResource("40_lantern")
 radius = 120
+chain = 0
+casts_shadows = false
+post = 70
 
-[node name="Light2" type="Node2D" parent="World"]
+[node name="Lantern2" type="Node2D" parent="World"]
 position = Vector2(3820, 735)
-script = ExtResource("10_light")
+script = ExtResource("40_lantern")
 radius = 95
+chain = 0
+casts_shadows = false
+post = 25
 
 [node name="Spring1" type="Area2D" parent="World"]
 position = Vector2(4440, 760)
@@ -186,10 +200,13 @@ position = Vector2(6470, -590)
 script = ExtResource("3_block")
 size = Vector2(100, 60)
 
-[node name="Light3" type="Node2D" parent="World"]
+[node name="Lantern3" type="Node2D" parent="World"]
 position = Vector2(6250, -600)
-script = ExtResource("10_light")
+script = ExtResource("40_lantern")
 radius = 85
+chain = 0
+casts_shadows = false
+post = 40
 
 [node name="Plank9" type="StaticBody2D" parent="World"]
 position = Vector2(7020, -412)
@@ -226,10 +243,13 @@ position = Vector2(7080, 458)
 script = ExtResource("11_oneway")
 size = Vector2(150, 16)
 
-[node name="Light4" type="Node2D" parent="World"]
+[node name="Lantern4" type="Node2D" parent="World"]
 position = Vector2(7620, 570)
-script = ExtResource("10_light")
+script = ExtResource("40_lantern")
 radius = 95
+chain = 0
+casts_shadows = false
+post = 30
 
 [node name="Spikes2" type="StaticBody2D" parent="World"]
 position = Vector2(8000, 588)
@@ -254,28 +274,147 @@ travel = Vector2(300, 0)
 period = 4.5
 phase = 0
 
-[node name="ArenaGate1" type="StaticBody2D" parent="World"]
+[node name="Gate1" type="StaticBody2D" parent="World"]
 position = Vector2(8320, 540)
 script = ExtResource("3_block")
 size = Vector2(40, 120)
 
+[node name="Caption1" type="Node2D" parent="World"]
+z_index = 5
+position = Vector2(8680, 420)
+script = ExtResource("43_caption")
+text = "HOLD Q - RAISE YOUR EMBER\nLIGHT MAKES THE SKETCH REAL"
+tilt = -0.03
+
+[node name="PitFloor1" type="StaticBody2D" parent="World"]
+position = Vector2(8680, 950)
+script = ExtResource("3_block")
+size = Vector2(520, 300)
+
+[node name="PitSpikes1" type="StaticBody2D" parent="World"]
+position = Vector2(8680, 788)
+script = ExtResource("4_spikes")
+size = Vector2(520, 24)
+
+[node name="Sketch1" type="StaticBody2D" parent="World"]
+position = Vector2(8680, 610)
+script = ExtResource("41_sketch")
+size = Vector2(520, 20)
+inkable = true
+
+[node name="Ground5" type="StaticBody2D" parent="World"]
+position = Vector2(9100, 850)
+script = ExtResource("3_block")
+size = Vector2(320, 500)
+
+[node name="Caption2" type="Node2D" parent="World"]
+z_index = 5
+position = Vector2(9560, 400)
+script = ExtResource("43_caption")
+text = "TOO FAR FOR ONE EMBER?\nSTAND STILL WITH IT RAISED: THE SKETCH INKS IN.\nINK STAYS. REST ON IT."
+tilt = -0.03
+
+[node name="PitFloor2" type="StaticBody2D" parent="World"]
+position = Vector2(9960, 950)
+script = ExtResource("3_block")
+size = Vector2(1400, 300)
+
+[node name="PitSpikes2" type="StaticBody2D" parent="World"]
+position = Vector2(9960, 788)
+script = ExtResource("4_spikes")
+size = Vector2(1400, 24)
+
+[node name="Sketch2" type="StaticBody2D" parent="World"]
+position = Vector2(9960, 610)
+script = ExtResource("41_sketch")
+size = Vector2(1400, 20)
+inkable = true
+
+[node name="Ground6" type="StaticBody2D" parent="World"]
+position = Vector2(10780, 850)
+script = ExtResource("3_block")
+size = Vector2(240, 500)
+
+[node name="Caption3" type="Node2D" parent="World"]
+z_index = 5
+position = Vector2(10990, 440)
+script = ExtResource("43_caption")
+text = "LANTERNS ARE FREE LIGHT.\nSHADOWS ARE NOT."
+tilt = 0.03
+
+[node name="PitFloor3" type="StaticBody2D" parent="World"]
+position = Vector2(11170, 950)
+script = ExtResource("3_block")
+size = Vector2(540, 300)
+
+[node name="PitSpikes3" type="StaticBody2D" parent="World"]
+position = Vector2(11170, 788)
+script = ExtResource("4_spikes")
+size = Vector2(540, 24)
+
+[node name="Sketch3" type="StaticBody2D" parent="World"]
+position = Vector2(11170, 610)
+script = ExtResource("41_sketch")
+size = Vector2(540, 20)
+inkable = true
+
+[node name="Lantern5" type="Node2D" parent="World"]
+position = Vector2(11160, 220)
+script = ExtResource("40_lantern")
+radius = 400
+chain = 120
+post = 0
+lit = true
+casts_shadows = true
+
+[node name="Sign1" type="StaticBody2D" parent="World"]
+position = Vector2(11246.5, 451)
+script = ExtResource("3_block")
+size = Vector2(63, 22)
+
+[node name="Caption4" type="Node2D" parent="World"]
+z_index = 5
+position = Vector2(11470, 360)
+script = ExtResource("43_caption")
+text = "HIT THE LANTERN.\nA SHADOW IS INK TOO."
+tilt = -0.03
+
+[node name="Lantern6" type="Node2D" parent="World"]
+position = Vector2(11550, 520)
+script = ExtResource("40_lantern")
+radius = 220
+chain = 0
+post = 80
+lit = false
+casts_shadows = true
+
+[node name="Cutout1" type="StaticBody2D" parent="World"]
+position = Vector2(11640, 470)
+script = ExtResource("42_caster")
+stick = 130
+
+[node name="Wall3" type="StaticBody2D" parent="World"]
+position = Vector2(11830, 435)
+script = ExtResource("3_block")
+size = Vector2(60, 330)
+
 [node name="Erasable1" type="StaticBody2D" parent="World" groups=["erasable"]]
-position = Vector2(8600, 470)
+position = Vector2(12200, 470)
 script = ExtResource("3_block")
 size = Vector2(200, 24)
 
 [node name="Erasable2" type="StaticBody2D" parent="World" groups=["erasable"]]
-position = Vector2(8860, 400)
+position = Vector2(12460, 400)
 script = ExtResource("3_block")
 size = Vector2(200, 24)
 
 [node name="Erasable3" type="StaticBody2D" parent="World" groups=["erasable"]]
-position = Vector2(9120, 470)
+position = Vector2(12720, 470)
 script = ExtResource("3_block")
 size = Vector2(200, 24)
 
 [node name="Trapdoor" type="StaticBody2D" parent="World"]
-position = Vector2(9120, 609)
+position = Vector2(12720, 609)
 script = ExtResource("20_trapdoor")
 guardian = NodePath("../../Enemies/Eraser1")
 
@@ -299,6 +438,18 @@ script = ExtResource("18_pen")
 position = Vector2(8250, 600)
 script = ExtResource("18_pen")
 
+[node name="Checkpoint6" type="Area2D" parent="World"]
+position = Vector2(10780, 600)
+script = ExtResource("18_pen")
+
+[node name="Checkpoint7" type="Area2D" parent="World"]
+position = Vector2(11480, 600)
+script = ExtResource("18_pen")
+
+[node name="Checkpoint8" type="Area2D" parent="World"]
+position = Vector2(11950, 600)
+script = ExtResource("18_pen")
+
 [node name="Heart1" type="Area2D" parent="World"]
 position = Vector2(3360, 340)
 script = ExtResource("19_heart")
@@ -320,7 +471,11 @@ position = Vector2(7080, 410)
 script = ExtResource("19_heart")
 
 [node name="Heart6" type="Area2D" parent="World"]
-position = Vector2(8270, 560)
+position = Vector2(10720, 560)
+script = ExtResource("19_heart")
+
+[node name="Heart7" type="Area2D" parent="World"]
+position = Vector2(11980, 560)
 script = ExtResource("19_heart")
 
 [node name="Coins" type="Node2D" parent="."]
@@ -578,27 +733,67 @@ position = Vector2(8120, 440)
 script = ExtResource("9_coin")
 
 [node name="Coin64" type="Area2D" parent="Coins"]
-position = Vector2(8560, 420)
+position = Vector2(8500, 560)
 script = ExtResource("9_coin")
 
 [node name="Coin65" type="Area2D" parent="Coins"]
-position = Vector2(8640, 420)
+position = Vector2(8590, 560)
 script = ExtResource("9_coin")
 
 [node name="Coin66" type="Area2D" parent="Coins"]
-position = Vector2(8820, 350)
+position = Vector2(8680, 560)
 script = ExtResource("9_coin")
 
 [node name="Coin67" type="Area2D" parent="Coins"]
-position = Vector2(8900, 350)
+position = Vector2(8770, 560)
 script = ExtResource("9_coin")
 
 [node name="Coin68" type="Area2D" parent="Coins"]
-position = Vector2(9080, 420)
+position = Vector2(8860, 560)
 script = ExtResource("9_coin")
 
 [node name="Coin69" type="Area2D" parent="Coins"]
-position = Vector2(9160, 420)
+position = Vector2(9900, 560)
+script = ExtResource("9_coin")
+
+[node name="Coin70" type="Area2D" parent="Coins"]
+position = Vector2(9960, 560)
+script = ExtResource("9_coin")
+
+[node name="Coin71" type="Area2D" parent="Coins"]
+position = Vector2(10020, 560)
+script = ExtResource("9_coin")
+
+[node name="Coin72" type="Area2D" parent="Coins"]
+position = Vector2(11720, 380)
+script = ExtResource("9_coin")
+
+[node name="Coin73" type="Area2D" parent="Coins"]
+position = Vector2(11760, 350)
+script = ExtResource("9_coin")
+
+[node name="Coin74" type="Area2D" parent="Coins"]
+position = Vector2(12160, 420)
+script = ExtResource("9_coin")
+
+[node name="Coin75" type="Area2D" parent="Coins"]
+position = Vector2(12240, 420)
+script = ExtResource("9_coin")
+
+[node name="Coin76" type="Area2D" parent="Coins"]
+position = Vector2(12420, 350)
+script = ExtResource("9_coin")
+
+[node name="Coin77" type="Area2D" parent="Coins"]
+position = Vector2(12500, 350)
+script = ExtResource("9_coin")
+
+[node name="Coin78" type="Area2D" parent="Coins"]
+position = Vector2(12680, 420)
+script = ExtResource("9_coin")
+
+[node name="Coin79" type="Area2D" parent="Coins"]
+position = Vector2(12760, 420)
 script = ExtResource("9_coin")
 
 [node name="Enemies" type="Node2D" parent="."]
@@ -637,8 +832,17 @@ position = Vector2(6700, -580)
 [node name="Smudge1" parent="Enemies" instance=ExtResource("23_smudge")]
 position = Vector2(7500, 588)
 
+[node name="Scribble4" parent="Enemies" instance=ExtResource("20_scribble")]
+position = Vector2(9800, 380)
+
+[node name="Scribble5" parent="Enemies" instance=ExtResource("20_scribble")]
+position = Vector2(10150, 340)
+
+[node name="Crossed2" parent="Enemies" instance=ExtResource("22_crossed")]
+position = Vector2(10820, 570)
+
 [node name="Eraser1" parent="Enemies" instance=ExtResource("25_eraser")]
-position = Vector2(8900, 564)
+position = Vector2(12500, 564)
 
 [node name="Player" parent="." instance=ExtResource("1_player")]
 position = Vector2(100, 570)
@@ -665,7 +869,7 @@ offset_bottom = 700.0
 theme_override_colors/font_color = Color(0.97, 0.95, 0.9, 1)
 theme_override_colors/font_outline_color = Color(0.06, 0.03, 0.13, 1)
 theme_override_constants/outline_size = 6
-text = "Move: A/D or Arrows   Jump: Space/Z (hold = higher)   Attack: Left Click (+W up, +S down in air = pogo; hold = ink wave)   Dash: Right Click   Restart: R"
+text = "Move: A/D or Arrows   Jump: Space/Z (hold = higher)   Attack: Left Click (+W up, +S down in air = pogo; hold = ink wave)   Dash: Right Click   Ember: hold Q/E   Restart: R"
 
 [node name="LevelMusic" type="Node" parent="."]
 script = ExtResource("8_music")
