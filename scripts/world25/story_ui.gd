@@ -76,7 +76,7 @@ func _draw_title() -> void:
 	var slide := (1.0 - clampf(_title_t / 0.35, 0.0, 1.0)) * 40.0
 	var size_px := 64
 	var w := TITLE_FONT.get_string_size(_title, HORIZONTAL_ALIGNMENT_LEFT, -1, size_px).x
-	var pos := Vector2((size.x - w) * 0.5, 170.0 - slide)
+	var pos := Vector2((size.x - w) * 0.5, 190.0 - slide)
 	draw_string_outline(TITLE_FONT, pos, _title, HORIZONTAL_ALIGNMENT_LEFT, -1, size_px, 14, Color(INK, a))
 	draw_string(TITLE_FONT, pos, _title, HORIZONTAL_ALIGNMENT_LEFT, -1, size_px, Color(PAPER, a))
 	draw_line(Vector2(pos.x, pos.y + 14), Vector2(pos.x + w, pos.y + 14), Color(1.0, 0.25, 0.18, a), 4.0)
@@ -96,7 +96,7 @@ func _draw_caption() -> void:
 	var max_w := 620.0
 	var lines := _wrap(font, _text, fs, max_w)
 	var line_h := fs + 8.0
-	var box := Rect2(Vector2((size.x - max_w - 40.0) * 0.5, 96.0), Vector2(max_w + 40.0, lines.size() * line_h + 26.0))
+	var box := Rect2(Vector2((size.x - max_w - 40.0) * 0.5, 18.0), Vector2(max_w + 40.0, lines.size() * line_h + 26.0))
 	var shaky := _who == "shaky"
 	var jitter := Vector2(randf_range(-1, 1), randf_range(-1, 1)) * 1.5 if shaky else Vector2.ZERO
 	draw_rect(Rect2(box.position + Vector2(6, 6), box.size), Color(INK, 0.5 * _alpha))

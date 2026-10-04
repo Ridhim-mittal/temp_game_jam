@@ -50,6 +50,12 @@ func _ready() -> void:
 
 
 func start_story() -> void:
+	reset()
+	go(START_SCENE, "")
+
+
+## Forget the current run (also happens whenever the main menu is shown).
+func reset() -> void:
 	entry_gate = ""
 	player_health = -1
 	cleared.clear()
@@ -57,7 +63,12 @@ func start_story() -> void:
 	links.clear()
 	flags.clear()
 	current_room = ""
-	go(START_SCENE, "")
+
+
+func _process(_delta: float) -> void:
+	var scene := get_tree().current_scene
+	if scene and scene.scene_file_path == MENU_SCENE and current_room != "":
+		reset()
 
 
 func is_cleared(room_id: String) -> bool:

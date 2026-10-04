@@ -36,7 +36,8 @@ const DEFAULT_BIOME = preload("res://data/biomes/darkwood.tres")
 ## Big title shown on entering (defaults to the biome's name).
 @export var title := ""
 @export var subtitle := ""
-## Writer captions shown the first time the room is entered ("|" splits).
+## Writer captions shown the first time the room is entered ("|" splits,
+## a leading "~" makes a line shaky).
 @export_multiline var enter_captions := ""
 ## Writer captions shown when the last monster falls ("|" splits).
 @export_multiline var clear_captions := ""
@@ -84,8 +85,18 @@ func _ready() -> void:
 	_prepare_enemies(world)
 	ui.title_card((title if title != "" else b.display_name).to_upper(), subtitle)
 	if enter_captions != "" and (world == null or world.once(room_id + ":enter")):
-		for line in enter_captions.split("|"):
-			ui.caption(line.strip_edges())
+		_captions(enter_captions)
+
+
+## "|" separates captions; a leading "~" makes one shaky (the Writer
+## losing their nerve).
+func _captions(text: String) -> void:
+	for line in text.split("|"):
+		line = line.strip_edges()
+		if line.begins_with("~"):
+			ui.caption(line.substr(1).strip_edges(), "shaky")
+		elif line != "":
+			ui.caption(line)
 
 
 func _biome() -> Resource:
@@ -312,8 +323,7 @@ func _on_cleared() -> void:
 		get_tree().create_timer(0.25 * i).timeout.connect(g.open)
 		i += 1
 	if clear_captions != "":
-		for line in clear_captions.split("|"):
-			ui.caption(line.strip_edges())
+		_captions(clear_captions)
 	if cutscene_on_clear != "" and world:
 		await get_tree().create_timer(4.5).timeout
 		world.play_cutscene(cutscene_on_clear)

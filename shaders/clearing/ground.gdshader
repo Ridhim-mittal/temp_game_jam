@@ -128,9 +128,9 @@ vec3 water_top(vec2 p, int w, out float glow) {
 	float t = TIME * 0.6;
 	vec2 c1 = voronoi(p * 0.75 + vec2(t * 0.15, 0.0), t);
 	vec2 c2 = voronoi(p * 1.1 - vec2(0.0, t * 0.12), t * 1.3 + 2.0);
-	float caustic = max(1.0 - smoothstep(0.0, 0.07, c1.x), (1.0 - smoothstep(0.0, 0.05, c2.x)) * 0.6);
-	col = mix(col, P(w, 3), caustic * 0.55);
-	glow = caustic * 0.35;
+	float caustic = max(1.0 - smoothstep(0.0, 0.035, c1.x), (1.0 - smoothstep(0.0, 0.022, c2.x)) * 0.5);
+	col = mix(col, P(w, 3), caustic * 0.4);
+	glow = caustic * 0.2;
 	// pebbles
 	vec2 pp = p * 3.0;
 	float pebble = step(0.93, hash(floor(pp))) * step(length(fract(pp) - 0.5), 0.2);

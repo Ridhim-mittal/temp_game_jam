@@ -26,7 +26,7 @@ const ENTRIES := [
 	["Begin", "res://scenes/cutscenes/cs_opening.tscn", "play"],
 	["Skip to the level", "res://scenes/levels/test_level.tscn", "skip"],
 	["Monster test", "res://scenes/levels/monster_test.tscn", "eye"],
-	["2.5D clearing", "res://scenes/clearing/clearing.tscn", "map"],
+	["Begin in the Margins", "res://scenes/clearing/clearing.tscn", "map"],
 	["Quit", "", "x"],
 ]
 const SFX := ["SHNK!", "KRAK!", "SLASH!", "THWACK!"]

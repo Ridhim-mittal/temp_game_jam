@@ -155,7 +155,7 @@ func _apply_attack_style() -> void:
 		if ui == null:
 			return
 		_style_label = Label.new()
-		_style_label.position = Vector2(24, 76)
+		_style_label.position = Vector2(24, 652)
 		_style_label.add_theme_font_size_override("font_size", 18)
 		_style_label.add_theme_color_override("font_color", Color(0.97, 0.95, 0.9))
 		_style_label.add_theme_color_override("font_outline_color", Color(0.06, 0.03, 0.13))
