@@ -23,11 +23,23 @@ var _shown := 0.0
 var _hold := 0.0
 var _alpha := 0.0
 var _time := 0.0
+var _boss: Node
+var _boss_name := ""
+var _boss_max := 1
+var _boss_shown := 1.0  # health bar eases down after hits
 
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+
+## Shows a boss health bar (reads the monster's `health`, `hp`, `dead`).
+func set_boss(boss: Node, boss_name: String) -> void:
+	_boss = boss
+	_boss_name = boss_name
+	_boss_max = maxi(boss.hp, 1)
+	_boss_shown = 1.0
 
 
 func title_card(title: String, subtitle := "") -> void:
@@ -67,6 +79,25 @@ func _process(delta: float) -> void:
 func _draw() -> void:
 	_draw_title()
 	_draw_caption()
+	_draw_boss()
+
+
+func _draw_boss() -> void:
+	if _boss == null or not is_instance_valid(_boss):
+		return
+	var frac := clampf(float(_boss.health) / _boss_max, 0.0, 1.0) if not _boss.dead else 0.0
+	_boss_shown = move_toward(_boss_shown, frac, get_process_delta_time() * 0.8)
+	if _boss.dead and _boss_shown <= 0.0:
+		return
+	var w := 520.0
+	var bar := Rect2(Vector2((size.x - w) * 0.5, size.y - 92.0), Vector2(w, 16.0))
+	draw_rect(bar.grow(4.0), INK)
+	draw_rect(Rect2(bar.position, Vector2(w * _boss_shown, bar.size.y)), Color(1.0, 0.82, 0.8))
+	draw_rect(Rect2(bar.position, Vector2(w * frac, bar.size.y)), Color(0.9, 0.2, 0.18))
+	var name_w := TITLE_FONT.get_string_size(_boss_name, HORIZONTAL_ALIGNMENT_LEFT, -1, 28).x
+	var np := Vector2((size.x - name_w) * 0.5, bar.position.y - 10.0)
+	draw_string_outline(TITLE_FONT, np, _boss_name, HORIZONTAL_ALIGNMENT_LEFT, -1, 28, 10, INK)
+	draw_string(TITLE_FONT, np, _boss_name, HORIZONTAL_ALIGNMENT_LEFT, -1, 28, PAPER)
 
 
 func _draw_title() -> void:

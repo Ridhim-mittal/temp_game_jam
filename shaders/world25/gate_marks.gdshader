@@ -8,6 +8,14 @@ uniform int mode = 0;
 uniform vec4 color : source_color = vec4(0.85, 0.82, 0.78, 1.0);
 uniform float seal = 1.0;
 uniform float glow = 1.6;
+// 1 = always face the camera (the seal, so side gates show a full X)
+uniform float billboard = 0.0;
+
+void vertex() {
+	if (billboard > 0.5) {
+		MODELVIEW_MATRIX = VIEW_MATRIX * mat4(INV_VIEW_MATRIX[0], INV_VIEW_MATRIX[1], INV_VIEW_MATRIX[2], MODEL_MATRIX[3]);
+	}
+}
 
 float seg(vec2 p, vec2 a, vec2 b, float w) {
 	vec2 pa = p - a;

@@ -22,7 +22,7 @@ var _lunge_dir := Vector3.RIGHT
 
 
 func _ready() -> void:
-	hp = 10
+	hp = maxi(hp, 10)  # a scene can make it tougher (the arena does)
 	sight = 11.0
 	knockback = 2.0
 	contact_damage = 2

@@ -34,6 +34,8 @@ subtitle = ""
 enter_captions = "~No. Not this one. Turn back.|~You don't need to see what I did to the other drafts."
 clear_captions = "~...That isn't how this goes.|~That isn't how ANY of this goes."
 cutscene_on_clear = "res://scenes/cutscenes/cs_reveal.tscn"
+boss_path = NodePath("Enemies/Eraser1")
+boss_name = "THE ERASER"
 
 [node name="Island" type="Node3D" parent="."]
 script = ExtResource("island")
@@ -209,4 +211,4 @@ color = Color(1, 0.6, 0.85, 1)
 
 [node name="Eraser1" parent="Enemies" instance=ExtResource("eraser")]
 transform = Transform3D(1.0000, 0, -0.0000, 0, 1, 0, 0.0000, 0, 1.0000, -3.00, 0.05, 0.00)
-
+hp = 16

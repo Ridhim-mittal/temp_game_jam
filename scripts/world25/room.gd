@@ -43,6 +43,9 @@ const DEFAULT_BIOME = preload("res://data/biomes/darkwood.tres")
 @export_multiline var clear_captions := ""
 ## Played after the room is cleared (e.g. the ending); "" = nothing.
 @export_file("*.tscn") var cutscene_on_clear := ""
+## A monster under "Enemies" shown with a big health bar (boss fights).
+@export var boss_path: NodePath
+@export var boss_name := ""
 
 @export_group("Blend into another biome")
 @export var biome_b: Resource:
@@ -84,6 +87,9 @@ func _ready() -> void:
 	_play_music(b.music)
 	_prepare_enemies(world)
 	ui.title_card((title if title != "" else b.display_name).to_upper(), subtitle)
+	var boss := get_node_or_null(boss_path)
+	if boss and not (world and world.is_cleared(room_id)):
+		ui.set_boss(boss, boss_name)
 	if enter_captions != "" and (world == null or world.once(room_id + ":enter")):
 		_captions(enter_captions)
 
@@ -241,6 +247,7 @@ func _spawn_player(world: Node) -> void:
 	if world and world.player_health > 0:
 		player.health = world.player_health
 		player.health_changed.emit(player.health, player.max_health)
+	player._invuln = 1.2  # a moment of grace while the ink wipe clears
 
 
 func _build_camera() -> void:

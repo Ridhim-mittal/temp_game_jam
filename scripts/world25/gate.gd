@@ -95,6 +95,7 @@ func _rebuild() -> void:
 	# the seal: a big red X standing in the gap
 	_x_mat = _marks(root, 1, Vector2(width * 0.6, width * 0.6), Vector3(0, width * 0.3 + 0.2, -0.3 if style == Style.THRESHOLD else 0.2),
 		Vector3.ZERO, Color(1.0, 0.16, 0.1))
+	_x_mat.set_shader_parameter("billboard", 1.0)
 	if is_open:
 		_x_mat.set_shader_parameter("seal", 0.0)
 	if Engine.is_editor_hint():
