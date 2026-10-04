@@ -15,6 +15,7 @@ signal coins_changed(total: int)
 const SlashEffect = preload("res://scripts/effects/slash_effect.gd")
 const ComicText = preload("res://scripts/effects/comic_text.gd")
 const InkWave = preload("res://scripts/effects/ink_wave.gd")
+const DeathScreen = preload("res://scripts/ui/death_screen.gd")
 
 const MASK_ENEMY := 4   # physics layer 3
 const MASK_HAZARD := 8  # physics layer 4
@@ -553,8 +554,8 @@ func _die() -> void:
 	velocity = Vector2.ZERO
 	var t := create_tween()
 	t.tween_property(visual, "modulate:a", 0.0, 0.6)
-	await get_tree().create_timer(1.2, true, false, true).timeout
-	_reload()
+	await get_tree().create_timer(0.75, true, false, true).timeout
+	DeathScreen.open(get_tree())  # RESTART (last checkpoint pen) or MAIN MENU
 
 
 func _reload() -> void:
