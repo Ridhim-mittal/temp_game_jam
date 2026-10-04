@@ -16,7 +16,7 @@ All art is drawn in code (`_draw()`, shaders, primitive meshes); no texture asse
 - Rooms are scenes whose root uses `scripts/world25/room.gd`; it builds environment, light,
   player, camera, HUD, minimap, music from a `Biome` resource (`data/biomes/*.tres`).
 - `Gate` nodes (`scripts/world25/gate.gd`) seal until every monster in the room is dead, then
-  load the target room. `BlendZone` morphs one biome into another inside a room.
+  load the target room. A room's `biome_b` + blend line morphs one biome into another inside it.
 - Autoload `World25` (`scripts/world25/world25.gd`): story state, cleared rooms, ink-wipe
   transitions, player health between rooms.
 - Props are `@tool` scripts that build meshes under a "Generated" child (never saved); edit
@@ -35,6 +35,7 @@ edits). Monsters stay dead in story rooms (room.gd sets `respawn_time = 0`).
 
 ## Checking work
 - Script errors: `godot --headless --path . --quit-after 60 res://<scene>.tscn`
-- Screenshots: `godot --path . --write-movie <dir>/f.png --fixed-fps 30 --quit-after 40 res://<scene>.tscn`
-  (note: hit-stop freezes look long in movie mode; that's an artifact).
+- Screenshots: from a script in a temporary scene, call `RenderingServer.force_draw(false)` then
+  `get_viewport().get_texture().get_image().save_png(...)`. `--write-movie` stops drawing after a few
+  frames when the screen is locked, and hit-stop freezes look far too long in it.
 - `.godot/imported/` is a generated cache: never commit it.
