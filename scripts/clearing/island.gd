@@ -30,6 +30,26 @@ const GROUND_SHADER = preload("res://shaders/clearing/ground.gdshader")
 	set(v):
 		stain_zone = v
 		_rebuild()
+## Ground look (scripts/world25/biome.gd); empty = the clearing's colours.
+@export var biome: Resource:
+	set(v):
+		biome = v
+		_rebuild()
+@export_group("Blend into another biome")
+## Biome B takes over past the wavy line between blend_from and blend_to
+## (x, z). Leave empty for a single-biome island.
+@export var biome_b: Resource:
+	set(v):
+		biome_b = v
+		_rebuild()
+@export var blend_from := Vector2(0, 0):
+	set(v):
+		blend_from = v
+		_rebuild()
+@export var blend_to := Vector2(10, 0):
+	set(v):
+		blend_to = v
+		_rebuild()
 
 
 func _ready() -> void:
@@ -54,9 +74,25 @@ func _rebuild() -> void:
 		zones.append(sand_zones[i] if i < sand_zones.size() else Vector3.ZERO)
 	mat.set_shader_parameter("sand_zones", zones)
 	mat.set_shader_parameter("stain_zone", stain_zone)
+	_apply_biomes(mat)
 	mi.material_override = mat
 	root.add_child(mi)
 	_build_colliders(root)
+
+
+const DEFAULT_BIOME = preload("res://data/biomes/darkwood.tres")
+
+
+func _apply_biomes(mat: ShaderMaterial) -> void:
+	var a: Resource = biome if biome else DEFAULT_BIOME
+	var b: Resource = biome_b if biome_b else a
+	mat.set_shader_parameter("pal_a", PackedColorArray(a.ground_palette()))
+	mat.set_shader_parameter("pal_b", PackedColorArray(b.ground_palette()))
+	mat.set_shader_parameter("mode_a", a.ground)
+	mat.set_shader_parameter("mode_b", b.ground)
+	mat.set_shader_parameter("use_blend", 1.0 if biome_b else 0.0)
+	mat.set_shader_parameter("blend_from", blend_from)
+	mat.set_shader_parameter("blend_to", blend_to)
 
 
 func _signed_area() -> float:

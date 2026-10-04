@@ -1,21 +1,24 @@
 extends CharacterBody3D
 ## Scribble (from the design doc): a small, fast, weak tangle of crossed-out
 ## ink. Wanders near where it was placed, hops after the player when it
-## spots them, gets knocked back by hits and bursts into an ink splat. It
-## scribbles itself back into existence a few seconds later, so the
-## clearing always has something to practise on.
+## spots them and pounces when close (touching it mid-pounce hurts), gets
+## knocked back by hits and bursts into an ink splat. Outside story rooms it
+## scribbles itself back into existence a few seconds later.
 
 const Fx = preload("res://scripts/clearing/clearing_fx.gd")
 
-enum State { WANDER, CHASE, STUNNED, DEAD }
+enum State { WANDER, CHASE, STUNNED, DEAD, WINDUP, POUNCE }
 
 @export var max_health := 3
 @export var wander_speed := 1.6
 @export var chase_speed := 3.2
 @export var wander_radius := 3.0
 @export var sight_range := 7.0
-## Stops this close to the player (it only bumps for now, no damage).
-@export var keep_distance := 1.1
+## Stops this close to the player, then winds up and pounces.
+@export var keep_distance := 1.6
+@export var pounce_speed := 7.0
+@export var pounce_cooldown := 1.2
+@export var contact_damage := 1
 @export var knockback := 9.0
 @export var stun_time := 0.3
 @export var respawn_time := 5.0
@@ -32,6 +35,8 @@ var _hop := 0.0
 var _squash := Vector3.ONE
 var _flash := 0.0
 var _player: Node3D
+var _pounce_cd := 0.8
+var _pounce_dir := Vector3.ZERO
 
 @onready var visual: MeshInstance3D = $Visual
 @onready var _mat: ShaderMaterial = visual.material_override.duplicate()
@@ -51,6 +56,7 @@ func _physics_process(delta: float) -> void:
 		return
 	_player = get_tree().get_first_node_in_group("player")
 	_timer -= delta
+	_pounce_cd -= delta
 	var planar := Vector3(velocity.x, 0.0, velocity.z)
 	match state:
 		State.WANDER:
@@ -72,13 +78,32 @@ func _physics_process(delta: float) -> void:
 				planar = planar.move_toward(to.normalized() * chase_speed, 20.0 * delta)
 			else:
 				planar = planar.move_toward(Vector3.ZERO, 30.0 * delta)
+				if _pounce_cd <= 0.0:
+					state = State.WINDUP
+					_timer = 0.35
+					_pounce_dir = to.normalized()
+		State.WINDUP:
+			planar = planar.move_toward(Vector3.ZERO, 30.0 * delta)
+			_squash = Vector3(1.25, 0.75, 1.25)
+			if _timer <= 0.0:
+				state = State.POUNCE
+				_timer = 0.35
+				planar = _pounce_dir * pounce_speed
+				velocity.y = 4.0
+		State.POUNCE:
+			if _timer <= 0.0 and is_on_floor():
+				state = State.CHASE
+				_pounce_cd = pounce_cooldown
 		State.STUNNED:
 			planar = planar.move_toward(Vector3.ZERO, 28.0 * delta)
 			if _timer <= 0.0:
 				state = State.CHASE if _player else State.WANDER
 	velocity.x = planar.x
 	velocity.z = planar.z
-	velocity.y = 0.0 if is_on_floor() else velocity.y - gravity * delta
+	if is_on_floor() and velocity.y <= 0.0:
+		velocity.y = 0.0
+	else:
+		velocity.y -= gravity * delta
 	move_and_slide()
 
 
@@ -96,6 +121,10 @@ func _process(delta: float) -> void:
 	if _player:
 		var to := _player.global_position - global_position
 		_mat.set_shader_parameter("look", Vector2(clampf(to.x * 0.3, -1, 1), clampf(-to.z * 0.3, -1, 1)))
+
+
+func is_harmful() -> bool:
+	return not dead and state == State.POUNCE
 
 
 func _sees_player() -> bool:
@@ -132,6 +161,8 @@ func _die() -> void:
 	var t := create_tween()
 	t.tween_property(visual, "scale", Vector3(1.6, 0.1, 1.6), 0.08)
 	t.tween_callback(func(): visual.visible = false)
+	if respawn_time <= 0.0:
+		return
 	await get_tree().create_timer(respawn_time).timeout
 	_respawn()
 

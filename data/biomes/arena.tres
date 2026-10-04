@@ -1,0 +1,28 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/world25/biome.gd" id="1_biome"]
+
+[resource]
+script = ExtResource("1_biome")
+display_name = "The Rubbing Room"
+ground = 2
+base = Color(0.62, 0.2, 0.18, 1)
+light = Color(0.74, 0.3, 0.22, 1)
+dark = Color(0.42, 0.12, 0.14, 1)
+accent = Color(1.0, 0.7, 0.55, 1)
+accent_dark = Color(0.32, 0.08, 0.1, 1)
+stain = Color(0.16, 0.03, 0.06, 1)
+cliff = Color(0.09, 0.02, 0.04, 1)
+cliff_line = Color(0.22, 0.06, 0.08, 1)
+lip = Color(0.34, 0.1, 0.1, 1)
+tuft_base = Color(0.32, 0.08, 0.1, 1)
+tuft_tip = Color(0.7, 0.3, 0.25, 1)
+background = Color(0.06, 0.01, 0.02, 1)
+ambient = Color(0.72, 0.3, 0.32, 1)
+ambient_energy = 0.62
+sun = Color(1.0, 0.5, 0.4, 1)
+sun_energy = 0.9
+fog = Color(0.08, 0.01, 0.02, 1)
+motes = Color(1.0, 0.45, 0.3, 1)
+music = "boss"
+vignette = 0.5

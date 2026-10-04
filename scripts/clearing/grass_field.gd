@@ -43,6 +43,30 @@ const TUFT_SHADER = preload("res://shaders/clearing/grass_tuft.gdshader")
 	set(v):
 		blades = v
 		_rebuild()
+## Take the tuft colours from a biome (scripts/world25/biome.gd) instead
+## of base_color / tip_color, multiplied by `biome_tint` (darker reeds).
+@export var biome: Resource:
+	set(v):
+		biome = v
+		_rebuild()
+@export var biome_tint := Color.WHITE:
+	set(v):
+		biome_tint = v
+		_rebuild()
+## Blend into biome_b's tufts past the line blend_from -> blend_to (x, z),
+## matching the island's biome seam.
+@export var biome_b: Resource:
+	set(v):
+		biome_b = v
+		_rebuild()
+@export var blend_from := Vector2(0, 0):
+	set(v):
+		blend_from = v
+		_rebuild()
+@export var blend_to := Vector2(10, 0):
+	set(v):
+		blend_to = v
+		_rebuild()
 ## Seconds before cut grass grows back.
 @export var regrow_time := 12.0
 
@@ -113,7 +137,7 @@ func _rebuild() -> void:
 			continue
 		var s := rng.randf_range(size_range.x, size_range.y)
 		var basis := Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3(s, s * rng.randf_range(0.85, 1.25), s))
-		transforms.append(Transform3D(basis, Vector3(p.x, 0.0, p.y) - global_position))
+		transforms.append(Transform3D(basis, Vector3(p.x - global_position.x, 0.0, p.y - global_position.z)))
 		var shade := rng.randf_range(0.82, 1.12)
 		colors.append(Color(shade, shade * rng.randf_range(0.95, 1.05), shade))
 
@@ -133,8 +157,14 @@ func _rebuild() -> void:
 	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	var mat := ShaderMaterial.new()
 	mat.shader = TUFT_SHADER
-	mat.set_shader_parameter("base_color", base_color)
-	mat.set_shader_parameter("tip_color", tip_color)
+	mat.set_shader_parameter("base_color", biome.tuft_base * biome_tint if biome else base_color)
+	mat.set_shader_parameter("tip_color", biome.tuft_tip * biome_tint if biome else tip_color)
+	if biome_b:
+		mat.set_shader_parameter("use_blend", 1.0)
+		mat.set_shader_parameter("blend_from", blend_from)
+		mat.set_shader_parameter("blend_to", blend_to)
+		mat.set_shader_parameter("base_b", biome_b.tuft_base * biome_tint)
+		mat.set_shader_parameter("tip_b", biome_b.tuft_tip * biome_tint)
 	mat.set_shader_parameter("blades", blades)
 	mmi.material_override = mat
 	root.add_child(mmi)

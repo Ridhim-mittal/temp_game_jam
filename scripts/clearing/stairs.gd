@@ -23,6 +23,8 @@ const Toon = preload("res://scripts/clearing/toon.gd")
 		step_depth = v
 		_rebuild()
 @export var base_depth := 7.0
+## Wall off the top (when the stairs lead nowhere yet).
+@export var top_wall := true
 @export var stone := Color(0.62, 0.6, 0.58):
 	set(v):
 		stone = v
@@ -69,5 +71,5 @@ func _rebuild() -> void:
 		for side in [-1, 1]:
 			Toon.collider(root, Toon.box_shape(Vector3(0.7, 4.0, run)),
 				Vector3(side * (width * 0.5 + 0.35), rise * 0.5 + 1.0, -run * 0.5))
-		# don't walk off the top
-		Toon.collider(root, Toon.box_shape(Vector3(width, 4.0, 0.4)), Vector3(0, rise + 2.0, -run - 0.2))
+		if top_wall:  # don't walk off the top
+			Toon.collider(root, Toon.box_shape(Vector3(width, 4.0, 0.4)), Vector3(0, rise + 2.0, -run - 0.2))

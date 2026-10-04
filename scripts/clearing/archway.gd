@@ -35,6 +35,12 @@ const DOOR_COLORS := {
 	set(v):
 		block = v
 		_rebuild()
+## Leave the opening walkable (pair it with a DOORWAY gate); otherwise the
+## whole arch is solid.
+@export var walk_through := false:
+	set(v):
+		walk_through = v
+		_rebuild()
 
 
 func _ready() -> void:
@@ -102,7 +108,11 @@ func _rebuild() -> void:
 		root.add_child(em)
 	if not Engine.is_editor_hint():
 		var total := pillar_height + apex
-		Toon.collider(root, Toon.box_shape(Vector3(width + block, total, block)), Vector3(0, total * 0.5, 0))
+		if walk_through:
+			for side in [-1, 1]:
+				Toon.collider(root, Toon.box_shape(Vector3(block, total, block)), Vector3(side * half, total * 0.5, 0))
+		else:
+			Toon.collider(root, Toon.box_shape(Vector3(width + block, total, block)), Vector3(0, total * 0.5, 0))
 
 
 ## Point on one half of a gothic arch over an opening of half-width `half`:

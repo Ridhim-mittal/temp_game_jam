@@ -1,0 +1,34 @@
+# The Gutter / Vesper — Godot 4.7 game jam project
+
+Comic-book game about light and ink (design doc: `The-Gutter-Game-Design-Document.pdf`,
+written for Unity — we build everything in Godot 4.7, GDScript, `gl_compatibility` renderer).
+All art is drawn in code (`_draw()`, shaders, primitive meshes); no texture assets yet.
+
+## Two modes
+- **2D platformer** (`scenes/levels/`, `scripts/player/`, `scripts/enemies/`): Hollow Knight-style
+  movement/combat. Monsters extend `scripts/enemies/enemy_base.gd` and draw via `paint()`.
+- **2.5D top-down** (Cult of the Lamb style; `scenes/clearing/`, `scenes/world25/`,
+  `scripts/clearing/`, `scripts/world25/`, `shaders/clearing/`): 3D scenes, tilted camera,
+  billboard characters. The player and monsters reuse the 2D art by drawing it into a
+  SubViewport (`clearing_player.tscn`, `monster_puppet.gd`).
+
+## 2.5D framework
+- Rooms are scenes whose root uses `scripts/world25/room.gd`; it builds environment, light,
+  player, camera, HUD, minimap, music from a `Biome` resource (`data/biomes/*.tres`).
+- `Gate` nodes (`scripts/world25/gate.gd`) seal until every monster in the room is dead, then
+  load the target room. `BlendZone` morphs one biome into another inside a room.
+- Autoload `World25` (`scripts/world25/world25.gd`): story state, cleared rooms, ink-wipe
+  transitions, player health between rooms.
+- Props are `@tool` scripts that build meshes under a "Generated" child (never saved); edit
+  their exports in the inspector. Shared helpers: `scripts/clearing/toon.gd`.
+
+## Conventions
+- Match surrounding code: tabs, `##` doc comments on scripts/exports, typed GDScript.
+- Physics layers: 1 world, 2 player, 3 enemy (mask value 4), 4 hazard.
+- Input actions come from `scripts/core/input_setup.gd` (move_*, up/down, jump, attack, dash).
+
+## Checking work
+- Script errors: `godot --headless --path . --quit-after 60 res://<scene>.tscn`
+- Screenshots: `godot --path . --write-movie <dir>/f.png --fixed-fps 30 --quit-after 40 res://<scene>.tscn`
+  (note: hit-stop freezes look long in movie mode; that's an artifact).
+- `.godot/imported/` is a generated cache: never commit it.
