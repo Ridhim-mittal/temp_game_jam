@@ -2,13 +2,13 @@ extends Control
 ## The 2D death screen: the frozen game behind a dark veil, cyan/yellow
 ## halftone rays swirling in, a pop-art comic burst (white, pink-red ring,
 ## ink outline) that pops in with an elastic overshoot, "YOU DIED" letters
-## bouncing in one by one, a little ghost Vesper with x_x eyes floating
-## inside, and two pill buttons: RESTART (back to the last checkpoint pen)
+## (rounded, bubbly Chewy lettering) bouncing in one by one, and two pill
+## buttons: RESTART (back to the last checkpoint pen)
 ## and MAIN MENU. Keyboard (A/D, arrows, W/S), Enter/Space/jump and mouse.
 ##
 ##   DeathScreen.open(tree)   # player.gd calls this from _die()
 
-const FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
+const FONT = preload("res://assets/fonts/Chewy-Regular.ttf")
 const MENU := "res://scenes/ui/main_menu.tscn"
 const INK := Color(0.05, 0.03, 0.1)
 const CREAM := Color(0.99, 0.97, 0.93)
@@ -167,8 +167,7 @@ func _draw() -> void:
 	var pop := _pop((_t - 0.12) / 0.7)
 	if pop > 0.0:
 		_draw_burst(c + Vector2(0, -10), pop)
-		_draw_title(c + Vector2(0, -88))
-		_draw_ghost(c + Vector2(0, 20 + 90.0 * (1.0 - _ease_out((_t - 0.5) / 0.6))))
+		_draw_title(c + Vector2(0, -40))
 		for i in OPTIONS.size():
 			_draw_button(i)
 	if _leave_t >= 0.0:
@@ -199,7 +198,7 @@ func _draw_burst(c: Vector2, s: float) -> void:
 
 func _draw_title(c: Vector2) -> void:
 	var text := "YOU DIED"
-	var size_px := 96
+	var size_px := 150
 	var total := FONT.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size_px).x
 	var x := c.x - total * 0.5
 	for i in text.length():
@@ -209,48 +208,14 @@ func _draw_title(c: Vector2) -> void:
 		if land > 0.0 and ch != " ":
 			var drop := (1.0 - minf(land, 1.0)) * -160.0
 			var bob := sin(_t * 2.6 + i * 0.7) * 3.0
-			var p := Vector2(x + w * 0.5, c.y + 34 + drop + bob)
+			var p := Vector2(x + w * 0.5, c.y + 50 + drop + bob)
 			draw_set_transform(p, sin(_t * 1.8 + i) * 0.04, Vector2(land, land))
 			var o := Vector2(-w * 0.5, 0)
-			draw_string(FONT, o + Vector2(4, 6), ch, HORIZONTAL_ALIGNMENT_LEFT, -1, size_px, TITLE_SHADOW)
-			draw_string_outline(FONT, o, ch, HORIZONTAL_ALIGNMENT_LEFT, -1, size_px, 10, INK)
+			draw_string(FONT, o + Vector2(6, 9), ch, HORIZONTAL_ALIGNMENT_LEFT, -1, size_px, TITLE_SHADOW)
+			draw_string_outline(FONT, o, ch, HORIZONTAL_ALIGNMENT_LEFT, -1, size_px, 16, INK)
 			draw_string(FONT, o, ch, HORIZONTAL_ALIGNMENT_LEFT, -1, size_px, TITLE)
 			draw_set_transform(Vector2.ZERO)
 		x += w
-
-
-## Little ghost Vesper: wavy sheet body, hat, scarf, x_x eyes, blush.
-func _draw_ghost(c: Vector2) -> void:
-	if _t < 0.45:
-		return
-	var a := clampf((_t - 0.45) / 0.3, 0.0, 1.0)
-	var p := c + Vector2(sin(_t * 1.4) * 10.0, sin(_t * 2.2) * 5.0)
-	var gs := 1.4  # ghost scale
-	draw_set_transform(p, sin(_t * 1.4) * 0.08, Vector2(gs, gs))
-	var body := PackedVector2Array()
-	for i in 13:  # dome
-		var ang := PI + PI * i / 12.0
-		body.append(Vector2(cos(ang) * 28.0, -8.0 + sin(ang) * 28.0))
-	for i in 7:  # wavy hem, fluttering
-		var x := 28.0 - i * (56.0 / 6.0)
-		body.append(Vector2(x, 22.0 + (6.0 if i % 2 == 0 else 0.0) + sin(_t * 6.0 + i) * 2.0))
-	draw_colored_polygon(_grow(body, 3.0), Color(INK, a))
-	draw_colored_polygon(body, Color(CREAM, a))
-	# x_x eyes, blush, tiny "o" mouth
-	for ex in [-10.0, 10.0]:
-		draw_line(Vector2(ex - 4, -16), Vector2(ex + 4, -8), Color(INK, a), 3.0)
-		draw_line(Vector2(ex + 4, -16), Vector2(ex - 4, -8), Color(INK, a), 3.0)
-		draw_circle(Vector2(ex * 1.45, -2), 3.5, Color(1.0, 0.55, 0.62, 0.8 * a))
-	draw_arc(Vector2(0, 0), 3.0, 0, TAU, 10, Color(INK, a), 2.0)
-	# scarf with a fluttering tail
-	draw_rect(Rect2(-22, 6, 44, 6), Color(0.92, 0.3, 0.2, a))
-	draw_line(Vector2(-20, 9), Vector2(-40, 14 + sin(_t * 5.0) * 4.0), Color(0.92, 0.3, 0.2, a), 5.0)
-	# hat, tilted, floating a little above the head
-	draw_set_transform(p + Vector2(4, -42 + sin(_t * 3.0) * 2.0) * gs, -0.2 + sin(_t * 1.4) * 0.08, Vector2(gs, gs))
-	draw_rect(Rect2(-24, 0, 48, 6), Color(INK, a))
-	draw_rect(Rect2(-14, -16, 28, 16), Color(INK, a))
-	draw_rect(Rect2(-14, -6, 28, 4), Color(0.92, 0.3, 0.2, a))
-	draw_set_transform(Vector2.ZERO)
 
 
 func _draw_button(i: int) -> void:
