@@ -25,6 +25,7 @@
 [ext_resource type="Script" path="res://scripts/world/checkpoint_pen.gd" id="18_pen"]
 [ext_resource type="Script" path="res://scripts/world/health_heart.gd" id="19_heart"]
 [ext_resource type="Script" path="res://scripts/world/level_exit.gd" id="17_exit"]
+[ext_resource type="Script" path="res://scripts/world/trapdoor.gd" id="20_trapdoor"]
 
 [node name="TestLevel" type="Node2D"]
 
@@ -43,9 +44,14 @@ script = ExtResource("3_block")
 size = Vector2(800, 340)
 
 [node name="Ground2" type="StaticBody2D" parent="World"]
-position = Vector2(6970, 850)
+position = Vector2(6775, 850)
 script = ExtResource("3_block")
-size = Vector2(4940, 500)
+size = Vector2(4550, 500)
+
+[node name="Ground3" type="StaticBody2D" parent="World"]
+position = Vector2(9315, 850)
+script = ExtResource("3_block")
+size = Vector2(250, 500)
 
 [node name="Wall1" type="StaticBody2D" parent="World"]
 position = Vector2(-200, -150)
@@ -268,11 +274,10 @@ position = Vector2(9120, 470)
 script = ExtResource("3_block")
 size = Vector2(200, 24)
 
-[node name="Exit" type="Area2D" parent="World"]
-position = Vector2(9290, 600)
-script = ExtResource("17_exit")
-target_scene = "res://scenes/levels/ink_cavern.tscn"
-label = "INTO THE INK CAVERN"
+[node name="Trapdoor" type="StaticBody2D" parent="World"]
+position = Vector2(9120, 609)
+script = ExtResource("20_trapdoor")
+guardian = NodePath("../../Enemies/Eraser1")
 
 [node name="Checkpoint1" type="Area2D" parent="World"]
 position = Vector2(2420, 600)

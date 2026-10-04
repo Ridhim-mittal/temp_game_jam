@@ -5,6 +5,7 @@ extends Node
 ##   World25.go(scene_path, gate_id)        # ink-wipe into another room
 ##   World25.play_cutscene(path, next)      # ink-wipe into a comic cutscene
 ##   World25.is_cleared(room_id)            # gates in cleared rooms stay open
+##   World25.fall_in_from_panel(health_frac)  # 2D trapdoor -> drop into the clearing
 ##
 ## Rooms (scripts/world25/room.gd) read `entry_gate` to place the player
 ## and `player_health` to carry health across. The minimap reads `visited`
@@ -29,6 +30,9 @@ var current_room := ""
 ## Story beats already shown (captions that should play once).
 var flags := {}
 var transitioning := false
+## > 0: the next room spawns the player this high up so they fall in from
+## the sky (used when Vesper drops out of a 2D comic panel into the gutter).
+var arrive_from_sky := 0.0
 
 var _layer: CanvasLayer
 var _wipe: ColorRect
@@ -52,6 +56,23 @@ func _ready() -> void:
 
 func start_story() -> void:
 	reset()
+	go(START_SCENE, "")
+
+
+## The 2D levels' trapdoor: start the 2.5D story with Vesper dropping out of
+## the sky into the clearing. `health_frac` (0..1) carries the platformer's
+## health over to the 2.5D hearts. The caller removes its 2D player from the
+## "player" group first, so go() doesn't read platformer stats.
+func fall_in_from_panel(health_frac: float) -> void:
+	reset()
+	var hearts := 5
+	var scene: PackedScene = load("res://scenes/clearing/clearing_player.tscn")
+	if scene:
+		var probe := scene.instantiate()
+		hearts = int(probe.max_health)
+		probe.free()
+	player_health = clampi(ceili(clampf(health_frac, 0.0, 1.0) * hearts), 1, hearts)
+	arrive_from_sky = 9.0
 	go(START_SCENE, "")
 
 

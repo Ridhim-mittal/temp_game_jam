@@ -17,6 +17,7 @@ const CameraScript = preload("res://scripts/clearing/clearing_camera.gd")
 const HudScript = preload("res://scripts/clearing/clearing_hud.gd")
 const MinimapScript = preload("res://scripts/world25/minimap.gd")
 const StoryUI = preload("res://scripts/world25/story_ui.gd")
+const ClearingFX = preload("res://scripts/clearing/clearing_fx.gd")
 const OVERLAY_SHADER = preload("res://shaders/comic_overlay.gdshader")
 const RectScript = preload("res://scripts/background/screen_shader_rect.gd")
 const DEFAULT_BIOME = preload("res://data/biomes/darkwood.tres")
@@ -259,6 +260,23 @@ func _spawn_player(world: Node) -> void:
 		player.fuel = world.player_fuel
 		player.ember_changed.emit(player.fuel, player.max_fuel)
 	player._invuln = 1.2  # a moment of grace while the ink wipe clears
+	if world and "arrive_from_sky" in world and world.arrive_from_sky > 0.0:
+		# fell out of a 2D panel: drop in from above, land with a thud
+		player.position.y += world.arrive_from_sky
+		player._invuln = 2.5
+		world.arrive_from_sky = 0.0
+		_land_from_sky()
+
+
+func _land_from_sky() -> void:
+	await get_tree().physics_frame
+	while is_instance_valid(player) and not player.is_on_floor():
+		await get_tree().physics_frame
+	if not is_instance_valid(player):
+		return
+	player._squash = Vector2(1.45, 0.6)
+	player._shake(0.8)
+	ClearingFX.pop_text(get_tree(), player.global_position + Vector3(0, 1.4, 0), "THUD!", Color(0.98, 0.95, 0.85), 40)
 
 
 func _build_camera() -> void:
