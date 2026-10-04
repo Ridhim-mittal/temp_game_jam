@@ -29,6 +29,8 @@ var max_speed := 300.0
 var stuck := false  # wading through goo: boots get gooey
 var charge := 0.0  # 0..1 charged-attack build-up
 var charge_ready := false
+var crouch := 0.0       # 0..1 crouch-jump coil depth
+var crouching := false  # crouch held (even before the coil counts)
 
 var _phase := 0.0
 var _time := 0.0
@@ -38,6 +40,7 @@ var _blink_timer := 2.5
 var _dust: Array = []
 var _goo := 0.0  # 1 while in goo, fades after leaving (drips off)
 var shoulder := Vector2(2, -33)  # sword arm pivot, read by sword.gd
+var _coil_draw := 0.0
 var _upper := Transform2D()  # hips + lean, for the upper-body parts
 
 
@@ -79,11 +82,19 @@ func _draw() -> void:
 	elif not on_floor:
 		lean = clampf(velocity.x * facing / max_speed, -1.0, 1.0) * 0.08
 	var hips := Vector2(0, -15 + bob)
+	# crouch-jump: hips sink, body tips forward, shivers when fully coiled
+	var coil := (0.25 + 0.75 * crouch) if crouching else 0.0
+	_coil_draw = coil
+	if coil > 0.0:
+		hips.y += 9.0 * coil
+		lean += 0.14 * coil
+		if crouch >= 1.0:
+			hips.x += sin(_time * 70.0) * 1.0
 
 	# legs behind the cloak (far leg first, slightly lighter)
 	for k in [1, 0]:
 		var foot := _foot(k, hips, fall)
-		var knee := (hips + foot) * 0.5 + Vector2(3.5, -1.0)
+		var knee := (hips + foot) * 0.5 + Vector2(3.5 + 6.0 * _coil_draw, -1.0 - 3.0 * _coil_draw)
 		var col := INK.lightened(0.12) if k == 1 else INK
 		var hip := hips + Vector2(-2.5 + k * 5.0, 0)
 		draw_polyline(PackedVector2Array([hip, knee, foot]), col, 5.0)
@@ -112,6 +123,25 @@ func _draw() -> void:
 			draw_line(Vector2(-22 - i * 6, y), Vector2(-58 - i * 10, y), Color(DUST, 0.9), 3.0)
 	if charge > 0.0:
 		_draw_charge()
+	if _coil_draw > 0.3:
+		_draw_coil()
+
+
+## Sparkle ring at the boots once the crouch is fully coiled (the pose itself
+## shows the build-up; extra lines here would catch the sticker outline).
+func _draw_coil() -> void:
+	if crouch >= 1.0:
+		for j in 4:
+			var ang := _time * 9.0 + j * TAU / 4.0
+			draw_circle(Vector2(cos(ang) * 14.0, -2.0 + sin(ang) * 3.0), 1.8, Color(1.0, 0.92, 0.55))
+
+
+## Ground puffs thrown out by a coiled launch (player.gd calls this).
+func launch_burst(depth: float) -> void:
+	for j in int(3 + depth * 5.0):
+		var dir := -1.0 if j % 2 == 0 else 1.0
+		_dust.append({"p": get_global_transform() * Vector2(dir * (4.0 + j * 2.0), -2.0), "age": 0.0,
+			"drift": Vector2(dir * (60.0 + j * 25.0) * depth, -10.0 - j * 4.0)})
 
 
 ## Ember sparks spiral in while charging; a pulsing ring when ready to fire.
@@ -138,7 +168,8 @@ func _foot(k: int, hips: Vector2, fall: float) -> Vector2:
 		var dangle := Vector2(-4.0 + k * 8.0, 14.0)
 		return hips + tuck.lerp(dangle, clampf(fall + 0.5, 0.0, 1.0))
 	var ph := _phase + k * PI
-	var stance := Vector2(-3.0 + k * 6.0, 0.0)
+	var spread := 1.0 + 0.8 * _coil_draw  # feet plant wider in a crouch
+	var stance := Vector2((-3.0 + k * 6.0) * spread, 0.0)
 	var run := Vector2(sin(ph) * 9.0, -maxf(0.0, cos(ph)) * 7.0)  # lifted while swinging forward
 	return stance.lerp(run, _run)
 

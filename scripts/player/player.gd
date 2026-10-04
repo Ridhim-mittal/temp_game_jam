@@ -40,6 +40,18 @@ const HAZARD_DAMAGE := 20.0
 @export var coyote_time := 0.1
 @export var jump_buffer_time := 0.12
 
+@export_group("Crouch Jump")
+## Standing still, holding jump crouches and coils the legs; releasing
+## launches. Legs act as a spring (E = 1/2 k x^2 -> v proportional to the
+## crouch depth x), so launch speed scales linearly with how deep you
+## crouched and the height scales with its square. A quick tap still gives a
+## normal full jump; running jumps stay instant.
+@export var crouch_time := 0.45
+## Holds shorter than this are a tap: normal jump, no bonus.
+@export var crouch_tap := 0.1
+## Launch speed at a full crouch (1.2 -> 1.44x the height).
+@export var crouch_jump_mult := 1.2
+
 @export_group("Dash")
 @export var dash_speed := 760.0
 @export var dash_time := 0.18
@@ -83,6 +95,7 @@ var dead := false
 
 var _coyote_timer := 0.0
 var _jump_buffer_timer := 0.0
+var _crouch := -1.0  # seconds spent crouching; -1 = not crouching
 var _dash_timer := 0.0
 var _dash_cooldown_timer := 0.0
 var _attack_timer := 0.0
@@ -132,7 +145,10 @@ func _physics_process(delta: float) -> void:
 	_tick_timers(delta)
 	var input_x := Input.get_axis("move_left", "move_right")
 	if Input.is_action_just_pressed("jump"):
-		_jump_buffer_timer = jump_buffer_time
+		if is_on_floor() and absf(input_x) < 0.2 and _hurt_timer <= 0.0 and _dash_timer <= 0.0:
+			_crouch = 0.0  # standing still: crouch and coil instead of jumping at once
+		else:
+			_jump_buffer_timer = jump_buffer_time
 	if Input.is_action_just_pressed("attack"):
 		_attack_buffer_timer = attack_buffer_time
 		_charge = 0.0
@@ -157,6 +173,7 @@ func _physics_process(delta: float) -> void:
 
 	_update_horizontal(input_x, delta)
 	_apply_gravity(delta)
+	_update_crouch(input_x, delta)
 	_handle_jump()
 	_handle_attack_input()
 	if _attack_timer > 0.0:
@@ -257,6 +274,43 @@ func _slow_mult() -> Vector2:
 	return m
 
 
+## Crouch-jump: coil while held, launch on release (see "Crouch Jump").
+func _update_crouch(input_x: float, delta: float) -> void:
+	if _crouch < 0.0:
+		return
+	if not is_on_floor() or absf(input_x) >= 0.2 or _hurt_timer > 0.0:
+		# started running or walked off a ledge mid-crouch: jump right away
+		_crouch_launch(Input.is_action_pressed("jump"))
+		return
+	if Input.is_action_pressed("jump"):
+		_crouch = minf(_crouch + delta, crouch_time)
+		velocity.x = move_toward(velocity.x, 0.0, ground_decel * delta)
+	else:
+		_crouch_launch(false)
+
+
+## 0..1 how deep the coil is (a tap reads as 0).
+func crouch_amount() -> float:
+	if _crouch < 0.0:
+		return 0.0
+	return clampf((_crouch - crouch_tap) / maxf(crouch_time - crouch_tap, 0.01), 0.0, 1.0)
+
+
+func _crouch_launch(still_holding: bool) -> void:
+	var depth := crouch_amount()
+	_crouch = -1.0
+	_jump_buffer_timer = 0.0
+	_coyote_timer = 0.0
+	# spring legs: launch speed grows linearly with crouch depth
+	velocity.y = jump_velocity * lerpf(1.0, crouch_jump_mult, depth) * _slow_mult().y
+	# the hold was spent coiling, so a release doesn't cut this jump short
+	is_jumping = still_holding
+	_squash = Vector2(0.75, 1.25).lerp(Vector2(0.62, 1.45), depth)
+	if depth > 0.35:
+		art.launch_burst(depth)
+		_pop_text(global_position + Vector2(0, 30), "HUP!" if depth < 0.95 else "BOING!", Color(1.0, 0.95, 0.85))
+
+
 func _start_dash(input_x: float) -> void:
 	if input_x != 0.0:
 		facing = 1 if input_x > 0.0 else -1
@@ -267,6 +321,7 @@ func _start_dash(input_x: float) -> void:
 	_attack_timer = 0.0
 	_recoil_timer = 0.0
 	_cancel_charge()
+	_crouch = -1.0
 	_squash = Vector2(1.3, 0.75)
 
 
@@ -466,6 +521,7 @@ func take_damage(amount: float, source_pos: Vector2, from_hazard := false) -> vo
 		return
 	health = maxf(health - amount, 0.0)
 	_cancel_charge()
+	_crouch = -1.0
 	health_changed.emit(health, max_health)
 	_invuln_timer = invuln_time
 	_hurt_timer = hurt_stun_time
@@ -519,6 +575,8 @@ func _update_visuals(delta: float) -> void:
 	art.stuck = _slow_mult().x < 1.0
 	art.charge = clampf((_charge - charge_show_delay) / (charge_time - charge_show_delay), 0.0, 1.0) if _charge >= 0.0 else 0.0
 	art.charge_ready = _charge_ready
+	art.crouch = crouch_amount() if _crouch >= 0.0 else 0.0
+	art.crouching = _crouch >= 0.0
 	sword.charge = art.charge
 	sword.charge_ready = _charge_ready
 	var col := Color.WHITE
