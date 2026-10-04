@@ -20,6 +20,7 @@ InputSetup="*res://scripts/core/input_setup.gd"
 Music="*res://scripts/audio/music.gd"
 Mood="*res://scripts/core/mood.gd"
 World25="*res://scripts/world25/world25.gd"
+Settings="*res://scripts/core/settings.gd"
 
 [display]
 

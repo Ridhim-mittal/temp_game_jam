@@ -42,7 +42,14 @@ var _pounce_dir := Vector3.ZERO
 @onready var _mat: ShaderMaterial = visual.material_override.duplicate()
 
 
+const DIVER_SCENE := "res://scenes/clearing/monsters/scribble_diver.tscn"
+
+
 func _ready() -> void:
+	# Settings can swap every Scribble for the platformer's flying dive-bomber
+	var settings := get_node_or_null("/root/Settings")
+	if settings and settings.scribble_style == "diver" and not Engine.is_editor_hint():
+		_become_diver.call_deferred()
 	add_to_group("enemy")
 	visual.material_override = _mat
 	_mat.set_shader_parameter("seed", randf() * 100.0)
@@ -121,6 +128,21 @@ func _process(delta: float) -> void:
 	if _player:
 		var to := _player.global_position - global_position
 		_mat.set_shader_parameter("look", Vector2(clampf(to.x * 0.3, -1, 1), clampf(-to.z * 0.3, -1, 1)))
+
+
+func _become_diver() -> void:
+	var diver: Node3D = load(DIVER_SCENE).instantiate()
+	diver.transform = transform
+	diver.respawn_time = respawn_time
+	diver.sight = sight_range + 1.0
+	var parent := get_parent()
+	var at := get_index()
+	var keep := name
+	parent.remove_child(self)
+	diver.name = keep
+	parent.add_child(diver)
+	parent.move_child(diver, at)
+	queue_free()
 
 
 func is_harmful() -> bool:

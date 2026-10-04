@@ -15,7 +15,6 @@ godot --path . res://scenes/clearing/clearing.tscn
 | Move / jump | WASD · Space |
 | Attack | Left click (aims at the mouse) or X · tap 3× for a combo · attack in the air to strike down |
 | Dash | Shift or right click |
-| Switch attack style (ink slash / nib-sword / both) | T |
 | Back to the menu | Esc |
 
 ## The story path
@@ -53,8 +52,9 @@ The Clearing (hub, now ~2x bigger)
   first guesses; tune them in each room's `Enemies` node.
 - Art is drawn in code (shapes and shaders), matching the clearing. Cult of the Lamb's look is
   hand-painted, so these are placeholders an artist can replace prop by prop.
-- Still open from before: which **attack style** stays (T toggles for now) and which **Scribble**
-  design stays. The clearing's Scribbles now pounce and hurt.
+- Attack: Vesper swings the nib-sword **and** sweeps the ink slash (decided after the night).
+- Scribbles: **Settings** on the main menu picks the 2.5D Hopper (hops and pounces) or the
+  platformer's Dive-bomber (flies, dives, flees light). Saved between sessions.
 - Copyright: `2.5d_map_ref_ideas/` (renamed: `>` breaks Windows checkouts) holds Cult of the
   Lamb screenshots. Fine as private reference; think twice before keeping them in a public repo.
 

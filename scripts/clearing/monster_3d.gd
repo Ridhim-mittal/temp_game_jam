@@ -27,6 +27,8 @@ const PALE := Color(0.98, 0.96, 0.9)
 
 var health := 0
 var dead := false
+## Flying monsters ignore gravity (the dive-bomber Scribble).
+var flying := false
 var stun := 0.0
 var facing := 1
 var time := 0.0
@@ -61,7 +63,10 @@ func _physics_process(delta: float) -> void:
 		_slow_to_stop(18.0, delta)
 	else:
 		_tick(delta)
-	if not is_on_floor():
+	if flying:
+		if stun > 0.0:
+			velocity.y = move_toward(velocity.y, 0.0, 20.0 * delta)
+	elif not is_on_floor():
 		velocity.y -= gravity * delta
 	elif velocity.y < 0.0:
 		velocity.y = 0.0

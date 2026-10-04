@@ -1,1 +1,10 @@
 res://_mech_tmp.gd
+res://scripts/clearing/clearing_player.gd
+res://scripts/clearing/eraser_3d.gd
+res://scripts/ui/main_menu.gd
+res://scripts/world25/gate.gd
+res://scripts/world25/minimap.gd
+res://scripts/world25/room.gd
+res://scripts/world25/story_ui.gd
+res://scripts/world25/world25.gd
+res://shaders/world25/gate_marks.gdshader

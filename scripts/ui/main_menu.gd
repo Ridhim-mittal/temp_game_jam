@@ -27,12 +27,13 @@ const ENTRIES := [
 	["Skip to the level", "res://scenes/levels/test_level.tscn", "skip"],
 	["Monster test", "res://scenes/levels/monster_test.tscn", "eye"],
 	["Begin in the Margins", "res://scenes/clearing/clearing.tscn", "map"],
+	["Settings", "res://scenes/ui/settings.tscn", "gear"],
 	["Quit", "", "x"],
 ]
 const SFX := ["SHNK!", "KRAK!", "SLASH!", "THWACK!"]
 const BAR_POS := Vector2(70, 336)
 const BAR_SIZE := Vector2(400, 50)
-const BAR_GAP := 64.0
+const BAR_GAP := 56.0
 
 @export var music := "margins"
 
@@ -298,6 +299,12 @@ func _draw_icon(kind: String, c: Vector2, col: Color) -> void:
 		"eye":
 			draw_circle(c, 7.0, col)
 			draw_circle(c, 3.5, RED)
+		"gear":
+			for k in 6:
+				var a := TAU * k / 6.0
+				draw_line(c + Vector2(cos(a), sin(a)) * 4.0, c + Vector2(cos(a), sin(a)) * 8.5, col, 3.5)
+			draw_circle(c, 5.5, col)
+			draw_circle(c, 2.5, RED)
 		"map":  # a little plateau seen from above, like the clearing
 			draw_colored_polygon(PackedVector2Array([c + Vector2(-8, 1), c + Vector2(0, -5), c + Vector2(8, 1), c + Vector2(0, 7)]), col)
 			draw_circle(c + Vector2(0, 1), 2.5, RED)

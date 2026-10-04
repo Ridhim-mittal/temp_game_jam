@@ -24,13 +24,10 @@ const MASK_WORLD := 1
 const MASK_ENEMY := 4  # physics layer 3
 const HIT_WORDS := ["THWACK!", "SLASH!", "POW!", "WHAM!", "SHNK!"]
 
-## How a swing looks. Two versions exist while the team picks one:
-##   INK_SLASH  ink crescent swept on the ground (clearing_fx.gd)
-##   NIB_SWORD  the platformer's nib-sword swinging on Vesper (sword.gd)
-##   BOTH       sword swing plus the ground crescent
-## Press T in game to cycle through them.
+## How a swing looks: Vesper swings the platformer's nib-sword (sword.gd)
+## and an ink crescent sweeps the ground (clearing_fx.gd). Either can be
+## turned off per scene.
 enum AttackStyle { INK_SLASH, NIB_SWORD, BOTH }
-const STYLE_NAMES := ["Ink slash (clearing)", "Nib-sword (platformer)", "Both"]
 
 @export var max_speed := 5.5
 @export var accel := 38.0
@@ -65,7 +62,7 @@ const STYLE_NAMES := ["Ink slash (clearing)", "Nib-sword (platformer)", "Both"]
 @export var hurt_hop := 4.0
 
 @export_group("Attack")
-@export var attack_style := AttackStyle.INK_SLASH
+@export var attack_style := AttackStyle.BOTH
 @export var attack_damage := 1
 @export var finisher_damage := 2
 ## Centre of the hit circle, in front of the player.
@@ -116,7 +113,6 @@ var _slow_sources := {}  # source -> Vector2(speed_mult, jump_mult)
 @onready var visual: Node2D = $ArtViewport/Visual
 @onready var art = $ArtViewport/Visual/Art
 @onready var sword = $ArtViewport/Visual/Sword
-var _style_label: Label
 
 ## Size the art is drawn at inside the SubViewport (sharper billboard).
 var _art_scale := 2.0
@@ -139,29 +135,10 @@ func _ready() -> void:
 	health_changed.emit.call_deferred(health, max_health)
 
 
-func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_T:
-		attack_style = (attack_style + 1) % AttackStyle.size() as AttackStyle
-		_apply_attack_style()
-		get_viewport().set_input_as_handled()
-
-
 func _apply_attack_style() -> void:
 	var has_sword := attack_style != AttackStyle.INK_SLASH
 	sword.visible = has_sword
 	sword.set_process(has_sword)
-	if _style_label == null:
-		var ui := get_tree().current_scene.get_node_or_null("UI")
-		if ui == null:
-			return
-		_style_label = Label.new()
-		_style_label.position = Vector2(24, 652)
-		_style_label.add_theme_font_size_override("font_size", 18)
-		_style_label.add_theme_color_override("font_color", Color(0.97, 0.95, 0.9))
-		_style_label.add_theme_color_override("font_outline_color", Color(0.06, 0.03, 0.13))
-		_style_label.add_theme_constant_override("outline_size", 6)
-		ui.add_child.call_deferred(_style_label)
-	_style_label.text = "Attack style: %s    (T to switch)" % STYLE_NAMES[attack_style]
 
 
 func _physics_process(delta: float) -> void:
