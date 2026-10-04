@@ -247,6 +247,9 @@ func _spawn_player(world: Node) -> void:
 	if world and world.player_health > 0:
 		player.health = world.player_health
 		player.health_changed.emit(player.health, player.max_health)
+	if world and world.player_fuel >= 0.0:
+		player.fuel = world.player_fuel
+		player.ember_changed.emit(player.fuel, player.max_fuel)
 	player._invuln = 1.2  # a moment of grace while the ink wipe clears
 
 

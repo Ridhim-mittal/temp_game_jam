@@ -70,6 +70,13 @@ func _tick(delta: float) -> void:
 				_cooldown = cooldown
 
 
+func on_flash(_from: Vector3) -> void:
+	if dead:
+		return
+	stun = maxf(stun, 0.6)  # the boss shrugs most of it off
+	puppet.flash()
+
+
 func _blocks(dir: Vector3, _aerial: bool) -> bool:
 	if state == State.TIRED:
 		return false

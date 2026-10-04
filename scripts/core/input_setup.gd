@@ -13,10 +13,16 @@ func _enter_tree() -> void:
 	_add_keys("dash", [KEY_C, KEY_SHIFT])  # keyboard fallbacks
 	_add_mouse_button("dash", MOUSE_BUTTON_RIGHT)
 	_add_keys("restart", [KEY_R])
+	# 2.5D Ember: right click flashes there (the platformer keeps it as dash)
+	_add_keys("flash", [KEY_Q])
+	_add_mouse_button("flash", MOUSE_BUTTON_RIGHT)
+	_add_keys("heal", [KEY_F])
 
 	_add_joy_button("jump", JOY_BUTTON_A)
 	_add_joy_button("attack", JOY_BUTTON_X)
 	_add_joy_button("dash", JOY_BUTTON_RIGHT_SHOULDER)
+	_add_joy_button("flash", JOY_BUTTON_Y)
+	_add_joy_button("heal", JOY_BUTTON_B)
 	_add_joy_button("move_left", JOY_BUTTON_DPAD_LEFT)
 	_add_joy_button("move_right", JOY_BUTTON_DPAD_RIGHT)
 	_add_joy_button("up", JOY_BUTTON_DPAD_UP)

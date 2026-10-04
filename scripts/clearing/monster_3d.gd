@@ -14,6 +14,7 @@ extends CharacterBody3D
 
 const Fx = preload("res://scripts/clearing/clearing_fx.gd")
 const Puppet = preload("res://scripts/clearing/monster_puppet.gd")
+const Light = preload("res://scripts/world25/light.gd")
 const DANGER := Color(1.0, 0.86, 0.2)
 const PALE := Color(0.98, 0.96, 0.9)
 
@@ -104,6 +105,26 @@ func _on_hurt() -> void:
 	pass
 
 
+## Caught in the Ember's Flash: stunned (monsters override for their own
+## light rules).
+func on_flash(_from: Vector3) -> void:
+	if dead:
+		return
+	stun = maxf(stun, 1.4)
+	puppet.flash()
+
+
+## Caught in the Writer's searchlight: crossed-out things are erased.
+func on_searchlight(damage: int) -> void:
+	if dead:
+		return
+	health -= damage
+	puppet.flash()
+	pop("SIZZLE!", Color(1.0, 0.95, 0.7), 1.6, 22)
+	if health <= 0:
+		_die()
+
+
 # ----------------------------------------------------------------- helpers
 
 func to_player() -> Vector3:
@@ -134,12 +155,10 @@ func _slow_to_stop(rate: float, delta: float) -> void:
 	move_planar(Vector3.ZERO, rate, delta)
 
 
-## The light standing over `point`, if any (braziers, the spirit flame).
+## The Writer's kind of light over `point`, if any: braziers, the
+## searchlight, a Flash (not the Ember's steady glow). See world25/light.gd.
 func light_at(point: Vector3) -> Node3D:
-	for l in get_tree().get_nodes_in_group("light_3d"):
-		if l.lights(point):
-			return l
-	return null
+	return Light.light_at(get_tree(), point, true)
 
 
 func is_lit() -> bool:

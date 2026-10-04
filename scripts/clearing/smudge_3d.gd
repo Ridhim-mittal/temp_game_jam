@@ -66,6 +66,17 @@ func _tick(delta: float) -> void:
 				_cooldown = cooldown
 
 
+## A Flash drags it to the surface, exposed and stunned.
+func on_flash(_from: Vector3) -> void:
+	if dead:
+		return
+	state = State.RECOVER
+	_timer = recover_time + 0.6
+	_alpha = 1.0
+	_set_exposed(true)
+	stun = 1.0
+
+
 ## Hidden: no collision on the enemy layer, so attacks pass through it.
 func _set_exposed(on: bool) -> void:
 	collision_layer = 4 if on and not dead else 0

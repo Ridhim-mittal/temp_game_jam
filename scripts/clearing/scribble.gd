@@ -149,6 +149,14 @@ func is_harmful() -> bool:
 	return not dead and state == State.POUNCE
 
 
+func on_flash(_from: Vector3) -> void:
+	if dead:
+		return
+	state = State.STUNNED
+	_timer = 1.4
+	_flash = 1.0
+
+
 func _sees_player() -> bool:
 	return _player != null and global_position.distance_to(_player.global_position) < sight_range
 

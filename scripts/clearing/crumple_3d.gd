@@ -68,6 +68,14 @@ func _tick(delta: float) -> void:
 				_cooldown = cooldown
 
 
+func on_flash(_from: Vector3) -> void:
+	if dead:
+		return
+	state = State.UNFOLDED
+	_timer = unfold_time
+	pop("FWUMP!", PALE)
+
+
 func _blocks(_dir: Vector3, _aerial: bool) -> bool:
 	if state == State.DAZED or state == State.UNFOLDED:
 		return false

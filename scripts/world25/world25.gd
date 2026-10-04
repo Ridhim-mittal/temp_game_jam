@@ -16,8 +16,9 @@ const WIPE_SHADER = preload("res://shaders/world25/ink_wipe.gdshader")
 
 ## Gate id the player arrives at in the next room ("" = the room's spawn).
 var entry_gate := ""
-## Carried between rooms; -1 = full health.
+## Carried between rooms; -1 = full health / starting fuel.
 var player_health := -1
+var player_fuel := -1.0
 ## room_id -> true once all its monsters are beaten.
 var cleared := {}
 ## room_id -> {"cell": Vector2i, "color": Color, "name": String}
@@ -58,6 +59,7 @@ func start_story() -> void:
 func reset() -> void:
 	entry_gate = ""
 	player_health = -1
+	player_fuel = -1.0
 	cleared.clear()
 	visited.clear()
 	links.clear()
@@ -111,6 +113,7 @@ func go(scene_path: String, gate_id: String) -> void:
 	var player := get_tree().get_first_node_in_group("player")
 	if player and "health" in player and not player.dead:
 		player_health = player.health
+		player_fuel = player.fuel
 	entry_gate = gate_id
 	await _cover()
 	Engine.time_scale = 1.0

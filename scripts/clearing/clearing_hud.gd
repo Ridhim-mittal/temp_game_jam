@@ -1,7 +1,7 @@
 extends Control
-## Clearing HUD: health as ink drops in the top-left, as in the design
-## document (section 10). A drop that is lost pops and empties; a full refill
-## (respawn) bounces all of them.
+## Clearing HUD (design doc section 10): health as ink drops in the
+## top-left, and the Ember's fuel as a flame and bar beside them. A drop
+## that is lost pops and empties; notches on the bar mark a Flash's cost.
 
 const INK := Color(0.06, 0.04, 0.09)
 const PAPER := Color(0.97, 0.95, 0.9)
@@ -9,8 +9,13 @@ const LOST := Color(1.0, 0.4, 0.35)
 
 var current := 5
 var maximum := 5
+var fuel := 60.0
+var max_fuel := 100.0
+var flash_cost := 25.0
 
 var _pops := {}  # drop index -> 1..0 pop animation
+var _fuel_shown := 60.0
+var _time := 0.0
 
 
 func _ready() -> void:
@@ -21,6 +26,11 @@ func _ready() -> void:
 	if player and player.has_signal("health_changed"):
 		player.health_changed.connect(_on_health_changed)
 		_on_health_changed(player.health, player.max_health)
+		if player.has_signal("ember_changed"):
+			player.ember_changed.connect(_on_ember_changed)
+			flash_cost = player.flash_cost
+			_on_ember_changed(player.fuel, player.max_fuel)
+			_fuel_shown = fuel
 
 
 func _on_health_changed(cur: int, max_hp: int) -> void:
@@ -30,7 +40,14 @@ func _on_health_changed(cur: int, max_hp: int) -> void:
 	maximum = max_hp
 
 
+func _on_ember_changed(f: float, max_f: float) -> void:
+	fuel = f
+	max_fuel = max_f
+
+
 func _process(delta: float) -> void:
+	_time += delta
+	_fuel_shown = move_toward(_fuel_shown, fuel, delta * 80.0)
 	for i in _pops.keys():
 		_pops[i] -= delta * 3.0
 		if _pops[i] <= 0.0:
@@ -52,6 +69,29 @@ func _draw() -> void:
 			var col := LOST if pop > 0.0 else Color(PAPER, 0.55)
 			draw_polyline(drop + PackedVector2Array([drop[0]]), INK, 5.0)
 			draw_polyline(drop + PackedVector2Array([drop[0]]), col, 2.0)
+	_draw_ember(Vector2(40 + maximum * 40 + 14, 42))
+
+
+## Flame icon and fuel bar (orange like the ember on Vesper's scarf).
+func _draw_ember(at: Vector2) -> void:
+	var ember := Color(1.0, 0.62, 0.22)
+	var flick := 1.0 + 0.08 * sin(_time * 12.0)
+	var flame := PackedVector2Array()
+	for k in 13:
+		var a := PI * 0.5 + (k / 12.0 - 0.5) * PI * 1.6
+		flame.append(at + Vector2(cos(a) * 9.0, sin(a) * 8.1))
+	flame.append(at + Vector2(0, -18.0 * flick))
+	draw_colored_polygon(flame, ember)
+	draw_polyline(flame + PackedVector2Array([flame[0]]), INK, 2.5)
+	draw_circle(at + Vector2(0, 2), 3.5, Color(1.0, 0.92, 0.6))
+	var bar := Rect2(at + Vector2(18, -7), Vector2(170, 14))
+	draw_rect(bar.grow(3.0), INK)
+	var w := bar.size.x * clampf(_fuel_shown / max_fuel, 0.0, 1.0)
+	draw_rect(Rect2(bar.position, Vector2(w, bar.size.y)), ember if fuel >= flash_cost else ember.darkened(0.45))
+	var n := int(max_fuel / flash_cost)
+	for i in range(1, n):
+		var x := bar.position.x + bar.size.x * i * flash_cost / max_fuel
+		draw_line(Vector2(x, bar.position.y), Vector2(x, bar.end.y), INK, 2.0)
 
 
 ## Ink drop: round bottom, pointed top. `c` is the centre of the round part.

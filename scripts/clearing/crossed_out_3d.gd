@@ -62,6 +62,12 @@ func _tick(delta: float) -> void:
 	face_dir(_front)
 
 
+func on_flash(from: Vector3) -> void:
+	super(from)
+	_shield = maxf(_shield - 0.7, 0.0)
+	pop("SIZZLE!", Color(1.0, 0.95, 0.7), 2.0, 22)
+
+
 func _turn_towards(d: Vector3, delta: float) -> void:
 	if d.length() < 0.01:
 		return

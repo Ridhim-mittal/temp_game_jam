@@ -100,6 +100,17 @@ func _process(delta: float) -> void:
 		_shadow.global_position = Vector3(global_position.x, _ground_y + 0.03, global_position.z)
 
 
+func on_flash(from: Vector3) -> void:
+	if dead:
+		return
+	_dir = global_position - from
+	_dir.y = 0.0
+	_dir = _dir.normalized() if _dir.length() > 0.01 else Vector3.RIGHT
+	state = State.FLEE
+	_timer = 1.4
+	pop("SKREE!", PALE, 1.2, 22)
+
+
 func is_harmful() -> bool:
 	return super() and state == State.DIVE
 

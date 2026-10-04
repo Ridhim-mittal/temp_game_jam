@@ -16,9 +16,11 @@ extends CharacterBody3D
 ##  - constant speed on slopes and floor snapping keep stairs even
 
 signal health_changed(current: int, maximum: int)
+signal ember_changed(fuel: float, maximum: float)
 signal died
 
 const Fx = preload("res://scripts/clearing/clearing_fx.gd")
+const FlashScript = preload("res://scripts/world25/flash.gd")
 const ART_RUN_SPEED := 300.0  # player_visual.gd's full-run speed, px/s
 const MASK_WORLD := 1
 const MASK_ENEMY := 4  # physics layer 3
@@ -61,6 +63,20 @@ enum AttackStyle { INK_SLASH, NIB_SWORD, BOTH }
 @export var hurt_knockback := 7.0
 @export var hurt_hop := 4.0
 
+@export_group("Ember")
+## Vesper's own light (design doc 6.7). Its glow makes drawn things real
+## around Vesper and shrinks as fuel runs low; hits refill it.
+@export var max_fuel := 100.0
+@export var start_fuel := 60.0
+@export var fuel_per_hit := 8.0
+@export var glow_radius_full := 3.4
+@export var glow_radius_empty := 1.6
+## Flash: right click / Q.
+@export var flash_cost := 25.0
+## Heal: hold F, standing still.
+@export var heal_cost := 33.0
+@export var heal_time := 1.0
+
 @export_group("Attack")
 @export var attack_style := AttackStyle.BOTH
 @export var attack_damage := 1
@@ -85,6 +101,9 @@ var smooth_position := Vector3.ZERO
 ## Height of the ground under the player (the shadow and camera use it, so
 ## jumping doesn't bob the view).
 var ground_height := 0.0
+var fuel := 60.0
+## The Ember only makes drawn things real; it doesn't burn monsters.
+var monster_light := false
 
 var _dash_timer := 0.0
 var _dash_cooldown_timer := 0.0
@@ -105,6 +124,9 @@ var _jumping := false
 var _invuln := 0.0
 var _hurt_timer := 0.0
 var _slow_sources := {}  # source -> Vector2(speed_mult, jump_mult)
+var _channel := -1.0  # seconds spent channelling a heal; -1 = not healing
+var _safe_pos := Vector3.ZERO
+var _safe_timer := 0.0
 
 @onready var visual_3d: Node3D = $Visual3D
 @onready var sprite: Sprite3D = $Visual3D/Sprite
@@ -113,6 +135,7 @@ var _slow_sources := {}  # source -> Vector2(speed_mult, jump_mult)
 @onready var visual: Node2D = $ArtViewport/Visual
 @onready var art = $ArtViewport/Visual/Art
 @onready var sword = $ArtViewport/Visual/Sword
+@onready var ember_light: OmniLight3D = $Visual3D/Ember
 
 ## Size the art is drawn at inside the SubViewport (sharper billboard).
 var _art_scale := 2.0
@@ -124,6 +147,9 @@ func _ready() -> void:
 	_spawn = global_position
 	ground_height = global_position.y
 	health = max_health
+	fuel = start_fuel
+	_safe_pos = global_position
+	add_to_group("light_3d")
 	_art_scale = visual.scale.y
 	sprite.texture = art_viewport.get_texture()
 	floor_constant_speed = true
@@ -133,6 +159,7 @@ func _ready() -> void:
 	Fx.prewarm.call_deferred(get_tree(), global_position)
 	_apply_attack_style()
 	health_changed.emit.call_deferred(health, max_health)
+	ember_changed.emit.call_deferred(fuel, max_fuel)
 
 
 func _apply_attack_style() -> void:
@@ -160,13 +187,20 @@ func _physics_process(delta: float) -> void:
 			_attack_buffer = attack_buffer_time
 		if Input.is_action_just_pressed("jump"):
 			_jump_buffer = jump_buffer_time
-		if Input.is_action_just_pressed("dash") and _dash_cooldown_timer <= 0.0:
+		if Input.is_action_just_pressed("flash"):
+			_flash()
+		# right click is Flash here; Shift / C dash
+		var dash_pressed := Input.is_action_just_pressed("dash") and not Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT)
+		if dash_pressed and _dash_cooldown_timer <= 0.0:
 			_dash_dir = dir.normalized() if dir != Vector3.ZERO else Vector3(facing, 0, 0)
 			_dash_timer = dash_time
 			_dash_cooldown_timer = dash_cooldown
 			_attack_timer = 0.0  # a dash cancels a swing
 			_squash = Vector2(1.3, 0.75)
-		if _attack_buffer > 0.0 and _attack_timer <= 0.0 and _dash_timer <= 0.0:
+		_update_heal(delta)
+		if _channel >= 0.0:
+			dir = Vector3.ZERO  # rooted while healing
+		elif _attack_buffer > 0.0 and _attack_timer <= 0.0 and _dash_timer <= 0.0:
 			_start_attack(dir)
 
 	_update_planar(dir, delta)
@@ -238,10 +272,9 @@ func _post_move() -> void:
 	_was_on_floor = is_on_floor()
 	_probe_ground()
 	_check_contact_damage()
-	if global_position.y < kill_height:
-		global_position = _spawn
-		velocity = Vector3.ZERO
-		_snap_visuals()
+	_track_safe_ground(get_physics_process_delta_time())
+	if global_position.y < ground_height - 4.0 or global_position.y < kill_height:
+		_fell()
 	_prev_tick_pos = _tick_pos
 	_tick_pos = global_position
 
@@ -350,6 +383,7 @@ func _hit_in_front(dir: Vector3, finisher: bool) -> void:
 	if cut > 0:
 		Fx.burst(get_tree(), center + Vector3(0, 0.3, 0), Color(0.42, 0.62, 0.42), mini(cut * 3, 18), 3.0)
 	if hits > 0:
+		add_fuel(fuel_per_hit * hits)
 		if aerial:
 			# pogo: bounce off what you hit, ready to strike again
 			velocity.y = pogo_velocity
@@ -371,6 +405,55 @@ func _shake(amount: float) -> void:
 	var cam := get_tree().get_first_node_in_group("camera")
 	if cam and cam.has_method("add_trauma"):
 		cam.add_trauma(amount)
+
+
+# ------------------------------------------------------------------- ember
+
+func add_fuel(amount: float) -> void:
+	fuel = clampf(fuel + amount, 0.0, max_fuel)
+	ember_changed.emit(fuel, max_fuel)
+
+
+func glow_radius() -> float:
+	return lerpf(glow_radius_empty, glow_radius_full, fuel / max_fuel)
+
+
+## Light source for drawn things (world25/light.gd): the Ember's glow.
+func lights(point: Vector3) -> bool:
+	if dead:
+		return false
+	var d := point - global_position
+	return Vector2(d.x, d.z).length() < glow_radius() and absf(d.y) < 3.0
+
+
+func _flash() -> void:
+	if fuel < flash_cost:
+		Fx.pop_text(get_tree(), global_position + Vector3(0, 1.8, 0), "fzzt...", Color(0.7, 0.6, 0.5), 24)
+		return
+	add_fuel(-flash_cost)
+	var f := FlashScript.new()
+	get_tree().current_scene.add_child(f)
+	f.global_position = Vector3(global_position.x, ground_height, global_position.z)
+	Fx.pop_text(get_tree(), global_position + Vector3(0, 1.9, 0), "FLASH!", Color(1.0, 0.85, 0.45), 34)
+	_squash = Vector2(1.2, 0.85)
+
+
+## Hold heal, standing on the ground, to turn fuel into one ink drop.
+func _update_heal(delta: float) -> void:
+	var can := Input.is_action_pressed("heal") and is_on_floor() and health < max_health \
+		and fuel >= heal_cost and _attack_timer <= 0.0 and _dash_timer <= 0.0
+	if not can:
+		_channel = -1.0
+		return
+	_channel = maxf(_channel, 0.0) + delta
+	if _channel >= heal_time:
+		_channel = -1.0
+		add_fuel(-heal_cost)
+		health = mini(health + 1, max_health)
+		health_changed.emit(health, max_health)
+		Fx.pop_text(get_tree(), global_position + Vector3(0, 1.8, 0), "+1", Color(0.6, 1.0, 0.7), 32)
+		Fx.burst(get_tree(), global_position + Vector3(0, 0.8, 0), Color(1.0, 0.75, 0.35), 14, 2.5)
+		_squash = Vector2(0.85, 1.2)
 
 
 # ------------------------------------------------------------------ damage
@@ -412,6 +495,34 @@ func take_damage(amount: int, from_pos: Vector3) -> void:
 	_shake(0.55)
 	if health <= 0:
 		_die()
+
+
+## Remembers solid, permanent ground to come back to after a fall.
+func _track_safe_ground(delta: float) -> void:
+	_safe_timer -= delta
+	if _safe_timer > 0.0 or not is_on_floor():
+		return
+	_safe_timer = 0.25
+	var below := get_last_slide_collision()
+	for i in get_slide_collision_count():
+		var c := get_slide_collision(i)
+		if c.get_normal().y > 0.6:
+			below = c
+	if below and below.get_collider() and below.get_collider().is_in_group("drawn"):
+		return  # never respawn on something that can vanish
+	_safe_pos = global_position
+
+
+## Fell through a vanished bridge (or off the world): back to safe ground,
+## one ink drop poorer.
+func _fell() -> void:
+	velocity = Vector3.ZERO
+	global_position = _safe_pos
+	_snap_visuals()
+	if not dead:
+		_invuln = 0.0
+		take_damage(1, global_position + Vector3(facing, 0, 0))
+		velocity = Vector3.ZERO
 
 
 ## Pushed back without damage (a hit bounced off something rubbery).
@@ -485,6 +596,11 @@ func _update_art(delta: float) -> void:
 	art.dashing = _dash_timer > 0.0
 	art.max_speed = ART_RUN_SPEED
 	art.stuck = _slow_mult().x < 1.0
+	art.charge = clampf(_channel / heal_time, 0.0, 1.0) if _channel >= 0.0 else 0.0
+	art.charge_ready = false
+	var k := fuel / max_fuel
+	ember_light.omni_range = lerpf(2.4, 4.6, k)
+	ember_light.light_energy = lerpf(0.55, 1.35, k)
 	# blink while invulnerable after a hit
 	if not dead:
 		sprite.modulate.a = 0.35 if _invuln > 0.0 and fmod(_invuln, 0.16) < 0.08 else 1.0
