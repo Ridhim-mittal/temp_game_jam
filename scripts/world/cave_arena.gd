@@ -1,8 +1,8 @@
 extends Node2D
 ## The end of the Ink Cave: two Ink Blots at once. When Vesper passes
 ## `trigger_x`, ink walls rise at `left_x` and `right_x` and both Blots
-## (`blot_paths`) wake. When the last one melts, Vesper gets `reward_heal`
-## back and the cave breaks apart (cave_backdrop.gd `collapse`: the screen
+## (`blot_paths`) wake. Each drops its +50 heart (ink_blot.gd); when the last
+## one melts the cave breaks apart (cave_backdrop.gd `collapse`: the screen
 ## shakes, cracks race across it, rocks rain, a white flash) and he is thrown
 ## back into Shade's city: `next_scene`, or "TO BE CONTINUED" and the main
 ## menu until the Shade fight exists. Place at the world origin.
@@ -19,7 +19,6 @@ const RIM := Color(1.0, 0.27, 0.66)
 @export var left_x := 2700.0
 @export var right_x := 4100.0
 @export var floor_y := 600.0
-@export var reward_heal := 40.0
 ## Where the collapse throws Vesper ("" = TO BE CONTINUED, then the main menu).
 @export_file("*.tscn") var next_scene := ""
 
@@ -81,12 +80,7 @@ func _on_defeated() -> void:
 	if _left > 0:
 		_pop("ONE MORE!", Color(1.0, 0.85, 0.3))
 		return
-	await get_tree().create_timer(1.4).timeout
-	var p := get_tree().get_first_node_in_group("player")
-	if p and p.has_method("heal"):
-		p.heal(reward_heal)
-		_pop("+%d HEALTH" % int(reward_heal), Color(0.55, 1.0, 0.6))
-	await get_tree().create_timer(1.0).timeout
+	await get_tree().create_timer(2.4).timeout  # time for its heart to reach Vesper
 	_start_collapse()
 
 

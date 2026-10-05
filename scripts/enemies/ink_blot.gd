@@ -31,6 +31,8 @@ const FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
 @export var asleep := true
 ## Shown over its health bar (boss_bar.gd).
 @export var display_name := "THE INK BLOT"
+## HP in the heart it always drops when it melts (it flies to Vesper).
+@export var drop_heal := 50.0
 
 var state := State.SLEEP
 var _timer := 0.0
@@ -230,6 +232,12 @@ func _die(_kx: float) -> void:
 	pop("BLORRP...", Color(0.7, 0.62, 0.9), Vector2(0, -150), 34)
 	Sfx.play("ink_splat", 4.0, 0.7)
 	defeated.emit()
+	var heart := Area2D.new()
+	heart.set_script(load("res://scripts/world/health_heart.gd"))
+	heart.amount = drop_heal
+	heart.seek = true
+	heart.position = global_position + Vector2(0, -90)
+	get_parent().add_child(heart)
 	await get_tree().create_timer(1.6).timeout
 	create_tween().tween_property(self, "modulate:a", 0.0, 0.8).finished.connect(queue_free)
 

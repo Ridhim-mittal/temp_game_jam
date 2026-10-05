@@ -2,7 +2,8 @@
 extends Area2D
 ## Health pickup: a cute little heart with a face and tiny flapping wings,
 ## bobbing in the air. Touch it to heal `amount` HP. It stays put while
-## you are at full health, so you can come back for it.
+## you are at full health, so you can come back for it. `seek` makes it fly
+## to Vesper (the Ink Blot's +50 drop), so it can't be left behind.
 
 const INK := Color(0.05, 0.03, 0.1)
 const ComicText = preload("res://scripts/effects/comic_text.gd")
@@ -10,6 +11,9 @@ const OnScreen = preload("res://scripts/core/on_screen.gd")
 
 @export var amount := 30.0
 @export var heart_color := Color(1.0, 0.36, 0.42)
+## Fly to the player after `seek_delay` seconds instead of waiting in place.
+@export var seek := false
+@export var seek_delay := 0.7
 
 var _time := 0.0
 var _taken := false
@@ -30,10 +34,16 @@ func _ready() -> void:
 	add_child(cs)
 
 
-func _physics_process(_delta: float) -> void:
+func _physics_process(delta: float) -> void:
 	# polled (not body_entered) so it also works if you stand on it until hurt
 	if Engine.is_editor_hint() or _taken:
 		return
+	if seek:
+		seek_delay -= delta
+		var p := get_tree().get_first_node_in_group("player") as Node2D
+		if p and seek_delay <= 0.0:
+			var to := p.global_position + Vector2(0, -20) - global_position
+			global_position += to.limit_length(minf(-seek_delay * 900.0 + 200.0, 1100.0) * delta)
 	for body in get_overlapping_bodies():
 		if body.has_method("heal") and body.heal(amount):
 			_collect()
@@ -76,6 +86,8 @@ func _heart(c: Vector2, s: float) -> PackedVector2Array:
 func _draw() -> void:
 	var bob := Vector2(0, sin(_time * 2.4) * 4.0)
 	var beat := 1.0 + 0.08 * maxf(sin(_time * 6.0), 0.0)
+	if amount >= 50.0:
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE * 1.35)  # a big heart for a big heal
 	# soft glow
 	draw_circle(bob, 30.0, Color(heart_color, 0.12))
 	# wings flapping

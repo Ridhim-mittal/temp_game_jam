@@ -99,7 +99,7 @@ full = 25 HP; nodes in group `light_cover` block it and cast a visible shadow) -
 -> the gate (`gate_arena.gd`: ink walls rise, the sleeping Ink Blot `ink_blot.gd` wakes: claw swipe
 `ink_claw.gd`, slam + floor shockwaves `ink_shockwave.gd`, ink globs `ink_glob.gd` that leave slowing
 puddles `ink_puddle.gd`; 15 hp, never staggered by hits, swipe 15 / slam 22, globs 8; below half health it
-enrages (red eye, 1.3x speed, double slams, 5 globs); light doubles damage to it; on death it melts, Vesper gets +50 HP and a heart,
+enrages (red eye, 1.3x speed, double slams, 5 globs); light doubles damage to it; on death it melts and always drops a big +50 heart that flies to Vesper (`drop_heal`, health_heart.gd `seek`),
 the tape burns off) -> through the gate Shade's trap (`scripts/effects/shade_trap.gd`: glitch, ink
 flood, "DID YOU REALLY THINK I'D LET YOU LEAVE?"; `next_scene` = the Ink Cave; with none, TO BE CONTINUED).
 Awake 2D bosses (group "boss", `display_name`) get bars at the bottom of the screen: `scripts/ui/boss_bar.gd`
@@ -113,7 +113,7 @@ come from the painting's bright, saturated colours), plus embers, ink drips off 
 Rock: `cave_rock.gd` (`ground` = floor, `one_way` ledges, fire-lit pink lip). Flow: Vesper falls in ->
 ink bats under the overhangs (`ink_bat.gd`: roost, wake together, orbit, flare wings (tell) and swoop 8,
 pull up at his feet, 2 hp, light scatters them; fly through rock) -> 3 paper spiders -> checkpoint + heart
--> the pit (`cave_arena.gd`): walls rise, two Ink Blots (hp 12 each) wake; when both melt +40 HP, then the
+-> the pit (`cave_arena.gd`): walls rise, two Ink Blots (hp 12 each) wake; each drops its +50 heart, and when both melt the
 cave collapses (shake, cracks, falling rocks, white flash, "THE CAVE GIVES WAY..."); `next_scene` = the
 Shade fight later, for now SHADE AWAITS / TO BE CONTINUED and the main menu.
 

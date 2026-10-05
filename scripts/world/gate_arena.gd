@@ -1,14 +1,12 @@
 extends Node2D
 ## The Ink Blot's gate in Shade's City. When Vesper passes `trigger_x`, ink
 ## walls rise at `left_x` and `right_x` and the gatekeeper (`blot_path`,
-## ink_blot.gd) wakes. When it melts the walls sink, Vesper is rewarded with
-## health (`reward_heal` + a heart), the "DO NOT CROSS" tape burns off and the
+## ink_blot.gd) wakes. When it melts (dropping its +50 heart) the walls sink,
+## the "DO NOT CROSS" tape burns off and the
 ## gate at `gate_x` opens; walking in springs Shade's trap (shade_trap.gd),
 ## which goes on to `next_scene`. Place at the world origin.
 
 const ShadeTrap = preload("res://scripts/effects/shade_trap.gd")
-const Heart = preload("res://scripts/world/health_heart.gd")
-const COMIC = preload("res://scripts/effects/comic_text.gd")
 const FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
 const INK := Color(0.05, 0.03, 0.1)
 const TAPE := Color(1.0, 0.85, 0.2)
@@ -19,7 +17,6 @@ const TAPE := Color(1.0, 0.85, 0.2)
 @export var right_x := 6950.0
 @export var gate_x := 6760.0
 @export var street_y := 600.0
-@export var reward_heal := 50.0
 ## Where the trap leads ("" = the main menu after "to be continued").
 @export_file("*.tscn") var next_scene := ""
 
@@ -86,15 +83,6 @@ func _on_defeated() -> void:
 	Sfx.play("gate_unlock")
 	for w in _walls:
 		w.collision_layer = 0
-	var p := get_tree().get_first_node_in_group("player")
-	if p and p.has_method("heal"):
-		p.heal(reward_heal)
-		_pop(p.global_position + Vector2(0, -90), "+%d HEALTH" % int(reward_heal), Color(0.55, 1.0, 0.6))
-	var blot := get_node_or_null(blot_path)
-	var heart := Area2D.new()
-	heart.set_script(Heart)
-	heart.position = (blot.global_position if blot else Vector2(gate_x - 200, street_y)) + Vector2(0, -60)
-	add_child(heart)
 	_gate.monitoring = true
 
 
@@ -104,14 +92,6 @@ func _on_gate(body: Node2D) -> void:
 	phase = Phase.SPRUNG
 	Sfx.play("teleport")
 	ShadeTrap.start(get_tree(), body, next_scene)
-
-
-func _pop(at: Vector2, text: String, col: Color) -> void:
-	var c := COMIC.new()
-	c.text = text
-	c.color = col
-	c.position = at
-	get_tree().current_scene.add_child(c)
 
 
 func _draw() -> void:
