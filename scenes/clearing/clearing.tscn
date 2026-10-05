@@ -8,7 +8,6 @@
 [ext_resource type="Resource" path="res://data/biomes/spine.tres" id="27_spine"]
 [ext_resource type="Script" path="res://scripts/clearing/stairs.gd" id="2_stairs"]
 [ext_resource type="Script" path="res://scripts/clearing/bridge.gd" id="3_bridge"]
-[ext_resource type="Script" path="res://scripts/clearing/archway.gd" id="4_arch"]
 [ext_resource type="Script" path="res://scripts/clearing/altar.gd" id="5_altar"]
 [ext_resource type="Script" path="res://scripts/clearing/brazier.gd" id="6_brazier"]
 [ext_resource type="Script" path="res://scripts/clearing/fence.gd" id="7_fence"]
@@ -52,19 +51,19 @@ script = ExtResource("3_bridge")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 0, -2.5)
 script = ExtResource("5_altar")
 
-[node name="CaveDoor" type="Node3D" parent="Props"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0, -10.6)
-script = ExtResource("4_arch")
-walk_through = true
-
 [node name="CaveGate" type="Node3D" parent="Props"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0, -10.6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.88, -30.2)
 script = ExtResource("26_gate")
 gate_id = "cave"
 target_scene = "res://scenes/world25/rooms/darkwood_1.tscn"
 target_gate = "east"
-style = 1
-width = 2.4
+width = 2.6
+
+[node name="DraftsByStairs" type="Node3D" parent="Props"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0, -10.2)
+script = ExtResource("28_bprops")
+kind = 1
+seed = 41
 
 [node name="BrazierStairsL" type="Node3D" parent="Props"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.6, 0, -10.4)
@@ -240,9 +239,9 @@ size = 0.7
 [node name="Terrace" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.88, 0)
 script = ExtResource("1_island")
-polygon = PackedVector2Array(-2.4, -17.8, -9, -17.6, -12, -20, -12.5, -25, -9, -29, 0, -30.5, 9, -29, 12.5, -25, 12, -20, 9, -17.6, 2.4, -17.8)
+polygon = PackedVector2Array(-2.4, -17.8, -9, -17.6, -12, -20, -12.5, -25, -9, -29, -1.5, -30.2, 1.5, -30.2, 9, -29, 12.5, -25, 12, -20, 9, -17.6, 2.4, -17.8)
 depth = 10.0
-open_edges = PackedInt32Array(10)
+open_edges = PackedInt32Array(5, 11)
 stain_zone = Vector3(0, -24, 7)
 
 [node name="Shrine" type="Node3D" parent="Props"]
@@ -283,13 +282,6 @@ script = ExtResource("28_bprops")
 kind = 6
 size = 1.2
 seed = 8
-solid = true
-
-[node name="ShadeStatue" type="Node3D" parent="Props/Shrine"]
-transform = Transform3D(1.0000, 0, -0.0000, 0, 1, 0, 0.0000, 0, 1.0000, 0, 2.88, -29)
-script = ExtResource("28_bprops")
-kind = 8
-size = 0.9
 solid = true
 
 [node name="ShrineFlameL" type="Node3D" parent="Props/Shrine"]

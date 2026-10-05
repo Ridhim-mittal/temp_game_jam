@@ -11,6 +11,9 @@ extends Node3D
 ## vanishing, and never re-solidifies inside the player.
 ## The bridge runs from this node along local -Z for `length`; its side
 ## rails are always solid, so you only fall through missing planks.
+## Inked, each plank is a piece of old gutter (gutter_strip.gd: dark,
+## cracked, ragged, between broken ink kerbs); the rails are leaning iron
+## posts with spear tips and a sagging iron bar (`wood` tints the iron).
 
 const Toon = preload("res://scripts/clearing/toon.gd")
 const Light = preload("res://scripts/world25/light.gd")
@@ -18,7 +21,9 @@ const Fx = preload("res://scripts/clearing/clearing_fx.gd")
 const ScreenAnchor = preload("res://scripts/clearing/screen_anchor.gd")
 const TITLE_FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
 const GHOST_SHADER = preload("res://shaders/world25/drawn_ghost.gdshader")
+const GutterStrip = preload("res://scripts/world25/gutter_strip.gd")
 const INK := Color(0.07, 0.04, 0.11)
+const IRON := Color(0.17, 0.16, 0.19)
 
 @export var length := 8.0:
 	set(v):
@@ -81,8 +86,11 @@ func _rebuild() -> void:
 	ghost_mat.set_shader_parameter("half_size", size * 0.5)
 	for i in n:
 		var center := Vector3(0, -0.15, -(i + 0.5) * step)
-		var solid := Toon.part(root, Toon.box(size), wood.darkened(0.08 * (i % 2)), center, Vector3(0, 0, (i % 3 - 1) * 1.5),
-			{"tile": 0.5, "line": wood.darkened(0.5)})
+		# a piece of gutter, centred on the plank so it can pop in round it
+		var solid := Node3D.new()
+		solid.position = Vector3(0, 0, center.z)
+		root.add_child(solid)
+		GutterStrip.section(solid, step * 0.48, -step * 0.48, width, i * 3 + int(length))
 		var ghost := MeshInstance3D.new()
 		ghost.mesh = Toon.box(size)
 		ghost.material_override = ghost_mat
@@ -102,13 +110,21 @@ func _rebuild() -> void:
 			shape.disabled = true
 		_planks.append({"shape": shape, "solid": solid, "ghost": ghost, "state": GHOST, "timer": 0.0,
 			"center": center, "half": Vector3(width * 0.5, 0.6, step * 0.5), "t": (i + 0.5) * step, "inked": false})
-	# rope rails on both sides: posts and a sagging rope, always solid
+	# rails on both sides, always solid: leaning iron posts with spear tips,
+	# an iron bar sagging between them
+	var iron := IRON.lerp(wood, 0.12)
 	for side in [-1, 1]:
 		var x: float = side * (width * 0.5 + 0.12)
 		for k in n + 1:
-			Toon.part(root, Toon.box(Vector3(0.14, 0.9, 0.14)), wood.darkened(0.3), Vector3(x, 0.3, -k * step), Vector3.ZERO)
-		Toon.part(root, Toon.box(Vector3(0.06, 0.06, length)), Color(0.85, 0.78, 0.6), Vector3(x, 0.62, -length * 0.5), Vector3.ZERO,
-			{"outline": 0.02})
+			var at := Vector3(x, -0.25, -k * step)
+			var lean := Vector3(4.0 * sin(k * 2.1), 0, side * (3.0 + 4.0 * absf(sin(k * 1.3))))
+			Toon.part(root, Toon.box(Vector3(0.07, 1.0, 0.07)), iron, at + Vector3(0, 0.5, 0), lean, {"outline": 0.015})
+			Toon.part(root, Toon.prism(Vector3(0.14, 0.2, 0.07)), iron.darkened(0.2), at + Vector3(0, 1.08, 0), lean, {"outline": 0.01})
+		for k in n:
+			var a := Vector3(x, 0.5, -k * step)
+			var b := Vector3(x, 0.5 - (0.08 if k % 2 == 0 else 0.15), -(k + 1) * step)
+			Toon.part(root, Toon.box(Vector3(0.04, 0.04, step * 1.01)), iron.darkened(0.1), (a + b) * 0.5,
+				Vector3(rad_to_deg(atan2(b.y - a.y, step)), 0, 0), {"outline": 0.0})
 		if not Engine.is_editor_hint():
 			Toon.collider(root, Toon.box_shape(Vector3(0.3, 3.0, length)), Vector3(x, 1.5, -length * 0.5))
 

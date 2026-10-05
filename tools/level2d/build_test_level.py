@@ -55,6 +55,8 @@ res("Script", "res://scripts/world/caption.gd", "43_caption")
 res("Script", "res://scripts/world/panel_door.gd", "44_door")
 res("Script", "res://scripts/ui/comic_frame.gd", "45_frame")
 res("Script", "res://scripts/ui/narration.gd", "46_narration")
+res("Script", "res://scripts/world/city_block.gd", "47_cityblock")
+res("Script", "res://scripts/world/city_ledge.gd", "48_cityledge")
 
 
 def v(x, y):
@@ -82,16 +84,22 @@ def uniq(prefix):
     return f"{prefix}{counts[prefix]}"
 
 
-def block(x0, x1, top, bottom, script="3_block", name="Block", groups=None, extra=()):
+# the neon trim of the current level's blocks and hover ledges (city_block.gd,
+# city_ledge.gd): [] = their defaults (the City's cyan)
+trim_props = []
+
+
+def block(x0, x1, top, bottom, script="47_cityblock", name="Block", groups=None, extra=()):
     """Solid block spanning x0..x1, top..bottom (world y)."""
     node(uniq(name), "StaticBody2D", "World",
          [("position", v((x0 + x1) / 2, (top + bottom) / 2)), ("script", f'ExtResource("{script}")'),
-          ("size", v(x1 - x0, bottom - top))] + list(extra), groups)
+          ("size", v(x1 - x0, bottom - top))] + (trim_props if script == "47_cityblock" else []) + list(extra), groups)
 
 
 def plank(cx, top, w=160):
     node(uniq("Plank"), "StaticBody2D", "World",
-         [("position", v(cx, top + 8)), ("script", 'ExtResource("11_oneway")'), ("size", v(w, 16))])
+         [("position", v(cx, top + 8)), ("script", 'ExtResource("48_cityledge")'), ("size", v(w, 16))] +
+         [kv for kv in trim_props if kv[0] == "trim"])
 
 
 def crumble(cx, top, w=140):
@@ -253,7 +261,6 @@ plank(2980, 490, 180)
 plank(3220, 390, 180)
 plank(3460, 490, 160)
 enemy("scribble", 3220, 300)
-caption(2560, 360, "OUT OF REACH?\nHOLD ATTACK, THEN LET GO:\nINK FLIES FURTHER THAN A SWORD.")
 coin_row(2940, 3020, 452, 2)
 coin_row(3180, 3260, 352, 3)
 heart(3220, 350)
@@ -261,12 +268,10 @@ heart(3220, 350)
 door(3600, "res://scenes/levels/sketchbook.tscn", "THE SKETCHBOOK")
 block(3700, 3780, -600, BOTTOM, name="Wall")
 write("scenes/levels/test_level.tscn", "TestLevel", (100, 570), page=1, story=[
-    ("VESPER STARTS OUT IN A CITY INFECTED BY EVIL MONSTERS. HE FIGHTS THEM OFF WITH THE LIGHT AND HIS SWORD.", -1e9),
-    ("THESE MONSTERS HAD INFESTED EVERY STREET OF THE CITY. ONE SWING OF THE SWORD SENT THEM SCATTERING.", 1350),
-    ("THE CITY WAS COMING APART, ONE PANEL AT A TIME. WHERE THE STREET BROKE, VESPER LEAPT.", 2250),
-    ("AND AT THE EDGE OF THE PAGE, A DOOR OF LIGHT WAS WAITING.", 3150),
+    ("MONSTERS HAD OVERRUN THE CITY. VESPER HAD HIS SWORD, AND HIS LIGHT.", -1e9),
+    ("AT THE EDGE OF THE PAGE, A DOOR OF LIGHT WAS WAITING.", 3150),
 ], live=[(-240, -1200, 3780, 660), (2380, 590, 2680, 812)],
-   tutorial=("move", "jump", "attack", "dash", "inkwave"))  # the controls, and the ink wave at the Scribble
+   tutorial=("move", "jump", "attack", "dash", "inkwave", "heal"))  # the controls, and the ink wave at the Scribble
 
 # ======================================================== THE SKETCHBOOK (light tutorial)
 # Pencil sketches are only solid in light (scripts/world/lights.gd). Each beat
@@ -274,10 +279,11 @@ write("scenes/levels/test_level.tscn", "TestLevel", (100, 570), page=1, story=[
 # rest, lanterns are free light that walls can shadow, and a lit cut-out's
 # shadow is solid ink.
 reset()
+# warm gold trim here, so solid ground never reads as the blue pencil sketches
+trim_props = [("trim", "Color(1, 0.78, 0.36, 1)"), ("accent", "Color(0.55, 0.9, 1, 1)")]
 block(7900, 8420, GROUND, BOTTOM, name="Ground")
 block(7820, 7900, -600, BOTTOM, name="Wall")
 # 9a. first light: a sketch bridge over spikes, too wide to jump (~470 px max)
-caption(8680, 455, "HOLD RIGHT CLICK - RAISE YOUR EMBER\nLIGHT MAKES THE SKETCH REAL")
 block(8420, 8940, 800, BOTTOM, name="PitFloor")
 spikes(8420, 8940, 800)
 sketch(8420, 8940, GROUND)
@@ -288,25 +294,23 @@ block(8940, 9260, GROUND, BOTTOM, name="Ground")
 # across is more than one Ember: stop at the end of the grey,
 # ink yourself a ledge, rest on it until the Ember is full, then jump the gap
 # and sprint the blue (~85 meter) while the Scribbles circle.
-caption(9470, 445, "TOO FAR FOR ONE EMBER?\nSTAND STILL WITH IT RAISED: INK SPREADS FROM YOUR FEET.\nINK STAYS. REST ON IT.")
 block(9260, 10700, 800, BOTTOM, name="PitFloor")
 spikes(9260, 10700, 800)
 sketch(9260, 10040, GROUND)
 sketch(10190, 10700, GROUND, inkable=False, drinks=True)
-caption(10445, 470, "BLUE PENCIL NEVER TAKES INK.\nIT DRINKS YOUR LIGHT.", tilt=0.03)
 coin_row(10080, 10150, 540, 2)
 enemy("scribble", 9850, 360)
 enemy("scribble", 10500, 340)
 block(10700, 10940, GROUND, BOTTOM, name="Ground")
 enemy("crossed", 10860, 570)                             # its X only burns in light
 # 9c. lanterns: free light that refills the Ember, but a sign shadows the far end
-caption(11030, 470, "LANTERNS ARE FREE LIGHT.\nSHADOWS ARE NOT.", tilt=0.03)
 block(10940, 11480, 800, BOTTOM, name="PitFloor")
 spikes(10940, 11480, 800)
 sketch(10940, 11480, GROUND)
 lantern(11200, 220, 400, chain=120)                      # lamp at (11200, 340)
 block(11255, 11318, 440, 462, name="Sign")                # shadows x 11340-11480 of the bridge
 # 9d. shadow ink: hit the lantern, the cut-out star's shadow is a ramp over the wall
+# (the level's only sign: every other rule is taught by the tutorial or by trying)
 caption(11510, 385, "HIT THE LANTERN.\nA SHADOW IS INK TOO.")
 block(11480, 12540, GROUND, BOTTOM, name="Ground")
 lantern(11590, 520, 220, chain=0, post=80, lit=False)
@@ -320,9 +324,7 @@ heart(10760, 560)
 door(12300, "res://scenes/levels/long_drop.tscn", "THE LONG DROP", tall=True)
 block(12540, 12620, -600, BOTTOM, name="Wall")
 write("scenes/levels/sketchbook.tscn", "Sketchbook", (8100, 570), page=2, story=[
-    ("PAST THE CITY, THE WORLD WAS STILL A SKETCH: PENCIL LINES THAT ONLY TURNED REAL IN THE LIGHT.", -1e9),
-    ("SOME BRIDGES WERE TOO LONG FOR ONE BREATH OF LIGHT. SO VESPER STOPPED, AND LET THE INK SET.", 9100),
-    ("THE OLD LANTERNS STILL REMEMBERED HOW TO SHINE. BUT LIGHT CASTS SHADOWS.", 10840),
-    ("AND BELOW THE LAST PAGE OF THE SKETCHBOOK, THE WORLD DROPPED AWAY INTO THE DARK...", 11940),
+    ("PAST THE CITY, THE WORLD WAS ONLY A SKETCH. IT TURNED REAL IN THE LIGHT.", -1e9),
+    ("BELOW THE LAST PAGE, THE WORLD DROPPED AWAY INTO THE DARK...", 11940),
 ], live=[(7820, -1200, 12620, 660), (8420, 590, 8940, 812), (9260, 590, 10700, 812), (10940, 590, 11480, 812)],
-   tutorial=("ember",))  # the light, at the first lantern
+   tutorial=("ember", "heal"))  # the light, at the first lantern

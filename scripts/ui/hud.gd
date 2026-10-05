@@ -1,33 +1,35 @@
 extends Control
-## Draws the continuous health bar (top left) and the Lumen coin counter
+## Draws Vesper's health as ink bottles (top left, ink_bottles.gd, the same as
+## in the Gutter) and the Lumen coin counter
 ## (top right: the shop's purse, Profile.lumens). Once there are enough
 ## coins to buy something in Quire's shop, a "B  SHOP" tag shows under the
 ## counter; once SHOP_HINT_AT (10) coins have been collected in this run
 ## (GameState.coins, not what was already in the purse), a caption says
-## "PRESS B TO OPEN THE SHOP", once a run (GameState.seen "shop_hint"). The bar has a trailing "damage ghost" that drains after a
-## hit (shows how much it took), shakes on damage, flashes green on heals
-## and pulses when health is low. Under it, the Ember meter (ember.gd):
+## "PRESS B TO OPEN THE SHOP", once a run (GameState.seen "shop_hint"). The
+## portrait shakes and flashes on damage. Under it, the Ember meter (ember.gd):
 ## glows while raised, greys out and shakes when snuffed.
 
 const Coin = preload("res://scripts/world/coin.gd")
+const InkBottles = preload("res://scripts/ui/ink_bottles.gd")
 const INK := Color(0.05, 0.03, 0.1)
 const FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
-const BAR := Rect2(84, 30, 280, 26)
+const BOTTLES_AT := Vector2(104, 40)  # centre of the first ink bottle
 const EMBER_BAR := Rect2(100, 66, 200, 13)
 ## Coins collected in a run that bring up the "PRESS B" caption.
 const SHOP_HINT_AT := 10
 
-var current := 100.0
-var maximum := 100.0
+var current := 12.0   # half ink bottles (ink_bottles.gd)
+var maximum := 12.0
 var coins := 0
 
-var _ghost := 100.0   # lags behind `current` after damage
 var _hit := 0.0       # 1 on damage, decays: shake + flash
 var _healed := 0.0    # 1 on heal, decays: green flash
 
 var _time := 0.0
 var _bump := 0.0  # 1 right after a pickup, decays: counter pops
 var _ember: Node
+var _bottles := InkBottles.new()
+var _player: Node
 var _can_shop := false  # enough coins for something in the shop
 var _hint := 0.0  # seconds the "PRESS B" caption has left
 
@@ -38,6 +40,7 @@ func _ready() -> void:
 	if player:
 		player.health_changed.connect(_on_health_changed)
 		_ember = player.get_node_or_null("Ember")
+		_player = player
 		_on_health_changed(player.health, player.max_health)
 		if player.has_signal("coins_changed"):
 			player.coins_changed.connect(_on_coins_changed)
@@ -46,14 +49,10 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_time += delta
+	_bottles.update(delta)
 	_bump = maxf(_bump - delta * 4.0, 0.0)
 	_hit = maxf(_hit - delta * 2.5, 0.0)
 	_healed = maxf(_healed - delta * 2.0, 0.0)
-	# ghost waits a moment, then drains down to the real value
-	if _ghost > current and _hit < 0.6:
-		_ghost = move_toward(_ghost, current, delta * maximum * 0.6)
-	elif _ghost < current:
-		_ghost = current
 	_update_shop_hint(delta)
 	queue_redraw()  # the coin icon spins
 
@@ -76,10 +75,9 @@ func _on_health_changed(cur: float, max_hp: float) -> void:
 		_hit = 1.0
 	elif cur > current and current > 0.0:
 		_healed = 1.0
-	if current <= 0.0 or maximum <= 0.0:
-		_ghost = cur  # first update
 	current = cur
 	maximum = max_hp
+	_bottles.set_health(cur, max_hp)
 	queue_redraw()
 
 
@@ -112,9 +110,30 @@ func _draw_ember() -> void:
 			fill = fill.lerp(Color(1.0, 0.95, 0.75), 0.4)
 		_slanted(Rect2(r.position, Vector2(r.size.x * frac, r.size.y)), fill)
 		_slanted(Rect2(r.position + Vector2(0, 2), Vector2(r.size.x * frac, 3)), fill.lightened(0.4))
-	# relight mark: below it a snuffed Ember stays out
-	var rx: float = r.position.x + r.size.x * _ember.relight_at / _ember.max_meter
-	draw_line(Vector2(rx + 2, r.position.y), Vector2(rx - 2, r.end.y), Color(INK, 0.6), 2.0)
+	# light or life: the bar in thirds, each third one heal (F); an ink drop marks each
+	if is_instance_valid(_player) and "heal_cost" in _player:
+		var third: float = _player.heal_cost / maxf(_ember.max_meter, 1.0)
+		var k := third
+		while k < 0.999:
+			var hx := r.position.x + r.size.x * k
+			draw_line(Vector2(hx + 2, r.position.y), Vector2(hx - 2, r.end.y), Color(INK, 0.85), 2.5)
+			k += third
+		if _player.can_heal():  # F would heal right now: a little key cap at the end of the bar
+			var pulse := 0.6 + 0.4 * sin(_time * 6.0)
+			var kc := Rect2(Vector2(r.end.x + 12, r.position.y - 6), Vector2(22, 22))
+			draw_rect(kc.grow(2.0), Color(INK, pulse))
+			draw_rect(kc, Color(1.0, 0.95, 0.85, pulse))
+			draw_string(FONT, kc.position + Vector2(6, 18), "F", HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color(INK, pulse))
+			draw_string_outline(FONT, kc.position + Vector2(30, 18), "HEAL", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, 5, Color(INK, pulse))
+			draw_string(FONT, kc.position + Vector2(30, 18), "HEAL", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color(1.0, 0.85, 0.45, pulse))
+	# relight mark, only while snuffed (the Ember stays out until it refills past it):
+	# a dashed white tick, so it never reads as one of the heal thirds
+	if snuffed:
+		var rx: float = r.position.x + r.size.x * _ember.relight_at / _ember.max_meter
+		var a := 0.6 + 0.4 * sin(_time * 8.0)
+		for k in 3:
+			var y0 := r.position.y - 4.0 + k * 8.0
+			draw_line(Vector2(rx, y0), Vector2(rx, y0 + 4.0), Color(1.0, 1.0, 1.0, a), 2.0)
 	# flame icon
 	var c := Vector2(r.position.x - 14, r.position.y + 6)
 	var s := 1.0 + (0.25 if raised else 0.0) + 0.08 * sin(_time * 10.0)
@@ -127,33 +146,8 @@ func _draw_ember() -> void:
 
 
 func _draw_health() -> void:
-	var frac := clampf(current / maxf(maximum, 1.0), 0.0, 1.0)
-	var ghost := clampf(_ghost / maxf(maximum, 1.0), 0.0, 1.0)
-	var shake := Vector2(randf_range(-1, 1), randf_range(-1, 1)) * 5.0 * _hit * _hit
-	var low := frac < 0.3 and frac > 0.0
-	var pulse := (0.5 + 0.5 * sin(_time * 8.0)) if low else 0.0
-	var r := Rect2(BAR.position + shake, BAR.size)
-	# slanted comic bar: back plate, ghost, fill
-	_slanted(r.grow(4.0), INK)
-	_slanted(r, Color(0.16, 0.08, 0.12))
-	if ghost > frac:
-		_slanted(Rect2(r.position + Vector2(r.size.x * frac, 0), Vector2(r.size.x * (ghost - frac), r.size.y)), Color(1.0, 0.95, 0.85))
-	if frac > 0.0:
-		var fill := Color(0.92, 0.2, 0.22).lerp(Color(1.0, 0.45, 0.35), pulse * 0.6)
-		fill = fill.lerp(Color(0.45, 1.0, 0.55), _healed * 0.8)
-		var fr := Rect2(r.position, Vector2(r.size.x * frac, r.size.y))
-		_slanted(fr, fill)
-		_slanted(Rect2(fr.position + Vector2(0, 3), Vector2(fr.size.x, 5)), fill.lightened(0.35))  # gloss
-		# halftone dots on the lower half
-		var x := fr.position.x + 6.0
-		while x < fr.end.x - 4.0:
-			draw_circle(Vector2(x, fr.end.y - 6.0), 1.6, fill.darkened(0.3))
-			x += 7.0
-	# tick marks every 20 HP
-	for k in range(1, 5):
-		var tx := r.position.x + r.size.x * k / 5.0
-		draw_line(Vector2(tx + 3, r.position.y + 2), Vector2(tx - 3, r.end.y - 2), Color(INK, 0.55), 2.0)
-	# portrait: Vesper's mask in a diamond
+	var shake := Vector2(randf_range(-1, 1), randf_range(-1, 1)) * 3.0 * _hit * _hit
+	# portrait: Vesper's mask in a diamond, then his ink bottles (the same as in the Gutter)
 	var c := Vector2(48, 43) + shake
 	var d := 30.0
 	draw_colored_polygon(PackedVector2Array([c + Vector2(0, -d - 4), c + Vector2(d + 4, 0), c + Vector2(0, d + 4), c + Vector2(-d - 4, 0)]), INK)
@@ -163,11 +157,7 @@ func _draw_health() -> void:
 	draw_circle(c + Vector2(5, 0), 3.5, INK)
 	draw_rect(Rect2(c + Vector2(-17, -15), Vector2(34, 6)), INK)  # hat brim
 	draw_rect(Rect2(c + Vector2(-10, -24), Vector2(20, 10)), INK)
-	# number
-	var text := "%d" % ceili(current)
-	var pos := Vector2(r.end.x + 14.0, r.end.y - 2.0)
-	draw_string_outline(FONT, pos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, 28, 7, INK)
-	draw_string(FONT, pos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, 28, Color(1.0, 0.95, 0.85))
+	_bottles.draw(self, BOTTLES_AT, 0.95)
 
 
 ## Parallelogram (slanted 8 px) filling `r`.

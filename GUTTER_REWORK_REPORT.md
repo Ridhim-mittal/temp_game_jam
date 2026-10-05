@@ -276,6 +276,92 @@ are untouched.
     - **The map placeholder** in the top right of the Margins is gone. In its place is a coin
       counter like the 2D one, but on a dark ink tag with a spinning dark-silver coin.
 
+16. **The Margins as the gutters of a comic** (your next notes):
+    - **The way out of the hub** now stands at the back of the terrace, where the skill tree
+      was. The archway portal by the stairs is gone; a pile of discarded drafts sits there
+      instead.
+    - **Ways on are gutters, not brick bridges.** Each one is a strip of cream paper between
+      two thick ink panel borders, with printed comic panels lying either side and a dashed
+      pencil ruling line down the middle. At its end two tall panels stand upright with a slit
+      between them: that's the way through. Sealed, it's all a grey pencil sketch (each
+      upright panel has its own sketch). The hub's bridge in is a gutter too.
+    - **Moving between rooms is a trip down the gutter.** Walking out through an open gate:
+      1. The screen freezes and shrinks into a panel on a comic page.
+      2. The view drops into the slit beside it (the gutter between two columns of panels)
+         and runs down it. A tiny ink Vesper runs ahead, drawing a line of light behind him.
+         The next room loads meanwhile.
+      3. It comes out beside the next panel, a pencil rough with the zone's name
+         ("MEANWHILE, FURTHER DOWN THE GUTTER..."). Ink floods it, and the panel is a window
+         onto the new room. It opens out to fill the screen.
+
+      The game is paused while the page covers the screen, so nothing can hit Vesper, and his
+      2 s of spawn protection start when the panel has opened. Starting the story and the
+      cutscenes still use the ink wipe.
+    - **Graves are discarded drafts.** A cracked, dried blob of ink, a snapped nib stuck in the
+      ground with its tip lying beside it, crumpled balls of paper and crossed-out scraps.
+      The other graveyard pieces changed the same way:
+      - Skull heaps (on the floor and far out in the fog) are heaps of crumpled drafts and
+        snapped pencils.
+      - Tree stumps are pencil stubs; stone pillars are leaning stacks of books.
+      - Rune stones are giant upside-down pen nibs with a glowing mark.
+      - The Torn Wastes' crystals are torn, ruled pages stuck upright.
+      - The bones in the hub's dirt are dropped staples.
+    - **Torches are desk lamps,** after your photo: a round white base, a jointed wooden arm
+      with brass bolts, a white dome shade tipped down, and a white cable looping down the
+      arm. A lit lamp has a warm bulb and a soft cone of light. An unlit one is switched off
+      until you hit it ("CLICK!"). The gates have a smaller pair leaning over the way, off
+      until the room is cleared.
+    - **The rest of the map is the Writer's desk:**
+      - The islands are thick stacks of paper. The cliffs show ruled page edges, and ink has
+        run over the lip and dripped down them.
+      - The edge rubble is crumpled paper and torn scraps.
+      - Pines are giant quills stuck nib-first.
+      - The big dead trunks are giant pencils, sharpened end up.
+      - Fences are rows of rulers with ink ticks.
+      - The hub's stairs are a pile of books, with stacks of paper for walls.
+      - Mushrooms, bushes and mossy rocks are push pins, crumpled drafts and worn erasers.
+      - The sketched bridge in level 3 inks in as pieces of paper gutter, with pencil posts
+        and a ruled ink line for rails.
+
+17. **The dead zone** (your next notes, after the broken-nib-grave image):
+    - **Graves are broken nibs,** like the image. Each is a giant fountain-pen nib, greyed
+      and patched with rust, curved across like a real nib, its point snapped off in a
+      jagged break. It has a breather hole and a slit, and ink bleeds from the break down
+      its face. An epitaph is scratched in ("REST IN INK", "THE INK RUNS DRY",
+      "UNFINISHED"...). It leans in a mound of dug earth wrapped in thorny brambles, with an
+      ink puddle at its foot and now and then a torn page lying in the dirt.
+    - **No more pencils, quills or the ink-blob drafts:**
+      - The pine rings are bare dead trees.
+      - The giant trunks are dead trunks with snapped branches.
+      - Stumps are split dead stumps.
+      - The pencil totems in levels 3 and 4, and the giant pencils over the comic page, are
+        giant broken nibs.
+    - **No books:** the stairs are stone again, and the book stacks are broken stone
+      pillars.
+    - **Ways on are broken portals:** a dark, cracked, ragged walkway between broken ink
+      kerbs, with torn scraps hanging off it, ending in two cracked pillars snapped at
+      different heights and a broken lintel. A faint seam of light runs in each pillar. The
+      hub's bridge and level 3's inked bridge are the same dark walkway; that bridge has
+      leaning iron posts with a sagging bar.
+    - **Gutter to gutter:** the room change never leaves the dark now. The screen tears down
+      the middle and its halves part and grey. You run down a black slit between greyed,
+      faded, torn dead panels, with dust drifting and the line of light behind tiny Vesper.
+      Then the slit clears onto the next room and the two walls part. There's no comic page
+      or panel any more.
+    - **The lamps are back** to the original stone braziers with flames, and the gates'
+      stone-post lanterns are back too. (The desk lamp script is kept but unhooked.)
+    - **Ground symbols are cryptic and scary.** The pen nib, quill, speech bubble, POW burst
+      and question mark are gone. In their place are a stitched mouth, claw marks, the death
+      rune, a broken seal, a screaming face, a handprint and a ring of thorns. The eye now has
+      a slit pupil and lashes. The ritual rings' centre is an eye in an inverted triangle of
+      thorns instead of a big nib.
+    - **Worn and torn everywhere:**
+      - The fence is a broken wrought-iron fence: spear-topped bars leaning, some bent or
+        missing, the top rail snapped.
+      - Pins are rusty.
+      - Rocks are grimy and chipped.
+      - The comic page under level 1 has faded to a yellowed grey.
+
 ## Tuning knobs
 
 | What | Where |
@@ -293,6 +379,11 @@ are untouched.
 | Background | `room.gd` `backdrop` (on/off) and `_build_backdrop()` |
 | Lamp spacing / feel | `haunt_lamp.gd` `_steer()` (accel), `_separation()` |
 | Gate timing / colour | `gate.gd`: `DRAW_TIME` (0.8 s), `lantern_color` |
+| Ways on (look) | `scripts/world25/gutter_strip.gd`: `STONE`, `INK`, `SCRAP`, `PILLAR` (the portal pillars' size) |
+| Gutter to gutter | `scripts/world25/gutter_transition.gd`: `T_TEAR`, `T_RUN0`, `T_RUN`, `T_CLEAR`, `T_OPEN0`, `T_OPEN` (timings), `SLIT` (slit width), `TRAVEL` (screens run), `DEAD` (panel greys) |
+| Nib graves | `scripts/world25/broken_nib.gd`: `STEEL`, `RUST`, size and break height in `build()`; `biome_props.gd` `EPITAPHS`, brambles in `_bramble()` |
+| Ground symbols | `shaders/world25/writers_marks.gdshaderinc` (`writers_mark()`, `writers_seal()` for the ring centre) |
+| Backdrop fade | `comic_page.gdshader` `faded` (0.7) |
 | Lamp per zone | `data/haunt/*.tres` (`haunt_profile.gd`): lamps, grace, seek_speed, circle_radius, strike_every, telegraph, erase_fill, lose_after, can_damage, strike_erase, linger, the Writer's lines |
 | Lamp per room | `room.gd` `haunt_scale`, `haunt_lamps` (-1 = profile), `haunt_enabled`; set in `tools/rooms25/build_rooms.py` (`r.haunt_scale`, `r.haunt_lamps`) |
 | Spawn protection | `clearing_player.gd`: `spawn_protection` (2 s) |
@@ -342,8 +433,11 @@ These ran with Godot 4.7-stable under Xvfb with software OpenGL.
   - The Spine's lamp never damages or strikes.
   - The circles glide, with no jumps between physics ticks. The limit is 1 unit per test
     tick: the Rubbing Room's lamps glide onto their marks at up to 0.6.
-- **`tests/gutter/test_levels.gd`: 43/43 checks.**
+- **`tests/gutter/test_levels.gd`: 51/51 checks** (rerun after round 17).
   - The gates chain hub → 1 → 2 → 3 → 4, and none leads to a retired room.
+  - The hub's way on is at the back of the terrace and the archway is gone. Walking out
+    through it starts the trip down the gutter with the game held still. It arrives in the
+    Inkwood at its way in, the game runs again, the page is gone and spawn protection is on.
   - Every level's way in is one-way. In a cleared room the way on opens and the way back
     stays shut.
   - The hub has 3 Scribbles and the next room has only Half-Drawn (4). Level 3 has no
@@ -406,6 +500,9 @@ These ran with Godot 4.7-stable under Xvfb with software OpenGL.
 
 ## Not verified
 
+- **The gutter-to-gutter trip at full speed:** it is timed to take about 2.5 s plus
+  loading. Here it took about 12 s, because every frame is drawn on the CPU and the
+  animation never skips frames. It was checked frame by frame in screenshots.
 - **Frame rate:** 60 fps on real hardware. This machine renders on the CPU, so frame rate
   means nothing here.
 - **Audio:** the gate chime. It is synthesised in code, and this machine has no audio

@@ -51,7 +51,7 @@ enum State { LURK, CHASE, STUNNED, DEAD, WINDUP, CLAW, SHRIEK, TANGLED }
 ## The arm reels back in this slowly; it can't move meanwhile.
 @export var tangle_time := 0.75
 @export var claw_cooldown := 1.3
-@export var claw_damage := 1
+@export var claw_damage := 1  # half ink bottles: small, half a bottle
 ## Kept for the player's contact check (is_harmful() is always false: only
 ## the claw hurts).
 @export var contact_damage := 1

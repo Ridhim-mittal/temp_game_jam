@@ -104,4 +104,4 @@ func paint(c: CanvasItem) -> void:
 
 
 func damage_default() -> float:
-	return 22.0  # rolling armoured ball
+	return 2.0  # rolling armoured ball

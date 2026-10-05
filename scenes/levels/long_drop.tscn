@@ -384,13 +384,6 @@ position = Vector2(3475, 2488)
 script = ExtResource("4_spikes")
 size = Vector2(440, 24)
 
-[node name="Caption1" type="Node2D" parent="World"]
-z_index = 5
-position = Vector2(3450, 2000)
-script = ExtResource("43_caption")
-text = "TOO FAR FOR A DOUBLE JUMP?\nJUMP, JUMP AGAIN, THEN DASH."
-tilt = -0.03
-
 [node name="Lantern4" type="Node2D" parent="World"]
 position = Vector2(2200, 1700)
 script = ExtResource("40_lantern")
@@ -473,25 +466,11 @@ script = ExtResource("41_sketch")
 size = Vector2(400, 20)
 inkable = false
 
-[node name="Caption2" type="Node2D" parent="World"]
+[node name="Caption1" type="Node2D" parent="World"]
 z_index = 5
 position = Vector2(4340, 3620)
 script = ExtResource("43_caption")
 text = "HIT THE LANTERN.\nA SHADOW IS INK TOO."
-tilt = -0.03
-
-[node name="Caption3" type="Node2D" parent="World"]
-z_index = 5
-position = Vector2(3830, 3310)
-script = ExtResource("43_caption")
-text = "OUT OF REACH?\nHOLD ATTACK, THEN LET GO:\nINK FLIES FURTHER THAN A SWORD."
-tilt = 0.03
-
-[node name="Caption4" type="Node2D" parent="World"]
-z_index = 5
-position = Vector2(3460, 3720)
-script = ExtResource("43_caption")
-text = "BLUE PENCIL NEVER TAKES INK.\nIT NEEDS LIGHT ALL THE WAY (HOLD RIGHT CLICK)."
 tilt = -0.03
 
 [node name="Heart2" type="Area2D" parent="World"]
@@ -849,13 +828,6 @@ size = Vector2(150, 18)
 theme = 0
 one_way = true
 
-[node name="Caption5" type="Node2D" parent="World"]
-z_index = 5
-position = Vector2(3930, 6770)
-script = ExtResource("43_caption")
-text = "THE LIGHT SWINGS. SHADOWS HOLD NOTHING UP.\nYOUR EMBER DOES (HOLD RIGHT CLICK).\nA LANTERN'S LIGHT REFILLS IT."
-tilt = -0.03
-
 [node name="Ledge62" type="StaticBody2D" parent="World"]
 position = Vector2(1900, 6999)
 script = ExtResource("53_ledge")
@@ -987,20 +959,6 @@ size = Vector2(520, 20)
 inkable = false
 drinks_light = true
 
-[node name="Caption6" type="Node2D" parent="World"]
-z_index = 5
-position = Vector2(1800, 8350)
-script = ExtResource("43_caption")
-text = "TOO FAR FOR ONE EMBER?\nSTAND STILL WITH IT RAISED. INK STAYS: REST ON IT."
-tilt = -0.03
-
-[node name="Caption7" type="Node2D" parent="World"]
-z_index = 5
-position = Vector2(2650, 8400)
-script = ExtResource("43_caption")
-text = "BLUE PENCIL NEVER TAKES INK.\nIT DRINKS YOUR LIGHT."
-tilt = 0.03
-
 [node name="Checkpoint6" type="Area2D" parent="World"]
 position = Vector2(3050, 8600)
 script = ExtResource("18_pen")
@@ -1030,13 +988,6 @@ position = Vector2(3646, 8451)
 script = ExtResource("51_rock")
 size = Vector2(63, 22)
 
-[node name="Caption8" type="Node2D" parent="World"]
-z_index = 5
-position = Vector2(3390, 8270)
-script = ExtResource("43_caption")
-text = "LANTERNS ARE FREE LIGHT.\nSHADOWS ARE NOT."
-tilt = 0.03
-
 [node name="Lantern12" type="Node2D" parent="World"]
 position = Vector2(1900, 7850)
 script = ExtResource("40_lantern")
@@ -1049,20 +1000,6 @@ position = Vector2(4250, 8600)
 script = ExtResource("17_exit")
 target_scene = "res://scenes/ui/main_menu.tscn"
 label = "THE END OF THE DROP"
-
-[node name="Caption9" type="Node2D" parent="World"]
-z_index = 5
-position = Vector2(760, 884)
-script = ExtResource("43_caption")
-text = "The way on is down."
-tilt = -0.03
-
-[node name="Caption10" type="Node2D" parent="World"]
-z_index = 5
-position = Vector2(3300, 4370)
-script = ExtResource("43_caption")
-text = "Mind the drop."
-tilt = -0.03
 
 [node name="Trims" type="Node2D" parent="."]
 

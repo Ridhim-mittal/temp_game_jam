@@ -4,10 +4,11 @@ shader_type spatial;
 //   mode 0 GRASS        stone tiles (paved over: no grass), earth patches
 //   mode 1 WATER_STONE  flagstones under rippling caustic light (Shallows)
 //   mode 2 CRACKED      cracked earth with pale grit (Crumple Wastes)
-//   mode 3 DIRT         bare packed earth, roots, pebbles, bone (the Spine)
+//   mode 3 DIRT         bare packed earth, roots, pebbles, dropped staples (the Spine)
 // Any mode can carry the Writer's marks scratched into it
-// (`rune_density`; writers_marks.gdshaderinc: ink drops, nibs, quills, the
-// Ember, proofing and comic marks), some of them glowing (`rune_color`).
+// (`rune_density`; writers_marks.gdshaderinc: the watching eye, stitched
+// mouths, claw marks, the death rune, handprints...), some of them glowing
+// (`rune_color`).
 // Two palettes (A and B) can be blended across the island: biome A on the
 // `blend_from` side, B past `blend_to`, meeting along a wavy inked line.
 // Palette order: base, light, dark, accent, accent_dark, stain, cliff,
@@ -180,7 +181,7 @@ vec3 cracked_top(vec2 p, int w) {
 
 // Bare packed earth: mottled, speckled grain, pebbles with inked rims,
 // roots snaking just under the surface, sparse cracks, trodden patches and
-// pale slivers of bone.
+// the odd staple dropped off the Writer's desk.
 vec3 dirt_top(vec2 p, int w) {
 	float n = fbm(p * 0.18) + noise(p * 1.2) * 0.15;
 	vec3 col = P(w, 0);
@@ -214,15 +215,16 @@ vec3 dirt_top(vec2 p, int w) {
 	col = mix(col, P(w, 3) * (0.9 + 0.15 * noise(p * 3.0)), step(0.0, sm) * 0.7);
 	float dash = step(0.5, fract((p.x + p.y) * 2.2));
 	col = mix(col, ink.rgb, step(abs(sm), 0.012) * dash * 0.6);
-	// slivers of bone
+	// dropped staples: a bar with its two legs bent down
 	vec2 bp = p * 1.4;
 	vec2 bc = floor(bp);
 	vec2 bf = fract(bp) - 0.5;
 	float ba = hash(bc + 8.0) * 6.283;
 	vec2 br = vec2(cos(ba) * bf.x + sin(ba) * bf.y, -sin(ba) * bf.x + cos(ba) * bf.y);
-	float bone = step(0.93, hash(bc + 4.0)) * step(abs(br.x), 0.2) * step(abs(br.y), 0.035);
-	bone = max(bone, step(0.93, hash(bc + 4.0)) * step(length(abs(br) - vec2(0.2, 0.0)), 0.06));
-	col = mix(col, mix(P(w, 1), vec3(0.62, 0.58, 0.5), 0.55), bone);
+	float bar = step(abs(br.x), 0.17) * step(abs(br.y), 0.014);
+	float legs = step(abs(abs(br.x) - 0.16), 0.014) * step(0.0, br.y) * step(br.y, 0.07);
+	float staple = step(0.93, hash(bc + 4.0)) * max(bar, legs);
+	col = mix(col, mix(P(w, 1), vec3(0.66, 0.68, 0.74), 0.6), staple);
 	// ink stains
 	float s = stains(p);
 	float th = 1.0 - stain_amount * 0.5;
@@ -266,17 +268,29 @@ float runes(vec2 p, out float hot, out float phase) {
 	return m * (0.75 + 0.25 * noise(p * 9.0));
 }
 
+// The cliffs: every island is a thick stack of the Writer's paper seen
+// edge-on (the Margins are the edge of his desk): page edges in the cliff's
+// colour, ruled by fine lines, the sheets a little uneven, a darker line at
+// every gathering, and ink that ran over the lip dripping down it.
 vec3 side_color(int w) {
 	float depth = clamp(-world_pos.y / 6.0, 0.0, 1.0);
 	float u = world_pos.x * 0.8 + world_pos.z * 0.8;
-	vec3 col = P(w, 6);
-	float streak = noise(vec2(u * 3.0, world_pos.y * 0.25));
-	col = mix(col, P(w, 8), step(0.68, streak));
+	vec3 col = mix(P(w, 6), vec3(0.78, 0.74, 0.66), 0.3);
+	float sheet = (world_pos.y + (noise(vec2(u * 1.3, 0.0)) - 0.5) * 0.08) / 0.15;
+	float f = fract(sheet);
+	col *= 0.88 + 0.16 * hash(vec2(floor(sheet), floor(u * 0.5)));
+	float line = 1.0 - smoothstep(0.0, 0.14, min(f, 1.0 - f));
+	float gathering = step(mod(floor(sheet + 0.5), 7.0), 0.5);
+	col = mix(col, P(w, 8), line * (0.55 + 0.45 * gathering));
 	col = mix(col, P(w, 7), step(-0.55, world_pos.y));
 	col = mix(col, ink.rgb, step(-0.62, world_pos.y) * step(world_pos.y, -0.55));
-	// moss hanging over the lip
-	float hang = noise(vec2(u * 2.5, 0.0)) * 0.3;
-	col = mix(col, P(w, 2) * 0.7, step(-hang, world_pos.y));
+	// ink run over the lip, dripping down the pages
+	float lane = floor(u * 3.0);
+	float run = step(0.72, hash(vec2(lane, 9.0))) * (0.4 + 1.6 * hash(vec2(lane, 5.0)));
+	float x = abs(fract(u * 3.0) - 0.5);
+	float drip = step(x, 0.12) * step(-run, world_pos.y);
+	drip = max(drip, step(length(vec2(x * 0.33, (world_pos.y + run) * 1.4)), 0.07) * step(0.01, run));
+	col = mix(col, ink.rgb, drip);
 	col = mix(col, vec3(0.0), depth * 0.85);
 	return col;
 }
