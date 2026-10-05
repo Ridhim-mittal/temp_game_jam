@@ -358,8 +358,7 @@ func _turn(delta: float) -> void:
 	var f := Vector3(facing_dir.x, 0.0, facing_dir.z)
 	if f.length() > 0.01 and not dead:
 		var target := atan2(-f.x, -f.z)
-		# whips round into a swing (the aim can be anywhere), then settles
-		var rate := turn_speed * (5.0 if swing >= 0.0 and swing < 0.35 else 2.0 if swing >= 0.0 or dashing else 1.0)
+		var rate := turn_speed * (2.0 if swing >= 0.0 or dashing else 1.0)
 		_yaw = lerp_angle(_yaw, target, 1.0 - exp(-rate * delta))
 	transform.basis = Basis(Vector3.UP, _yaw).scaled(Vector3.ONE * model_scale)
 

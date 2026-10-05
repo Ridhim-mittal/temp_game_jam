@@ -27,7 +27,6 @@ const SettingsMenu = preload("res://scripts/ui/settings_menu.gd")
 const Tutorial = preload("res://scripts/ui/tutorial.gd")
 const HauntLamp = preload("res://scripts/world25/haunt_lamp.gd")
 const DarknessScript = preload("res://scripts/world25/darkness.gd")
-const AimReticle = preload("res://scripts/world25/aim_reticle.gd")
 const RING_SHADER = preload("res://shaders/world25/sigil_ring.gdshader")
 const MIST_SHADER = preload("res://shaders/world25/void_mist.gdshader")
 const BiomeProps = preload("res://scripts/world25/biome_props.gd")
@@ -381,10 +380,6 @@ func _build_ui() -> void:
 	ui = Control.new()
 	ui.set_script(StoryUI)
 	layer.add_child(ui)
-	var reticle := Control.new()
-	reticle.name = "AimReticle"
-	reticle.set_script(AimReticle)
-	layer.add_child(reticle)
 
 
 func _spawn_player(world: Node) -> void:
