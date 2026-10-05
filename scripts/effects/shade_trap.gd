@@ -1,8 +1,8 @@
 extends CanvasLayer
 ## Shade's trap (end of Shade's City): walking through the gate looks like
 ## the way out, then the light curdles: the screen glitches, ink floods down
-## over everything and Shade speaks. Then "TO BE CONTINUED..." and on to
-## `next_scene` (the main menu until the cave exists).
+## over everything and Shade speaks, then on to `next_scene` (the Ink Cave);
+## with no next scene, "TO BE CONTINUED..." and the main menu.
 ##
 ##   ShadeTrap.start(get_tree(), player, "res://scenes/levels/ink_cave.tscn")
 
@@ -42,7 +42,8 @@ func _process(delta: float) -> void:
 	var cam := get_tree().get_first_node_in_group("camera")
 	if cam and _t > 0.8 and _t < 1.8:
 		cam.add_trauma(0.08)
-	if _t > 8.5 or (_t > 6.0 and Input.is_anything_pressed()):
+	var done := 8.5 if next_scene == "" else 5.6  # with a next scene: no "to be continued"
+	if _t > done or (next_scene == "" and _t > 6.0 and Input.is_anything_pressed()):
 		set_process(false)
 		get_tree().change_scene_to_file(next_scene if next_scene != "" else MENU)
 	_view.queue_redraw()
@@ -86,8 +87,8 @@ func _paint() -> void:
 			Vector2(box.position.x + 40, box.end.y + 40)]), Color(0.02, 0.01, 0.04))
 		_view.draw_string(FONT, box.position + Vector2(30, 54), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 40, Color(0.92, 0.88, 1.0))
 		_view.draw_string(FONT, box.position + Vector2(box.size.x - 90, -12), "- SHADE", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color(0.7, 0.62, 0.9))
-	# 4. to be continued
-	if _t > 5.0:
+	# 4. to be continued (only when there's nowhere to go yet)
+	if _t > 5.0 and next_scene == "":
 		var a := clampf((_t - 5.0) / 0.6, 0.0, 1.0)
 		var cap := "TO BE CONTINUED..."
 		var cw := FONT.get_string_size(cap, HORIZONTAL_ALIGNMENT_LEFT, -1, 34).x

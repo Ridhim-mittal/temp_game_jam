@@ -69,6 +69,7 @@ PEN = res("Script", "res://scripts/world/checkpoint_pen.gd")
 HEART = res("Script", "res://scripts/world/health_heart.gd")
 COIN = res("Script", "res://scripts/world/coin.gd")
 HUD = res("Script", "res://scripts/ui/hud.gd")
+BOSSBAR = res("Script", "res://scripts/ui/boss_bar.gd")
 MUSIC = res("Script", "res://scripts/audio/level_music.gd")
 MOOD = res("Script", "res://scripts/world/level_mood.gd")
 FRAME = res("Script", "res://scripts/ui/comic_frame.gd")
@@ -159,7 +160,7 @@ heart(5530, 560)
 node("InkBlot", None, "Enemies", [("position", v(6450, STREET - 75))], instance=BLOT)
 node("GateArena", "Node2D", "World", [("script", f'ExtResource("{ARENA}")'), ("blot_path", 'NodePath("../../Enemies/InkBlot")'),
      ("trigger_x", "5960.0"), ("left_x", "5800.0"), ("right_x", "7000.0"), ("gate_x", "6830.0"),
-     ("street_y", f"{STREET}.0")])
+     ("street_y", f"{STREET}.0"), ("next_scene", '"res://scenes/levels/ink_cave.tscn"')])
 
 # Vesper falls in from above: a hard landing (500 px), not a damaging one
 node("Player", None, ".", [("position", v(300, STREET - 26 - 500))], instance=PLAYER)
@@ -169,6 +170,8 @@ node("UI", "CanvasLayer", ".", [("layer", "2")])
 node("HUD", "Control", "UI", [("layout_mode", "3"), ("anchors_preset", "15"), ("anchor_right", "1.0"),
      ("anchor_bottom", "1.0"), ("grow_horizontal", "2"), ("grow_vertical", "2"), ("mouse_filter", "2"),
      ("script", f'ExtResource("{HUD}")')])
+node("BossBar", "Control", "UI", [("layout_mode", "3"), ("anchors_preset", "15"), ("anchor_right", "1.0"),
+     ("anchor_bottom", "1.0"), ("mouse_filter", "2"), ("script", f'ExtResource("{BOSSBAR}")')])
 node("LevelMusic", "Node", ".", [("script", f'ExtResource("{MUSIC}")')])
 node("LevelMood", "Node", ".", [("script", f'ExtResource("{MOOD}")')])
 node("ComicFrame", "CanvasLayer", ".", [("script", f'ExtResource("{FRAME}")'), ("page_number", "7"),

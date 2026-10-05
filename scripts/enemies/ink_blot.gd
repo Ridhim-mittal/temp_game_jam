@@ -20,15 +20,17 @@ const EYE := Color(1.0, 0.86, 0.32)
 const RAGE_EYE := Color(1.0, 0.25, 0.2)
 const FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
 
-@export var hp := 24
+@export var hp := 18
 @export var walk_speed := 140.0
 @export var wake_range := 420.0
-@export var swipe_damage := 25.0
-@export var slam_damage := 35.0
-@export var touch_damage := 15.0
+@export var swipe_damage := 22.0
+@export var slam_damage := 32.0
+@export var touch_damage := 13.0
 @export var art_scale := 0.78
 ## Starts asleep (a gatekeeper); false = awake and hunting at once.
 @export var asleep := true
+## Shown over its health bar (boss_bar.gd).
+@export var display_name := "THE INK BLOT"
 
 var state := State.SLEEP
 var _timer := 0.0

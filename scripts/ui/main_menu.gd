@@ -38,6 +38,7 @@ const CHAPTERS := [
 	["THE SKETCHBOOK", "res://scenes/levels/sketchbook.tscn"],
 	["THE LONG DROP", "res://scenes/levels/long_drop.tscn"],
 	["SHADE'S CITY", "res://scenes/levels/shades_city.tscn"],
+	["THE INK CAVE", "res://scenes/levels/ink_cave.tscn"],
 	["THE MARGINS", "res://scenes/clearing/clearing.tscn"],
 	["BACK", "@back"],
 ]

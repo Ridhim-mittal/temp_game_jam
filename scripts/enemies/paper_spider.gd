@@ -7,7 +7,7 @@ extends "res://scripts/enemies/enemy_base.gd"
 
 enum State { HANG, DROP, CHASE, WINDUP, STAB, RECOVER, FLINCH }
 
-@export var hp := 8
+@export var hp := 6
 ## Start hanging this far above the floor on a thread (0 = on the ground).
 @export var hang_height := 0.0
 ## Drop when the player is this close sideways.
@@ -15,12 +15,12 @@ enum State { HANG, DROP, CHASE, WINDUP, STAB, RECOVER, FLINCH }
 @export var speed := 220.0
 @export var stab_range := 150.0
 @export var stab_speed := 600.0
-@export var stab_damage := 22.0
+@export var stab_damage := 20.0
 ## How long it rears up before the stab (the tell). Hits don't stop it.
 @export var windup_time := 0.28
 ## Chance the stab is followed at once by a second one.
-@export var double_stab_chance := 0.45
-@export var touch_damage := 15.0
+@export var double_stab_chance := 0.3
+@export var touch_damage := 13.0
 @export var art_scale := 0.62
 ## Further than this from Vesper it wanders its patch of street instead.
 @export var notice_range := 650.0

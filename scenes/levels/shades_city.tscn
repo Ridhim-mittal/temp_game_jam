@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=3]
+[gd_scene load_steps=19 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="1_player"]
 [ext_resource type="PackedScene" path="res://scenes/enemies/paper_spider.tscn" id="2_paper_spider"]
@@ -13,10 +13,11 @@
 [ext_resource type="Script" path="res://scripts/world/health_heart.gd" id="11_health_heart"]
 [ext_resource type="Script" path="res://scripts/world/coin.gd" id="12_coin"]
 [ext_resource type="Script" path="res://scripts/ui/hud.gd" id="13_hud"]
-[ext_resource type="Script" path="res://scripts/audio/level_music.gd" id="14_level_music"]
-[ext_resource type="Script" path="res://scripts/world/level_mood.gd" id="15_level_mood"]
-[ext_resource type="Script" path="res://scripts/ui/comic_frame.gd" id="16_comic_frame"]
-[ext_resource type="Script" path="res://scripts/ui/narration.gd" id="17_narration"]
+[ext_resource type="Script" path="res://scripts/ui/boss_bar.gd" id="14_boss_bar"]
+[ext_resource type="Script" path="res://scripts/audio/level_music.gd" id="15_level_music"]
+[ext_resource type="Script" path="res://scripts/world/level_mood.gd" id="16_level_mood"]
+[ext_resource type="Script" path="res://scripts/ui/comic_frame.gd" id="17_comic_frame"]
+[ext_resource type="Script" path="res://scripts/ui/narration.gd" id="18_narration"]
 
 [node name="ShadesCity" type="Node2D"]
 
@@ -192,6 +193,7 @@ left_x = 5800.0
 right_x = 7000.0
 gate_x = 6830.0
 street_y = 600.0
+next_scene = "res://scenes/levels/ink_cave.tscn"
 
 [node name="Player" parent="." instance=ExtResource("1_player")]
 position = Vector2(300, 74)
@@ -212,33 +214,41 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("13_hud")
 
+[node name="BossBar" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+script = ExtResource("14_boss_bar")
+
 [node name="LevelMusic" type="Node" parent="."]
-script = ExtResource("14_level_music")
+script = ExtResource("15_level_music")
 
 [node name="LevelMood" type="Node" parent="."]
-script = ExtResource("15_level_mood")
+script = ExtResource("16_level_mood")
 
 [node name="ComicFrame" type="CanvasLayer" parent="."]
-script = ExtResource("16_comic_frame")
+script = ExtResource("17_comic_frame")
 page_number = 7
 live_areas = Array[Rect2]([Rect2(-700, -2000, 8200, 3200)])
 
 [node name="Narration1" type="CanvasLayer" parent="."]
-script = ExtResource("17_narration")
+script = ExtResource("18_narration")
 text = "VESPER HAS BEEN DRAGGED BACK INTO SHADE'S CORRUPTED COMIC CITY. THE AUTHOR IS TRYING TO DELETE THE METROPOLIS."
 trigger_x = -1000000000.0
 
 [node name="Narration2" type="CanvasLayer" parent="."]
-script = ExtResource("17_narration")
+script = ExtResource("18_narration")
 text = "SOMETHING SKITTERS IN THE GUTTERS. SHADE HAS BEEN DRAWING NEW THINGS."
 trigger_x = 1500
 
 [node name="Narration3" type="CanvasLayer" parent="."]
-script = ExtResource("17_narration")
+script = ExtResource("18_narration")
 text = "THE AUTHOR IS LOOKING FOR YOU. STAY OUT OF THE LIGHT."
 trigger_x = 3200
 
 [node name="Narration4" type="CanvasLayer" parent="."]
-script = ExtResource("17_narration")
+script = ExtResource("18_narration")
 text = "A GATE OUT OF THE CITY. AND SOMETHING GUARDING IT."
 trigger_x = 5700

@@ -1,0 +1,247 @@
+[gd_scene load_steps=17 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="1_player"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/paper_spider.tscn" id="2_paper_spider"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/ink_bat.tscn" id="3_ink_bat"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/ink_blot.tscn" id="4_ink_blot"]
+[ext_resource type="Script" path="res://scripts/background/cave_backdrop.gd" id="5_cave_backdrop"]
+[ext_resource type="Script" path="res://scripts/world/cave_rock.gd" id="6_cave_rock"]
+[ext_resource type="Script" path="res://scripts/world/cave_arena.gd" id="7_cave_arena"]
+[ext_resource type="Script" path="res://scripts/world/checkpoint_pen.gd" id="8_checkpoint_pen"]
+[ext_resource type="Script" path="res://scripts/world/health_heart.gd" id="9_health_heart"]
+[ext_resource type="Script" path="res://scripts/world/coin.gd" id="10_coin"]
+[ext_resource type="Script" path="res://scripts/ui/hud.gd" id="11_hud"]
+[ext_resource type="Script" path="res://scripts/ui/boss_bar.gd" id="12_boss_bar"]
+[ext_resource type="Script" path="res://scripts/audio/level_music.gd" id="13_level_music"]
+[ext_resource type="Script" path="res://scripts/world/level_mood.gd" id="14_level_mood"]
+[ext_resource type="Script" path="res://scripts/ui/comic_frame.gd" id="15_comic_frame"]
+[ext_resource type="Script" path="res://scripts/ui/narration.gd" id="16_narration"]
+
+[node name="InkCave" type="Node2D"]
+
+[node name="Backdrop" type="Node2D" parent="."]
+script = ExtResource("5_cave_backdrop")
+
+[node name="World" type="Node2D" parent="."]
+
+[node name="Enemies" type="Node2D" parent="."]
+
+[node name="Coins" type="Node2D" parent="."]
+
+[node name="Rock1" type="StaticBody2D" parent="World"]
+position = Vector2(-600, 600)
+script = ExtResource("6_cave_rock")
+size = Vector2(5400, 500)
+ground = true
+
+[node name="Rock2" type="StaticBody2D" parent="World"]
+position = Vector2(-700, -1400)
+script = ExtResource("6_cave_rock")
+size = Vector2(100, 2100)
+
+[node name="Rock3" type="StaticBody2D" parent="World"]
+position = Vector2(4600, -1400)
+script = ExtResource("6_cave_rock")
+size = Vector2(100, 2100)
+
+[node name="Rock4" type="StaticBody2D" parent="World"]
+position = Vector2(620, 470)
+script = ExtResource("6_cave_rock")
+size = Vector2(200, 40)
+one_way = true
+
+[node name="Coin1" type="Area2D" parent="Coins"]
+position = Vector2(650, 430)
+script = ExtResource("10_coin")
+
+[node name="Coin2" type="Area2D" parent="Coins"]
+position = Vector2(698, 430)
+script = ExtResource("10_coin")
+
+[node name="Coin3" type="Area2D" parent="Coins"]
+position = Vector2(746, 430)
+script = ExtResource("10_coin")
+
+[node name="Rock5" type="StaticBody2D" parent="World"]
+position = Vector2(900, 210)
+script = ExtResource("6_cave_rock")
+size = Vector2(300, 70)
+one_way = true
+
+[node name="Bat1" parent="Enemies" instance=ExtResource("3_ink_bat")]
+position = Vector2(980, 260)
+
+[node name="Bat2" parent="Enemies" instance=ExtResource("3_ink_bat")]
+position = Vector2(1110, 260)
+
+[node name="Rock6" type="StaticBody2D" parent="World"]
+position = Vector2(1250, 450)
+script = ExtResource("6_cave_rock")
+size = Vector2(180, 40)
+one_way = true
+
+[node name="Rock7" type="StaticBody2D" parent="World"]
+position = Vector2(1500, 190)
+script = ExtResource("6_cave_rock")
+size = Vector2(280, 70)
+one_way = true
+
+[node name="Bat3" parent="Enemies" instance=ExtResource("3_ink_bat")]
+position = Vector2(1600, 240)
+
+[node name="Coin4" type="Area2D" parent="Coins"]
+position = Vector2(1530, 150)
+script = ExtResource("10_coin")
+
+[node name="Coin5" type="Area2D" parent="Coins"]
+position = Vector2(1578, 150)
+script = ExtResource("10_coin")
+
+[node name="Coin6" type="Area2D" parent="Coins"]
+position = Vector2(1626, 150)
+script = ExtResource("10_coin")
+
+[node name="Coin7" type="Area2D" parent="Coins"]
+position = Vector2(1674, 150)
+script = ExtResource("10_coin")
+
+[node name="Rock8" type="StaticBody2D" parent="World"]
+position = Vector2(1700, 470)
+script = ExtResource("6_cave_rock")
+size = Vector2(160, 40)
+one_way = true
+
+[node name="Rock9" type="StaticBody2D" parent="World"]
+position = Vector2(1950, 230)
+script = ExtResource("6_cave_rock")
+size = Vector2(260, 70)
+one_way = true
+
+[node name="Spider1" parent="Enemies" instance=ExtResource("2_paper_spider")]
+position = Vector2(2060, 567)
+hang_height = 260
+
+[node name="Spider2" parent="Enemies" instance=ExtResource("2_paper_spider")]
+position = Vector2(2300, 567)
+
+[node name="Rock10" type="StaticBody2D" parent="World"]
+position = Vector2(2380, 460)
+script = ExtResource("6_cave_rock")
+size = Vector2(180, 40)
+one_way = true
+
+[node name="Coin8" type="Area2D" parent="Coins"]
+position = Vector2(2400, 420)
+script = ExtResource("10_coin")
+
+[node name="Coin9" type="Area2D" parent="Coins"]
+position = Vector2(2448, 420)
+script = ExtResource("10_coin")
+
+[node name="Coin10" type="Area2D" parent="Coins"]
+position = Vector2(2496, 420)
+script = ExtResource("10_coin")
+
+[node name="Rock11" type="StaticBody2D" parent="World"]
+position = Vector2(2560, 220)
+script = ExtResource("6_cave_rock")
+size = Vector2(220, 70)
+one_way = true
+
+[node name="Spider3" parent="Enemies" instance=ExtResource("2_paper_spider")]
+position = Vector2(2650, 567)
+hang_height = 270
+
+[node name="Bat4" parent="Enemies" instance=ExtResource("3_ink_bat")]
+position = Vector2(2600, 270)
+
+[node name="Checkpoint1" type="Area2D" parent="World"]
+position = Vector2(2840, 600)
+script = ExtResource("8_checkpoint_pen")
+
+[node name="Heart1" type="Area2D" parent="World"]
+position = Vector2(2900, 560)
+script = ExtResource("9_health_heart")
+
+[node name="Rock12" type="StaticBody2D" parent="World"]
+position = Vector2(3420, 430)
+script = ExtResource("6_cave_rock")
+size = Vector2(240, 40)
+one_way = true
+
+[node name="InkBlotA" parent="Enemies" instance=ExtResource("4_ink_blot")]
+position = Vector2(3250, 525)
+hp = 15
+display_name = "THE INK BLOT"
+
+[node name="InkBlotB" parent="Enemies" instance=ExtResource("4_ink_blot")]
+position = Vector2(3900, 525)
+hp = 15
+display_name = "ITS TWIN"
+
+[node name="CaveArena" type="Node2D" parent="World"]
+script = ExtResource("7_cave_arena")
+blot_paths = Array[NodePath]([NodePath("../../Enemies/InkBlotA"), NodePath("../../Enemies/InkBlotB")])
+backdrop_path = NodePath("../../Backdrop")
+trigger_x = 3100.0
+left_x = 2980.0
+right_x = 4280.0
+floor_y = 600.0
+
+[node name="Player" parent="." instance=ExtResource("1_player")]
+position = Vector2(260, 74)
+
+[node name="Camera2D" parent="Player"]
+framing_offset = Vector2(0, -226)
+
+[node name="UI" type="CanvasLayer" parent="."]
+layer = 2
+
+[node name="HUD" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("11_hud")
+
+[node name="BossBar" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+script = ExtResource("12_boss_bar")
+
+[node name="LevelMusic" type="Node" parent="."]
+script = ExtResource("13_level_music")
+
+[node name="LevelMood" type="Node" parent="."]
+script = ExtResource("14_level_mood")
+
+[node name="ComicFrame" type="CanvasLayer" parent="."]
+script = ExtResource("15_comic_frame")
+page_number = 8
+live_areas = Array[Rect2]([Rect2(-800, -2000, 5600, 3200)])
+
+[node name="Narration1" type="CanvasLayer" parent="."]
+script = ExtResource("16_narration")
+text = "SHADE'S TRAP. VESPER FALLS INTO A CAVE WHERE THE INK BURNS."
+trigger_x = -1000000000.0
+
+[node name="Narration2" type="CanvasLayer" parent="."]
+script = ExtResource("16_narration")
+text = "SOMETHING IS ROOSTING UP THERE."
+trigger_x = 800
+
+[node name="Narration3" type="CanvasLayer" parent="."]
+script = ExtResource("16_narration")
+text = "SHADE KEEPS DRAWING. AND HIS DRAWINGS KEEP COMING."
+trigger_x = 1850
+
+[node name="Narration4" type="CanvasLayer" parent="."]
+script = ExtResource("16_narration")
+text = "THE GROUND SHAKES. TWO OF THEM, THIS TIME."
+trigger_x = 3000
