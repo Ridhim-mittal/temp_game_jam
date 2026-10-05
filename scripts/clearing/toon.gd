@@ -141,3 +141,49 @@ static func cylinder_shape(radius: float, height: float) -> CylinderShape3D:
 	s.radius = radius
 	s.height = height
 	return s
+
+
+# --------------------------------------------------------- bones and wax
+
+const BONE := Color(0.8, 0.76, 0.66)
+const FLAME_SHADER = preload("res://shaders/clearing/flame.gdshader")
+
+
+## A small skull, `s` units across, facing local +Z: domed cranium, jaw,
+## dark eye sockets and nose, a line of teeth. Returns its holder node.
+static func skull(parent: Node3D, pos: Vector3, s := 0.3, yaw_deg := 0.0, tilt := Vector3.ZERO, tint := BONE) -> Node3D:
+	var n := Node3D.new()
+	n.position = pos
+	n.rotation_degrees = Vector3(tilt.x, yaw_deg, tilt.z)
+	parent.add_child(n)
+	var o := {"outline": 0.016}
+	var head := part(n, sphere(0.5 * s, 10, 6), tint, Vector3(0, 0.52 * s, 0), Vector3.ZERO, o)
+	head.scale = Vector3(1.0, 0.92, 1.1)
+	part(n, box(Vector3(0.6, 0.28, 0.4) * s), tint.darkened(0.08), Vector3(0, 0.16 * s, 0.14 * s), Vector3.ZERO, o)
+	var none := {"outline": 0.0}
+	for side in [-1, 1]:
+		var eye := part(n, sphere(0.15 * s, 8, 4), INK, Vector3(side * 0.19 * s, 0.5 * s, 0.43 * s), Vector3.ZERO, none)
+		eye.scale = Vector3(1.0, 1.15, 0.6)
+	part(n, prism(Vector3(0.12, 0.13, 0.06) * s), INK, Vector3(0, 0.33 * s, 0.53 * s), Vector3(0, 0, 180), none)
+	part(n, box(Vector3(0.42, 0.03, 0.02) * s), INK, Vector3(0, 0.19 * s, 0.35 * s), Vector3.ZERO, none)
+	return n
+
+
+## A crossed pair of bones lying flat, about `s` long.
+static func bones(parent: Node3D, pos: Vector3, s := 0.5, yaw_deg := 0.0) -> void:
+	for k in 2:
+		var b := Node3D.new()
+		b.position = pos + Vector3(0, 0.04 * s + k * 0.03 * s, 0)
+		b.rotation_degrees = Vector3(0, yaw_deg + (k * 2 - 1) * 35.0, 90)
+		parent.add_child(b)
+		part(b, cylinder(0.05 * s, 0.05 * s, s, 6), BONE.darkened(0.05 * k), Vector3.ZERO, Vector3.ZERO, {"outline": 0.014})
+		for end in [-1, 1]:
+			part(b, sphere(0.08 * s, 6, 4), BONE, Vector3(0, end * s * 0.5, 0), Vector3.ZERO, {"outline": 0.014})
+
+
+## A wax candle, `h` tall, with a little flame on top.
+static func candle(parent: Node3D, pos: Vector3, h := 0.3, flame := Color(1.0, 0.42, 0.2), wax := Color(0.78, 0.2, 0.18)) -> void:
+	part(parent, cylinder(0.05, 0.06, h, 8), wax, pos + Vector3(0, h * 0.5, 0), Vector3.ZERO, {"outline": 0.014})
+	part(parent, sphere(0.04, 6, 4), wax.lightened(0.1), pos + Vector3(0.05, h * 0.7, 0.02), Vector3.ZERO, {"outline": 0.0})
+	billboard(parent, FLAME_SHADER, Vector2(0.15, 0.24), pos + Vector3(0, h + 0.1, 0),
+		{"outer_color": flame, "core_color": flame.lightened(0.6), "brightness": 2.2})

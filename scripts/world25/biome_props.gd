@@ -6,17 +6,24 @@ extends Node3D
 ## (Color(0, 0, 0, 0) = the prop's own colours), `count`/`radius` are used by
 ## clusters. Set `solid` to block the player.
 ##
-## Darkwood:  CANOPY (hanging foliage with watching eyes), TOMBSTONE, STUMP,
-##            GARDEN_PLOT, BARN, SCARECROW
-## Shrine:    PILLAR (broken), RITUAL_CIRCLE (red correction marks),
-##            SHADE_STATUE
-## Shallows:  CORAL (shell clusters), TUBE_PLANT, INK_POOL
-## Wastes:    CRYSTAL, PAPER_MOUND, PINS, NEST (cocoons + glowing bulbs),
-##            PENCIL_TOTEM, INK_POT
+## Darkwood:  TOMBSTONE (a grave: headstone, mound, skulls and bones), STUMP
+## Shrine:    PILLAR (broken), RITUAL_CIRCLE (a glowing ritual circle of
+##            cryptic sigils), SHADE_STATUE
+## Anywhere:  SKULL_PILE (`count` skulls heaped up), CANDLES (`count` red
+##            candles), RUNE_STONE (a standing stone with a glowing sigil)
+## Shallows:  INK_POOL
+## Wastes:    CRYSTAL, PAPER_MOUND, PINS, PENCIL_TOTEM, INK_POT
+##
+## Retired (no longer placed anywhere, kept so the enum's integers stay put;
+## never remove or reorder Kind values, scenes store them as numbers):
+## CANOPY, GARDEN_PLOT, BARN, SCARECROW, CORAL, TUBE_PLANT, NEST.
 
 const Toon = preload("res://scripts/clearing/toon.gd")
 const EYES_SHADER = preload("res://shaders/clearing/glow_eyes.gdshader")
-const CIRCLE_SHADER = preload("res://shaders/world25/ritual_circle.gdshader")
+const RING_SHADER = preload("res://shaders/world25/sigil_ring.gdshader")
+const MARK_SHADER = preload("res://shaders/world25/sigil_mark.gdshader")
+const CORRECTION := Color(0.85, 0.14, 0.12)
+const SIGIL_GLOW := Color(1.0, 0.26, 0.16)
 const SPLAT_SHADER = preload("res://shaders/clearing/ink_splat.gdshader")
 
 enum Kind {
@@ -24,6 +31,8 @@ enum Kind {
 	PILLAR, RITUAL_CIRCLE, SHADE_STATUE,
 	CORAL, TUBE_PLANT, INK_POOL,
 	CRYSTAL, PAPER_MOUND, PINS, NEST, PENCIL_TOTEM, INK_POT,
+	# new kinds always go at the end
+	SKULL_PILE, CANDLES, RUNE_STONE,
 }
 
 @export var kind := Kind.TOMBSTONE:
@@ -56,6 +65,9 @@ enum Kind {
 		_rebuild()
 
 var _rng := RandomNumberGenerator.new()
+## The pool it carves in the Gutter's darkness (darkness.gd), for kinds that
+## give light (candles); 0 = none.
+var glow_radius := 0.0
 
 
 func _ready() -> void:
@@ -71,6 +83,7 @@ func _rebuild() -> void:
 		return
 	var root := Toon.fresh_root(self)
 	_rng.seed = seed
+	glow_radius = 0.0
 	var s := size
 	match kind:
 		Kind.CANOPY: _canopy(root, s)
@@ -91,6 +104,13 @@ func _rebuild() -> void:
 		Kind.NEST: _nest(root, s)
 		Kind.PENCIL_TOTEM: _pencil_totem(root, s)
 		Kind.INK_POT: _ink_pot(root, s)
+		Kind.SKULL_PILE: _skull_pile(root, s)
+		Kind.CANDLES: _candles(root, s)
+		Kind.RUNE_STONE: _rune_stone(root, s)
+	if glow_radius > 0.0 and not Engine.is_editor_hint():
+		add_to_group("glow")
+	elif is_in_group("glow"):
+		remove_from_group("glow")
 
 
 func _collide(root: Node3D, shape: Shape3D, pos: Vector3) -> void:
@@ -105,8 +125,8 @@ func _rand_in_disc(r: float) -> Vector3:
 
 # ---------------------------------------------------------------- darkwood
 
-## Foliage hanging from the canopy above (Cult of the Lamb's Darkwood):
-## leafy lumps with dangling vines and dark hollows where red eyes watch.
+## Retired. Foliage hanging from a canopy above: leafy lumps with dangling
+## vines and dark hollows where red eyes watch.
 ## Place it at the room edge; it floats at height `size * 5`.
 func _canopy(root: Node3D, s: float) -> void:
 	var leaf := _col(Color(0.36, 0.52, 0.3))
@@ -136,8 +156,15 @@ func _canopy(root: Node3D, s: float) -> void:
 		Toon.billboard(root, EYES_SHADER, Vector2(0.9, 0.45) * s, hp + Vector3(0, 0, 0.12), {"color": Color(1.0, 0.15, 0.1)})
 
 
+## A grave: a leaning headstone on a low mound of dug earth. Most were
+## crossed out in red (cut characters); the rest bear a carved sigil that
+## glows faintly. Skulls and bones lie round it, and now and then a candle.
 func _tombstone(root: Node3D, s: float) -> void:
 	var st := _col(Color(0.55, 0.54, 0.56))
+	# the mound
+	var mound := Toon.part(root, Toon.sphere(0.55 * s, 10, 5, true), Color(0.24, 0.17, 0.14), Vector3(0, -0.02, 0.32 * s), Vector3.ZERO,
+		{"outline": 0.025})
+	mound.scale = Vector3(1.0, 0.28, 1.35)
 	var tilt := Vector3(_rng.randf_range(-8, 8), _rng.randf_range(-20, 20), _rng.randf_range(-8, 8))
 	var holder := Node3D.new()
 	holder.rotation_degrees = tilt
@@ -145,11 +172,45 @@ func _tombstone(root: Node3D, s: float) -> void:
 	Toon.part(holder, Toon.box(Vector3(0.8, 1.0, 0.25) * s), st, Vector3(0, 0.5 * s, 0), Vector3.ZERO, {"moss": 0.4})
 	var cap := Toon.part(holder, Toon.cylinder(0.4 * s, 0.4 * s, 0.25 * s, 14), st, Vector3(0, 1.0 * s, 0), Vector3(90, 0, 0), {"moss": 0.4})
 	cap.scale = Vector3(1, 1, 1)
-	# a red X: this one was crossed out
-	for a in [35.0, -35.0]:
-		Toon.part(holder, Toon.box(Vector3(0.08, 0.7, 0.03) * s), Color(0.8, 0.12, 0.1), Vector3(0, 0.62 * s, 0.14 * s),
-			Vector3(0, 0, a), {"outline": 0.0})
+	# a darker inset panel, with the mark on it
+	Toon.part(holder, Toon.box(Vector3(0.5, 0.55, 0.02) * s), st.darkened(0.3), Vector3(0, 0.62 * s, 0.13 * s), Vector3.ZERO, {"outline": 0.0})
+	if _rng.randf() < 0.6:
+		for a in [35.0, -35.0]:
+			Toon.part(holder, Toon.box(Vector3(0.08, 0.7, 0.03) * s), CORRECTION, Vector3(0, 0.62 * s, 0.15 * s),
+				Vector3(0, 0, a), {"outline": 0.0})
+	else:
+		_sigil_quad(holder, Vector3(0, 0.64 * s, 0.145 * s), 0.42 * s, Vector3.ZERO, 0.9)
+	# skulls and bones in the grass that isn't there any more
+	var n := 1 + _rng.randi() % 3
+	for k in n:
+		var a := _rng.randf_range(-2.2, 2.2)
+		var r := _rng.randf_range(0.55, 0.85) * s
+		Toon.skull(root, Vector3(sin(a) * r, 0.0, cos(a) * r + 0.25 * s), _rng.randf_range(0.2, 0.3) * s,
+			rad_to_deg(a) + _rng.randf_range(-40, 40), Vector3(_rng.randf_range(-20, 10), 0, _rng.randf_range(-20, 20)))
+	if _rng.randf() < 0.6:
+		Toon.bones(root, Vector3(_rng.randf_range(-0.6, 0.6) * s, 0.0, 0.75 * s), 0.45 * s, _rng.randf() * 180.0)
+	if _rng.randf() < 0.35:
+		Toon.candle(root, Vector3((0.55 if _rng.randf() < 0.5 else -0.55) * s, 0.0, 0.15 * s), _rng.randf_range(0.16, 0.3) * s)
 	_collide(root, Toon.box_shape(Vector3(0.9, 1.4, 0.4) * s), Vector3(0, 0.7 * s, 0))
+
+
+## A glowing carved sigil (sigil_mark.gdshader) on a quad facing local +Z.
+func _sigil_quad(parent: Node3D, pos: Vector3, w: float, rot := Vector3.ZERO, glow := 1.6) -> void:
+	var q := QuadMesh.new()
+	q.size = Vector2(w, w)
+	var m := ShaderMaterial.new()
+	m.shader = MARK_SHADER
+	m.set_shader_parameter("sigil", _rng.randi() % 5)
+	m.set_shader_parameter("seed", float(seed) + _rng.randf() * 10.0)
+	m.set_shader_parameter("glow", glow)
+	m.set_shader_parameter("color", _col(SIGIL_GLOW) if kind != Kind.TOMBSTONE else SIGIL_GLOW)
+	var mi := MeshInstance3D.new()
+	mi.mesh = q
+	mi.material_override = m
+	mi.position = pos
+	mi.rotation_degrees = rot
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	parent.add_child(mi)
 
 
 func _stump(root: Node3D, s: float) -> void:
@@ -234,8 +295,8 @@ func _ritual_circle(root: Node3D, s: float) -> void:
 	q.orientation = PlaneMesh.FACE_Y
 	q.size = Vector2(radius * 2.0, radius * 2.0)
 	var mat := ShaderMaterial.new()
-	mat.shader = CIRCLE_SHADER
-	mat.set_shader_parameter("color", _col(Color(0.95, 0.18, 0.14)))
+	mat.shader = RING_SHADER
+	mat.set_shader_parameter("color", _col(SIGIL_GLOW))
 	var mi := MeshInstance3D.new()
 	mi.mesh = q
 	mi.material_override = mat
@@ -264,8 +325,8 @@ func _shade_statue(root: Node3D, s: float) -> void:
 
 # ---------------------------------------------------------------- shallows
 
-## Shell coral: a heap of round shells with dark mouths (Cult of the Lamb's
-## Anura), in sea-glass greens and blues.
+## Retired. Shell coral: a heap of round shells with dark mouths, in
+## sea-glass greens and blues.
 func _coral(root: Node3D, s: float) -> void:
 	var base := _col(Color(0.36, 0.7, 0.62))
 	for i in count:
@@ -403,3 +464,60 @@ func _ink_pot(root: Node3D, s: float) -> void:
 		Toon.part(root, Toon.cylinder(0.17 * k, 0.17 * k, 0.03, 10), Color(0.05, 0.03, 0.08), p + Vector3(0, 0.94 * k, 0),
 			Vector3.ZERO, {"outline": 0.0})
 	_collide(root, Toon.cylinder_shape(radius * s * 0.6, 1.2), Vector3(0, 0.6, 0))
+
+
+# --------------------------------------------------------------- the dead
+
+## Skulls heaped into a mound, a couple of bones rolled away. `count` is how
+## many skulls, `radius` how wide; big ones make the background's heaps.
+func _skull_pile(root: Node3D, s: float) -> void:
+	var n := maxi(count, 3)
+	var big := radius * s
+	for k in n:
+		# denser and higher towards the middle: a mound, not a ring
+		var d := pow(_rng.randf(), 0.8) * big
+		var a := _rng.randf() * TAU
+		var y := (1.0 - (d / big) * (d / big)) * big * 0.55
+		Toon.skull(root, Vector3(cos(a) * d, y, sin(a) * d), _rng.randf_range(0.3, 0.4) * s, _rng.randf_range(-70, 70),
+			Vector3(_rng.randf_range(-30, 20), 0, _rng.randf_range(-25, 25)))
+	for k in 2:
+		Toon.bones(root, _rand_in_disc(big * 1.1), 0.5 * s, _rng.randf() * 180.0)
+	_collide(root, Toon.cylinder_shape(big * 0.6, 1.2), Vector3(0, 0.6, 0))
+
+
+## Red candles of every height melted onto a puddle of wax.
+func _candles(root: Node3D, s: float) -> void:
+	var wax := _col(Color(0.72, 0.16, 0.15))
+	var puddle := Toon.part(root, Toon.cylinder(radius * s * 0.8, radius * s * 0.9, 0.04, 14), wax.darkened(0.35), Vector3(0, 0.02, 0),
+		Vector3.ZERO, {"outline": 0.0})
+	puddle.scale = Vector3(1.0, 1.0, 0.8)
+	for k in maxi(count, 1):
+		var p := _rand_in_disc(radius * s * 0.75)
+		Toon.candle(root, p, _rng.randf_range(0.14, 0.5) * s, Color(1.0, 0.42, 0.2), wax.lerp(Color(0.9, 0.85, 0.75), _rng.randf() * 0.3))
+	glow_radius = 1.4 + radius * s * 0.6
+	if not Engine.is_editor_hint():
+		var l := OmniLight3D.new()
+		l.light_color = Color(1.0, 0.45, 0.25)
+		l.light_energy = 0.9
+		l.omni_range = glow_radius + 1.0
+		l.position = Vector3(0, 0.6, 0)
+		root.add_child(l)
+
+
+## A rough standing stone, leaning, with a sigil carved into its face that
+## glows from inside, and the ground round it scorched.
+func _rune_stone(root: Node3D, s: float) -> void:
+	var st := _col(Color(0.36, 0.34, 0.38))
+	var holder := Node3D.new()
+	holder.rotation_degrees = Vector3(_rng.randf_range(-7, 7), 0, _rng.randf_range(-7, 7))
+	root.add_child(holder)
+	var h := _rng.randf_range(1.6, 2.2) * s
+	Toon.part(holder, Toon.box(Vector3(0.8, h, 0.45) * Vector3(s, 1, s)), st, Vector3(0, h * 0.5, 0), Vector3.ZERO, {"moss": 0.3})
+	Toon.part(holder, Toon.prism(Vector3(0.8, 0.45, 0.45) * s), st, Vector3(0, h + 0.22 * s, 0), Vector3.ZERO, {"moss": 0.3})
+	_sigil_quad(holder, Vector3(0, h * 0.55, 0.235 * s), 0.6 * s, Vector3.ZERO, 2.0)
+	# smaller rubble at its foot
+	for k in 3:
+		var chunk := Toon.part(root, Toon.box(Vector3(0.28, 0.2, 0.24) * s), st.darkened(0.1), _rand_in_disc(0.7 * s) + Vector3(0, 0.08 * s, 0),
+			Vector3(_rng.randf() * 40.0, _rng.randf() * 90.0, _rng.randf() * 30.0))
+		chunk.scale = Vector3.ONE
+	_collide(root, Toon.box_shape(Vector3(0.9, 2.0, 0.55) * s), Vector3(0, 1.0, 0))

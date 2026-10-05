@@ -1,5 +1,5 @@
 extends "res://scripts/clearing/monster_3d.gd"
-## The Red Pen: the Writer's editor, boss of the Inkwell Shallows. It floats
+## The Red Pen: the Writer's editor, boss of the Drowned Margin. It floats
 ## out of reach above the page and corrects Vesper like a typo. Its body is
 ## lacquered: swings CLINK off it, except while its nib is stuck in the
 ## ground (STUCK) or it is dazzled (phase 2).

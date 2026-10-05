@@ -7,10 +7,13 @@ All art is drawn in code (`_draw()`, shaders, primitive meshes); no texture asse
 ## Two modes
 - **2D platformer** (`scenes/levels/`, `scripts/player/`, `scripts/enemies/`): Hollow Knight-style
   movement/combat. Monsters extend `scripts/enemies/enemy_base.gd` and draw via `paint()`.
-- **2.5D top-down** (Cult of the Lamb style; `scenes/clearing/`, `scenes/world25/`,
-  `scripts/clearing/`, `scripts/world25/`, `shaders/clearing/`): 3D scenes, tilted camera,
-  billboard characters. The player and monsters reuse the 2D art by drawing it into a
-  SubViewport (`clearing_player.tscn`, `monster_puppet.gd`).
+- **2.5D top-down** ("the Gutter": dark, moody rooms; `scenes/clearing/`, `scenes/world25/`,
+  `scripts/clearing/`, `scripts/world25/`, `shaders/clearing/`): 3D scenes, tilted camera.
+  Vesper is a procedural 3D model, "the Traveler's Ghost" (`scripts/clearing/vesper_3d.gd`: black
+  hat with a red band, white egg head, red scarf, open purple cloak, broadsword on his back that
+  comes out on swings; dash = lunge + ghost afterimages; `use_3d_model = false` on the player
+  brings back the 2D art on a billboard). Monsters reuse the 2D art drawn into a
+  SubViewport (`monster_puppet.gd`).
 
 ## 2D story start (main menu PLAY)
 `cs_opening` → THE CITY (`scenes/levels/test_level.tscn`, a ~1 min controls tutorial) → glowing
@@ -48,14 +51,45 @@ The 2D player has a double jump (`air_jumps`, `air_jump_velocity` in player.gd; 
 - Rooms are scenes whose root uses `scripts/world25/room.gd`; it builds environment, light,
   player, camera, HUD, minimap, music from a `Biome` resource (`data/biomes/*.tres`).
 - `Gate` nodes (`scripts/world25/gate.gd`) seal until every monster in the room is dead, then
-  load the target room. A room's `biome_b` + blend line morphs one biome into another inside it.
+  load the target room. Sealed = the path is a grey dashed pencil sketch (`drawn_ghost.gdshader`)
+  with cold lanterns; `open()` draws a line of light outwards (`gate_light.gdshader`), fills the
+  path in, lights pale-gold lanterns and chimes. A room's `biome_b` + blend line morphs one biome
+  into another inside it.
+- Look: biomes (`data/biomes/`) are dark versions of the original palettes. Ground modes
+  (ground.gdshader): 0 stone tiles (Inkwood), 1 wet flagstones, 2 cracked, 3 DIRT (the hub);
+  `Biome.runes` / `rune_color` scatter glowing cryptic sigils on any floor. `island.gd` piles
+  rubble along closed edges. Darkness round Vesper: `darkness.gd` (+ darkness.gdshader) on the
+  room's UI layer, strength `Biome.darkness`; pools of light at the Ember, lit lanterns, open
+  gates, the lamp and anything in group "glow" (`glow_radius` property or meta); bright pixels
+  shine through. room.gd `_build_backdrop()` fills the void (a huge turning sigil far below,
+  mist, rising embers, uplit skull heaps and ink statues). No grass, farms or shops; retired
+  `biome_props.gd` kinds (CANOPY, GARDEN_PLOT, BARN, SCARECROW, CORAL, TUBE_PLANT, NEST) stay
+  in the enum but are placed nowhere. Newer kinds: SKULL_PILE, CANDLES, RUNE_STONE; TOMBSTONE
+  graves carry skulls; RITUAL_CIRCLE uses sigil_ring.gdshader. Helpers `Toon.skull()`,
+  `Toon.bones()`, `Toon.candle()`. The hub's altar.gd is the original shrine in a ritual circle.
+- HUD (clearing_hud.gd): health bar (one notch per ink drop) and a healing counter (heals the
+  Ember's fuel covers, F), above the Ember bar.
+- The Writer's Haunting Lamp (`scripts/world25/haunt_lamp.gd`, built on `searchlight.gd`):
+  room.gd spawns it in every room from the biome's `haunt` profile (`data/haunt/*.tres`,
+  `haunt_profile.gd`), scaled by Settings difficulty and the room's `haunt_scale` (set in the
+  generator). States DORMANT/SEEK/MARK/STRIKE/LINGER/LOST; standing in its light fills the erase
+  meter (a full meter = an ink drop); hide behind solid props. `room.haunt_hold()` stops strikes
+  during transitions and boss intros. The hub's lamp only searches. The circle steers with
+  inertia (`_steer`), is interpolated between ticks, keeps to the floor (`room.on_floor()`) and
+  keeps apart from other lamps (`_separation`).
+- Controls (clearing_player.gd): `facing_dir` (8-way snap) is what swings, dashes and the facing
+  chevron follow; the mouse position is ignored (buttons only). Aim assist (`aim_assist_angle`,
+  `aim_assist_range`, Settings toggle). World25 owns `Input.mouse_mode`: hidden while a room is
+  in play (room.gd `in_gameplay()`), visible in menus; Settings "Cursor in game" keeps it shown.
 - Autoload `World25` (`scripts/world25/world25.gd`): story state, cleared rooms, ink-wipe
   transitions, player health between rooms.
 - Props are `@tool` scripts that build meshes under a "Generated" child (never saved); edit
   their exports in the inspector. Shared helpers: `scripts/clearing/toon.gd`.
 
 ## 2.5D story (main menu → "Begin in the Margins")
-Hub `scenes/clearing/clearing.tscn` → cave → `scenes/world25/rooms/`: darkwood_1, darkwood_2,
+Zones (display names; code names stay): hub = The Spine, darkwood_* = The Inkwood, shallows_* =
+The Drowned Margin, wastes_* = The Torn Wastes, arena = The Rubbing Room.
+Hub `scenes/clearing/clearing.tscn` (hand-made, not generated) → cave → `scenes/world25/rooms/`: darkwood_1, darkwood_2,
 darkwood_bridge, darkwood_3 (blends forest into water) → shallows_1, shallows_2, shallows_field →
 shallows_pen (Red Pen boss, `scripts/clearing/red_pen_3d.gd`: wet-ink circles dry in light) →
 wastes_1, wastes_2, wastes_gap → arena (Eraser boss) → `cs_reveal` cutscene.
@@ -68,7 +102,10 @@ edits). Monsters stay dead in story rooms (room.gd sets `respawn_time = 0`).
 Autoloads `Profile` (Lumens, Ink Points, skills, owned/equipped items; user://profile.cfg) and
 `Settings` (options; user://settings.cfg). Catalog of skills and shop items:
 `scripts/core/catalog.gd`. clearing_player.gd `_apply_loadout()` turns them into stats from the
-exported base values; room.gd opens overlays (pause, skills, shop, settings) and pauses the tree.
+exported base values; room.gd opens overlays (pause, skills, settings) and pauses the tree.
+The Gutter has no shop or coins: Patch (`patch_npc.gd`) is a guide who talks on E; `shop.gd`,
+`lumen.gd` and the Lumen counter are unhooked. The skill tree opens at the hub shrine and from
+pause.
 First-run controls tutorial: `scripts/ui/tutorial.gd` (started by player.gd and room.gd; steps
 are remembered in Profile; Esc / controller Back skips; shows controller buttons when one is used;
 Settings -> Tutorials or Pause -> Controls replays them).
@@ -81,6 +118,8 @@ Settings -> Tutorials or Pause -> Controls replays them).
 
 ## Checking work
 - Script errors: `godot --headless --path . --quit-after 60 res://<scene>.tscn`
+- Gutter checks (need a display, e.g. `xvfb-run`): `godot --path . --rendering-driver opengl3 -s
+  res://tests/gutter/test_phase1.gd` (also test_phase2, test_phase5); exit code = failures.
 - Screenshots: from a script in a temporary scene, call `RenderingServer.force_draw(false)` then
   `get_viewport().get_texture().get_image().save_png(...)`. `--write-movie` stops drawing after a few
   frames when the screen is locked, and hit-stop freezes look far too long in it.

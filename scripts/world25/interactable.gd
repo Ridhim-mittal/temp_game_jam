@@ -1,13 +1,16 @@
 extends Node3D
-## Something Vesper can use with Interact (E / gamepad LB) when she's near:
-## shows a prompt over it and asks the room to open an overlay
-## (room.gd open_overlay: "shop", "skills", ...).
+## Something Vesper can use with Interact (E / gamepad LB) when he's near:
+## shows a prompt over it, emits `used` and, if `action` is set, asks the
+## room to open that overlay (room.gd open_overlay: "skills", "settings").
+## Leave `action` empty for things that only talk (Patch).
+
+signal used
 
 const ScreenAnchor = preload("res://scripts/clearing/screen_anchor.gd")
 const TITLE_FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
 
-@export var action := "shop"
-@export var prompt := "SHOP"
+@export var action := ""
+@export var prompt := "TALK"
 @export var radius := 2.4
 @export var prompt_height := 2.2
 
@@ -25,8 +28,9 @@ func _process(_delta: float) -> void:
 		and Vector2(player.global_position.x - global_position.x, player.global_position.z - global_position.z).length() < radius
 	_show_prompt(near)
 	if near and Input.is_action_just_pressed("interact"):
+		used.emit()
 		var room := get_tree().current_scene
-		if room and room.has_method("open_overlay"):
+		if action != "" and room and room.has_method("open_overlay"):
 			room.open_overlay(action)
 
 

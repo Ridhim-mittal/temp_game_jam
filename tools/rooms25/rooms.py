@@ -15,7 +15,6 @@ EXT = [
     ("Script", "res://scripts/clearing/island.gd", "island"),
     ("Script", "res://scripts/world25/gate.gd", "gate"),
     ("Script", "res://scripts/world25/biome_props.gd", "bprops"),
-    ("Script", "res://scripts/clearing/grass_field.gd", "grass"),
     ("Script", "res://scripts/clearing/pine.gd", "pine"),
     ("Script", "res://scripts/clearing/trunk.gd", "trunk"),
     ("Script", "res://scripts/clearing/brazier.gd", "brazier"),
@@ -37,7 +36,10 @@ EXT = [
     ("Resource", "res://data/biomes/wastes.tres", "b_wastes"),
     ("Resource", "res://data/biomes/arena.tres", "b_arena"),
 ]
-KIND = {k: i for i, k in enumerate("CANOPY TOMBSTONE STUMP GARDEN_PLOT BARN SCARECROW PILLAR RITUAL_CIRCLE SHADE_STATUE CORAL TUBE_PLANT INK_POOL CRYSTAL PAPER_MOUND PINS NEST PENCIL_TOTEM INK_POT".split())}
+# biome_props.gd Kind, in enum order (never reorder; new kinds go at the end).
+# Retired, placed nowhere: CANOPY GARDEN_PLOT BARN SCARECROW CORAL TUBE_PLANT NEST.
+KIND = {k: i for i, k in enumerate("CANOPY TOMBSTONE STUMP GARDEN_PLOT BARN SCARECROW PILLAR RITUAL_CIRCLE SHADE_STATUE CORAL TUBE_PLANT INK_POOL CRYSTAL PAPER_MOUND PINS NEST PENCIL_TOTEM INK_POT "
+                                   "SKULL_PILE CANDLES RUNE_STONE".split())}
 ROT = {"north": 0, "south": 180, "east": -90, "west": 90}
 
 
@@ -67,6 +69,9 @@ class Room:
         self.props = {}
         self.story = {}
         self.extra_islands = []  # (name, points, open_edges)
+        # the Writer's lamp: > 1 hunts a little harder than the biome's
+        # profile (room.gd haunt_scale); later rooms in a biome go higher
+        self.haunt_scale = 1.0
 
     def gate(self, side, target, target_gate, offset=0.0, always_open=False):
         self.gates[side] = (target, target_gate, offset, always_open)
@@ -137,6 +142,8 @@ class Room:
             room.append(f'biome_b = ExtResource("b_{self.biome_b}")')
             room.append(f"blend_from = Vector2({self.blend[0][0]}, {self.blend[0][1]})")
             room.append(f"blend_to = Vector2({self.blend[1][0]}, {self.blend[1][1]})")
+        if self.haunt_scale != 1.0:
+            room.append(f"haunt_scale = {self.haunt_scale}")
         if extra_room_props:
             room.append(extra_room_props)
         lines.append("\n".join(room) + "\n")
@@ -146,13 +153,7 @@ class Room:
         for k, (ename, epts, eopen) in enumerate(self.extra_islands):
             estr = ", ".join(f"{x:.2f}, {z:.2f}" for x, z in epts)
             lines.append(f'[node name="{ename}" type="Node3D" parent="."]\nscript = ExtResource("island")\npolygon = PackedVector2Array({estr})\nopen_edges = PackedInt32Array({", ".join(str(i) for i in eopen)})\n')
-            xs = [p[0] for p in epts]; zs = [p[1] for p in epts]
-            lines.append(f'[node name="Grass{ename}" type="Node3D" parent="."]\nscript = ExtResource("grass")\nisland_path = NodePath("../{ename}")\n'
-                         f"area = Rect2({min(xs)}, {min(zs)}, {max(xs) - min(xs)}, {max(zs) - min(zs)})\ncount = {int((max(xs) - min(xs)) * (max(zs) - min(zs)) * 0.4)}\nsize_range = Vector2(0.55, 0.95)\nseed = {self.rng.randint(1, 99)}\n"
-                         f"keep_clear = PackedVector3Array({', '.join(f'{x:.1f}, {z:.1f}, {r * 0.7:.1f}' for x, z, r in self.clear_zones[:40])})\n")
-        lines.append(f'[node name="Grass" type="Node3D" parent="."]\nscript = ExtResource("grass")\nisland_path = NodePath("../Island")\n'
-                     f"area = Rect2({-hw}, {-hd}, {2 * hw}, {2 * hd})\ncount = {int(hw * hd * 1.6)}\nsize_range = Vector2(0.55, 0.95)\nseed = {self.rng.randint(1, 99)}\n"
-                     f"keep_clear = PackedVector3Array({', '.join(f'{x:.1f}, {z:.1f}, {r * 0.7:.1f}' for x, z, r in self.clear_zones[:40])})\n")
+        # (no grass fields: the Gutter's ground is bare stone and ink)
         for side, (target, tg, off, always) in self.gates.items():
             gx, gz = self.gate_pos(side)
             g = [f'[node name="Gate{side.title()}" type="Node3D" parent="."]', f"transform = {T(gx, 0, gz, ROT[side])}", 'script = ExtResource("gate")',
@@ -220,7 +221,8 @@ def rect_polygon(rng, x0, x1, z0, z1, gaps, gap_half=1.8):
 
 
 def forest_ring(r, n_pines=10, void_pines=4, canopies=2):
-    """Darkwood surroundings: pines on the rim, trunks, canopy over the north edge."""
+    """Darkwood surroundings: pines on the rim and trunks. (`canopies` is
+    ignored: the hanging CANOPY foliage is no longer used.)"""
     for i in range(n_pines):
         side = r.rng.choice(["n", "e", "w"])
         if side == "n":
@@ -238,9 +240,4 @@ def forest_ring(r, n_pines=10, void_pines=4, canopies=2):
         r.nodes.append(("Forest", f"VoidPine{i + 1}", "pine", (x, -9, z), 0, {"height": 11.0, "radius": 2.2, "color": "Color(0.06, 0.06, 0.11, 1)"}))
     for sx in (-1, 1):
         r.nodes.append(("Forest", f"Trunk{'L' if sx < 0 else 'R'}", "trunk", (sx * (r.hw + 3.5), -8, r.hd - 1), 0, {"height": 26.0, "radius": 1.6}))
-    for i in range(canopies):
-        x = -r.hw * 0.6 + i * r.hw * 1.2 / max(canopies - 1, 1)
-        if any(math.dist((x, -r.hd), r.gate_pos(s)) < 4.5 for s in r.gates):
-            x += 5
-        r.nodes.append(("Forest", f"Canopy{i + 1}", "bprops", (x, 0, -r.hd - 2.2), 0, {"kind": KIND["CANOPY"], "size": round(r.rng.uniform(1.0, 1.25), 2), "seed": r.rng.randint(1, 99)}))
     r.nodes.append(("Forest", "Eyes1", "eyes", (r.rng.uniform(-r.hw, r.hw), -4, r.hd + 3), 0, {}))
