@@ -36,11 +36,9 @@ const MAIN := [
 const CHAPTERS := [
 	["THE CITY", "res://scenes/levels/test_level.tscn"],
 	["THE SKETCHBOOK", "res://scenes/levels/sketchbook.tscn"],
-	["THE INK CAVERN", "res://scenes/levels/ink_cavern.tscn"],
 	["THE LONG DROP", "res://scenes/levels/long_drop.tscn"],
 	["SHADE'S CITY", "res://scenes/levels/shades_city.tscn"],
 	["THE MARGINS", "res://scenes/clearing/clearing.tscn"],
-	["MONSTER TEST", "res://scenes/levels/monster_test.tscn"],
 	["BACK", "@back"],
 ]
 const TITLE := "VESPER"

@@ -5,12 +5,14 @@ extends Control
 ## motes of light, and a vignette. Sits under the HUD.
 
 const Style = preload("res://scripts/depth/depth_style.gd")
+const InkBatch = preload("res://scripts/depth/ink_batch.gd")
 const BLACK := Color(0.0, 0.0, 0.01)
 const SPACING := 46.0
 
 var backdrop: Node2D
 var camera_center := Vector2.ZERO
 var _time := 0.0
+var _b := InkBatch.new()  # the whole overlay is one draw call
 
 
 func _process(delta: float) -> void:
@@ -31,8 +33,8 @@ func _draw() -> void:
 		var p := Vector2(fposmod(base.x + drift.x, s.x), fposmod(base.y + drift.y, s.y))
 		var r := rng.randf_range(1.0, 2.4)
 		var a := 0.55 + 0.45 * sin(_time * 1.3 + i * 2.1)
-		draw_texture_rect(backdrop.glow_texture, Rect2(p - Vector2(r, r) * 7.0, Vector2(r, r) * 14.0), false, Color(pal.accent, 0.5 * a))
-		draw_circle(p, r, Color(1, 1, 0.92, 0.9 * a))
+		_b.draw_texture_rect(backdrop.glow_texture, Rect2(p - Vector2(r, r) * 7.0, Vector2(r, r) * 14.0), false, Color(pal.accent, 0.5 * a))
+		_b.draw_circle(p, r, Color(1, 1, 0.92, 0.9 * a))
 	# fringe: one silhouette per slot, slots slide with the camera
 	var shift := camera_center.x * 1.3
 	var first := int(floor(shift / SPACING)) - 1
@@ -43,9 +45,9 @@ func _draw() -> void:
 			Style.CAVERN:
 				var l := 14.0 + pow(rng.randf(), 2.6) * 110.0
 				var hw := rng.randf_range(6.0, 16.0)
-				draw_colored_polygon(PackedVector2Array([Vector2(x - hw, -2), Vector2(x + hw, -2), Vector2(x + rng.randf_range(-3, 3), l)]), BLACK)
+				_b.draw_colored_polygon(PackedVector2Array([Vector2(x - hw, -2), Vector2(x + hw, -2), Vector2(x + rng.randf_range(-3, 3), l)]), BLACK)
 				var h := rng.randf_range(10.0, 46.0)
-				draw_colored_polygon(PackedVector2Array([Vector2(x + 14, s.y + 2), Vector2(x + 18 + rng.randf_range(-10, 10), s.y - h),
+				_b.draw_colored_polygon(PackedVector2Array([Vector2(x + 14, s.y + 2), Vector2(x + 18 + rng.randf_range(-10, 10), s.y - h),
 					Vector2(x + 22, s.y + 2)]), BLACK)
 			Style.ARCHIVE:
 				if posmod(i, 5) == 0:
@@ -54,16 +56,17 @@ func _draw() -> void:
 					var pts := PackedVector2Array()
 					for k in 13:
 						pts.append(Vector2(x + span * k / 12.0, sin(k / 12.0 * PI) * sag - 4.0))
-					draw_polyline(pts, BLACK, 3.0, true)
+					_b.draw_polyline(pts, BLACK, 3.0, true)
 			Style.WORKS:
 				if posmod(i, 9) == 0:
-					draw_line(Vector2(x, -10), Vector2(x + rng.randf_range(-60, 60), 54), BLACK, 12.0)
+					_b.draw_line(Vector2(x, -10), Vector2(x + rng.randf_range(-60, 60), 54), BLACK, 12.0)
 	# vignette
 	var edge := Color(0, 0, 0, 0.62)
 	var clear := Color(0, 0, 0, 0)
-	draw_polygon(PackedVector2Array([Vector2(0, 0), Vector2(s.x, 0), Vector2(s.x, 130), Vector2(0, 130)]), PackedColorArray([edge, edge, clear, clear]))
-	draw_polygon(PackedVector2Array([Vector2(0, s.y - 130), Vector2(s.x, s.y - 130), Vector2(s.x, s.y), Vector2(0, s.y)]),
+	_b.draw_polygon(PackedVector2Array([Vector2(0, 0), Vector2(s.x, 0), Vector2(s.x, 130), Vector2(0, 130)]), PackedColorArray([edge, edge, clear, clear]))
+	_b.draw_polygon(PackedVector2Array([Vector2(0, s.y - 130), Vector2(s.x, s.y - 130), Vector2(s.x, s.y), Vector2(0, s.y)]),
 		PackedColorArray([clear, clear, edge, edge]))
-	draw_polygon(PackedVector2Array([Vector2(0, 0), Vector2(200, 0), Vector2(200, s.y), Vector2(0, s.y)]), PackedColorArray([edge, clear, clear, edge]))
-	draw_polygon(PackedVector2Array([Vector2(s.x - 200, 0), Vector2(s.x, 0), Vector2(s.x, s.y), Vector2(s.x - 200, s.y)]),
+	_b.draw_polygon(PackedVector2Array([Vector2(0, 0), Vector2(200, 0), Vector2(200, s.y), Vector2(0, s.y)]), PackedColorArray([edge, clear, clear, edge]))
+	_b.draw_polygon(PackedVector2Array([Vector2(s.x - 200, 0), Vector2(s.x, 0), Vector2(s.x, s.y), Vector2(s.x - 200, s.y)]),
 		PackedColorArray([clear, edge, edge, clear]))
+	_b.flush(self)

@@ -6,6 +6,7 @@ extends Node2D
 ## or down (walls).
 
 const Style = preload("res://scripts/depth/depth_style.gd")
+const InkBatch = preload("res://scripts/depth/ink_batch.gd")
 
 enum Mode { FLOOR, CEILING, WALL_FACING_RIGHT, WALL_FACING_LEFT }
 
@@ -26,12 +27,14 @@ enum Mode { FLOOR, CEILING, WALL_FACING_RIGHT, WALL_FACING_LEFT }
 func _draw() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash(Vector2i(position))
+	var b := InkBatch.new()  # one draw call for the whole edge
 	match mode:
 		Mode.FLOOR:
-			Style.floor_trim(self, 0.0, length, 0.0, theme, rng)
+			Style.floor_trim(b, 0.0, length, 0.0, theme, rng)
 		Mode.CEILING:
-			Style.ceiling_trim(self, 0.0, length, 0.0, theme, rng)
+			Style.ceiling_trim(b, 0.0, length, 0.0, theme, rng)
 		Mode.WALL_FACING_RIGHT:
-			Style.wall_trim(self, 0.0, 0.0, length, 1.0, theme, rng)
+			Style.wall_trim(b, 0.0, 0.0, length, 1.0, theme, rng)
 		Mode.WALL_FACING_LEFT:
-			Style.wall_trim(self, 0.0, 0.0, length, -1.0, theme, rng)
+			Style.wall_trim(b, 0.0, 0.0, length, -1.0, theme, rng)
+	b.flush(self)

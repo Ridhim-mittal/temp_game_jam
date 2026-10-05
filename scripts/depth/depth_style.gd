@@ -1,6 +1,7 @@
 extends RefCounted
 ## Shared look for the "depth" scenery: one colour family per zone, far things
 ## pale and near things dark, a near-black playfield whose edges catch light.
+## Drawing helpers take a CanvasItem or an InkBatch (ink_batch.gd).
 ## Used by the backdrop (scripts/depth/depth_backdrop.gd), the terrain trims
 ## (depth_trim.gd) and the ledges (depth_ledge.gd).
 
@@ -40,7 +41,7 @@ static func arc_pts(c: Vector2, rx: float, ry: float, a0: float, a1: float, n :=
 	return p
 
 
-static func spiral(ci: CanvasItem, c: Vector2, r: float, turns: float, col: Color, w: float, flip := 1.0) -> void:
+static func spiral(ci, c: Vector2, r: float, turns: float, col: Color, w: float, flip := 1.0) -> void:
 	var p := PackedVector2Array()
 	for i in 28:
 		var u := i / 27.0
@@ -50,7 +51,7 @@ static func spiral(ci: CanvasItem, c: Vector2, r: float, turns: float, col: Colo
 
 
 ## Lit edge along the top of a floor from x0 to x1 at height y.
-static func floor_trim(ci: CanvasItem, x0: float, x1: float, y: float, theme: int, rng: RandomNumberGenerator) -> void:
+static func floor_trim(ci, x0: float, x1: float, y: float, theme: int, rng: RandomNumberGenerator) -> void:
 	var pal: Dictionary = PALETTES[theme]
 	var w := x1 - x0
 	match theme:
@@ -98,7 +99,7 @@ static func floor_trim(ci: CanvasItem, x0: float, x1: float, y: float, theme: in
 
 
 ## Things hanging from a ceiling from x0 to x1 at height y.
-static func ceiling_trim(ci: CanvasItem, x0: float, x1: float, y: float, theme: int, rng: RandomNumberGenerator) -> void:
+static func ceiling_trim(ci, x0: float, x1: float, y: float, theme: int, rng: RandomNumberGenerator) -> void:
 	var pal: Dictionary = PALETTES[theme]
 	var w := x1 - x0
 	var dark: Color = pal.dark
@@ -137,7 +138,7 @@ static func ceiling_trim(ci: CanvasItem, x0: float, x1: float, y: float, theme: 
 
 
 ## Faint lit edge down a wall at x from y0 to y1. facing: +1 = open air to the right.
-static func wall_trim(ci: CanvasItem, x: float, y0: float, y1: float, facing: float, theme: int, rng: RandomNumberGenerator) -> void:
+static func wall_trim(ci, x: float, y0: float, y1: float, facing: float, theme: int, rng: RandomNumberGenerator) -> void:
 	ci.draw_line(Vector2(x, y0), Vector2(x, y1), Color(depth(theme, 0.62), 0.8), 1.5)
 	var y := y0 + rng.randf_range(10, 60)
 	while y < y1 - 10.0:

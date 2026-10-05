@@ -11,6 +11,8 @@ extends Node2D
 
 const Lights = preload("res://scripts/world/lights.gd")
 const ComicText = preload("res://scripts/effects/comic_text.gd")
+const InkBatch = preload("res://scripts/depth/ink_batch.gd")
+const OnScreen = preload("res://scripts/core/on_screen.gd")
 const INK := Color(0.05, 0.03, 0.1)
 
 @export var lit := true:
@@ -83,8 +85,10 @@ func _physics_process(delta: float) -> void:
 	_hit_cd = maxf(_hit_cd - delta, 0.0)
 	_flare = maxf(_flare - delta * 3.0, 0.0)
 	_body.position = _lamp_local()
-	queue_redraw()
-	_glow.queue_redraw()
+	if OnScreen.near(self, radius + chain + post):  # off-screen lanterns don't redraw
+		if swing > 0.0:
+			queue_redraw()
+		_glow.queue_redraw()
 
 
 func _angle() -> float:
@@ -140,40 +144,42 @@ func _draw_glow() -> void:
 
 
 func _draw() -> void:
+	var b := InkBatch.new()  # chain, shade and ring in one draw call
 	var lp := _lamp_local()
 	var ang := _angle()
 	if lit:
 		# faint edge of the light, so you can read its reach
-		draw_arc(lp, radius, 0, TAU, 64, Color(1.0, 0.85, 0.45, 0.3), 2.0)
+		b.draw_arc(lp, radius, 0, TAU, 64, Color(1.0, 0.85, 0.45, 0.3), 2.0)
 	if post > 0.0:
-		draw_rect(Rect2(lp + Vector2(-4, 20), Vector2(8, post - 20)), INK)
-		draw_rect(Rect2(lp + Vector2(-14, post - 8), Vector2(28, 8)), INK)
+		b.draw_rect(Rect2(lp + Vector2(-4, 20), Vector2(8, post - 20)), INK)
+		b.draw_rect(Rect2(lp + Vector2(-14, post - 8), Vector2(28, 8)), INK)
 	if chain > 0.0 and post <= 0.0:
 		var n := int(chain / 10.0)
 		for k in n:  # chain links
 			var p := Vector2(0, (k + 0.5) * chain / n).rotated(ang)
-			draw_set_transform(p, ang + (PI * 0.5 if k % 2 else 0.0), Vector2(1, 0.6))
-			draw_arc(Vector2.ZERO, 4.0, 0, TAU, 8, INK, 2.5)
-			draw_set_transform(Vector2.ZERO)
-		draw_circle(Vector2.ZERO, 5.0, INK)
+			b.draw_set_transform(p, ang + (PI * 0.5 if k % 2 else 0.0), Vector2(1, 0.6))
+			b.draw_arc(Vector2.ZERO, 4.0, 0, TAU, 8, INK, 2.5)
+			b.draw_set_transform(Vector2.ZERO)
+		b.draw_circle(Vector2.ZERO, 5.0, INK)
 	# the shade: a ribbed paper lantern with ink caps
-	draw_set_transform(lp, ang, Vector2.ONE)
+	b.draw_set_transform(lp, ang, Vector2.ONE)
 	var body := paper if lit else paper.lerp(Color(0.45, 0.45, 0.5), 0.75)
 	var shade := PackedVector2Array()
 	for i in 16:
 		var a := TAU * i / 16.0
 		shade.append(Vector2(cos(a) * 18.0, sin(a) * 22.0))
 	for poly in Geometry2D.offset_polygon(shade, 3.0, Geometry2D.JOIN_ROUND):
-		draw_colored_polygon(poly, INK)
-	draw_colored_polygon(shade, body)
+		b.draw_colored_polygon(poly, INK)
+	b.draw_colored_polygon(shade, body)
 	if lit:
-		draw_circle(Vector2(0, 2), 9.0, Color(1.0, 0.92, 0.6))  # flame through the paper
+		b.draw_circle(Vector2(0, 2), 9.0, Color(1.0, 0.92, 0.6))  # flame through the paper
 	for x in [-9.0, 0.0, 9.0]:  # ribs
-		draw_line(Vector2(x, -20), Vector2(x * 1.15, 0), Color(INK, 0.5), 1.5)
-		draw_line(Vector2(x * 1.15, 0), Vector2(x, 20), Color(INK, 0.5), 1.5)
-	draw_rect(Rect2(-10, -27, 20, 7), INK)
-	draw_rect(Rect2(-10, 20, 20, 7), INK)
+		b.draw_line(Vector2(x, -20), Vector2(x * 1.15, 0), Color(INK, 0.5), 1.5)
+		b.draw_line(Vector2(x * 1.15, 0), Vector2(x, 20), Color(INK, 0.5), 1.5)
+	b.draw_rect(Rect2(-10, -27, 20, 7), INK)
+	b.draw_rect(Rect2(-10, 20, 20, 7), INK)
 	if not lit:
-		draw_line(Vector2(-6, -4), Vector2(6, 6), INK, 2.5)
-		draw_line(Vector2(6, -4), Vector2(-6, 6), INK, 2.5)
-	draw_set_transform(Vector2.ZERO)
+		b.draw_line(Vector2(-6, -4), Vector2(6, 6), INK, 2.5)
+		b.draw_line(Vector2(6, -4), Vector2(-6, 6), INK, 2.5)
+	b.draw_set_transform(Vector2.ZERO)
+	b.flush(self)

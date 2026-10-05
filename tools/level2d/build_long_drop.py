@@ -34,7 +34,6 @@ ROOMS = {
     "side_b": (120, 1060, 260, 110), "door_b": (380, 1120, 50, 50), "shaft3": (760, 1170, 90, 100),
     "cavern": (80, 1270, 780, 150),                       # light puzzle 2: the Pendulum, over the sump
     "sump": (420, 1420, 300, 90), "pit": (100, 1420, 110, 150), "bottom": (100, 1570, 840, 150),
-    "lift": (920, 340, 70, 1380), "lift_door": (860, 390, 60, 70),
 }
 # solid rock put back inside rooms (applied after ROOMS), then air cut through it again
 SOLIDS = {
@@ -43,6 +42,10 @@ SOLIDS = {
 }
 CUTS = {
     "shaft2b": (440, 630, 90, 220),     # down through the shelf into the tower
+    # spike pits cut 200 px into the floor (the level's size is unchanged)
+    "dash_pit": (650, 460, 90, 40),     # hall2: 450 px, needs a double jump and a dash
+    "blue_gap": (300, 1720, 290, 40),   # bottom: the Blue Gap (grey, a gap, then blue)
+    "lamp_pit": (660, 1720, 110, 40),   # bottom: a lantern's bridge, a sign shadowing its end
 }
 
 
@@ -65,8 +68,8 @@ res("PackedScene", "res://scenes/player/player.tscn", "1_player")
 res("PackedScene", "res://scenes/enemies/crawler.tscn", "2_crawler")
 res("Script", "res://scripts/ui/hud.gd", "5_hud")
 res("Script", "res://scripts/audio/level_music.gd", "8_music")
+res("Script", "res://scripts/world/spikes.gd", "4_spikes")
 res("Script", "res://scripts/world/coin.gd", "9_coin")
-res("Script", "res://scripts/world/moving_platform.gd", "12_moving")
 res("Script", "res://scripts/world/level_exit.gd", "17_exit")
 res("Script", "res://scripts/world/checkpoint_pen.gd", "18_pen")
 res("Script", "res://scripts/world/health_heart.gd", "19_heart")
@@ -226,10 +229,26 @@ def lantern(x, y, r, chain=60, post=0, lit=True, swing=0, period=3.0, name="Puzz
     node(name, "Node2D", "World", props)
 
 
-def sketch(x0, x1, top, h=20, inkable=True, name=None):
-    node(name or uniq("Sketch"), "StaticBody2D", "World",
-         [("position", v((x0 + x1) / 2, top + h / 2)), ("script", 'ExtResource("41_sketch")'), ("size", v(x1 - x0, h)),
-          ("inkable", "true" if inkable else "false")])
+def sketch(x0, x1, top, h=20, inkable=True, name=None, drinks=False):
+    props = [("position", v((x0 + x1) / 2, top + h / 2)), ("script", 'ExtResource("41_sketch")'), ("size", v(x1 - x0, h)),
+             ("inkable", "true" if inkable else "false")]
+    if drinks:  # the Ember drains twice as fast over it (ember.gd)
+        props.append(("drinks_light", "true"))
+    node(name or uniq("Sketch"), "StaticBody2D", "World", props)
+
+
+def spikes(x0, x1, floor):
+    """A spike strip on a floor at y=floor (width a multiple of 20 px: the spike drawing needs it)."""
+    assert (x1 - x0) % 20 == 0, (x0, x1)
+    node(uniq("Spikes"), "StaticBody2D", "World",
+         [("position", v((x0 + x1) / 2, floor - 12)), ("script", 'ExtResource("4_spikes")'), ("size", v(x1 - x0, 24))])
+
+
+def pit_spikes(name):
+    """Spikes along the floor of a pit in CUTS (5 px clear of each wall)."""
+    l, t, r, f = px(name)
+    w = (r - l - 10) // 20 * 20
+    spikes((l + r - w) / 2, (l + r + w) / 2, f)
 
 
 def caster(x, y, stick=0, length=420, name=None):
@@ -274,6 +293,8 @@ ledge(l + 1650, f - 110, 220)
 coin_row(l + 820, l + 980, f - 150, 3)
 coin_row(l + 1170, l + 1330, f - 260, 3)
 coin_row(l + 1570, l + 1730, f - 150, 3)
+spikes(l + 1900, l + 2060, f)                 # the City's spike strip: hop it, or pogo off it
+coin_row(l + 1900, l + 2060, f - 150, 3)
 lamp(l + 520, t, 300, 150)
 lamp(l + 1900, t, 300, 190)
 sl, st, sr, sf = px("shaft1")
@@ -281,7 +302,6 @@ l2, t2, r2, f2 = px("hall2")
 steps(sl, sr, st, f2)
 coin_row(sl + 225, sl + 225, st + 200, 1)
 nl, nt, nr, nf = px("nook")
-checkpoint(nl + 330, nf)
 lamp(nl + 220, nt, 260, 120)
 heart(nl + 520, nf - 60)
 ledge(l2 + 900, f2 - 110, 240)
@@ -289,7 +309,13 @@ ledge(l2 + 1500, f2 - 110, 240)
 ledge(l2 + 1200, f2 - 220, 240)
 coin_row(l2 + 1120, l2 + 1280, f2 - 260, 3)
 enemy("crawler", l2 + 700, f2 - 20)
-enemy("crawler", l2 + 2000, f2 - 20)
+checkpoint(l2 + 1800, f2)                       # where shaft 1 lands you
+enemy("crawler", l2 + 2050, f2 - 20)
+# the City's dash pit, wider: 450 px of spikes. A dash (at most ~430 px) or a double jump
+# (~470 at its very best, from the very edge) falls short; jump, jump again, dash (~510) clears it.
+pit_spikes("dash_pit")
+coin_row(px("dash_pit")[0] + 80, px("dash_pit")[2] - 80, f2 - 150, 3)
+caption(px("dash_pit")[0] + 200, f2 - 300, "TOO FAR FOR A DOUBLE JUMP?\nJUMP, JUMP AGAIN, THEN DASH.")
 lamp(l2 + 1200, t2, 320, 110)
 lamp(l2 + 2500, t2, 300, 150)
 
@@ -297,7 +323,6 @@ lamp(l2 + 2500, t2, 300, 150)
 sl, st, sr, sf = px("shaft2")
 gl, gt, gr, F = px("gallery")
 steps(sl, sr, st, gt + 60)
-ledge((sl + sr) / 2, st, 150)                    # stepping stone across the shaft mouth, towards the lift
 # The Shadow Gallery. You land on the right; the way on is a ledge 800 px up on the left.
 #   1. Hit lantern B (on a post). The cut-out star beside it throws a ramp of shadow ink up and left.
 #   2. From the top of that ramp lantern A hangs dead ahead, out of sword reach: an ink wave
@@ -330,6 +355,7 @@ while y <= tf - 100:
         coin_row(cx - 60, cx + 60, y - 40, 3)
     y += 110
     i += 1
+checkpoint(tl + 1400, tf)                       # the tower floor, before shaft 3
 for sx, sy in [(tl + 1500, tt + 420), (tl + 800, tt + 760), (tl + 1400, tt + 1150)]:
     enemy("scribble", sx, sy)
 lamp(tl + 1700, tt, 320, 220)
@@ -338,7 +364,6 @@ lamp(tl + 1300, tt, 320, 900)
 al, at, ar, af = px("side_a")
 ledge(tl + 150, af, 300, one_way=False)        # landing outside the upper side room
 steps(tl, tl + 420, tt + 170, af, 150)         # and a ladder of ledges back up from it
-checkpoint(al + 500, af)
 coin_row(al + 200, al + 380, af - 40, 4)
 lamp(al + 700, at, 280, 130)
 heart(al + 950, af - 60)
@@ -378,27 +403,37 @@ ol, ot, orr, of = px("bottom")
 steps(pl, pr, pt, of, 190)
 heart(pl + 275, pt + 250)
 checkpoint(ol + 900, of)
-enemy("crossed", ol + 1700, of - 30)
-enemy("crawler", ol + 2600, of - 20)
+# The Sketchbook's Blue Gap, again: grey pencil (inkable), an open gap, then non-photo blue that
+# drinks the light. Straight across is more than one Ember: stand still at the end of the grey,
+# let the ink set, rest on it till the Ember is full, then jump the gap and sprint the blue.
+gl0, _, gr0, _ = px("blue_gap")
+pit_spikes("blue_gap")
+sketch(gl0, gl0 + 780, of)
+sketch(gl0 + 930, gr0, of, inkable=False, drinks=True)
+caption(gl0 + 300, of - 250, "TOO FAR FOR ONE EMBER?\nSTAND STILL WITH IT RAISED. INK STAYS: REST ON IT.")
+caption(gl0 + 1150, of - 200, "BLUE PENCIL NEVER TAKES INK.\nIT DRINKS YOUR LIGHT.", tilt=0.03)
+coin_row(gl0 + 820, gl0 + 890, of - 60, 2)
 enemy("scribble", ol + 2100, of - 330)
 enemy("scribble", ol + 2300, of - 380)
+checkpoint(gr0 + 100, of)
+enemy("crossed", gr0 + 250, of - 30)              # its X only burns in light
+# The Sketchbook's lantern bridge: free light that refills the Ember, but a sign hanging under
+# the lantern shadows the far end of the sketch. Cross the shadow on your own Ember.
+ll0, _, lr0, _ = px("lamp_pit")
+pit_spikes("lamp_pit")
+sketch(ll0, lr0, of)
+lantern(ll0 + 260, ot, 400, chain=of - 260 - ot, name="BridgeLantern")
+node("Sign", "StaticBody2D", "World", [("position", v(ll0 + 346, of - 149)), ("script", 'ExtResource("51_rock")'),
+     ("size", v(63, 22))])                          # shadows the last ~150 px of the bridge
+caption(ll0 + 90, of - 330, "LANTERNS ARE FREE LIGHT.\nSHADOWS ARE NOT.", tilt=0.03)
+enemy("crawler", lr0 + 300, of - 20)
 lamp(ol + 1400, ot, 320, 260)
-lamp(ol + 3000, ot, 320, 220)
-coin_row(ol + 3300, ol + 3600, of - 40, 5)
+coin_row(lr0 + 200, lr0 + 400, of - 40, 4)
 node("Exit", "Area2D", "World", [("position", v(ol + 3750, of)), ("script", 'ExtResource("17_exit")'),
      ("target_scene", '"res://scenes/ui/main_menu.tscn"'), ("label", '"THE END OF THE DROP"')])
 
-# 4. the lift: a girder that rides the shaft between the bottom room and the Archive
-ll, lt, lr, lf = px("lift")
-dl, dt, dr, df = px("lift_door")
-node("Lift", "AnimatableBody2D", "World",
-     [("position", v((ll + lr) / 2, lf - 10)), ("script", 'ExtResource("12_moving")'), ("size", v(lr - ll - 60, 20)),
-      ("travel", v(0, -(lf - df) - 10)), ("period", "56")])
-ledge((ll + lr) / 2, df, lr - ll)   # one-way cap: ride up through it, but no dropping down the shaft from the top
-
 caption(START[0] + 260, START[1] - 190, "The way on is down.")
 caption(px("tower")[0] + 1150, px("tower")[1] + 120, "Mind the drop.")
-caption(ol + 3300, of - 220, "The lift goes back to the top.")
 
 # ------------------------------------------------------------------ write
 zone_bottoms = ", ".join(f"{b * U:g}" for b, _ in ZONES[:-1])
