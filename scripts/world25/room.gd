@@ -236,13 +236,18 @@ func _build_ui() -> void:
 
 func _spawn_player(world: Node) -> void:
 	var at := default_spawn
+	var face := Vector3(0, 0, 1)  # towards the camera
 	if world and world.entry_gate != "":
 		for g in get_tree().get_nodes_in_group("gate"):
 			if is_ancestor_of(g) and g.gate_id == world.entry_gate:
 				at = g.arrival_point()
+				face = g.global_basis.z  # walked in through it: face into the room
 				break
 	player = PLAYER_SCENE.instantiate()
 	player.position = at
+	face.y = 0.0
+	if face.length() > 0.01:
+		player.facing_dir = face.normalized()
 	add_child(player)
 	if world and world.player_health > 0:
 		player.health = world.player_health
@@ -313,6 +318,12 @@ func _gates() -> Array:
 
 
 # --------------------------------------------------------------- overlays
+
+## True while the room is being played: no menu open over it. World25
+## hides the mouse cursor while this holds (and the tree isn't paused).
+func in_gameplay() -> bool:
+	return not Engine.is_editor_hint() and _overlay == null and is_inside_tree()
+
 
 func _unhandled_input(event: InputEvent) -> void:
 	if Engine.is_editor_hint() or _overlay != null:

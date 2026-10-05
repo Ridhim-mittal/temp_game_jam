@@ -1,12 +1,23 @@
 extends CharacterBody3D
-## Top-down (Cult of the Lamb style) controller for the 2.5D clearing.
-## Moves on the ground plane with WASD / stick, jumps on Space, dashes on
-## Shift / right click, attacks on left click / X: a three-hit combo (the
-## third hit is a heavier finisher) aimed at the mouse cursor, or along the
-## movement direction from the keyboard or a gamepad. Attacking in the air
-## strikes from above: it gets past a Crossed-Out's shield and bounces you
-## off what you hit. The character is the same procedural Vesper art as the
-## platformer (player_visual.gd), drawn into a SubViewport on a billboard.
+## Vesper's controller in the Gutter (the 2.5D Margins), seen side-on from a
+## low tilted camera. Moves on the ground plane with WASD / stick, jumps on
+## Space, dashes on Shift, attacks on left click / X: a three-hit combo (the
+## third hit is a heavier overhead finisher). Q / right click Flash, F heals.
+##
+## Aiming: `facing_dir` (a unit vector on the XZ plane, snapped to
+## `snap_directions`) is the source of truth. It follows the movement input
+## and keeps its last value when idle; a swing goes along the direction held
+## at the moment of the attack (turn and swing in one press), otherwise along
+## `facing_dir`, then aim assist turns it towards the nearest monster in a
+## cone. The mouse pointer is ignored; its buttons are just buttons. A faint
+## chevron on the ground shows where Vesper faces.
+##
+## Attacking in the air strikes from above: it gets past a Crossed-Out's
+## shield and bounces you off what you hit.
+##
+## The character is a procedural 3D model (vesper_3d.gd); with
+## `use_3d_model` off it is the platformer's 2D art (player_visual.gd),
+## drawn into a SubViewport on a billboard.
 ##
 ## Smoothness:
 ##  - the body moves on physics ticks, but the visuals ($Visual3D, top
@@ -22,6 +33,8 @@ signal died
 const Fx = preload("res://scripts/clearing/clearing_fx.gd")
 const FlashScript = preload("res://scripts/world25/flash.gd")
 const InkWave = preload("res://scripts/world25/ink_wave_3d.gd")
+const VesperModel = preload("res://scripts/clearing/vesper_3d.gd")
+const CHEVRON_SHADER = preload("res://shaders/clearing/facing_chevron.gdshader")
 const ART_RUN_SPEED := 300.0  # player_visual.gd's full-run speed, px/s
 const MASK_WORLD := 1
 const MASK_ENEMY := 4  # physics layer 3
@@ -46,6 +59,20 @@ enum AttackStyle { INK_SLASH, NIB_SWORD, BOTH }
 @export var flip_speed := 9.0
 ## Below this height the player fell off the map and is put back.
 @export var kill_height := -12.0
+## The 3D model (vesper_3d.gd). Off: the 2D art on a billboard, as before.
+@export var use_3d_model := true
+
+@export_group("Aim")
+## Facing snaps to this many directions (8 = the stick's diagonals);
+## 0 = analog.
+@export var snap_directions := 8
+## Stick / key input below this length doesn't turn Vesper.
+@export var facing_deadzone := 0.3
+## Aim assist: a swing turns towards the nearest living monster within this
+## many degrees either side of the aim, and within `aim_assist_range`.
+## Settings -> Aim Assist turns it off.
+@export var aim_assist_angle := 50.0
+@export var aim_assist_range := 3.5
 
 @export_group("Jump")
 @export var jump_velocity := 9.5
@@ -84,7 +111,7 @@ enum AttackStyle { INK_SLASH, NIB_SWORD, BOTH }
 @export var finisher_damage := 2
 ## Centre of the hit circle, in front of the player.
 @export var attack_reach := 1.1
-@export var attack_radius := 1.0
+@export var attack_radius := 1.15
 ## Forward burst when swinging (the finisher lunges further).
 @export var attack_lunge := 6.5
 ## Swing lockout; the finisher takes longer.
@@ -94,6 +121,10 @@ enum AttackStyle { INK_SLASH, NIB_SWORD, BOTH }
 @export var combo_window := 0.35
 @export var attack_buffer_time := 0.15
 
+## Where Vesper faces (unit vector on the XZ plane): swings, dashes and the
+## facing chevron follow it.
+var facing_dir := Vector3(0, 0, 1)
+## Left / right, derived from facing_dir.x (the 2D art and older code).
 var facing := 1
 var health := 0
 var dead := false
@@ -139,6 +170,12 @@ var _ink_wave := false
 var _seal_ready := false
 var _last_drop_ready := false
 var _slash_rim := Color(1.0, 0.58, 0.14)
+var _swing_len := 0.24
+var _model: Node3D
+var _chevron: MeshInstance3D
+var _chevron_mat: ShaderMaterial
+var _chevron_flash := 0.0
+var _chevron_yaw := 0.0
 
 @onready var visual_3d: Node3D = $Visual3D
 @onready var sprite: Sprite3D = $Visual3D/Sprite
@@ -165,6 +202,8 @@ func _ready() -> void:
 	add_to_group("light_3d")
 	_art_scale = visual.scale.y
 	sprite.texture = art_viewport.get_texture()
+	_build_model()
+	_build_chevron()
 	floor_constant_speed = true
 	floor_snap_length = 0.45
 	floor_max_angle = deg_to_rad(50.0)
@@ -178,7 +217,41 @@ func _ready() -> void:
 func _apply_attack_style() -> void:
 	var has_sword := attack_style != AttackStyle.INK_SLASH
 	sword.visible = has_sword
-	sword.set_process(has_sword)
+	sword.set_process(has_sword and not use_3d_model)
+	if _model:
+		_model.show_sword = has_sword
+
+
+## The 3D Vesper replaces the billboard; the 2D art stops rendering.
+func _build_model() -> void:
+	if not use_3d_model:
+		return
+	_model = VesperModel.new()
+	_model.name = "Vesper3D"
+	visual_3d.add_child(_model)
+	_model.facing_dir = facing_dir
+	sprite.visible = false
+	art_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
+	art.set_process(false)
+	var profile := get_node_or_null("/root/Profile")
+	if profile:
+		_model.apply_look(profile.look())
+
+
+## Faint white chevron on the ground in front of Vesper, along facing_dir.
+func _build_chevron() -> void:
+	var q := QuadMesh.new()
+	q.orientation = PlaneMesh.FACE_Y
+	q.size = Vector2(0.7, 0.7)
+	_chevron_mat = ShaderMaterial.new()
+	_chevron_mat.shader = CHEVRON_SHADER
+	_chevron = MeshInstance3D.new()
+	_chevron.name = "FacingChevron"
+	_chevron.mesh = q
+	_chevron.material_override = _chevron_mat
+	_chevron.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	visual_3d.add_child(_chevron)
+	_chevron_yaw = atan2(-facing_dir.x, -facing_dir.z)
 
 
 func _physics_process(delta: float) -> void:
@@ -192,8 +265,8 @@ func _physics_process(delta: float) -> void:
 	var in_control := _hurt_timer <= 0.0
 	if not in_control:
 		dir = Vector3.ZERO
-	if absf(input.x) > 0.2 and _attack_timer <= 0.0 and in_control:
-		facing = 1 if input.x > 0.0 else -1
+	if in_control and input.length() > facing_deadzone and _attack_timer <= 0.0:
+		set_facing(dir)
 
 	if in_control:
 		if Input.is_action_just_pressed("attack"):
@@ -205,7 +278,7 @@ func _physics_process(delta: float) -> void:
 		# right click is Flash here; Shift / C dash
 		var dash_pressed := Input.is_action_just_pressed("dash") and not Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT)
 		if dash_pressed and _dash_cooldown_timer <= 0.0:
-			_dash_dir = dir.normalized() if dir != Vector3.ZERO else Vector3(facing, 0, 0)
+			_dash_dir = dir.normalized() if dir.length() > facing_deadzone else facing_dir
 			_dash_timer = dash_time
 			_dash_cooldown_timer = dash_cooldown
 			_attack_timer = 0.0  # a dash cancels a swing
@@ -310,7 +383,11 @@ func _process(delta: float) -> void:
 	var height := maxf(smooth_position.y - ground_height, 0.0)
 	shadow.position.y = -height + 0.03
 	shadow.scale = Vector3.ONE * clampf(1.0 - height * 0.25, 0.45, 1.0)
-	_update_art(delta)
+	_update_chevron(height, delta)
+	if _model:
+		_update_model(delta)
+	else:
+		_update_art(delta)
 
 
 # ------------------------------------------------------------------ attack
@@ -320,13 +397,16 @@ func _start_attack(move_dir: Vector3) -> void:
 	_combo = _combo % 3 + 1 if _combo_timer > 0.0 else 1
 	var finisher := _combo == 3
 	var dir := _aim_direction(move_dir)
+	facing_dir = dir  # Vesper turns into the swing (aim assist included)
 	if absf(dir.x) > 0.15:
 		facing = 1 if dir.x > 0.0 else -1
 	var lunge := attack_lunge * (1.4 if finisher else 1.0)
 	velocity.x = dir.x * lunge
 	velocity.z = dir.z * lunge
 	_attack_timer = finisher_time if finisher else attack_time
+	_swing_len = _attack_timer
 	_combo_timer = _attack_timer + combo_window
+	_chevron_flash = 1.0
 	_squash = Vector2(1.25, 0.8) if finisher else Vector2(1.15, 0.88)
 	if attack_style != AttackStyle.NIB_SWORD:
 		Fx.slash(get_tree(), global_position, dir, _combo == 2, finisher, _slash_rim)
@@ -337,7 +417,7 @@ func _start_attack(move_dir: Vector3) -> void:
 		wave.damage = finisher_damage
 		get_tree().current_scene.add_child(wave)
 		wave.global_position = Vector3(global_position.x, ground_height, global_position.z) + dir * 0.6
-	if attack_style != AttackStyle.INK_SLASH:
+	if attack_style != AttackStyle.INK_SLASH and not _model:
 		sword.swing(_sword_direction(dir))
 	_hit_in_front(dir, finisher)
 
@@ -352,22 +432,69 @@ func _sword_direction(dir: Vector3) -> Vector2:
 	return Vector2(signf(dir.x), 0.0)
 
 
-## Mouse attacks aim at the cursor; keyboard / gamepad attacks follow the
-## movement direction, or the way the character faces.
+## A swing goes along the direction held right now (so you can turn and
+## swing in one press), otherwise where Vesper faces; aim assist may then
+## turn it towards a monster. The mouse position plays no part.
 func _aim_direction(move_dir: Vector3) -> Vector3:
-	var cam := get_viewport().get_camera_3d()
-	if cam and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
-		var mp := get_viewport().get_mouse_position()
-		var from := cam.project_ray_origin(mp)
-		var n := cam.project_ray_normal(mp)
-		if absf(n.y) > 0.01:
-			var hit := from + n * ((global_position.y + 0.5 - from.y) / n.y)
-			var d := Vector3(hit.x - global_position.x, 0.0, hit.z - global_position.z)
-			if d.length() > 0.2:
-				return d.normalized()
-	if move_dir != Vector3.ZERO:
-		return move_dir.normalized()
-	return Vector3(facing, 0.0, 0.0)
+	var dir := facing_dir
+	if Vector2(move_dir.x, move_dir.z).length() > facing_deadzone:
+		dir = snap_dir(move_dir)
+	var target := aim_assist_target(dir)
+	if target:
+		var d := target.global_position - global_position
+		d.y = 0.0
+		if d.length() > 0.05:
+			dir = d.normalized()
+	return dir
+
+
+## Turns Vesper to face `dir` (flattened, snapped to snap_directions).
+func set_facing(dir: Vector3) -> void:
+	if Vector2(dir.x, dir.z).length() < 0.001:
+		return
+	facing_dir = snap_dir(dir)
+	# the left / right `facing` follows with a little hysteresis, so straight
+	# up / down doesn't flicker the 2D art
+	if facing_dir.x > 0.2:
+		facing = 1
+	elif facing_dir.x < -0.2:
+		facing = -1
+
+
+## Flattens `dir` onto the ground and snaps it to snap_directions.
+func snap_dir(dir: Vector3) -> Vector3:
+	var flat := Vector2(dir.x, dir.z)
+	if flat.length() < 0.001:
+		return facing_dir
+	var a := flat.angle()
+	if snap_directions > 0:
+		var step := TAU / snap_directions
+		a = roundf(a / step) * step
+	return Vector3(cos(a), 0.0, sin(a))
+
+
+## The nearest living monster within aim_assist_angle of `dir` and
+## aim_assist_range, or null (also null with Settings -> Aim Assist off).
+func aim_assist_target(dir: Vector3) -> Node3D:
+	var settings := get_node_or_null("/root/Settings")
+	if aim_assist_range <= 0.0 or (settings and settings.get_value("aim_assist") == "off"):
+		return null
+	var best: Node3D = null
+	var best_dist := aim_assist_range
+	var min_dot := cos(deg_to_rad(aim_assist_angle))
+	for e in get_tree().get_nodes_in_group("enemy"):
+		if not (e is Node3D) or ("dead" in e and e.dead):
+			continue
+		var d: Vector3 = e.global_position - global_position
+		if absf(d.y) > 2.5:
+			continue
+		d.y = 0.0
+		var dist := d.length()
+		if dist < 0.01 or dist > best_dist or (d / dist).dot(dir) < min_dot:
+			continue
+		best = e
+		best_dist = dist
+	return best
 
 
 func _hit_in_front(dir: Vector3, finisher: bool) -> void:
@@ -501,6 +628,8 @@ func refresh_loadout() -> void:
 
 ## Restyles Vesper and her sword from the equipped gear.
 func _apply_look(look: Dictionary) -> void:
+	if _model:
+		_model.apply_look(look)
 	if look.has("scarf"):
 		art.scarf_color = look.scarf
 	if look.has("mask"):
@@ -610,7 +739,7 @@ func take_damage(amount: int, from_pos: Vector3) -> void:
 	_jumping = false
 	var away := global_position - from_pos
 	away.y = 0.0
-	away = away.normalized() if away.length() > 0.01 else Vector3(-facing, 0, 0)
+	away = away.normalized() if away.length() > 0.01 else -facing_dir
 	velocity = away * hurt_knockback + Vector3(0, hurt_hop, 0)
 	_squash = Vector2(1.3, 0.7)
 	Fx.pop_text(get_tree(), global_position + Vector3(0, 1.6, 0), "OOF!", Color(1.0, 0.4, 0.35))
@@ -662,7 +791,8 @@ func _die() -> void:
 	died.emit()
 	Fx.splat(get_tree(), global_position, 2.0)
 	Fx.pop_text(get_tree(), global_position + Vector3(0, 1.8, 0), "THE END?", Color(0.98, 0.96, 0.9), 40)
-	create_tween().tween_property(sprite, "modulate:a", 0.0, 0.5)
+	if not _model:
+		create_tween().tween_property(sprite, "modulate:a", 0.0, 0.5)
 	await get_tree().create_timer(1.6).timeout
 	global_position = _spawn
 	velocity = Vector3.ZERO
@@ -701,6 +831,47 @@ func _snap_visuals() -> void:
 	ground_height = global_position.y
 	if visual_3d:
 		visual_3d.global_position = global_position
+	if _model:
+		_model.snap()
+
+
+## Feeds the 3D model its state (it poses itself; see vesper_3d.gd).
+func _update_model(delta: float) -> void:
+	_squash = _squash.lerp(Vector2.ONE, 1.0 - exp(-14.0 * delta))
+	_model.facing_dir = facing_dir
+	_model.speed = Vector2(velocity.x, velocity.z).length() / max_speed
+	_model.on_floor = is_on_floor()
+	_model.vertical = velocity.y
+	_model.dashing = _dash_timer > 0.0
+	_model.squash = _squash
+	_model.swing = 1.0 - _attack_timer / _swing_len if _attack_timer > 0.0 else -1.0
+	_model.combo = _combo
+	_model.hurt = _hurt_timer / 0.2
+	_model.heal = clampf(_channel / heal_time, 0.0, 1.0) if _channel >= 0.0 else 0.0
+	_model.erase = erase
+	_model.blink = not dead and _invuln > 0.0 and fmod(_invuln, 0.16) < 0.08
+	_model.dead = dead
+	_model.fuel = fuel / max_fuel
+	_update_ember_light()
+
+
+## The ground chevron eases round to facing_dir and flares on each swing.
+func _update_chevron(height: float, delta: float) -> void:
+	if _chevron == null:
+		return
+	_chevron_flash = maxf(_chevron_flash - delta * 3.0, 0.0)
+	_chevron_yaw = lerp_angle(_chevron_yaw, atan2(-facing_dir.x, -facing_dir.z), 1.0 - exp(-22.0 * delta))
+	var fwd := Vector3(-sin(_chevron_yaw), 0.0, -cos(_chevron_yaw))
+	_chevron.position = fwd * 0.8 + Vector3(0.0, -height + 0.05, 0.0)
+	_chevron.rotation = Vector3(0.0, _chevron_yaw, 0.0)
+	_chevron.visible = not dead
+	_chevron_mat.set_shader_parameter("flash", _chevron_flash)
+
+
+func _update_ember_light() -> void:
+	var k := fuel / max_fuel
+	ember_light.omni_range = lerpf(2.4, 4.6, k)
+	ember_light.light_energy = lerpf(0.55, 1.35, k)
 
 
 func _update_art(delta: float) -> void:
@@ -721,9 +892,7 @@ func _update_art(delta: float) -> void:
 	art.stuck = _slow_mult().x < 1.0
 	art.charge = clampf(_channel / heal_time, 0.0, 1.0) if _channel >= 0.0 else 0.0
 	art.charge_ready = false
-	var k := fuel / max_fuel
-	ember_light.omni_range = lerpf(2.4, 4.6, k)
-	ember_light.light_energy = lerpf(0.55, 1.35, k)
+	_update_ember_light()
 	# whiten as a searchlight erases her; blink while invulnerable
 	if not dead:
 		# (a dark flicker rather than fading out: the sprite is alpha-cut, so a
