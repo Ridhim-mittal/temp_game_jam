@@ -318,6 +318,8 @@ func protection_test() -> void:
 	change_scene_to_file(LEVELS[0])
 	await frames(4)
 	var player = current_scene.player
+	for m in current_scene.get_node("Enemies").get_children():
+		m.set_physics_process(false)  # only the protection is under test
 	var hp: int = player.health
 	check(player.is_protected(), "arriving in a room: spawn protection is on")
 	player.take_damage(1, player.global_position + Vector3(1, 0, 0))
