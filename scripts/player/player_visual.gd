@@ -14,6 +14,9 @@ const DUST := Color(0.97, 0.94, 0.86)
 @export var mask_color := Color(0.98, 0.96, 0.9)
 ## Warm "ember" accent: the one warm saturated colour on a cool background.
 @export var scarf_color := Color(0.92, 0.3, 0.2)
+## The hat and its band (outfits from Quire's shop).
+@export var hat_color := Color(0.14, 0.11, 0.16)
+@export var band_color := Color(0.92, 0.3, 0.2)
 ## Torn comic-page lining that shows along the coat hem.
 @export var page_color := Color(0.92, 0.89, 0.8)
 @export var pencil_color := Color(0.96, 0.76, 0.2)
@@ -242,14 +245,14 @@ func _draw_head() -> void:
 		draw_set_transform_matrix(_upper * Transform2D(0.0, Vector2(1.0, open), 0.0, Vector2(ex, -33)))
 		draw_colored_polygon(_ellipse(1.8, 3.8), INK)
 	draw_set_transform_matrix(_upper)
-	# wide-brimmed hat with a scarf-red band; the brim tips with speed
+	# wide-brimmed hat with a coloured band; the brim tips with speed
 	var tip := clampf(velocity.x * facing / max_speed, -1.0, 1.0) * -0.06
 	draw_set_transform_matrix(_upper * Transform2D(tip, Vector2(1, -41)))
-	draw_colored_polygon(_ellipse(21.0, 4.8), cloak_color)
+	draw_colored_polygon(_ellipse(21.0, 4.8), hat_color)
 	draw_colored_polygon(PackedVector2Array([Vector2(-10, -2), Vector2(-8, -17), Vector2(9, -15),
-		Vector2(11, -2)]), cloak_color)
-	draw_line(Vector2(-10, -4.5), Vector2(11, -4.5), scarf_color, 3.0)
-	draw_line(Vector2(-16, -1.5), Vector2(8, -2.5), cloak_rim, 1.5)
+		Vector2(11, -2)]), hat_color)
+	draw_line(Vector2(-10, -4.5), Vector2(11, -4.5), band_color, 3.0)
+	draw_line(Vector2(-16, -1.5), Vector2(8, -2.5), hat_color.lightened(0.25), 1.5)
 	draw_set_transform_matrix(_upper)
 
 

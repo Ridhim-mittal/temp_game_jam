@@ -18,6 +18,8 @@ func _enter_tree() -> void:
 	_add_keys("flash", [KEY_Q])
 	_add_keys("heal", [KEY_F])
 	_add_keys("interact", [KEY_E])
+	# Quire's shop, anywhere in the game (scripts/ui/shop.gd)
+	_add_keys("shop", [KEY_B])
 	# platformer Ember: hold to raise it (light makes sketches real)
 	_add_keys("ember", [KEY_Q, KEY_E])
 

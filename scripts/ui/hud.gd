@@ -1,6 +1,9 @@
 extends Control
 ## Draws the continuous health bar (top left) and the Lumen coin counter
-## (top right). The bar has a trailing "damage ghost" that drains after a
+## (top right: the shop's purse, Profile.lumens). Once there are enough
+## coins to buy something in Quire's shop, a "B  SHOP" tag shows under the
+## counter, and the first time in a run a caption says "PRESS B TO OPEN THE
+## SHOP" (GameState.seen "shop_hint"). The bar has a trailing "damage ghost" that drains after a
 ## hit (shows how much it took), shakes on damage, flashes green on heals
 ## and pulses when health is low. Under it, the Ember meter (ember.gd):
 ## glows while raised, greys out and shakes when snuffed.
@@ -22,6 +25,8 @@ var _healed := 0.0    # 1 on heal, decays: green flash
 var _time := 0.0
 var _bump := 0.0  # 1 right after a pickup, decays: counter pops
 var _ember: Node
+var _can_shop := false  # enough coins for something in the shop
+var _hint := 0.0  # seconds the "PRESS B" caption has left
 
 
 func _ready() -> void:
@@ -46,7 +51,21 @@ func _process(delta: float) -> void:
 		_ghost = move_toward(_ghost, current, delta * maximum * 0.6)
 	elif _ghost < current:
 		_ghost = current
+	_update_shop_hint(delta)
 	queue_redraw()  # the coin icon spins
+
+
+func _update_shop_hint(delta: float) -> void:
+	_hint = maxf(_hint - delta, 0.0)
+	var profile := get_node_or_null("/root/Profile")
+	if profile == null:
+		return
+	var price: int = profile.cheapest_price()
+	_can_shop = price >= 0 and profile.lumens >= price
+	var state := get_node_or_null("/root/GameState")
+	if _can_shop and state and not state.seen.has("shop_hint"):
+		state.seen["shop_hint"] = true
+		_hint = 5.0
 
 
 func _on_health_changed(cur: float, max_hp: float) -> void:
@@ -168,3 +187,29 @@ func _draw_coin_counter() -> void:
 	Coin.draw_coin(self, Vector2(baseline.x - 30.0, 44.0), 15.0 * (1.0 + 0.25 * _bump), _time * 2.0 + _bump * 6.0)
 	draw_string_outline(font, baseline, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, 8, INK)
 	draw_string(font, baseline, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color(1.0, 0.85, 0.3))
+	if _can_shop:
+		# a key cap and SHOP under the counter
+		var pulse := 0.75 + 0.25 * sin(_time * 4.0)
+		var at := Vector2(right - 92.0, 74.0)
+		draw_rect(Rect2(at, Vector2(26, 26)), Color(0.98, 0.96, 0.9, pulse))
+		draw_rect(Rect2(at, Vector2(26, 26)), INK, false, 2.0)
+		draw_string(FONT, at + Vector2(7, 21), "B", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, INK)
+		draw_string_outline(FONT, at + Vector2(34, 21), "SHOP", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, 6, INK)
+		draw_string(FONT, at + Vector2(34, 21), "SHOP", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color(1.0, 0.85, 0.3, pulse))
+	if _hint > 0.0:
+		_draw_shop_caption()
+
+
+## "PRESS B TO OPEN THE SHOP": a comic caption box near the top, the first
+## time there's enough for something.
+func _draw_shop_caption() -> void:
+	var a := clampf(_hint / 0.5, 0.0, 1.0) * clampf((5.0 - _hint) / 0.25, 0.0, 1.0)
+	var text := "ENOUGH COINS!  PRESS  B  TO OPEN THE SHOP"
+	var w := FONT.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 30).x
+	var box := Rect2(Vector2((size.x - w) * 0.5 - 22.0, 104.0), Vector2(w + 44.0, 50.0))
+	var bob := sin(_time * 3.0) * 2.0
+	box.position.y += bob
+	draw_rect(Rect2(box.position + Vector2(5, 5), box.size), Color(INK, 0.6 * a))
+	draw_rect(box, Color(1.0, 0.95, 0.75, a))
+	draw_rect(box, Color(INK, a), false, 3.0)
+	draw_string(FONT, box.position + Vector2(22, 36), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 30, Color(INK, a))

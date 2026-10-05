@@ -3,7 +3,7 @@ extends SceneTree
 ## Torn Page -> Rubbing Room, with nothing leading to a retired room, and
 ## every way in is one-way (entry_only: it never opens, even once the room
 ## is cleared); each level has its monsters and lamps; the Half-Drawn swing
-## a blade that hurts, stagger when hit mid-windup and fall in three hits;
+## a blade that hurts, stagger when hit mid-windup and fall in five hits;
 ## spawn protection holds for two seconds; the sketched bridge only forms
 ## when Vesper holds Q, and he can then walk across it; the Eraser gets
 ## furious at half health.
@@ -132,7 +132,7 @@ func one_way_test() -> void:
 
 
 ## The Half-Drawn: only the blade hurts, a swing lands on a Vesper standing
-## in front, a hit mid-windup staggers it, three hits finish it.
+## in front, a hit mid-windup staggers it, five hits finish it.
 func half_drawn_test() -> void:
 	change_scene_to_file(LEVELS[0])
 	await frames(4)
@@ -179,10 +179,10 @@ func half_drawn_test() -> void:
 	g._timer = g.windup_time
 	g.take_hit(1, Vector3(-1, 0, 0))
 	check(g.state == g.State.RECOVER, "in the light, a hit mid-windup staggers it out of the swing")
-	g.take_hit(1, Vector3(-1, 0, 0))
-	g.take_hit(1, Vector3(-1, 0, 0))
+	for i in g.hp - 1:
+		g.take_hit(1, Vector3(-1, 0, 0))
 	Input.action_release("flash")
-	check(g.dead and g.hp == 3, "three hits in the light and it's unwritten (hp %d)" % g.hp)
+	check(g.dead and g.hp == 5, "five hits in the light and it's unwritten (hp %d)" % g.hp)
 
 
 ## Six hearts, and the hub's shrine is Vesper's.

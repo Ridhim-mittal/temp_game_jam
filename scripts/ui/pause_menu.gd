@@ -1,6 +1,6 @@
 extends Control
-## Pause menu for 2.5D rooms (Esc): Resume, Skill Tree, Controls (replays the
-## controls tutorial), Settings, Main Menu.
+## Pause menu for 2.5D rooms (Esc): Resume, Shop (Quire's Curios, also on
+## B), Controls (replays the controls tutorial), Settings, Main Menu.
 ## The game is paused while it (or anything it opens) is up. room.gd opens
 ## it and the overlays it leads to.
 
@@ -13,7 +13,7 @@ const RED := Color(0.9, 0.22, 0.16)
 const DIM := Color(0.62, 0.6, 0.62)
 const GOLD := Color(1.0, 0.82, 0.25)
 
-const ITEMS := [["RESUME", "resume"], ["SKILL TREE", "skills"], ["CONTROLS", "controls"], ["SETTINGS", "settings"],
+const ITEMS := [["RESUME", "resume"], ["SHOP", "shop"], ["CONTROLS", "controls"], ["SETTINGS", "settings"],
 	["MAIN MENU", "menu"]]
 
 var _row := 0
@@ -72,8 +72,8 @@ func _draw() -> void:
 		draw_polyline(bar + PackedVector2Array([bar[0]]), RED, 2.0)
 		var label: String = ITEMS[i][0]
 		draw_string(TITLE_FONT, rect.position + Vector2(22, 38), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 34, PAPER if focused else DIM)
-		if ITEMS[i][1] == "skills" and profile and profile.skill_points > 0:
-			var pulse := 0.6 + 0.4 * sin(_time * 5.0)
-			draw_string(TITLE_FONT, rect.position + Vector2(250, 38), "%d POINT%s" % [profile.skill_points, "" if profile.skill_points == 1 else "S"],
-				HORIZONTAL_ALIGNMENT_LEFT, -1, 26, Color(GOLD, pulse))
+		if ITEMS[i][1] == "shop" and profile:
+			# the coins to spend, beside the shop
+			draw_string(TITLE_FONT, rect.position + Vector2(250, 38), "%d COINS" % profile.lumens,
+				HORIZONTAL_ALIGNMENT_LEFT, -1, 26, Color(GOLD, 0.85))
 	draw_string(TITLE_FONT, Vector2(80, size.y - 40), "W/S  CHOOSE     ENTER  SELECT     ESC  RESUME", HORIZONTAL_ALIGNMENT_LEFT, -1, 20, DIM)

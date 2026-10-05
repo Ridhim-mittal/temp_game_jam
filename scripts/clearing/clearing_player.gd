@@ -2,8 +2,10 @@ extends CharacterBody3D
 ## Vesper's controller in the Gutter (the 2.5D Margins), seen side-on from a
 ## low tilted camera. Moves on the ground plane with WASD / stick, jumps on
 ## Space, dashes on right click / Shift, attacks on left click / X: a
-## three-hit combo (the third hit is a heavier overhead finisher). Hold Q to
-## raise the Ember (as in the 2D levels), F heals.
+## three-hit combo (the third hit is a heavier overhead finisher); holding
+## attack charges the equipped weapon's special, as in the 2D levels (wave,
+## volley, slam, drill, sweep, whirl; Quire's shop on B). Hold Q to raise
+## the Ember (as in the 2D levels), F heals.
 ##
 ## Aiming: `facing_dir` (a unit vector on the XZ plane, snapped to
 ## `snap_directions`) is the source of truth. It follows the movement input
@@ -34,6 +36,7 @@ signal died
 const Fx = preload("res://scripts/clearing/clearing_fx.gd")
 const FlashScript = preload("res://scripts/world25/flash.gd")
 const InkWave = preload("res://scripts/world25/ink_wave_3d.gd")
+const WeaponFx = preload("res://scripts/clearing/weapon_fx_3d.gd")
 const VesperModel = preload("res://scripts/clearing/vesper_3d.gd")
 const CHEVRON_SHADER = preload("res://shaders/clearing/facing_chevron.gdshader")
 const ScreenAnchor = preload("res://scripts/clearing/screen_anchor.gd")
@@ -87,6 +90,36 @@ enum AttackStyle { INK_SLASH, NIB_SWORD, BOTH }
 @export var jump_buffer_time := 0.12
 ## Upward bounce after an air attack connects.
 @export var pogo_velocity := 8.5
+
+@export_group("Weapon Specials")
+## Hold attack this long to charge the equipped weapon's special.
+@export var charge_time := 0.55
+## PEN-DRILL (Corkscrew Nib): drag radius, pull speed, grinding reach and
+## tick, longest spin, burst damage.
+@export var drill_radius := 3.2
+@export var drill_pull := 6.0
+@export var drill_grind := 1.4
+@export var drill_tick := 0.3
+@export var drill_max := 2.5
+@export var drill_burst := 2
+## BLINDING SWEEP (Prism Saber): radius, damage, stun; a normal hit's stun.
+@export var sweep_radius := 3.2
+@export var sweep_damage := 2
+@export var sweep_stun := 1.6
+@export var prism_stun := 0.8
+## LANTERN WHIRL (Lantern Flail): orbit radius, Ember burnt a second,
+## damage a pass.
+@export var whirl_radius := 1.8
+@export var whirl_drain := 14.0
+@export var whirl_damage := 1
+## QUILL VOLLEY (Quill Rapier).
+@export var dart_count := 3
+@export var dart_speed := 14.0
+@export var dart_range := 9.0
+@export var dart_damage := 1
+## INK SLAM (Brush Maul).
+@export var slam_radius := 2.8
+@export var slam_damage := 2
 
 @export_group("Health")
 @export var max_health := 6
@@ -209,6 +242,18 @@ var _snuffed := false  # ran dry: the Ember won't rise until relight_at is back
 var _since_raised := 10.0
 var _raise_w := 0.0  # 0..1, eases towards ember_raised (radius and light)
 var _q_prompt: Node2D  # "HOLD Q TO SEE THEM" over Vesper's head
+var _weapon := "nib"  # equipped weapon (catalog.gd id)
+var _special := "wave"  # what holding attack does
+var _tier := 0  # upgrades bought for it (0..3)
+var _charge := -1.0  # seconds attack has been held; -1 = not charging
+var _charge_ready := false
+var _drill := -1.0  # seconds spent drilling; -1 = not
+var _drill_t := 0.0
+var _drill_fx := 0.0
+var _whirl := -1.0  # seconds spent whirling; -1 = not
+var _whirl_angle := 0.0
+var _whirl_hits := {}  # target -> seconds before it can be hit again
+var _lantern: Node3D
 var _q_label: Label
 
 @onready var visual_3d: Node3D = $Visual3D
@@ -304,9 +349,14 @@ func _physics_process(delta: float) -> void:
 	if in_control and input.length() > facing_deadzone and _attack_timer <= 0.0:
 		set_facing(dir)
 
+	if not in_control:
+		_cancel_charge()
 	if in_control:
 		if Input.is_action_just_pressed("attack"):
 			_attack_buffer = attack_buffer_time
+			_charge = 0.0
+			_charge_ready = false
+		_update_charge(delta)
 		if Input.is_action_just_pressed("jump"):
 			_jump_buffer = jump_buffer_time
 		if Input.is_action_just_pressed("flash") or (ember_raised and input.length() < 0.1 and _inking == null):
@@ -316,6 +366,7 @@ func _physics_process(delta: float) -> void:
 		var dash_pressed := Input.is_action_just_pressed("dash")
 		if dash_pressed and _dash_cooldown_timer <= 0.0:
 			_dash_dir = dir.normalized() if dir.length() > facing_deadzone else facing_dir
+			_cancel_charge()
 			_dash_timer = dash_time
 			_dash_cooldown_timer = dash_cooldown
 			_attack_timer = 0.0  # a dash cancels a swing
@@ -327,6 +378,8 @@ func _physics_process(delta: float) -> void:
 	if in_control:
 		if _channel >= 0.0 or _inking:
 			dir = Vector3.ZERO  # rooted while healing or inking
+		elif _drill >= 0.0 or _whirl >= 0.0:
+			dir *= 0.35  # slowed while the drill spins or the lantern whirls
 		elif _attack_buffer > 0.0 and _attack_timer <= 0.0 and _dash_timer <= 0.0:
 			_start_attack(dir)
 
@@ -560,6 +613,8 @@ func _hit_in_front(dir: Vector3, finisher: bool) -> void:
 			var landed = target.take_hit(dmg, dir, aerial)
 			if landed == false:
 				continue  # blocked: the monster shows its own reaction
+			if _weapon == "prism":
+				_stun(target, prism_stun)  # its light dazzles
 			hits += 1
 			var word: String = "KA-POW!" if finisher else HIT_WORDS.pick_random()
 			Fx.pop_text(get_tree(), target.global_position + Vector3(0, 1.3, 0), word)
@@ -591,6 +646,310 @@ func _hit_in_front(dir: Vector3, finisher: bool) -> void:
 		_shake(0.12)
 
 
+# ------------------------------------------------------- weapon specials
+
+## Hold-to-charge, as in the 2D levels: the press already swung, keep
+## holding to charge, let go when charged for the weapon's special. The
+## drill and the whirl run while still held, once charged.
+func _update_charge(delta: float) -> void:
+	if _charge < 0.0:
+		return
+	if Input.is_action_pressed("attack"):
+		_charge += delta
+		if not _charge_ready and _charge >= charge_time:
+			_charge_ready = true
+			_chevron_flash = 1.0
+			Fx.burst(get_tree(), global_position + Vector3(0, 1.0, 0), _slash_rim, 8, 2.0)
+			if _special == "drill":
+				_start_drill()
+			elif _special == "whirl":
+				_start_whirl()
+		if _drill >= 0.0:
+			_update_drill(delta)
+		elif _whirl >= 0.0:
+			_update_whirl(delta)
+		return
+	if _charge_ready:
+		_release_special()
+	_cancel_charge()
+
+
+func _cancel_charge() -> void:
+	_charge = -1.0
+	_charge_ready = false
+	_stop_drill()
+	_stop_whirl()
+
+
+## True while holding a charged attack (the model and tests read it).
+func charge_ready() -> bool:
+	return _charge_ready
+
+
+func _release_special() -> void:
+	match _special:
+		"drill":
+			if _drill >= 0.0:
+				_drill_burst()
+		"whirl":
+			pass  # it whirled while held
+		"sweep":
+			_blinding_sweep()
+		"darts":
+			_quill_volley()
+		"slam":
+			_ink_slam()
+		_:
+			_ink_wave_special()
+
+
+## SHARPENED (first upgrade): +1 damage on every hit, specials included.
+func _sharp() -> int:
+	return 1 if _tier >= 1 else 0
+
+
+## MASTERWORK (third upgrade): the special is stronger.
+func _master() -> bool:
+	return _tier >= 3
+
+
+## Living monsters within `radius` of `at` on the ground plane.
+func _enemies_near(at: Vector3, radius: float) -> Array:
+	var out := []
+	for e in get_tree().get_nodes_in_group("enemy"):
+		if not (e is Node3D) or not e.has_method("take_hit") or ("dead" in e and e.dead):
+			continue
+		var d: Vector3 = e.global_position - at
+		if absf(d.y) < 2.5 and Vector2(d.x, d.z).length() <= radius:
+			out.append(e)
+	return out
+
+
+## Stuns a monster for at least `seconds` (monster_3d.gd and scribble.gd
+## both answer stun_for()).
+func _stun(e: Node, seconds: float) -> void:
+	if e.has_method("stun_for"):
+		e.stun_for(seconds)
+
+
+## A special's hit: like a swing (the monster may block it), with a word.
+func _special_hit(e: Node3D, dmg: int, dir: Vector3, word: String, col := Color(1.0, 0.82, 0.15)) -> bool:
+	var landed = e.take_hit(dmg, dir, false)
+	if landed == false:
+		return false
+	add_fuel(fuel_per_hit)
+	Fx.pop_text(get_tree(), e.global_position + Vector3(0, 1.3, 0), word, col)
+	return true
+
+
+# INK WAVE (Nib-Sword)
+func _ink_wave_special() -> void:
+	var wave := InkWave.new()
+	wave.direction = facing_dir
+	wave.rim = _slash_rim
+	wave.damage = finisher_damage + _sharp() + (2 if _master() else 0)
+	if _master():
+		wave.max_range *= 1.4
+	get_tree().current_scene.add_child(wave)
+	wave.global_position = Vector3(global_position.x, ground_height, global_position.z) + facing_dir * 0.6
+	Fx.pop_text(get_tree(), global_position + Vector3(0, 1.8, 0), "KA-SHOOM!", _slash_rim)
+	_squash = Vector2(1.25, 0.8)
+	_shake(0.3)
+
+
+# PEN-DRILL (Corkscrew Nib): spin, drag monsters in, grind; burst on release
+func _drill_radius() -> float:
+	return drill_radius * (1.4 if _master() else 1.0)
+
+
+func _start_drill() -> void:
+	_drill = 0.0
+	_drill_t = 0.0
+	_drill_fx = 0.0
+	if _model:
+		_model.spin = 22.0
+	Fx.pop_text(get_tree(), global_position + Vector3(0, 1.9, 0), "VRRRRR!", Color(0.85, 0.9, 1.0), 30)
+
+
+func _update_drill(delta: float) -> void:
+	_drill += delta
+	_drill_t -= delta
+	_drill_fx -= delta
+	if _drill_fx <= 0.0:
+		# an ink twister: slashes all round, turning
+		_drill_fx = 0.08
+		var a := _drill * 14.0
+		Fx.slash(get_tree(), global_position, Vector3(cos(a), 0.0, sin(a)), int(_drill * 12.0) % 2 == 0, false, _slash_rim)
+	var tick := _drill_t <= 0.0
+	if tick:
+		_drill_t = drill_tick
+	for e in _enemies_near(global_position, _drill_radius()):
+		var d: Vector3 = global_position - e.global_position
+		d.y = 0.0
+		_stun(e, 0.15)
+		var pull := d.normalized() * minf(drill_pull, d.length() * 6.0)
+		e.velocity.x = pull.x
+		e.velocity.z = pull.z
+		if tick and d.length() < drill_grind:
+			_special_hit(e, 1 + _sharp(), -d.normalized() if d.length() > 0.01 else facing_dir, "BZZRT!", Color(0.85, 0.9, 1.0))
+			_shake(0.12)
+	if _drill >= drill_max:
+		_drill_burst()
+		_cancel_charge()
+
+
+func _drill_burst() -> void:
+	var dmg := drill_burst + _sharp() + (2 if _master() else 0)
+	for e in _enemies_near(global_position, _drill_radius() * 0.75):
+		var away: Vector3 = e.global_position - global_position
+		away.y = 0.0
+		away = away.normalized() if away.length() > 0.01 else facing_dir
+		if _special_hit(e, dmg, away, "KA-BLOOEY!", Color(0.85, 0.9, 1.0)):
+			e.velocity.x = away.x * 11.0
+			e.velocity.z = away.z * 11.0
+	WeaponFx.ring(get_tree(), global_position, _drill_radius() * 0.75, _slash_rim, 0.25)
+	_squash = Vector2(1.3, 0.75)
+	_hitstop(0.06)
+	_shake(0.5)
+	_stop_drill()
+
+
+func _stop_drill() -> void:
+	if _drill < 0.0:
+		return
+	_drill = -1.0
+	if _model:
+		_model.spin = 0.0
+
+
+# LANTERN WHIRL (Lantern Flail): the lantern orbits, hits what it passes,
+# and its light shows hidden things
+func _whirl_reach() -> float:
+	return whirl_radius * (1.3 if _master() else 1.0)
+
+
+func _start_whirl() -> void:
+	if _snuffed or fuel <= 0.0:
+		Fx.pop_text(get_tree(), global_position + Vector3(0, 1.8, 0), "NO EMBER", Color(0.7, 0.6, 0.5), 24)
+		return
+	_whirl = 0.0
+	_whirl_hits.clear()
+	_whirl_angle = atan2(facing_dir.z, facing_dir.x)
+	_lantern = WeaponFx.OrbitLantern.new()
+	_lantern.glow_range = 4.0 * (1.3 if _master() else 1.0)
+	get_tree().current_scene.add_child(_lantern)
+	_place_lantern()
+	Fx.pop_text(get_tree(), global_position + Vector3(0, 1.9, 0), "WHOOM!", Color(1.0, 0.8, 0.4), 30)
+
+
+func _place_lantern() -> void:
+	if _lantern:
+		_lantern.global_position = global_position + Vector3(cos(_whirl_angle), 0.0, sin(_whirl_angle)) * _whirl_reach() + Vector3(0, 0.9, 0)
+		_lantern.anchor = global_position + Vector3(0, 0.9, 0)
+
+
+func _update_whirl(delta: float) -> void:
+	_whirl += delta
+	_whirl_angle += delta * 9.0
+	_place_lantern()
+	add_fuel(-whirl_drain * delta)
+	_since_raised = 0.0  # no regen while it burns
+	for t in _whirl_hits.keys():
+		_whirl_hits[t] -= delta
+	var dmg := whirl_damage + _sharp() + (1 if _master() else 0)
+	for e in _enemies_near(_lantern.global_position, 0.95):
+		if _whirl_hits.get(e, 0.0) > 0.0:
+			continue
+		_whirl_hits[e] = 0.35
+		var away: Vector3 = e.global_position - global_position
+		away.y = 0.0
+		_special_hit(e, dmg, away.normalized() if away.length() > 0.01 else facing_dir, "CLONK!")
+		_shake(0.15)
+	if fuel <= 0.0:
+		_snuffed = true
+		_cancel_charge()
+
+
+func _stop_whirl() -> void:
+	if _whirl < 0.0:
+		return
+	_whirl = -1.0
+	if _lantern:
+		_lantern.queue_free()
+	_lantern = null
+
+
+## The Prism Saber's blade is light: it cuts unseen Half-Drawn.
+func light_blade() -> bool:
+	return _weapon == "prism"
+
+
+## True while the Lantern Flail whirls (its light counts as the Writer's).
+func whirling() -> bool:
+	return _whirl >= 0.0
+
+
+# BLINDING SWEEP (Prism Saber): a rainbow sweep in front that blinds, and
+# turns the Haunting Lamp's light away
+func _blinding_sweep() -> void:
+	var radius := sweep_radius * (1.3 if _master() else 1.0)
+	WeaponFx.rainbow(get_tree(), global_position, facing_dir, radius)
+	var min_dot := cos(deg_to_rad(100.0))
+	for e in _enemies_near(global_position, radius):
+		var d: Vector3 = e.global_position - global_position
+		d.y = 0.0
+		if d.length() > 0.6 and d.normalized().dot(facing_dir) < min_dot:
+			continue  # behind
+		if _special_hit(e, sweep_damage + _sharp(), d.normalized() if d.length() > 0.01 else facing_dir, "BLINDED!", Color(0.6, 1.0, 0.95)):
+			_stun(e, sweep_stun * (2.0 if _master() else 1.0))
+	for lamp in get_tree().get_nodes_in_group("haunt_lamp"):
+		if not lamp.has_method("dazzle"):
+			continue
+		var on_me: bool = lamp.has_method("lights") and lamp.lights(global_position)
+		var near: bool = "spot" in lamp and Vector2(lamp.spot.x - global_position.x, lamp.spot.z - global_position.z).length() < radius * 1.5
+		if on_me or near:
+			lamp.dazzle()
+	Fx.pop_text(get_tree(), global_position + Vector3(0, 2.0, 0), "FWASSH!", Color(0.85, 1.0, 1.0), 36)
+	_hitstop(0.05)
+	_shake(0.35)
+
+
+# QUILL VOLLEY (Quill Rapier): a fan of quills that pierce
+func _quill_volley() -> void:
+	var n := dart_count + (2 if _master() else 0)
+	for i in n:
+		var a := deg_to_rad(lerpf(-14.0, 14.0, float(i) / maxf(n - 1, 1)))
+		var dart := WeaponFx.QuillDart.new()
+		dart.direction = facing_dir.rotated(Vector3.UP, a)
+		dart.speed = dart_speed
+		dart.max_range = dart_range
+		dart.damage = dart_damage + _sharp()
+		dart.color = _slash_rim
+		get_tree().current_scene.add_child(dart)
+		dart.global_position = global_position + Vector3(0, 0.9, 0) + facing_dir * 0.5
+	Fx.pop_text(get_tree(), global_position + Vector3(0, 1.9, 0), "FWIP-FWIP!", Color(0.6, 0.9, 1.0), 30)
+	_shake(0.2)
+
+
+# INK SLAM (Brush Maul): a ring of ink thrown out along the ground
+func _ink_slam() -> void:
+	var radius := slam_radius * (1.4 if _master() else 1.0)
+	var at := Vector3(global_position.x, ground_height, global_position.z)
+	WeaponFx.ring(get_tree(), at, radius, _slash_rim)
+	Fx.splat(get_tree(), at, radius * 0.9)
+	Fx.burst(get_tree(), at + Vector3(0, 0.3, 0), Color(0.06, 0.03, 0.13), 22, 5.0)
+	var dmg := slam_damage + _sharp() + (1 if _master() else 0)
+	for e in _enemies_near(global_position, radius):
+		var away: Vector3 = e.global_position - global_position
+		away.y = 0.0
+		if _special_hit(e, dmg, away.normalized() if away.length() > 0.01 else facing_dir, "KA-BLAM!", Color(1.0, 0.4, 0.35)):
+			if not ("flying" in e and e.flying):
+				e.velocity.y = 6.0
+	_squash = Vector2(1.35, 0.7)
+	_hitstop(0.07)
+	_shake(0.55)
+
+
 func _hitstop(duration: float) -> void:
 	Engine.time_scale = 0.05
 	await get_tree().create_timer(duration, true, false, true).timeout
@@ -605,11 +964,12 @@ func _shake(amount: float) -> void:
 
 # ----------------------------------------------------------------- loadout
 
-## Applies skills (Ink Points), shop gear and the difficulty setting on top
-## of the exported base values. Runs once per spawn (each room).
+## Applies the gear from Quire's shop (the weapon and its upgrades, armor,
+## outfit) and the difficulty setting on top of the exported base values.
+## Runs once per spawn (each room) and after the shop closes.
 const LOADOUT_STATS := ["max_health", "invuln_time", "max_speed", "dash_speed", "dash_cooldown", "attack_reach",
 	"attack_radius", "attack_damage", "finisher_damage", "attack_time", "finisher_time", "pogo_velocity", "max_fuel",
-	"glow_radius_full", "fuel_per_hit", "flash_cost", "heal_time", "heal_cost"]
+	"glow_radius_full", "fuel_per_hit", "flash_cost", "heal_time", "heal_cost", "charge_time"]
 var _base_stats := {}
 
 
@@ -635,9 +995,14 @@ func _apply_loadout() -> void:
 	dash_cooldown *= profile.effect("dash_cd_mult", 1.0)
 	attack_reach *= profile.effect("reach_mult", 1.0)
 	attack_radius *= profile.effect("radius_mult", 1.0)
-	var dmg := int(profile.effect("damage_bonus", 0))
+	_weapon = profile.weapon()
+	_special = profile.weapon_item().get("special", "wave")
+	_tier = profile.upgrade_level(_weapon)
+	var dmg := int(profile.effect("damage_bonus", 0)) + _sharp()
 	attack_damage += dmg
 	finisher_damage += dmg + int(profile.effect("finisher_bonus", 0))
+	if _tier >= 2:
+		charge_time *= 0.6  # QUICK HAND
 	attack_time *= profile.effect("swing_mult", 1.0)
 	finisher_time *= profile.effect("swing_mult", 1.0)
 	pogo_velocity *= profile.effect("pogo_mult", 1.0)
@@ -657,9 +1022,10 @@ func _apply_loadout() -> void:
 	_apply_look(profile.look())
 
 
-## After the shop or skill tree: re-apply everything, keeping health and
-## fuel (topped up by any new maximum).
+## After the shop: re-apply everything, keeping health and fuel (topped up
+## by any new maximum).
 func refresh_loadout() -> void:
+	_cancel_charge()
 	var old_max := max_health
 	var old_fuel_max := max_fuel
 	_apply_loadout()
@@ -682,6 +1048,12 @@ func _apply_look(look: Dictionary) -> void:
 		sword.cloak_color = look.cloak
 	if look.has("cloak_rim"):
 		art.cloak_rim = look.cloak_rim
+	if look.has("hat"):
+		art.hat_color = look.hat
+	if look.has("band"):
+		art.band_color = look.band
+	if look.has("weapon"):
+		sword.style = look.weapon
 	if look.has("blade_length"):
 		sword.blade_length = look.blade_length
 	if look.has("grip"):
@@ -727,7 +1099,7 @@ func _flash() -> void:
 func _update_ember(delta: float, in_control: bool) -> void:
 	var want := in_control and not dead and Input.is_action_pressed("flash") and not _snuffed and _channel < 0.0
 	ember_raised = want and _inking == null and fuel > 0.0
-	monster_light = ember_raised
+	monster_light = ember_raised or _whirl >= 0.0
 	if ember_raised or _inking:
 		_since_raised = 0.0
 	if ember_raised:
@@ -789,7 +1161,14 @@ func _in_lantern_light() -> bool:
 ## True when the raised Ember's light reaches `point` (the unfinished
 ## Scribbles only show, and can only be cut, inside it).
 func ember_reveals(point: Vector3) -> bool:
-	if not ember_raised or dead:
+	if dead:
+		return false
+	if _whirl >= 0.0:
+		# the whirling lantern's light shows them too
+		var w := point - global_position
+		if Vector2(w.x, w.z).length() < _whirl_reach() + 1.2 and absf(w.y) < 3.0:
+			return true
+	if not ember_raised:
 		return false
 	var d := point - global_position
 	return Vector2(d.x, d.z).length() < glow_radius() and absf(d.y) < 3.0

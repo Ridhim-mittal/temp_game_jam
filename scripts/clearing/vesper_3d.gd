@@ -49,11 +49,15 @@ const GHOST := Color(0.66, 0.6, 1.0)
 @export var mask_color := Color(0.95, 0.95, 0.93)
 @export var scarf_color := Color(0.85, 0.22, 0.16)
 @export var hat_color := Color(0.1, 0.09, 0.11)
+@export var band_color := Color(0.85, 0.22, 0.16)
 @export var leg_color := Color(0.56, 0.53, 0.5)
 @export var boot_color := Color(0.24, 0.14, 0.13)
 @export var grip_color := Color(0.12, 0.08, 0.08)
 ## Length of the broadsword's blade, in world units.
 @export var blade_length := 0.72
+## Which weapon he carries (catalog.gd look "weapon"): nib (the broadsword),
+## quill, brush, corkscrew, prism or lantern.
+@export var weapon_style := "nib"
 ## Overall size (1 = about 1.5 units tall, hat included).
 @export var model_scale := 1.3
 
@@ -75,6 +79,8 @@ var blink := false
 var dead := false
 var fuel := 1.0  # 0..1 Ember fuel
 var show_sword := true
+## Radians a second he spins on the spot (the Corkscrew Nib's PEN-DRILL), 0 = not.
+var spin := 0.0
 
 var _yaw := 0.0
 var _phase := 0.0
@@ -128,6 +134,12 @@ func apply_look(look: Dictionary) -> void:
 		cloak_rim = look.cloak_rim
 	if look.has("grip"):
 		grip_color = look.grip
+	if look.has("hat"):
+		hat_color = look.hat
+	if look.has("band"):
+		band_color = look.band
+	if look.has("weapon"):
+		weapon_style = look.weapon
 	if look.has("blade_length"):
 		# the 2D sword's length is in pixels (36 = standard)
 		blade_length = 0.72 * float(look.blade_length) / 36.0
@@ -234,7 +246,7 @@ func _build() -> void:
 	_hat.rotation = Vector3(0.12, 0, 0.04)
 	_part(_hat, Toon.cylinder(0.43, 0.41, 0.035, 28), hat_color, Vector3.ZERO, Vector3.ZERO, {"outline": 0.03})
 	_part(_hat, Toon.cylinder(0.24, 0.27, 0.32, 18), hat_color, Vector3(0, 0.17, 0), Vector3.ZERO, {"outline": 0.03})
-	_part(_hat, Toon.cylinder(0.275, 0.28, 0.085, 18), scarf_color, Vector3(0, 0.065, 0), Vector3.ZERO, {"outline": 0.015})
+	_part(_hat, Toon.cylinder(0.275, 0.28, 0.085, 18), band_color, Vector3(0, 0.065, 0), Vector3.ZERO, {"outline": 0.015})
 	# a crease across the crown
 	_part(_hat, Toon.box(Vector3(0.3, 0.02, 0.06)), hat_color.darkened(0.4), Vector3(0, 0.33, 0), Vector3.ZERO, {"outline": 0.0})
 	# sword arm: hidden in the cloak until he swings
@@ -309,9 +321,27 @@ func _quad(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, d: Vector3, insi
 			st.add_vertex(p)
 
 
-## A broadsword: black grip, gold pommel and crossguard, a long straight
-## steel blade with a fuller and a point. Held at the origin, blade along -Y.
+## The weapon in his hand (or on his back), after `weapon_style`. Held at
+## the origin, pointing along -Y.
 func _build_sword(root: Node3D) -> void:
+	match weapon_style:
+		"quill":
+			_build_quill(root)
+		"brush":
+			_build_brush(root)
+		"corkscrew":
+			_build_corkscrew(root)
+		"prism":
+			_build_prism(root)
+		"lantern":
+			_build_lantern(root)
+		_:
+			_build_broadsword(root)
+
+
+## A broadsword: black grip, gold pommel and crossguard, a long straight
+## steel blade with a fuller and a point.
+func _build_broadsword(root: Node3D) -> void:
 	_part(root, Toon.cylinder(0.027, 0.027, 0.2, 8), grip_color, Vector3(0, 0.02, 0), Vector3.ZERO, {"outline": 0.016})
 	_part(root, Toon.sphere(0.045, 8, 5), GOLD, Vector3(0, 0.14, 0), Vector3.ZERO, {"outline": 0.016})
 	_part(root, Toon.box(Vector3(0.3, 0.045, 0.06)), GOLD, Vector3(0, -0.1, 0), Vector3.ZERO, {"outline": 0.018})
@@ -323,6 +353,84 @@ func _build_sword(root: Node3D) -> void:
 	var tip := _part(root, Toon.prism(Vector3(0.09, 0.12, 0.022)), STEEL, Vector3(0, top - blade_length - 0.06, 0), Vector3(0, 0, PI),
 		{"outline": 0.018, "emission": 0.12})
 	tip.scale = Vector3.ONE
+
+
+## The Quill Rapier: a long white feather, its vane tinted, a steel nib point.
+func _build_quill(root: Node3D) -> void:
+	var L := blade_length
+	_part(root, Toon.cylinder(0.018, 0.022, 0.24, 8), grip_color.darkened(0.3), Vector3(0, 0.03, 0), Vector3.ZERO, {"outline": 0.014})
+	_part(root, Toon.cylinder(0.014, 0.018, L + 0.1, 6), Color(0.95, 0.93, 0.86), Vector3(0, -0.1 - L * 0.5, 0), Vector3.ZERO, {"outline": 0.012})
+	for side in [-1, 1]:
+		var vane := _part(root, Toon.box(Vector3(0.07, L * 0.8, 0.012)), grip_color.lerp(Color.WHITE, 0.55),
+			Vector3(side * 0.04, -0.1 - L * 0.42, 0), Vector3(0, 0, side * 0.06), {"outline": 0.012, "emission": 0.08})
+		vane.scale = Vector3(1.0 - 0.3 * float(side > 0), 1, 1)
+	_part(root, Toon.prism(Vector3(0.05, 0.16, 0.014)), STEEL, Vector3(0, -0.12 - L - 0.06, 0), Vector3(0, 0, PI), {"outline": 0.014, "emission": 0.12})
+
+
+## The Brush Maul: a fat wooden handle, a gold ferrule and a big inked
+## bristle head.
+func _build_brush(root: Node3D) -> void:
+	var L := blade_length
+	_part(root, Toon.cylinder(0.04, 0.04, L * 0.9, 10), Color(0.5, 0.3, 0.18), Vector3(0, -L * 0.3, 0), Vector3.ZERO, {"outline": 0.016})
+	_part(root, Toon.cylinder(0.065, 0.06, 0.12, 12), GOLD, Vector3(0, -L * 0.78, 0), Vector3.ZERO, {"outline": 0.016})
+	var head := _part(root, Toon.sphere(0.12, 12, 6), Color(0.88, 0.82, 0.68), Vector3(0, -L * 0.98, 0), Vector3.ZERO, {"outline": 0.02})
+	head.scale = Vector3(1, 1.6, 1)
+	var tip := _part(root, Toon.cylinder(0.09, 0.0, 0.2, 10), INK, Vector3(0, -L * 1.16, 0), Vector3.ZERO, {"outline": 0.016})
+	tip.rotation = Vector3.ZERO
+
+
+## The Corkscrew Nib: a wooden pen grip with silver rings and a twisted
+## steel drill of a nib, a spiral ridge winding down to the point.
+func _build_corkscrew(root: Node3D) -> void:
+	var L := blade_length
+	_part(root, Toon.cylinder(0.04, 0.045, 0.3, 10), grip_color, Vector3(0, 0.04, 0), Vector3.ZERO, {"outline": 0.016})
+	for k in 2:
+		_part(root, Toon.cylinder(0.05, 0.05, 0.03, 12), STEEL, Vector3(0, -0.09 - k * 0.05, 0), Vector3.ZERO, {"outline": 0.01})
+	var top := -0.15
+	_part(root, Toon.cylinder(0.065, 0.004, L, 10), STEEL, Vector3(0, top - L * 0.5, 0), Vector3.ZERO, {"outline": 0.016, "emission": 0.1})
+	var n := 14
+	for k in n:
+		var t := float(k) / n
+		var a := t * TAU * 3.0
+		var r := lerpf(0.06, 0.008, t)
+		_part(root, Toon.box(Vector3(0.05, 0.02, 0.02)), STEEL.darkened(0.35), Vector3(cos(a) * r, top - t * L, sin(a) * r),
+			Vector3(0.0, -a, 0.5), {"outline": 0.0})
+
+
+## The Prism Saber: a dark grip with a brass guard and a long six-sided
+## crystal blade that glows pale cyan.
+func _build_prism(root: Node3D) -> void:
+	var L := blade_length
+	_part(root, Toon.cylinder(0.028, 0.03, 0.22, 8), grip_color, Vector3(0, 0.03, 0), Vector3.ZERO, {"outline": 0.016})
+	_part(root, Toon.box(Vector3(0.22, 0.04, 0.07)), GOLD, Vector3(0, -0.1, 0), Vector3.ZERO, {"outline": 0.016})
+	var crystal := Color(0.7, 1.0, 0.97)
+	_part(root, Toon.cylinder(0.05, 0.05, L * 0.85, 6), crystal, Vector3(0, -0.12 - L * 0.43, 0), Vector3.ZERO,
+		{"outline": 0.014, "emission": 0.7})
+	_part(root, Toon.cylinder(0.0, 0.05, L * 0.25, 6), crystal, Vector3(0, -0.12 - L * 0.98, 0), Vector3.ZERO,
+		{"outline": 0.014, "emission": 0.7})
+	# a rainbow shimmer down one face
+	var bands := [Color(1.0, 0.4, 0.5), Color(1.0, 0.85, 0.35), Color(0.5, 1.0, 0.6), Color(0.45, 0.65, 1.0)]
+	for k in bands.size():
+		_part(root, Toon.box(Vector3(0.012, L * 0.18, 0.06)), bands[k], Vector3(0.045, -0.2 - L * (0.12 + k * 0.18), 0), Vector3.ZERO,
+			{"outline": 0.0, "emission": 0.9})
+
+
+## The Lantern Flail: a short handle, a chain and a little lit lantern.
+func _build_lantern(root: Node3D) -> void:
+	var L := blade_length
+	_part(root, Toon.cylinder(0.03, 0.035, 0.24, 8), Color(0.3, 0.2, 0.14), Vector3(0, 0.02, 0), Vector3.ZERO, {"outline": 0.016})
+	var links := 6
+	for k in links:
+		var link := _part(root, Toon.cylinder(0.025, 0.025, 0.06, 8), Color(0.3, 0.3, 0.34), Vector3(0, -0.12 - k * L * 0.1, 0),
+			Vector3(0, k * 1.57, PI * 0.5), {"outline": 0.008})
+		link.scale = Vector3(1, 0.5, 1)
+	var c := Vector3(0, -0.12 - links * L * 0.1 - 0.12, 0)
+	_part(root, Toon.box(Vector3(0.17, 0.03, 0.17)), Color(0.22, 0.2, 0.24), c + Vector3(0, 0.11, 0), Vector3.ZERO, {"outline": 0.012})
+	_part(root, Toon.box(Vector3(0.17, 0.03, 0.17)), Color(0.22, 0.2, 0.24), c - Vector3(0, 0.11, 0), Vector3.ZERO, {"outline": 0.012})
+	_part(root, Toon.sphere(0.07, 10, 6), Color(1.0, 0.8, 0.4), c, Vector3.ZERO, {"outline": 0.0, "emission": 1.5})
+	for k in 4:
+		var a := k * PI * 0.5 + PI * 0.25
+		_part(root, Toon.box(Vector3(0.02, 0.2, 0.02)), Color(0.22, 0.2, 0.24), c + Vector3(cos(a), 0, sin(a)) * 0.08, Vector3.ZERO, {"outline": 0.006})
 
 
 ## Simple silhouette meshes (cloak, head, hat) shared by the dash
@@ -358,7 +466,9 @@ func _process(delta: float) -> void:
 
 func _turn(delta: float) -> void:
 	var f := Vector3(facing_dir.x, 0.0, facing_dir.z)
-	if f.length() > 0.01 and not dead:
+	if spin != 0.0 and not dead:
+		_yaw = wrapf(_yaw + spin * delta, -PI, PI)  # the Corkscrew's drill spin
+	elif f.length() > 0.01 and not dead:
 		var target := atan2(-f.x, -f.z)
 		var rate := turn_speed * (2.0 if swing >= 0.0 or dashing else 1.0)
 		_yaw = lerp_angle(_yaw, target, 1.0 - exp(-rate * delta))

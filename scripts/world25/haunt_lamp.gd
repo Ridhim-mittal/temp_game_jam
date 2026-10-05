@@ -28,6 +28,7 @@ extends "res://scripts/world25/searchlight.gd"
 
 signal hunt_changed(state: int)
 
+const Fx = preload("res://scripts/clearing/clearing_fx.gd")
 const COLUMN_SHADER = preload("res://shaders/world25/haunt_column.gdshader")
 const CIRCLE_SHADER = preload("res://shaders/world25/haunt_circle.gdshader")
 ## Where the light comes from, seen from the circle: up, a little towards
@@ -198,6 +199,22 @@ func hear(at: Vector3) -> void:
 	last_known = Vector3(at.x, ground_y, at.z)
 	_unseen = 0.0
 	_set_hunt(Hunt.SEEK)
+
+
+## The Prism Saber's Blinding Sweep turns the light away: it loses Vesper
+## (LOST, wandering off), its erase meter empties and its next strike waits.
+func dazzle() -> void:
+	if hunt == Hunt.DORMANT:
+		return
+	erase = 0.0
+	_unseen = profile.lose_after
+	_strike_t = _strike_every()
+	_wander = _floor_point()
+	_flash = 1.0
+	_set_hunt(Hunt.LOST)
+	var tree := get_tree()
+	if tree:
+		Fx.pop_text(tree, spot + Vector3(0, 1.2, 0), "DAZZLED!", Color(0.6, 1.0, 0.95), 32)
 
 
 ## In its light, or close enough to it (the halo round the circle) and not
