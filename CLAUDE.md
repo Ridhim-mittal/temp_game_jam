@@ -40,8 +40,8 @@ comic page (`scripts/ui/comic_frame.gd`; outside its `live_areas` the world is r
 sketch by `shaders/pencil_outside.gdshader`, the HUD stays as is); the City opens with the Writer's typed caption
 (`scripts/ui/narration.gd`, once per run via GameState.seen; the controls tutorial waits for it).
 Both levels come from `tools/level2d/build_test_level.py`. Text is kept light: two story captions
-a level, and the only sign in the world (`caption.gd`) is the Sketchbook's "HIT THE LANTERN" at the
-shadow-ink ramp; every other rule is taught by the tutorial's keys. The trapdoor
+a level, and the only signs in the world (`caption.gd`) are "HIT THE LANTERN" at the shadow-ink ramps
+(the Sketchbook and the Long Drop's Shadow Gallery); every other rule is taught by the tutorial's keys. The trapdoor
 (`trapdoor.gd` + `gutter_fall.gd`) is kept for a later level but no longer placed.
 
 ## 2D light mechanic (the Sketchbook level)
