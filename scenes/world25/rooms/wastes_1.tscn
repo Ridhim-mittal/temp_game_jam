@@ -20,6 +20,7 @@
 [ext_resource type="Script" path="res://scripts/world25/drawn_bridge.gd" id="bridge"]
 [ext_resource type="Script" path="res://scripts/world25/searchlight.gd" id="searchlight"]
 [ext_resource type="PackedScene" path="res://scenes/clearing/monsters/scribble_diver.tscn" id="scribble_diver"]
+[ext_resource type="PackedScene" path="res://scenes/clearing/monsters/red_pen.tscn" id="red_pen"]
 [ext_resource type="Resource" path="res://data/biomes/darkwood.tres" id="b_darkwood"]
 [ext_resource type="Resource" path="res://data/biomes/shallows.tres" id="b_shallows"]
 [ext_resource type="Resource" path="res://data/biomes/wastes.tres" id="b_wastes"]
@@ -29,7 +30,7 @@
 script = ExtResource("room")
 room_id = "wastes_1"
 biome = ExtResource("b_wastes")
-map_cell = Vector2i(-6, -2)
+map_cell = Vector2i(-7, -2)
 camera_bounds = Rect2(-8.0, -6.5, 16.0, 13.0)
 default_spawn = Vector3(0, 0.05, 0)
 title = "Crumple Wastes"
@@ -55,7 +56,7 @@ keep_clear = PackedVector3Array(0.0, 0.0, 2.1, -7.0, 2.0, 0.8, 6.0, -4.0, 0.8, 0
 transform = Transform3D(0.0000, 0, -1.0000, 0, 1, 0, 1.0000, 0, 0.0000, 13.50, 0.00, -1.00)
 script = ExtResource("gate")
 gate_id = "east"
-target_scene = "res://scenes/world25/rooms/shallows_field.tscn"
+target_scene = "res://scenes/world25/rooms/shallows_pen.tscn"
 target_gate = "west"
 
 [node name="GateNorth" type="Node3D" parent="."]

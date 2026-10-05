@@ -31,6 +31,7 @@ EXT = [
     ("Script", "res://scripts/world25/drawn_bridge.gd", "bridge"),
     ("Script", "res://scripts/world25/searchlight.gd", "searchlight"),
     ("PackedScene", "res://scenes/clearing/monsters/scribble_diver.tscn", "scribble_diver"),
+    ("PackedScene", "res://scenes/clearing/monsters/red_pen.tscn", "red_pen"),
     ("Resource", "res://data/biomes/darkwood.tres", "b_darkwood"),
     ("Resource", "res://data/biomes/shallows.tres", "b_shallows"),
     ("Resource", "res://data/biomes/wastes.tres", "b_wastes"),

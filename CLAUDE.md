@@ -43,6 +43,7 @@ room rectangles (everything else is rock); re-running overwrites hand edits to l
 ## 2.5D story (main menu → "Begin in the Margins")
 Hub `scenes/clearing/clearing.tscn` → cave → `scenes/world25/rooms/`: darkwood_1, darkwood_2,
 darkwood_bridge, darkwood_3 (blends forest into water) → shallows_1, shallows_2, shallows_field →
+shallows_pen (Red Pen boss, `scripts/clearing/red_pen_3d.gd`: wet-ink circles dry in light) →
 wastes_1, wastes_2, wastes_gap → arena (Eraser boss) → `cs_reveal` cutscene.
 Light: `scripts/world25/light.gd` (rules), Ember/Flash/Heal on `clearing_player.gd`, `flash.gd`,
 `drawn_bridge.gd`, `searchlight.gd`; braziers with `lit = false` are lanterns.

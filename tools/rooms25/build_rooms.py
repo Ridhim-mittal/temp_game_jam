@@ -170,6 +170,29 @@ r.write("The Drowned Circle", "Inkwell Shallows, 2 / 2",
         "~You read it, didn't you.")
 
 
+# ------------------------------------------------------------ The Red Pen (Shallows boss)
+# scripts/clearing/red_pen_3d.gd. Four unlit lanterns in the corners: strike
+# them to light them. Their light dries the pen's wet circles, and in phase 2
+# it dazzles the pen, so the fight is about where the light is.
+r = Room("shallows_pen", "shallows", (-6, -2), 13, 9.5, seed=131)
+r.gate("east", R + "shallows_field.tscn", "west", offset=-1)
+r.gate("west", R + "wastes_1.tscn", "east", offset=-1)
+r.clear_path_to_gates()
+r.clear_zones.append((0, 0, 7.0))  # open floor for the fight
+r.enemy("red_pen", 0, -2.5, hp=18, arena="Rect2(-10, -6.5, 20, 13)")
+for i, (x, z) in enumerate([(-7, -4.5), (7, -4.5), (-7, 4.5), (7, 4.5)]):
+    r.prop("brazier", x, z, name=f"Lantern{i + 1}", lit=False, light_radius=3.2, **SPIRIT)
+    r.clear_zones.append((x, z, 1.2))
+r.scatter("CORAL", 3, count=5, radius=1.1, solid=True)
+r.scatter("TUBE_PLANT", 3, count=5)
+r.scatter("INK_POOL", 1, radius=1.3)
+shallows_ring(r)
+r.write("The Red Pen", "Inkwell Shallows",
+        "~My editor marked every page in red. Every single page.|Wet ink dries in the light. Make the nib miss, then hit it while it's stuck.",
+        "~...Stet. It means: let it stand.|~I never knew that until now.",
+        extra_room_props='boss_path = NodePath("Enemies/RedPen1")\nboss_name = "THE RED PEN"')
+
+
 def wastes_dressing(r, crystals=3, mounds=3, pins=2, nests=1, totems=2, pots=2):
     r.clear_path_to_gates()
     r.scatter("CRYSTAL", crystals, count=4, radius=1.2, solid=True)
@@ -196,8 +219,8 @@ def wastes_ring(r):
 EMBER = dict(flame_color="Color(1, 0.3, 0.45, 1)", core_color="Color(1, 0.8, 0.85, 1)")
 
 # ------------------------------------------------------------ Wastes 1
-r = Room("wastes_1", "wastes", (-6, -2), 13.5, 9.5, seed=71)
-r.gate("east", R + "shallows_field.tscn", "west", offset=-1)
+r = Room("wastes_1", "wastes", (-7, -2), 13.5, 9.5, seed=71)
+r.gate("east", R + "shallows_pen.tscn", "west", offset=-1)
 r.gate("north", R + "wastes_2.tscn", "south", offset=-2)
 r.enemy("crumple", -7, 2)
 r.enemy("crumple", 6, -4)
@@ -213,7 +236,7 @@ r.write("Crumple Wastes", "1 / 2",
         "~Why won't you just STAY on the page?")
 
 # ------------------------------------------------------------ Wastes 2
-r = Room("wastes_2", "wastes", (-6, -3), 14.5, 10, seed=83)
+r = Room("wastes_2", "wastes", (-7, -3), 14.5, 10, seed=83)
 r.gate("south", R + "wastes_1.tscn", "north", offset=-2)
 r.gate("west", R + "wastes_gap.tscn", "east", offset=0)
 r.enemy("crumple", -6, -4)
@@ -252,7 +275,7 @@ class Arena(Room):
         return pts, [k]
 
 
-r = Arena("arena", "arena", (-8, -3), 12, 10, seed=97)
+r = Arena("arena", "arena", (-9, -3), 12, 10, seed=97)
 r.gate("east", R + "wastes_gap.tscn", "west", offset=0)
 r.enemy("eraser", -3, 0, hp=16)
 for i in range(8):
@@ -341,7 +364,7 @@ r.write("The Unlit Bridge", "Darkwood",
 # ------------------------------------------------------------ The Lamplit Field (Shallows)
 r = Room("shallows_field", "shallows", (-5, -2), 15, 10, seed=113)
 r.gate("east", R + "shallows_2.tscn", "west", offset=-1)
-r.gate("west", R + "wastes_1.tscn", "east", offset=-1)
+r.gate("west", R + "shallows_pen.tscn", "east", offset=-1)
 r.clear_path_to_gates()
 r.nodes.append(("Lamp", "Searchlight", "searchlight", (0, 16, -15), 0, {
     "patrol": "PackedVector2Array(-9, -5, 9, -5, 9, 4, -9, 4)", "speed": 3.0, "spot_radius": 2.8}))
@@ -361,7 +384,7 @@ r.write("The Lamplit Field", "Inkwell Shallows",
         "~Where did you GO?")
 
 # ------------------------------------------------------------ The Torn Page (Wastes)
-r = ChasmRoom("wastes_gap", "wastes", (-7, -3), 15, 9, seed=127)
+r = ChasmRoom("wastes_gap", "wastes", (-8, -3), 15, 9, seed=127)
 r.gap = 5.0
 r.gate("east", R + "wastes_2.tscn", "west", offset=0)
 r.gate("west", R + "arena.tscn", "east", offset=0)

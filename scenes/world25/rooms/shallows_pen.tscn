@@ -26,22 +26,24 @@
 [ext_resource type="Resource" path="res://data/biomes/wastes.tres" id="b_wastes"]
 [ext_resource type="Resource" path="res://data/biomes/arena.tres" id="b_arena"]
 
-[node name="Shallows1" type="Node3D"]
+[node name="ShallowsPen" type="Node3D"]
 script = ExtResource("room")
-room_id = "shallows_1"
+room_id = "shallows_pen"
 biome = ExtResource("b_shallows")
-map_cell = Vector2i(-4, -1)
+map_cell = Vector2i(-6, -2)
 camera_bounds = Rect2(-7.5, -6.5, 15, 13.0)
 default_spawn = Vector3(0, 0.05, 0)
-title = "Inkwell Shallows"
-subtitle = "1 / 2"
-enter_captions = "The Inkwell Shallows. Where I used to rinse my nibs.|The bottles spit. Cut the blobs out of the air, and don't stand in the puddles."
-clear_captions = "Still here? Fine. Keep going."
+title = "The Red Pen"
+subtitle = "Inkwell Shallows"
+enter_captions = "~My editor marked every page in red. Every single page.|Wet ink dries in the light. Make the nib miss, then hit it while it's stuck."
+clear_captions = "~...Stet. It means: let it stand.|~I never knew that until now."
+boss_path = NodePath("Enemies/RedPen1")
+boss_name = "THE RED PEN"
 
 [node name="Island" type="Node3D" parent="."]
 script = ExtResource("island")
-polygon = PackedVector2Array(-10.50, -9.50, -7.00, -9.09, -3.50, -9.93, 0.20, -9.50, 3.80, -9.50, 7.00, -9.60, 13.00, -7.00, 13.16, -3.50, 13.00, -1.80, 13.00, 1.80, 12.59, 3.50, 10.50, 9.50, 7.00, 9.53, 3.50, 9.39, 0.00, 9.15, -3.50, 10.03, -7.00, 9.92, -13.00, 7.00, -12.95, 3.50, -12.49, 0.00, -13.58, -3.50)
-open_edges = PackedInt32Array(8, 3)
+polygon = PackedVector2Array(-10.50, -9.50, -7.00, -9.42, -3.50, -9.55, 0.00, -10.08, 3.50, -9.70, 7.00, -8.99, 13.00, -7.00, 13.00, -2.80, 13.00, 0.80, 13.52, 3.50, 10.50, 9.50, 7.00, 9.29, 3.50, 9.60, 0.00, 9.99, -3.50, 9.08, -7.00, 8.98, -13.00, 7.00, -13.06, 3.50, -13.00, 0.80, -13.00, -2.80)
+open_edges = PackedInt32Array(7, 18)
 
 [node name="Grass" type="Node3D" parent="."]
 script = ExtResource("grass")
@@ -49,107 +51,122 @@ island_path = NodePath("../Island")
 area = Rect2(-13, -9.5, 26, 19.0)
 count = 197
 size_range = Vector2(0.55, 0.95)
-seed = 16
-keep_clear = PackedVector3Array(0.0, 0.0, 2.1, -9.0, -5.5, 0.8, 9.0, -5.0, 0.8, -4.0, 3.0, 0.8, 4.0, 4.0, 0.8, -6.0, -1.0, 0.8, 12.0, 0.0, 1.5, 9.6, 0.0, 1.5, 7.2, 0.0, 1.5, 4.8, 0.0, 1.5, 2.4, 0.0, 1.5, 0.0, 0.0, 1.5, 1.8, -8.7, 1.5, 1.5, -7.0, 1.5, 1.1, -5.2, 1.5, 0.7, -3.5, 1.5, 0.4, -1.7, 1.5, 0.0, -0.0, 1.5, -7.6, 4.9, 0.7, -8.6, 0.6, 0.7, 6.4, 6.6, 0.7, 5.9, -7.2, 0.6, -0.7, 6.3, 0.6, -10.8, -1.0, 0.6, -4.5, 5.8, 0.6, -10.0, 4.1, 0.8, 9.0, 5.9, 0.8)
+seed = 98
+keep_clear = PackedVector3Array(0.0, 0.0, 2.1, 12.0, -0.9, 1.5, 9.6, -0.7, 1.5, 7.2, -0.6, 1.5, 4.8, -0.4, 1.5, 2.4, -0.2, 1.5, 0.0, -0.0, 1.5, -12.0, -0.9, 1.5, -9.6, -0.7, 1.5, -7.2, -0.6, 1.5, -4.8, -0.4, 1.5, -2.4, -0.2, 1.5, -0.0, -0.0, 1.5, 0.0, 0.0, 4.9, 0.0, -2.5, 0.8, -7.0, -4.5, 0.8, 7.0, -4.5, 0.8, -7.0, 4.5, 0.8, 7.0, 4.5, 0.8, 5.3, -7.6, 0.6, -4.9, -7.7, 0.6, -8.0, 7.5, 0.6, -9.5, 3.1, 0.6, -5.3, 6.9, 0.6, 10.0, 4.5, 0.6, 7.9, -7.1, 0.7)
 
 [node name="GateEast" type="Node3D" parent="."]
-transform = Transform3D(0.0000, 0, -1.0000, 0, 1, 0, 1.0000, 0, 0.0000, 13.00, 0.00, 0.00)
+transform = Transform3D(0.0000, 0, -1.0000, 0, 1, 0, 1.0000, 0, 0.0000, 13.00, 0.00, -1.00)
 script = ExtResource("gate")
 gate_id = "east"
-target_scene = "res://scenes/world25/rooms/darkwood_3.tscn"
+target_scene = "res://scenes/world25/rooms/shallows_field.tscn"
 target_gate = "west"
 
-[node name="GateNorth" type="Node3D" parent="."]
-transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 2.00, 0.00, -9.50)
+[node name="GateWest" type="Node3D" parent="."]
+transform = Transform3D(0.0000, 0, 1.0000, 0, 1, 0, -1.0000, 0, 0.0000, -13.00, 0.00, -1.00)
 script = ExtResource("gate")
-gate_id = "north"
-target_scene = "res://scenes/world25/rooms/shallows_2.tscn"
-target_gate = "south"
+gate_id = "west"
+target_scene = "res://scenes/world25/rooms/wastes_1.tscn"
+target_gate = "east"
 
 [node name="Props" type="Node3D" parent="."]
 
+[node name="Lantern1" type="Node3D" parent="Props"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -7.00, 0.00, -4.50)
+script = ExtResource("brazier")
+lit = false
+light_radius = 3.2
+flame_color = Color(0.25, 0.55, 1, 1)
+core_color = Color(0.75, 0.92, 1, 1)
+
+[node name="Lantern2" type="Node3D" parent="Props"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 7.00, 0.00, -4.50)
+script = ExtResource("brazier")
+lit = false
+light_radius = 3.2
+flame_color = Color(0.25, 0.55, 1, 1)
+core_color = Color(0.75, 0.92, 1, 1)
+
+[node name="Lantern3" type="Node3D" parent="Props"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -7.00, 0.00, 4.50)
+script = ExtResource("brazier")
+lit = false
+light_radius = 3.2
+flame_color = Color(0.25, 0.55, 1, 1)
+core_color = Color(0.75, 0.92, 1, 1)
+
+[node name="Lantern4" type="Node3D" parent="Props"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 7.00, 0.00, 4.50)
+script = ExtResource("brazier")
+lit = false
+light_radius = 3.2
+flame_color = Color(0.25, 0.55, 1, 1)
+core_color = Color(0.75, 0.92, 1, 1)
+
 [node name="Coral1" type="Node3D" parent="Props"]
-transform = Transform3D(0.4960, 0, -0.8683, 0, 1, 0, 0.8683, 0, 0.4960, -7.57, 0.00, 4.95)
+transform = Transform3D(0.1191, 0, -0.9929, 0, 1, 0, 0.9929, 0, 0.1191, 5.31, 0.00, -7.56)
 script = ExtResource("bprops")
 kind = 9
-count = 6
-radius = 1.3
+count = 5
+radius = 1.1
 solid = true
-seed = 237
+seed = 910
 
 [node name="Coral2" type="Node3D" parent="Props"]
-transform = Transform3D(-0.9903, 0, 0.1393, 0, 1, 0, -0.1393, 0, -0.9903, -8.65, 0.00, 0.60)
+transform = Transform3D(-0.5154, 0, 0.8569, 0, 1, 0, -0.8569, 0, -0.5154, -4.89, 0.00, -7.68)
 script = ExtResource("bprops")
 kind = 9
-count = 6
-radius = 1.3
+count = 5
+radius = 1.1
 solid = true
-seed = 34
+seed = 153
 
 [node name="Coral3" type="Node3D" parent="Props"]
-transform = Transform3D(-0.5944, 0, -0.8041, 0, 1, 0, 0.8041, 0, -0.5944, 6.40, 0.00, 6.57)
+transform = Transform3D(-0.6611, 0, 0.7503, 0, 1, 0, -0.7503, 0, -0.6611, -8.01, 0.00, 7.50)
 script = ExtResource("bprops")
 kind = 9
-count = 6
-radius = 1.3
+count = 5
+radius = 1.1
 solid = true
-seed = 781
+seed = 832
 
 [node name="TubePlant1" type="Node3D" parent="Props"]
-transform = Transform3D(0.5210, 0, -0.8536, 0, 1, 0, 0.8536, 0, 0.5210, 5.92, 0.00, -7.25)
+transform = Transform3D(-0.3279, 0, 0.9447, 0, 1, 0, -0.9447, 0, -0.3279, -9.49, 0.00, 3.14)
 script = ExtResource("bprops")
 kind = 10
 count = 5
-seed = 980
+seed = 62
 
 [node name="TubePlant2" type="Node3D" parent="Props"]
-transform = Transform3D(0.4496, 0, -0.8932, 0, 1, 0, 0.8932, 0, 0.4496, -0.67, 0.00, 6.26)
+transform = Transform3D(0.5594, 0, 0.8289, 0, 1, 0, -0.8289, 0, 0.5594, -5.32, 0.00, 6.87)
 script = ExtResource("bprops")
 kind = 10
 count = 5
-seed = 109
+seed = 516
 
-[node name="Pillar1" type="Node3D" parent="Props"]
-transform = Transform3D(0.8496, 0, -0.5274, 0, 1, 0, 0.5274, 0, 0.8496, -10.84, 0.00, -1.01)
+[node name="TubePlant3" type="Node3D" parent="Props"]
+transform = Transform3D(-0.8565, 0, -0.5162, 0, 1, 0, 0.5162, 0, -0.8565, 10.04, 0.00, 4.53)
 script = ExtResource("bprops")
-kind = 6
-solid = true
-seed = 425
-
-[node name="Pillar2" type="Node3D" parent="Props"]
-transform = Transform3D(0.9975, 0, 0.0707, 0, 1, 0, -0.0707, 0, 0.9975, -4.52, 0.00, 5.82)
-script = ExtResource("bprops")
-kind = 6
-solid = true
-seed = 756
+kind = 10
+count = 5
+seed = 826
 
 [node name="InkPool1" type="Node3D" parent="Props"]
-transform = Transform3D(0.4484, 0, -0.8938, 0, 1, 0, 0.8938, 0, 0.4484, -10.01, 0.00, 4.08)
+transform = Transform3D(0.7327, 0, 0.6806, 0, 1, 0, -0.6806, 0, 0.7327, 7.92, 0.00, -7.08)
 script = ExtResource("bprops")
 kind = 11
-radius = 1.5
-seed = 337
-
-[node name="InkPool2" type="Node3D" parent="Props"]
-transform = Transform3D(-0.6205, 0, -0.7842, 0, 1, 0, 0.7842, 0, -0.6205, 9.00, 0.00, 5.89)
-script = ExtResource("bprops")
-kind = 11
-radius = 1.5
-seed = 962
-
-[node name="Spirit1" type="Node3D" parent="Props"]
-transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -3.00, 0.00, -7.50)
-script = ExtResource("brazier")
-flame_color = Color(0.25, 0.55, 1, 1)
-core_color = Color(0.75, 0.92, 1, 1)
-
-[node name="Spirit2" type="Node3D" parent="Props"]
-transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 7.00, 0.00, 6.50)
-script = ExtResource("brazier")
-flame_color = Color(0.25, 0.55, 1, 1)
-core_color = Color(0.75, 0.92, 1, 1)
+radius = 1.3
+seed = 80
 
 [node name="Deep" type="Node3D" parent="."]
+
+[node name="Deep1" type="Node3D" parent="Deep"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 16.24, -4.50, 3.99)
+script = ExtResource("bprops")
+kind = 9
+size = 2.4
+count = 7
+radius = 1.8
+seed = 91
 
 [node name="Deep2" type="Node3D" parent="Deep"]
 transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 3.77, -6.00, 13.16)
@@ -158,7 +175,7 @@ kind = 10
 size = 2.4
 count = 7
 radius = 1.8
-seed = 2
+seed = 34
 
 [node name="Deep3" type="Node3D" parent="Deep"]
 transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -12.47, -4.50, 9.17)
@@ -167,16 +184,7 @@ kind = 9
 size = 2.4
 count = 7
 radius = 1.8
-seed = 79
-
-[node name="Deep4" type="Node3D" parent="Deep"]
-transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -16.24, -6.00, -3.99)
-script = ExtResource("bprops")
-kind = 10
-size = 2.4
-count = 7
-radius = 1.8
-seed = 68
+seed = 40
 
 [node name="Deep5" type="Node3D" parent="Deep"]
 transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -3.77, -4.50, -13.16)
@@ -185,7 +193,7 @@ kind = 9
 size = 2.4
 count = 7
 radius = 1.8
-seed = 79
+seed = 38
 
 [node name="Deep6" type="Node3D" parent="Deep"]
 transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 12.47, -6.00, -9.17)
@@ -194,7 +202,7 @@ kind = 10
 size = 2.4
 count = 7
 radius = 1.8
-seed = 94
+seed = 8
 
 [node name="RuinPillar1" type="Node3D" parent="Deep"]
 transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -16.00, -6.00, -11.00)
@@ -211,28 +219,13 @@ size = 2.4
 seed = 41
 
 [node name="Eyes1" type="Node3D" parent="Deep"]
-transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 6.99, -4.00, 12.50)
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -10.01, -4.00, 12.50)
 script = ExtResource("eyes")
 color = Color(0.4, 1, 0.85, 1)
 
 [node name="Enemies" type="Node3D" parent="."]
 
-[node name="Inkwell1" parent="Enemies" instance=ExtResource("inkwell")]
-transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -9.00, 0.05, -5.50)
-
-
-[node name="Inkwell2" parent="Enemies" instance=ExtResource("inkwell")]
-transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 9.00, 0.05, -5.00)
-
-
-[node name="Smudge3" parent="Enemies" instance=ExtResource("smudge")]
-transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -4.00, 0.05, 3.00)
-
-
-[node name="Smudge4" parent="Enemies" instance=ExtResource("smudge")]
-transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 4.00, 0.05, 4.00)
-
-
-[node name="Scribble5" parent="Enemies" instance=ExtResource("scribble")]
-transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -6.00, 0.05, -1.00)
-
+[node name="RedPen1" parent="Enemies" instance=ExtResource("red_pen")]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 0.00, 0.05, -2.50)
+hp = 18
+arena = Rect2(-10, -6.5, 20, 13)

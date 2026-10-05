@@ -74,13 +74,15 @@ func _process(delta: float) -> void:
 		_hold = 2.2 + _text.length() * 0.035
 	if _text != "":
 		_shown += delta * 40.0
-		_alpha = move_toward(_alpha, 1.0, delta * 5.0)
 		if _shown >= _text.length():
 			_hold -= delta
-			if _hold <= 0.0:
-				_alpha = move_toward(_alpha, 0.0, delta * 5.0)
-				if _alpha <= 0.0:
-					_text = ""
+		if _hold > 0.0:
+			_alpha = move_toward(_alpha, 1.0, delta * 5.0)
+		else:
+			# fade out (fading in at the same time used to cancel this out)
+			_alpha = move_toward(_alpha, 0.0, delta * 5.0)
+			if _alpha <= 0.0:
+				_text = ""
 	queue_redraw()
 
 

@@ -20,6 +20,7 @@
 [ext_resource type="Script" path="res://scripts/world25/drawn_bridge.gd" id="bridge"]
 [ext_resource type="Script" path="res://scripts/world25/searchlight.gd" id="searchlight"]
 [ext_resource type="PackedScene" path="res://scenes/clearing/monsters/scribble_diver.tscn" id="scribble_diver"]
+[ext_resource type="PackedScene" path="res://scenes/clearing/monsters/red_pen.tscn" id="red_pen"]
 [ext_resource type="Resource" path="res://data/biomes/darkwood.tres" id="b_darkwood"]
 [ext_resource type="Resource" path="res://data/biomes/shallows.tres" id="b_shallows"]
 [ext_resource type="Resource" path="res://data/biomes/wastes.tres" id="b_wastes"]

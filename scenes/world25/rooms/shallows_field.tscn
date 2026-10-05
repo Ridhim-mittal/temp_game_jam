@@ -20,6 +20,7 @@
 [ext_resource type="Script" path="res://scripts/world25/drawn_bridge.gd" id="bridge"]
 [ext_resource type="Script" path="res://scripts/world25/searchlight.gd" id="searchlight"]
 [ext_resource type="PackedScene" path="res://scenes/clearing/monsters/scribble_diver.tscn" id="scribble_diver"]
+[ext_resource type="PackedScene" path="res://scenes/clearing/monsters/red_pen.tscn" id="red_pen"]
 [ext_resource type="Resource" path="res://data/biomes/darkwood.tres" id="b_darkwood"]
 [ext_resource type="Resource" path="res://data/biomes/shallows.tres" id="b_shallows"]
 [ext_resource type="Resource" path="res://data/biomes/wastes.tres" id="b_wastes"]
@@ -62,7 +63,7 @@ target_gate = "west"
 transform = Transform3D(0.0000, 0, 1.0000, 0, 1, 0, -1.0000, 0, 0.0000, -15.00, 0.00, -1.00)
 script = ExtResource("gate")
 gate_id = "west"
-target_scene = "res://scenes/world25/rooms/wastes_1.tscn"
+target_scene = "res://scenes/world25/rooms/shallows_pen.tscn"
 target_gate = "east"
 
 [node name="Lamp" type="Node3D" parent="."]
