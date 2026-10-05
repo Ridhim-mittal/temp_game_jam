@@ -78,6 +78,13 @@ size = Vector2(160, 24)
 position = Vector2(2300, 600)
 script = ExtResource("18_pen")
 
+[node name="Caption1" type="Node2D" parent="World"]
+z_index = 5
+position = Vector2(1960, 330)
+script = ExtResource("43_caption")
+text = "HURT? STAND STILL AND HOLD F:\nLIGHT OR LIFE. YOUR EMBER BECOMES INK."
+tilt = -0.03
+
 [node name="PitFloor1" type="StaticBody2D" parent="World"]
 position = Vector2(2530, 950)
 script = ExtResource("3_block")
@@ -108,7 +115,7 @@ position = Vector2(3460, 498)
 script = ExtResource("11_oneway")
 size = Vector2(160, 16)
 
-[node name="Caption1" type="Node2D" parent="World"]
+[node name="Caption2" type="Node2D" parent="World"]
 z_index = 5
 position = Vector2(2560, 360)
 script = ExtResource("43_caption")
@@ -214,7 +221,7 @@ position = Vector2(3220, 300)
 
 [node name="Player" parent="." instance=ExtResource("1_player")]
 position = Vector2(100, 570)
-tutorial_steps = PackedStringArray("move", "jump", "attack", "dash", "inkwave")
+tutorial_steps = PackedStringArray("move", "jump", "attack", "dash", "inkwave", "heal")
 
 [node name="UI" type="CanvasLayer" parent="."]
 layer = 2

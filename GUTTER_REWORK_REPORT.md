@@ -276,6 +276,53 @@ are untouched.
     - **The map placeholder** in the top right of the Margins is gone. In its place is a coin
       counter like the 2D one, but on a dark ink tag with a spinning dark-silver coin.
 
+16. **The Margins as the gutters of a comic** (your next notes):
+    - **The way out of the hub** now stands at the back of the terrace, where the skill tree
+      was. The archway portal by the stairs is gone; a pile of discarded drafts sits there
+      instead.
+    - **Ways on are gutters, not brick bridges.** Each one is a strip of cream paper between
+      two thick ink panel borders, with printed comic panels lying either side and a dashed
+      pencil ruling line down the middle. At its end two tall panels stand upright with a slit
+      between them: that's the way through. Sealed, it's all a grey pencil sketch (each
+      upright panel has its own sketch). The hub's bridge in is a gutter too.
+    - **Moving between rooms is a trip down the gutter.** Walking out through an open gate:
+      1. The screen freezes and shrinks into a panel on a comic page.
+      2. The view drops into the slit beside it (the gutter between two columns of panels)
+         and runs down it. A tiny ink Vesper runs ahead, drawing a line of light behind him.
+         The next room loads meanwhile.
+      3. It comes out beside the next panel, a pencil rough with the zone's name
+         ("MEANWHILE, FURTHER DOWN THE GUTTER..."). Ink floods it, and the panel is a window
+         onto the new room. It opens out to fill the screen.
+
+      The game is paused while the page covers the screen, so nothing can hit Vesper, and his
+      2 s of spawn protection start when the panel has opened. Starting the story and the
+      cutscenes still use the ink wipe.
+    - **Graves are discarded drafts.** A cracked, dried blob of ink, a snapped nib stuck in the
+      ground with its tip lying beside it, crumpled balls of paper and crossed-out scraps.
+      The other graveyard pieces changed the same way:
+      - Skull heaps (on the floor and far out in the fog) are heaps of crumpled drafts and
+        snapped pencils.
+      - Tree stumps are pencil stubs; stone pillars are leaning stacks of books.
+      - Rune stones are giant upside-down pen nibs with a glowing mark.
+      - The Torn Wastes' crystals are torn, ruled pages stuck upright.
+      - The bones in the hub's dirt are dropped staples.
+    - **Torches are desk lamps,** after your photo: a round white base, a jointed wooden arm
+      with brass bolts, a white dome shade tipped down, and a white cable looping down the
+      arm. A lit lamp has a warm bulb and a soft cone of light. An unlit one is switched off
+      until you hit it ("CLICK!"). The gates have a smaller pair leaning over the way, off
+      until the room is cleared.
+    - **The rest of the map is the Writer's desk:**
+      - The islands are thick stacks of paper. The cliffs show ruled page edges, and ink has
+        run over the lip and dripped down them.
+      - The edge rubble is crumpled paper and torn scraps.
+      - Pines are giant quills stuck nib-first.
+      - The big dead trunks are giant pencils, sharpened end up.
+      - Fences are rows of rulers with ink ticks.
+      - The hub's stairs are a pile of books, with stacks of paper for walls.
+      - Mushrooms, bushes and mossy rocks are push pins, crumpled drafts and worn erasers.
+      - The sketched bridge in level 3 inks in as pieces of paper gutter, with pencil posts
+        and a ruled ink line for rails.
+
 ## Tuning knobs
 
 | What | Where |
@@ -293,6 +340,9 @@ are untouched.
 | Background | `room.gd` `backdrop` (on/off) and `_build_backdrop()` |
 | Lamp spacing / feel | `haunt_lamp.gd` `_steer()` (accel), `_separation()` |
 | Gate timing / colour | `gate.gd`: `DRAW_TIME` (0.8 s), `lantern_color` |
+| Gutter look | `scripts/world25/gutter_strip.gd`: `PAPER`, `INK`, `PANEL` (side panels' width), `BOARD` (the upright panels) |
+| Trip down the gutter | `scripts/world25/gutter_transition.gd`: `T_SHRINK`, `T_DIVE`, `T_RUN`, `T_OUT`, `T_INK`, `T_OPEN` (timings), `ROWS` (rows run down), `Z_SLIT` (zoom in the slit), the caption in `_draw_front()` |
+| Desk lamps | `scripts/clearing/desk_lamp.gd` (shape, colours); per lamp `brazier.gd` `pedestal_height` (size), `flame_color` / `core_color` (bulb), `light_energy`, `light_range`, `light_radius` |
 | Lamp per zone | `data/haunt/*.tres` (`haunt_profile.gd`): lamps, grace, seek_speed, circle_radius, strike_every, telegraph, erase_fill, lose_after, can_damage, strike_erase, linger, the Writer's lines |
 | Lamp per room | `room.gd` `haunt_scale`, `haunt_lamps` (-1 = profile), `haunt_enabled`; set in `tools/rooms25/build_rooms.py` (`r.haunt_scale`, `r.haunt_lamps`) |
 | Spawn protection | `clearing_player.gd`: `spawn_protection` (2 s) |
@@ -342,8 +392,11 @@ These ran with Godot 4.7-stable under Xvfb with software OpenGL.
   - The Spine's lamp never damages or strikes.
   - The circles glide, with no jumps between physics ticks. The limit is 1 unit per test
     tick: the Rubbing Room's lamps glide onto their marks at up to 0.6.
-- **`tests/gutter/test_levels.gd`: 43/43 checks.**
+- **`tests/gutter/test_levels.gd`: 51/51 checks.**
   - The gates chain hub → 1 → 2 → 3 → 4, and none leads to a retired room.
+  - The hub's way on is at the back of the terrace and the archway is gone. Walking out
+    through it starts the trip down the gutter with the game held still. It arrives in the
+    Inkwood at its way in, the game runs again, the page is gone and spawn protection is on.
   - Every level's way in is one-way. In a cleared room the way on opens and the way back
     stays shut.
   - The hub has 3 Scribbles and the next room has only Half-Drawn (4). Level 3 has no
@@ -406,6 +459,9 @@ These ran with Godot 4.7-stable under Xvfb with software OpenGL.
 
 ## Not verified
 
+- **The trip down the gutter at full speed:** it is timed to take about 3 s plus loading.
+  Here it took about 12 s, because every frame is drawn on the CPU and the animation never
+  skips frames. It was checked frame by frame in screenshots.
 - **Frame rate:** 60 fps on real hardware. This machine renders on the CPU, so frame rate
   means nothing here.
 - **Audio:** the gate chime. It is synthesised in code, and this machine has no audio

@@ -1,7 +1,8 @@
 shader_type spatial;
 // Cel-shaded material for clearing props. Optional extras, all in world
 // space so props never need UVs: moss creeping over top faces and down the
-// sides, stone tile lines, and vertical bark streaks.
+// sides, stone tile lines, vertical bark streaks, and the ruled edges of
+// stacked pages on side faces (books, reams of paper).
 render_mode specular_disabled;
 
 #include "res://shaders/clearing/toon_common.gdshaderinc"
@@ -12,6 +13,9 @@ uniform float moss_amount : hint_range(0.0, 1.0) = 0.0;
 // Size of one stone tile in world units; 0 = no tile lines.
 uniform float tile_size = 0.0;
 uniform float bark = 0.0;
+// Spacing of page edges ruled across side faces (a book or a ream of paper
+// seen edge-on), in world units; 0 = none.
+uniform float pages = 0.0;
 uniform vec4 line_color : source_color = vec4(0.1, 0.08, 0.12, 1.0);
 uniform float emission_strength = 0.0;
 // Characters only (vesper_3d.gd): whiten towards paper as the Writer's
@@ -44,6 +48,10 @@ void fragment() {
 		float a = atan(world_normal.x, world_normal.z);
 		float streak = noise(vec2(a * 9.0, world_pos.y * 0.35));
 		col = mix(col, line_color.rgb, step(0.72, streak) * bark);
+	}
+	if (pages > 0.0 && an.y < 0.5) {
+		float f = fract(world_pos.y / pages);
+		col = mix(col, line_color.rgb, (1.0 - smoothstep(0.0, 0.2, min(f, 1.0 - f))) * 0.55);
 	}
 	if (moss_amount > 0.0) {
 		float up = smoothstep(0.35, 0.75, world_normal.y);

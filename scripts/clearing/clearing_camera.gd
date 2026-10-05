@@ -37,6 +37,7 @@ var _focus := Vector3.ZERO
 var _trauma := 0.0
 var _warmup := 0
 var _fade: ColorRect
+var _fade_tween: Tween
 
 
 func _ready() -> void:
@@ -117,7 +118,24 @@ func _add_fade() -> void:
 func _end_warmup() -> void:
 	if _target:
 		_focus = _target_focus()
+		# start where the follow will settle, inside the bounds (no slide in)
+		_focus.x = clampf(_focus.x, bounds.position.x, bounds.end.x)
+		_focus.z = clampf(_focus.z, bounds.position.y, bounds.end.y)
 		global_position = _from_focus(_focus)
-	var t := create_tween()
-	t.tween_property(_fade, "color:a", 0.0, fade_in_time)
-	t.tween_callback(_fade.get_parent().queue_free)
+	_fade_tween = create_tween()
+	_fade_tween.tween_property(_fade, "color:a", 0.0, fade_in_time)
+	_fade_tween.tween_callback(_fade.get_parent().queue_free)
+
+
+## Ends the warm-up and drops the fade from black at once (a room change's
+## page, gutter_transition.gd, already hid the warm-up).
+func skip_fade() -> void:
+	if _warmup > 0:
+		_warmup = 0
+		_end_warmup()
+	if _fade_tween:
+		_fade_tween.kill()
+		_fade_tween = null
+	if is_instance_valid(_fade):
+		_fade.get_parent().queue_free()
+		_fade = null

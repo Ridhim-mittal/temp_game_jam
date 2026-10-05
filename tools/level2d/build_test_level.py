@@ -243,6 +243,7 @@ coin_row(1500, 1600, 560, 2)
 node("Spikes1", "StaticBody2D", "World", [("position", v(2050, 588)), ("script", 'ExtResource("4_spikes")'), ("size", v(160, 24))])
 coins += [(1980, 480), (2050, 450), (2120, 480)]
 checkpoint(2300, GROUND)
+caption(1960, 330, "HURT? STAND STILL AND HOLD F:\nLIGHT OR LIFE. YOUR EMBER BECOMES INK.")
 # dash: a 300 px spike pit, too wide to just jump (~260 px); a dash or double jump clears it
 block(2380, 2680, 800, BOTTOM, name="PitFloor")
 spikes(2380, 2680, 800)
@@ -266,7 +267,7 @@ write("scenes/levels/test_level.tscn", "TestLevel", (100, 570), page=1, story=[
     ("THE CITY WAS COMING APART, ONE PANEL AT A TIME. WHERE THE STREET BROKE, VESPER LEAPT.", 2250),
     ("AND AT THE EDGE OF THE PAGE, A DOOR OF LIGHT WAS WAITING.", 3150),
 ], live=[(-240, -1200, 3780, 660), (2380, 590, 2680, 812)],
-   tutorial=("move", "jump", "attack", "dash", "inkwave"))  # the controls, and the ink wave at the Scribble
+   tutorial=("move", "jump", "attack", "dash", "inkwave", "heal"))  # the controls, and the ink wave at the Scribble
 
 # ======================================================== THE SKETCHBOOK (light tutorial)
 # Pencil sketches are only solid in light (scripts/world/lights.gd). Each beat
@@ -325,4 +326,4 @@ write("scenes/levels/sketchbook.tscn", "Sketchbook", (8100, 570), page=2, story=
     ("THE OLD LANTERNS STILL REMEMBERED HOW TO SHINE. BUT LIGHT CASTS SHADOWS.", 10840),
     ("AND BELOW THE LAST PAGE OF THE SKETCHBOOK, THE WORLD DROPPED AWAY INTO THE DARK...", 11940),
 ], live=[(7820, -1200, 12620, 660), (8420, 590, 8940, 812), (9260, 590, 10700, 812), (10940, 590, 11480, 812)],
-   tutorial=("ember",))  # the light, at the first lantern
+   tutorial=("ember", "heal"))  # the light, at the first lantern

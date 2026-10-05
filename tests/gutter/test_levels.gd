@@ -2,7 +2,9 @@ extends SceneTree
 ## The four-level Gutter: the gates chain hub -> Inkwood -> Red Pen ->
 ## Torn Page -> Rubbing Room, with nothing leading to a retired room, and
 ## every way in is one-way (entry_only: it never opens, even once the room
-## is cleared); each level has its monsters and lamps; the Half-Drawn swing
+## is cleared); the hub's way on stands at the back of the terrace and
+## walking out through it travels down the gutter into the Inkwood
+## (gutter_transition.gd); each level has its monsters and lamps; the Half-Drawn swing
 ## a blade that hurts, stagger when hit mid-windup and fall in five hits;
 ## spawn protection holds for two seconds; the sketched bridge only forms
 ## when Vesper holds right click, and he can then walk across it; the Eraser gets
@@ -46,6 +48,7 @@ func _run() -> void:
 	await one_way_test()
 	await half_drawn_test()
 	await hub_test()
+	await gutter_test()
 	await protection_test()
 	await bridge_test()
 	await eraser_test()
@@ -194,6 +197,41 @@ func hub_test() -> void:
 	check(player.max_health == 12 and hud.maximum == 12 and hud._bottles.count() == 6, "six ink bottles (max %d half bottles, HUD %d, %d bottles)" % [player.max_health, hud.maximum, hud._bottles.count()])
 	var altar: Node = current_scene.get_node("Props/Altar")
 	check(altar.find_child("Statue", true, false) != null, "the hub's shrine holds a statue of Vesper")
+
+
+## The hub's way on stands at the back of the terrace (where the skill tree
+## was), a gutter between two upright panels; walking out through it plays
+## the trip down the gutter (gutter_transition.gd) and arrives in the
+## Inkwood at its way in.
+func gutter_test() -> void:
+	change_scene_to_file(HUB)
+	await frames(6)
+	var room := current_scene
+	var gate = room.get_node("Props/CaveGate")
+	check(gate.global_position.distance_to(Vector3(0, 2.88, -30.2)) < 0.1, "the hub's way on is at the back of the terrace %s" % gate.global_position)
+	check(room.find_child("CaveDoor", true, false) == null, "no archway portal by the stairs any more")
+	gate.open(false)
+	var world = root.get_node("World25")
+	var player = room.player
+	player.global_position = gate.global_transform * Vector3(0, 0.1, -1.8)
+	player.velocity = Vector3.ZERO
+	await pframes(3)
+	var fx: Node = null
+	for n in world._layer.get_children():
+		if n.has_signal("finished"):
+			fx = n
+	check(world.transitioning and fx != null, "walking out through the open gutter starts the trip down the gutter")
+	check(paused, "the game holds still while the page covers the screen")
+	var waited := 0
+	while world.transitioning and waited < 2400:
+		await process_frame
+		waited += 1
+	check(not world.transitioning and current_scene.scene_file_path == LEVELS[0], "... and comes out in the Inkwood (%s)" % current_scene.scene_file_path)
+	check(not paused and not is_instance_valid(fx), "then the room runs again and the page is gone")
+	var east = current_scene.get_node("GateEast")
+	var at: Vector3 = current_scene.player.global_position
+	check(at.distance_to(east.arrival_point()) < 1.5, "Vesper arrives at the Inkwood's way in (%s)" % at)
+	check(current_scene.player.is_protected(), "spawn protection still holds after the page opens")
 
 
 func protection_test() -> void:
