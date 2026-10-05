@@ -1,10 +1,10 @@
 extends Control
 ## The pause screen, the same in 2D levels and 2.5D rooms (Esc / Start):
-## the frozen game behind a veil of ink, ink-navy and Ember-gold halftone
+## a veil of ink over the frozen game, ink-navy and Ember-gold halftone
 ## rays swirling in, a hand-drawn comic burst (the Writer's red-pen ring)
-## that pops in, "PAUSED" in gold lettering that drips ink, the Writer's
-## caption, and slanted comic-tag buttons, each in a colour of the book
-## (Ember gold, paper, pencil blue, Works lilac, Cavern teal, red pen).
+## that pops in, "PAUSED" in gold lettering, and five slanted comic-tag
+## buttons, each in a colour of the book (Ember gold, paper, Cavern teal,
+## pencil blue, red pen). Nothing else is drawn over it.
 ## Keyboard (WASD / arrows, Enter / Space, Esc), controller, mouse.
 ##
 ##   PauseMenu.open_2d(player)   # player.gd, on the "pause" action
@@ -14,36 +14,32 @@ extends Control
 ## and come back to it (the shop refreshes Vesper's loadout as it closes);
 ## for the rest it emits `chosen` (2.5D: room.gd acts) or, opened by
 ## open_2d(), acts itself: resume, retry (reload: back to the last
-## checkpoint), controls (replay the 2D tutorial), main menu. (The Skill
-## Tree is retired: skill_tree.gd is unhooked.)
+## checkpoint), main menu.
 
 signal chosen(action: String)
 
 const FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
 const SettingsMenu = preload("res://scripts/ui/settings_menu.gd")
 const Shop = preload("res://scripts/ui/shop.gd")
-const Tutorial = preload("res://scripts/ui/tutorial.gd")
 const MENU := "res://scenes/ui/main_menu.tscn"
 const INK := Color(0.05, 0.03, 0.1)
 const PAPER := Color(0.98, 0.95, 0.87)
 const GOLD := Color(1.0, 0.82, 0.26)
 const RED := Color(0.9, 0.2, 0.16)
-const CAPTION := Color(1.0, 0.9, 0.45)
 const DULL := Color(0.5, 0.48, 0.58)
 const BUTTON := Vector2(250, 58)
 const SKEW := 11.0
 
-## [label, action, colour, icon]
+## [label, action, colour, icon], three to a row (the last row centred)
 const ITEMS := [
 	["RESUME", "resume", Color(1.0, 0.76, 0.26), "play"],
 	["RETRY", "retry", Color(0.98, 0.95, 0.87), "retry"],
-	["CONTROLS", "controls", Color(0.78, 0.66, 1.0), "keys"],
 	["SHOP", "shop", Color(0.42, 0.86, 0.8), "coin"],
 	["SETTINGS", "settings", Color(0.52, 0.8, 1.0), "gear"],
 	["MAIN MENU", "menu", Color(0.97, 0.45, 0.38), "door"],
 ]
-const TILTS := [-0.035, 0.025, -0.02, 0.03, -0.025, 0.02]
-const LINES := ["THE WRITER LIFTS HIS PEN...", "THE INK HOLDS ITS BREATH.", "MEANWHILE, NOTHING MOVES."]
+const COLS := 3
+const TILTS := [-0.03, 0.025, -0.02, 0.02, -0.025]
 
 const RAYS_SHADER := """
 shader_type canvas_item;
@@ -67,12 +63,10 @@ void fragment() {
 	float rays = smoothstep(reach, reach - 0.2, r);
 	col = mix(col, navy * 0.5, smoothstep(0.45, 1.05, r) * 0.7);
 	vec3 veil = vec3(0.02, 0.02, 0.06);
-	COLOR = vec4(mix(veil, col, rays), max(0.7 * clamp(intro * 2.0, 0.0, 1.0), rays * intro * 0.86));  // the frozen game shows through a little
+	COLOR = vec4(mix(veil, col, rays), max(0.7 * clamp(intro * 2.0, 0.0, 1.0), rays * intro * 0.97));  // nothing of the game reads through
 }
 """
 
-## Unused (the Skill Tree it gated is retired); kept so old callers still work.
-var show_skills := false
 ## Set by open_2d(): the menu acts on its own choices.
 var handle_2d := false
 var player: Node
@@ -83,9 +77,8 @@ var _focus := 0
 var _hover: Array[float] = []
 var _t := 0.0
 var _boil := 0
-var _line := ""
 var _rays: ColorRect
-var _sub: Control  # Settings / Skill Tree on top
+var _sub: Control  # Settings, on top
 var _closing := -1.0  # resume: fading out
 var _leaving := ""    # retry / menu: the ink blot
 var _leave_t := -1.0
@@ -110,11 +103,9 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
-	for it in ITEMS:
-		_items.append(it)
+	_items = ITEMS.duplicate()
 	_hover.resize(_items.size())
 	_hover.fill(0.0)
-	_line = LINES[randi() % LINES.size()]
 	_rays = ColorRect.new()
 	_rays.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_rays.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -186,18 +177,13 @@ func _gui_input(event: InputEvent) -> void:
 				_choose(i)
 
 
-## Move the focus round the grid (3 to a row).
+## Move the focus round the grid (wrapping).
 func _step(move: Vector2i) -> void:
 	var n := _items.size()
 	if move.x != 0:
 		_focus = (_focus + move.x + n) % n
 	else:
-		var to := _focus + move.y * 3
-		if to >= n:
-			to = n - 1 if _focus < 3 else _focus % 3
-		elif to < 0:
-			to = mini(_focus + 3, n - 1)
-		_focus = to
+		_focus = (_focus + move.y * COLS + n) % n
 
 
 func _choose(i: int) -> void:
@@ -254,18 +240,6 @@ func _act(action: String) -> void:
 			tree.paused = false
 			Engine.time_scale = 1.0
 			tree.reload_current_scene()  # GameState puts you back at the last checkpoint
-		"controls":
-			tree.paused = false
-			if is_instance_valid(player):
-				var old := player.get_node_or_null("Tutorial")
-				if old:
-					player.remove_child(old)
-					old.queue_free()
-				var profile := get_node_or_null("/root/Profile")
-				if profile:
-					profile.reset_tutorials("2d.")
-				Tutorial.start(player, player, "2d", tree.get_first_node_in_group("narration"))
-			get_parent().queue_free()
 		"menu":
 			tree.paused = false
 			Engine.time_scale = 1.0
@@ -297,14 +271,13 @@ func _draw() -> void:
 	if pop > 0.0:
 		_draw_burst(c, pop)
 		_draw_title(c + Vector2(0, 8))
-		_draw_caption(c + Vector2(-330, -205), pop)
 	_rects.clear()
 	var n := _items.size()
 	for i in n:
-		var row := floori(i / 3.0)
-		var in_row := mini(3, n - row * 3)
-		var col := i % 3
-		var cx := size.x * 0.5 + (col - (in_row - 1) * 0.5) * 290.0
+		var row := floori(float(i) / COLS)
+		var in_row := mini(COLS, n - row * COLS)
+		var col := i % COLS
+		var cx := size.x * 0.5 + (col - (in_row - 1) * 0.5) * 300.0
 		var cy := c.y + 205.0 + row * 80.0
 		_rects.append(Rect2(Vector2(cx, cy) - BUTTON * 0.5, BUTTON))
 		_draw_button(i, Vector2(cx, cy))
@@ -364,33 +337,8 @@ func _draw_title(c: Vector2) -> void:
 			draw_string_outline(FONT, o, ch, HORIZONTAL_ALIGNMENT_LEFT, -1, px, 18, INK)
 			draw_string(FONT, o, ch, HORIZONTAL_ALIGNMENT_LEFT, -1, px, GOLD)
 			draw_string(FONT, o + Vector2(0, -4), ch, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Color(1.0, 0.95, 0.7, 0.35))  # top shine
-			if i == 2 or i == 4:  # ink dripping off two letters: a teardrop that stretches, falls, grows back
-				var cyc := fmod(_t * 0.4 + i * 0.37, 1.0)
-				var dx := w * (0.08 if i == 2 else -0.12)
-				var drip := 18.0 + 40.0 * minf(cyc * 1.4, 1.0)
-				var bulb := 8.0 + 3.5 * cyc
-				draw_colored_polygon(PackedVector2Array([Vector2(dx - 12, -8), Vector2(dx + 12, -8), Vector2(dx + bulb * 0.8, drip),
-					Vector2(dx - bulb * 0.8, drip)]), INK)
-				draw_circle(Vector2(dx, drip + 2), bulb, INK)
-				draw_circle(Vector2(dx - bulb * 0.35, drip), bulb * 0.28, Color(1, 1, 1, 0.5))  # wet shine
-				if cyc > 0.72:  # the drop lets go
-					draw_circle(Vector2(dx, drip + 14 + (cyc - 0.72) * 140.0), bulb * 0.7, INK)
 			draw_set_transform(Vector2.ZERO)
 		x += w
-
-
-func _draw_caption(at: Vector2, s: float) -> void:
-	var a := clampf((_t - 0.3) / 0.25, 0.0, 1.0) * minf(s, 1.0)
-	if a <= 0.0:
-		return
-	var w := FONT.get_string_size(_line, HORIZONTAL_ALIGNMENT_LEFT, -1, 24).x
-	var box := Rect2(at, Vector2(w + 28, 40))
-	draw_set_transform(Vector2.ZERO, -0.03)
-	draw_rect(Rect2(box.position + Vector2(5, 6), box.size), Color(INK, 0.4 * a))
-	draw_rect(box.grow(3.0), Color(INK, a))
-	draw_rect(box, Color(CAPTION, a))
-	draw_string(FONT, box.position + Vector2(14, 29), _line, HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Color(INK, a))
-	draw_set_transform(Vector2.ZERO)
 
 
 func _tag(r: Rect2) -> PackedVector2Array:
@@ -443,10 +391,6 @@ func _icon(kind: String, c: Vector2, col: Color) -> void:
 		"retry":
 			draw_arc(c, 10.0, 0.7, TAU - 0.3, 16, col, 4.0)
 			draw_colored_polygon(PackedVector2Array([c + Vector2(12, -11), c + Vector2(13, 2), c + Vector2(3, -4)]), col)
-		"keys":  # a little W / A S D cluster
-			for o in [Vector2(-4, -12), Vector2(-13, -1), Vector2(-4, -1), Vector2(5, -1)]:
-				draw_rect(Rect2(c + o, Vector2(8, 8)), col, false, 2.5)
-			draw_rect(Rect2(c + Vector2(-4, -12), Vector2(8, 8)), col)
 		"coin":  # a little stack of coins
 			for k in 3:
 				var o := c + Vector2(-3 + k * 2, 8 - k * 7)

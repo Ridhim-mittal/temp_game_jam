@@ -202,8 +202,8 @@ are untouched.
       one end, and Quire (a pale, long-tailed paper creature with a quill behind his ear)
       sitting on the other. Wares are on show and a hanging sign reads QUIRE'S CURIOS.
     - **Opening the shop:** press E at the stall, pick SHOP on the pause screen (Esc, now
-      the same in 2D and the Gutter; SHOP takes the skill tree's place), or press **B
-      anywhere**. The game pauses while it's open.
+      the same in 2D and the Gutter; SHOP is its fifth button), or press **B anywhere**. The
+      game pauses while it's open.
     - **Money:** the Lumen coins you pick up in the 2D levels. They are kept between runs.
     - **The 2D prompt:** once you have enough coins for something, a caption says "ENOUGH
       COINS! PRESS B TO OPEN THE SHOP" (once a run), and a "B SHOP" tag stays under the coin
@@ -375,4 +375,5 @@ These ran with Godot 4.7-stable under Xvfb with software OpenGL.
   numbers are in the tuning table.
 - **Controls on `main`:** while this round was in progress, `main` moved the light to
   right click (Q is no longer used) and dash to Shift, and added one pause screen for 2D and
-  2.5D. I merged that in and kept it. Earlier sections of this report still say Q.
+  2.5D (since cut to four buttons). I merged that in and kept it, adding SHOP as a fifth
+  button. Earlier sections of this report still say Q.

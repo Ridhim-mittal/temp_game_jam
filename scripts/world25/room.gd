@@ -735,6 +735,14 @@ func open_overlay(action: String) -> void:
 			_overlay.closed.connect(_on_overlay_closed)
 		_:
 			return
+	if action == "pause":  # its own layer above everything (HUD, captions, tutorial), as in 2D
+		layer = get_node_or_null("PauseLayer")
+		if layer == null:
+			layer = CanvasLayer.new()
+			layer.name = "PauseLayer"
+			layer.layer = 85
+			layer.process_mode = Node.PROCESS_MODE_ALWAYS
+			add_child(layer)
 	layer.add_child(_overlay)
 	get_tree().paused = true
 

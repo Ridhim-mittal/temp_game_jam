@@ -38,7 +38,7 @@ const BASICS := {
 ## Taught once, the first time `when` holds (see _ready_for()).
 const LATER := {
 	"2d": [
-		{"id": "ember", "word": "EMBER", "keys": [["RMB", "ember"]], "hold": 0.8, "when": "near_lantern"},
+		{"id": "ember", "word": "EMBER", "keys": [["RMB", "ember"]], "hold": 0.8, "when": "near_light"},
 		# hold attack past player.gd's charge_time (0.6 s), let go: an ink wave flies out
 		{"id": "inkwave", "word": "LONG-RANGE INK WAVE", "keys": [["LMB", "attack"]], "hold": 0.7, "when": "near_flyer"},
 	],
@@ -57,6 +57,7 @@ const CLUSTER_CAP := 64.0  # ...when a move has several keys
 const TRAY_SCALE := 0.5
 
 var mode := "2d"
+var only := PackedStringArray()  # steps this level teaches (empty = all)
 var player: Node
 var story: Node  # story_ui.gd: the tutorial waits while it talks
 var host: Node
@@ -84,13 +85,16 @@ var _pad := false  # the last input came from a controller
 
 
 ## Adds the tutorial for `mode` over the game, unless it has all been seen.
-static func start(host_node: Node, the_player: Node, the_mode: String, story_ui: Node = null) -> void:
+## `only_steps`: the step ids this level teaches (empty = all of the mode's).
+static func start(host_node: Node, the_player: Node, the_mode: String, story_ui: Node = null,
+		only_steps := PackedStringArray()) -> void:
 	var profile := host_node.get_node_or_null("/root/Profile")
 	if profile == null:
 		return
 	var todo := false
 	for s in BASICS[the_mode] + LATER[the_mode]:
-		todo = todo or not profile.tutorial_seen(the_mode + "." + s.id)
+		if only_steps.is_empty() or only_steps.has(s.id):
+			todo = todo or not profile.tutorial_seen(the_mode + "." + s.id)
 	if not todo:
 		return
 	var layer := CanvasLayer.new()
@@ -101,6 +105,7 @@ static func start(host_node: Node, the_player: Node, the_mode: String, story_ui:
 	t.player = the_player
 	t.story = story_ui
 	t.host = host_node
+	t.only = only_steps
 	t.center_y = 0.25 if the_mode == "25d" else 0.3
 	layer.add_child(t)
 	host_node.add_child.call_deferred(layer)
@@ -111,12 +116,14 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	process_mode = Node.PROCESS_MODE_ALWAYS  # to hide under pause menus (below)
 	for s in BASICS[mode]:
+		if not only.is_empty() and not only.has(s.id):
+			continue
 		if _seen(s):
 			_tray.append(s)
 		else:
 			_basics.append(s)
 	for s in LATER[mode]:
-		if not _seen(s):
+		if not _seen(s) and (only.is_empty() or only.has(s.id)):
 			_later.append(s)
 	_tray_alpha = 1.0 if not _basics.is_empty() and not _tray.is_empty() else 0.0
 	var scope := host.owner if host.owner else host  # the 2D player lives in a level scene
@@ -222,9 +229,13 @@ func _show(s: Dictionary) -> void:
 
 func _ready_for(when: String) -> bool:
 	match when:
-		"near_lantern":
-			for l in get_tree().get_nodes_in_group("lantern"):
-				if l is Node2D and l.global_position.distance_to(player.global_position) < 320.0:
+		"near_light":  # the first pencil sketch or lantern: where the Ember is needed
+			for l in get_tree().get_nodes_in_group("lantern") + get_tree().get_nodes_in_group("sketch"):
+				if not l is Node2D:
+					continue
+				var half: float = l.size.x * 0.5 if "size" in l else 0.0
+				var d := absf(l.global_position.x - player.global_position.x) - half
+				if d < 320.0 and absf(l.global_position.y - player.global_position.y) < 400.0:
 					return true
 		"near_monster":
 			return _nearest_monster() < 6.0
