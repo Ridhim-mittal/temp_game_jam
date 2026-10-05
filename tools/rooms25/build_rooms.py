@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Builds the 2.5D story rooms: python3 tools/rooms25/build_rooms.py
 The Gutter is four levels, west of the hub (The Spine, hand-made):
-  1 The Inkwood       darkwood_1    a few Half-Drawn ghosts (after the hub's Scribbles)
+  1 The Inkwood       darkwood_1    a few Half-Drawn ghosts and a pack of Scribbles
+                                    (after the hub's Scribbles)
   2 The Red Pen       shallows_pen  the boss, with two of the Writer's lamps
   3 The Torn Page     wastes_gap    ink the sketched bridge across with right click
   4 The Rubbing Room  arena         the Eraser, hard
@@ -154,11 +155,13 @@ def chasm_depths(r, kind_list, y=-7):
 # ------------------------------------------------------------ Level 1: The Inkwood
 # Level 1 is the hub (scenes/clearing/clearing.tscn, a few Scribbles) and
 # this room: where Vesper lands after slipping out from under the eraser.
-# Its only monsters are the Half-Drawn (half_drawn_3d.gd): scribbles the
+# Its monsters are the Half-Drawn (half_drawn_3d.gd): scribbles the
 # Writer never finished, barely on the page. Out of the Ember's light they
 # are faint ghosts a sword goes through; hold right click and inside its light they
 # ink in, solid enough to cut. A few of them, quick with a nib-blade, quick
-# to fall, with a slow lamp. The page round it is a comic book (room.gd
+# to fall, with a slow lamp. A pack of Scribbles (scribble.gd: they circle
+# and claw, and shy from light) keeps the Ember busy: raise it on one
+# that's winding up and it curls up. Half-Drawn first: tests read child 0. The page round it is a comic book (room.gd
 # backdrop_style).
 r = Room("darkwood_1", "darkwood", CELLS[0], 14, 9.5, seed=11)
 r.gate("east", HUB, "cave", entry_only=True)  # the Gutter only goes forward
@@ -167,6 +170,10 @@ r.enemy("half_drawn", 4, -4)
 r.enemy("half_drawn", 3, 4.5)
 r.enemy("half_drawn", -4, -1)
 r.enemy("half_drawn", -8, 4)
+r.enemy("scribble", 8, -3)
+r.enemy("scribble", 9, 1)
+r.enemy("scribble", -1, 6)
+r.enemy("scribble", -10, 0.5)
 darkwood_dressing(r)
 r.prop("brazier", -9.5, -6, name="Lantern1", flame_color="Color(1, 0.25, 0.15, 1)")
 r.prop("brazier", 9.5, 6, name="Lantern2", flame_color="Color(1, 0.25, 0.15, 1)")
@@ -220,6 +227,8 @@ r.enemy("scribble", 11, 4)
 r.enemy("smudge", 8, -1)
 r.enemy("scribble", -10, -4)
 r.enemy("crossed_out", -10, 4)
+r.enemy("scribble", 7, 6)
+r.enemy("scribble", -8, -6)
 r.scatter("CRYSTAL", 3, count=4, radius=1.1, solid=True)
 r.scatter("PINS", 2, count=6, radius=1.1)
 r.scatter("PAPER_MOUND", 2, count=4, radius=1.2, solid=True)

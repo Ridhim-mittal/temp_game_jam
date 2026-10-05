@@ -25,6 +25,18 @@ All art is drawn in code (`_draw()`, shaders, primitive meshes); no texture asse
   prompt over Vesper; the Prism Saber's blade and the Lantern Flail's whirl count as light too).
   Quick windup, arc slash, only the blade hurts, hp 5 (half_drawn.tscn). (The earlier toon-shaded
   model, `half_drawn_model.gd` + `half_drawn.gdshader`, is kept but unused.)
+  The 2.5D Scribble (`scripts/clearing/scribble.gd`, `scenes/clearing/scribble.tscn`; not a
+  monster_3d.gd) is the scary "vibrating swarm" from the sketch sheet: a camera-facing quad
+  (`scribble.gdshader`: pen and pencil scratch loops on a 4-drawing loop round a hatched black core,
+  bristling wisps, slanted white eyes that burn red on a windup, a toothed mouth, `mouth` / `rage` /
+  `fray`; the quad jitters every frame). LURK → SHRIEK ("SKRITCH!") → STALK (circles at
+  `keep_distance`, just out of sword reach, in jerky bursts, stays on its island) → WINDUP (a red
+  pencil scratch races along the floor where the claw lands: `scribble_aim.gdshader`) → CLAW (a
+  shape-shifting reach, `claw_reach`, `scribble_claw.gdshader` on a quad turned about its axis;
+  only the claw hurts, a dash dodges it) → TANGLED (the arm reels back, it can't move: hit it).
+  It never steps into a monster light and backs out of one; raising the Ember on a windup stuns it
+  (`light_stun`, the parry). At most `max_attackers` (2) wind up at once (group "scribble_claw").
+  Pen-scratch sounds are synthesised in the script.
 
 ## 2D story start (main menu PLAY)
 `cs_book` (scripts/cutscenes/cs_book.gd: ~20 s animated opening, a comic book on a desk opens,
@@ -95,50 +107,53 @@ ground, it falls back to the last checkpoint pen / level start (`_respawn_point(
   player, camera, HUD, music from a `Biome` resource (`data/biomes/*.tres`); `minimap.gd` is
   unhooked (the top-right corner holds the coin purse).
 - `Gate` nodes (`scripts/world25/gate.gd`) seal until every monster in the room is dead, then
-  load the target room. The Margins are a comic's gutters, so a way on is one
-  (`scripts/world25/gutter_strip.gd`): a strip of cream paper between two ink panel borders,
-  printed panels (comic_page.gdshader) lying either side, and two tall panels standing upright
-  at its end with a slit between them; a desk lamp either side. Sealed = a grey dashed pencil
-  sketch (`drawn_ghost.gdshader`, one twin per section and per upright panel) with the lamps
-  off; `open()` draws a line of light outwards (`gate_light.gdshader`), fills the path in, turns
-  the lamps on and chimes. Walking out goes `World25.go(target, gate, true)`: the trip down the
-  gutter (`gutter_transition.gd`: the frozen frame shrinks into a panel on a comic page, the view
-  drops into the slit between two columns of panels and runs down it, a tiny ink Vesper ahead,
-  the line of light behind him; the next panel, a pencil rough with the zone's name, inks in and
-  is a window onto the live room that opens out to the screen; the tree is paused while the page
-  covers it, and the room camera's fade from black is skipped with `skip_fade()`). The ink wipe
-  is kept for start_story and cutscenes. The Gutter only goes forward: each room's way in
+  load the target room. The Margins are a comic's dead gutters, so a way on is an old one
+  (`scripts/world25/gutter_strip.gd`): a dark, cracked, ragged walkway between two broken ink
+  kerbs, torn scraps hanging off it, ending in a broken portal (two cracked pillars snapped at
+  different heights, a broken lintel, a seam of light in each); stone-post lanterns with flames
+  either side. Sealed = a grey dashed pencil sketch (`drawn_ghost.gdshader`, one twin per section
+  and per pillar) with cold lanterns; `open()` draws a line of light outwards
+  (`gate_light.gdshader`), fills the path in, lights the lanterns and chimes. Walking out goes
+  `World25.go(target, gate, true)`: gutter to gutter (`gutter_transition.gd`, never leaving the
+  dark: the frozen frame tears down the middle and its halves part and grey; the view runs down
+  the black slit between greyed, torn dead panels, dust drifting, a tiny ink Vesper ahead and the
+  line of light behind him; then the slit clears onto the live new room and the two walls part;
+  the tree is paused meanwhile, and the room camera's fade from black is skipped with
+  `skip_fade()`). The ink wipe is kept for start_story and cutscenes. The Gutter only goes forward: each room's way in
   is `entry_only` (never opens; its sketch rubs itself out a moment after Vesper arrives). A room's `biome_b` + blend line morphs one biome
   into another inside it.
 - Look: biomes (`data/biomes/`) are dark versions of the original palettes. Ground modes
   (ground.gdshader): 0 stone tiles (Inkwood), 1 wet flagstones, 2 cracked, 3 DIRT (the hub);
   `Biome.runes` / `rune_color` scatter glowing marks on any floor. Every symbol in the Gutter is
-  one of the Writer's marks (`shaders/world25/writers_marks.gdshaderinc`: the eye, an ink drop, a
-  nib, a quill, the Ember's flame, ¶, *, a speech bubble, a POW burst, ?), shared by ground.gdshader,
-  sigil_mark (rune stones, graves) and sigil_ring (ritual circles, a great pen nib in the middle).
-  Everything down here is off the Writer's desk: islands are thick stacks of paper (cliffs =
-  ground.gdshader `side_color`: ruled page edges, ink run over the lip), `island.gd` piles
-  crumpled paper and torn scraps along closed edges, the lights are giant architect desk lamps
-  (`scripts/clearing/desk_lamp.gd`: white base, jointed wooden arm, white dome shade; brazier.gd
-  and the gates use it; a lamp with `lit = false` is off until hit), pine.gd = giant quills stuck
-  nib-first, trunk.gd = giant pencils, fence.gd = rows of rulers, stairs.gd = a pile of books with
-  paper-ream walls, bridge.gd = a paper gutter, scatter_props = push pins / crumpled drafts /
-  erasers (old enum names), the DIRT floor has dropped staples. Toon option `pages` rules page
-  edges on side faces. Darkness round Vesper: `darkness.gd` (+ darkness.gdshader) on the
+  one of the Writer's marks (`shaders/world25/writers_marks.gdshaderinc`, cryptic and scary: the
+  watching eye with a slit pupil, an ink drop, a stitched mouth, claw marks, the Ember's flame,
+  the death rune, a broken seal, a screaming face, a handprint, a ring of thorns), shared by
+  ground.gdshader, sigil_mark (rune stones) and sigil_ring (ritual circles, `writers_seal()` in the
+  middle: an eye in an inverted triangle of thorns). The Gutter is the dead zone, everything worn
+  out and torn apart: islands are thick stacks of paper (cliffs = ground.gdshader `side_color`:
+  ruled page edges, ink run over the lip), `island.gd` piles crumpled paper and torn scraps along
+  closed edges, pine.gd = bare dead trees, trunk.gd = dead trunks with snapped branches, fence.gd =
+  a broken wrought-iron fence, stairs.gd = stone, bridge.gd = an old gutter, scatter_props =
+  rusty push pins / crumpled drafts / grimy rocks (old enum names), the DIRT floor has dropped
+  staples, the COMIC backdrop's print is faded (comic_page.gdshader `faded`). Toon option `pages`
+  rules page edges on side faces; Toon `moss` with `moss_color` is used for rust and grime.
+  (`scripts/clearing/desk_lamp.gd` is unhooked; the lights are braziers again.) Darkness round Vesper: `darkness.gd` (+ darkness.gdshader) on the
   room's UI layer, strength `Biome.darkness`; pools of light at the Ember, lit lanterns, open
   gates, the lamp and anything in group "glow" (`glow_radius` property or meta); bright pixels
   shine through. room.gd fills the void per `backdrop_style`: SIGIL `_build_backdrop()` (a huge
   turning sigil far below, mist, rising embers, uplit heaps of crumpled drafts and ink statues) or COMIC
   `_build_comic_backdrop()` (level 1: a printed comic page of panels far below,
   `comic_page.gdshader`; torn-out panels and sound-effect words drifting round the floor, giant
-  pencils, paper dust). No grass or farms, and no shop but Quire's stall in the hub; retired
+  broken nibs, paper dust). No grass or farms, and no shop but Quire's stall in the hub; retired
   `biome_props.gd` kinds (CANOPY, GARDEN_PLOT, BARN, SCARECROW, CORAL, TUBE_PLANT, NEST) stay
-  in the enum but are placed nowhere. The names are old, the looks are the Writer's rejects:
-  TOMBSTONE = discarded drafts (a cracked dried ink blob, a snapped nib, crumpled balls, crossed-out
-  scraps), STUMP = a pencil stub, PILLAR = a leaning stack of books, SKULL_PILE = a heap of
-  crumpled drafts and snapped pencils, RUNE_STONE = a giant nib with a glowing mark, CRYSTAL = torn
-  ruled pages stuck upright; CANDLES; RITUAL_CIRCLE uses sigil_ring.gdshader. Helper
-  `Toon.candle()` (`Toon.skull()` / `Toon.bones()` are unused now). The hub's altar.gd is Vesper's forgotten shrine in weathered
+  in the enum but are placed nowhere. The names are old: TOMBSTONE = a broken nib grave
+  (`scripts/world25/broken_nib.gd`: a giant fountain-pen nib, greyed and rust-patched, curved, its
+  point snapped off, breather hole and slit, ink bleeding from the break, an epitaph scratched in
+  from `EPITAPHS`; in a dirt mound wrapped in thorny brambles, an ink puddle at its foot), STUMP =
+  a split dead stump, PILLAR = a broken stone pillar, SKULL_PILE = a heap of crumpled, yellowed
+  pages, RUNE_STONE = a cracked standing stone with a glowing mark, CRYSTAL = torn ruled pages,
+  PENCIL_TOTEM = a giant broken nib driven in, PINS = rusty pins; CANDLES; RITUAL_CIRCLE uses
+  sigil_ring.gdshader. Helper `Toon.candle()` (`Toon.skull()` / `Toon.bones()` are unused). The hub's altar.gd is Vesper's forgotten shrine in weathered
   grey stone: only the lower half of his statue stands (broken off at the chest, built from
   primitives, not vesper_3d), his head, hat, an arm and the snapped blade lie in the rubble; a worn
   "VESPER" plaque, old offerings (faded scarf, tipped ink pots, quills, yellowed pages, a few
@@ -178,7 +193,7 @@ ground, it falls back to the last checkpoint pen / level start (`_respawn_point(
 Zones (display names; code names stay): hub = The Spine, darkwood_* = The Inkwood, shallows_* =
 The Drowned Margin, wastes_* = The Torn Wastes, arena = The Rubbing Room.
 Hub `scenes/clearing/clearing.tscn` (hand-made, not generated) → its terrace's way on → four levels in
-`scenes/world25/rooms/`, a row running west: 1 the hub (3 Scribbles) + darkwood_1 (a few Half-Drawn;
+`scenes/world25/rooms/`, a row running west: 1 the hub (9 Scribbles, two up on the shrine terrace) + darkwood_1 (a few Half-Drawn and 4 Scribbles;
 both with the COMIC backdrop) →
 2 shallows_pen (Red Pen boss, `scripts/clearing/red_pen_3d.gd`: wet-ink circles dry in light; two
 lamps) → 3 wastes_gap (a sketched bridge inked with right click; one slow lamp) → 4 arena (the Eraser, hard:
@@ -189,7 +204,7 @@ Light: `scripts/world25/light.gd` (rules), Ember/Heal on `clearing_player.gd`, `
 (`flash.gd` is unhooked); braziers with `lit = false` are lanterns. `drawn_bridge.gd` is a pencil
 sketch that never forms on its own: pressing right click by it, or holding the raised Ember still next to it,
 inks it, and while held, ink runs from Vesper's feet along the planks for good (`ink_reach`, `ink_speed`, `ink_cost` Ember fuel
-a plank; an inked plank is a piece of paper gutter, the rails a ruled ink line on small pencils);
+a plank; an inked plank is a piece of old gutter, the rails leaning iron posts and a sagging bar);
 `ink_only = false` brings back the old rule (solid only where light reaches).
 Rooms are generated by `tools/rooms25/build_rooms.py` (deterministic; re-running overwrites hand
 edits). Monsters stay dead in story rooms (room.gd sets `respawn_time = 0`).

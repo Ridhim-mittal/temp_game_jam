@@ -6,8 +6,9 @@ shader_type spatial;
 //   mode 2 CRACKED      cracked earth with pale grit (Crumple Wastes)
 //   mode 3 DIRT         bare packed earth, roots, pebbles, dropped staples (the Spine)
 // Any mode can carry the Writer's marks scratched into it
-// (`rune_density`; writers_marks.gdshaderinc: ink drops, nibs, quills, the
-// Ember, proofing and comic marks), some of them glowing (`rune_color`).
+// (`rune_density`; writers_marks.gdshaderinc: the watching eye, stitched
+// mouths, claw marks, the death rune, handprints...), some of them glowing
+// (`rune_color`).
 // Two palettes (A and B) can be blended across the island: biome A on the
 // `blend_from` side, B past `blend_to`, meeting along a wavy inked line.
 // Palette order: base, light, dark, accent, accent_dark, stain, cliff,

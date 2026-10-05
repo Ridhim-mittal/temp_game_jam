@@ -1,9 +1,10 @@
 @tool
 extends Node3D
-## A row of the Writer's wooden rulers stood on end, from this node's origin
-## to `end` (local), with two more laid across them as rails; every ruler is
-## marked with ink ticks (one merged mesh). Blocks the player along its
-## length. (Was sharpened stakes; `wood` is the rulers' wood.)
+## An old wrought-iron fence, broken: spear-topped bars from this node's
+## origin to `end` (local) on two rails, leaning every which way, some bent
+## over, some missing, a rail snapped and sagging, rust creeping over it all.
+## Blocks the player along its length. (Was sharpened stakes, then rulers;
+## `wood` tints the iron a little.)
 
 const Toon = preload("res://scripts/clearing/toon.gd")
 
@@ -19,7 +20,7 @@ const Toon = preload("res://scripts/clearing/toon.gd")
 	set(v):
 		height = v
 		_rebuild()
-@export var wood := Color(0.62, 0.5, 0.34):
+@export var wood := Color(0.4, 0.3, 0.27):
 	set(v):
 		wood = v
 		_rebuild()
@@ -38,51 +39,37 @@ func _rebuild() -> void:
 		return
 	var dir := end / length
 	var yaw := rad_to_deg(atan2(-dir.z, dir.x))
-	var count := int(length / spacing) + 1
-	var ticks := SurfaceTool.new()
-	ticks.begin(Mesh.PRIMITIVE_TRIANGLES)
-	var tick := BoxMesh.new()
-	tick.size = Vector3(1, 1, 1)
+	var iron := Color(0.15, 0.14, 0.17).lerp(wood, 0.12)
+	var rust := {"outline": 0.018, "moss": 0.3, "moss_color": Color(0.34, 0.22, 0.17)}
+	var rng := RandomNumberGenerator.new()
+	rng.seed = int(end.x * 31.0 + end.z * 17.0) + int(position.x * 7.0)
+	var count := int(length / (spacing * 0.6)) + 1
 	for i in count:
+		if rng.randf() < 0.15 and i > 0 and i < count - 1:
+			continue  # a bar gone
 		var p := dir * (i * length / maxf(count - 1, 1))
-		var h := height * (0.85 + 0.3 * absf(sin(i * 2.7)))
-		var tilt := Vector3(5.0 * sin(i * 1.9), yaw, 6.0 * sin(i * 3.3))
-		var ruler := Node3D.new()
-		ruler.position = p
-		ruler.rotation_degrees = tilt
-		root.add_child(ruler)
-		Toon.part(ruler, Toon.box(Vector3(0.22, h, 0.05)), wood.darkened(0.06 * (i % 2)), Vector3(0, h * 0.5, 0), Vector3.ZERO,
-			{"outline": 0.025})
-		# ticks up one edge of both faces, a long one every fifth
-		var k := 0
-		var y := 0.12
-		while y < h - 0.04:
-			var w := 0.11 if k % 5 == 0 else 0.055
-			for face in [-1.0, 1.0]:
-				ticks.append_from(tick, 0, ruler.transform * Transform3D(Basis.from_scale(Vector3(w, 0.014, 0.01)),
-					Vector3(-0.11 + w * 0.5, y, face * 0.026)))
-			y += 0.08
-			k += 1
-	for y in [height * 0.35, height * 0.7]:
-		var rail := Node3D.new()
-		rail.position = end * 0.5 + Vector3(0, y, 0) + Vector3(dir.z, 0, -dir.x) * -0.08
-		rail.rotation_degrees = Vector3(0, yaw, 2.0 * sin(y * 9.0))
-		root.add_child(rail)
-		var rail_len := length + 0.3
-		Toon.part(rail, Toon.box(Vector3(rail_len, 0.16, 0.045)), wood.lightened(0.06), Vector3.ZERO, Vector3.ZERO, {"outline": 0.02})
-		var x := -rail_len * 0.5 + 0.1
-		var k := 0
-		while x < rail_len * 0.5 - 0.05:
-			var tall := 0.07 if k % 5 == 0 else 0.035
-			for face in [-1.0, 1.0]:
-				ticks.append_from(tick, 0, rail.transform * Transform3D(Basis.from_scale(Vector3(0.012, tall, 0.01)),
-					Vector3(x, 0.08 - tall * 0.5, face * 0.024)))
-			x += 0.1
-			k += 1
-	var mi := MeshInstance3D.new()
-	mi.mesh = ticks.commit()
-	mi.material_override = Toon.material(Color(0.08, 0.06, 0.1), {"outline": 0.0})
-	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	root.add_child(mi)
+		var h := height * rng.randf_range(0.85, 1.1)
+		var bar := Node3D.new()
+		bar.position = p
+		bar.rotation_degrees = Vector3(rng.randf_range(-7, 7), yaw, rng.randf_range(-6, 6))
+		root.add_child(bar)
+		if rng.randf() < 0.15:
+			# bent over halfway up
+			var low := h * rng.randf_range(0.4, 0.6)
+			Toon.part(bar, Toon.box(Vector3(0.05, low, 0.05)), iron, Vector3(0, low * 0.5, 0), Vector3.ZERO, rust)
+			var bent := Node3D.new()
+			bent.position = Vector3(0, low, 0)
+			bent.rotation_degrees = Vector3(rng.randf_range(-70, -40) * (1.0 if rng.randf() < 0.5 else -1.0), 0, rng.randf_range(-20, 20))
+			bar.add_child(bent)
+			Toon.part(bent, Toon.box(Vector3(0.05, h - low, 0.05)), iron, Vector3(0, (h - low) * 0.5, 0), Vector3.ZERO, rust)
+			Toon.part(bent, Toon.prism(Vector3(0.13, 0.2, 0.05)), iron.darkened(0.2), Vector3(0, h - low + 0.1, 0), Vector3.ZERO, rust)
+		else:
+			Toon.part(bar, Toon.box(Vector3(0.05, h, 0.05)), iron, Vector3(0, h * 0.5, 0), Vector3.ZERO, rust)
+			Toon.part(bar, Toon.prism(Vector3(0.13, 0.2, 0.05)), iron.darkened(0.2), Vector3(0, h + 0.1, 0), Vector3.ZERO, rust)
+	# the rails: the top one snapped in the middle, each half sagging
+	Toon.part(root, Toon.box(Vector3(length + 0.1, 0.06, 0.06)), iron, end * 0.5 + Vector3(0, height * 0.18, 0), Vector3(0, yaw, 1.0), rust)
+	for k in 2:
+		var half := end * (0.25 + 0.5 * k) + Vector3(0, height * 0.78 - 0.05, 0)
+		Toon.part(root, Toon.box(Vector3(length * 0.48, 0.06, 0.06)), iron, half, Vector3(0, yaw, (4.0 if k == 0 else -4.0)), rust)
 	if not Engine.is_editor_hint():
 		Toon.collider(root, Toon.box_shape(Vector3(length + 0.3, 2.0, 0.4)), end * 0.5 + Vector3(0, 1, 0), Vector3(0, yaw, 0))
