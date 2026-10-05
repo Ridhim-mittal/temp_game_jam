@@ -47,7 +47,7 @@ const WORD_COLORS := [Color(1.0, 0.85, 0.25), Color(0.95, 0.3, 0.25), Color(0.98
 ## Where the player starts when not arriving through a gate.
 @export var default_spawn := Vector3(0, 0.05, 0)
 ## The living background round the floor: a great sigil turning far
-## below, mist, rising embers, skull heaps and ink statues in the void
+## below, mist, rising embers, heaps of crumpled drafts and ink statues in the void
 ## (SIGIL, _build_backdrop), or a comic book in the 2D levels' look (COMIC,
 ## _build_comic_backdrop): a page of panels far below, torn-out panels and
 ## sound-effect words floating round the floor, giant pencils, paper dust.
@@ -235,8 +235,9 @@ func _build_environment() -> void:
 ## The void round the room, so the floor floats in something: a huge
 ## ritual circle turning slowly far below (the zone's sigil colour), two
 ## sheets of mist drifting over it, embers rising out of the dark, and
-## heaps of skulls and black ink statues standing in the fog round the
-## edges, kept clear of the gates. Deterministic per room.
+## heaps of crumpled drafts (biome_props SKULL_PILE) and black ink statues
+## standing in the fog round the edges, kept clear of the gates.
+## Deterministic per room.
 func _build_backdrop(b: Resource) -> void:
 	var c := camera_bounds.get_center()
 	var span := maxf(camera_bounds.size.x, camera_bounds.size.y) + 40.0
@@ -306,7 +307,7 @@ func _build_backdrop(b: Resource) -> void:
 	eg.colors = PackedColorArray([Color(glow, 0), Color(glow.lightened(0.3), 0.9), Color(glow, 0.5), Color(glow, 0)])
 	embers.color_ramp = eg
 	holder.add_child(embers)
-	# skull heaps and ink statues in the fog round the floor
+	# heaps of crumpled drafts and ink statues in the fog round the floor
 	var rng := RandomNumberGenerator.new()
 	rng.seed = room_id.hash()
 	var half := camera_bounds.size * 0.5 + Vector2(9.0, 7.0)
@@ -701,6 +702,9 @@ func in_gameplay() -> bool:
 func _unhandled_input(event: InputEvent) -> void:
 	if Engine.is_editor_hint() or _overlay != null:
 		return
+	var world := get_node_or_null("/root/World25")
+	if world and world.transitioning:
+		return  # no menus over a room change
 	if event.is_action_pressed("pause"):
 		get_viewport().set_input_as_handled()  # pause here instead of leaving
 		open_overlay("pause")

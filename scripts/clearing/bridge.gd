@@ -1,9 +1,12 @@
 @tool
 extends Node3D
-## Stone walkway leading towards the camera (+Z) over the void, with mossy
-## parapet walls and a little rubble. The far end is blocked.
+## The hub's way in over the void, towards the camera (+Z): a gutter of the
+## comic (gutter_strip.gd), a walkway of cream paper between two thick ink
+## panel borders with the printed panels lying either side; an ink border
+## closes the far end. (Was a stone walkway with parapets.)
 
 const Toon = preload("res://scripts/clearing/toon.gd")
+const GutterStrip = preload("res://scripts/world25/gutter_strip.gd")
 
 @export var length := 9.0:
 	set(v):
@@ -13,6 +16,7 @@ const Toon = preload("res://scripts/clearing/toon.gd")
 	set(v):
 		width = v
 		_rebuild()
+## Unused since the bridge became a gutter (kept for scenes that set it).
 @export var stone := Color(0.6, 0.57, 0.6):
 	set(v):
 		stone = v
@@ -27,27 +31,13 @@ func _rebuild() -> void:
 	if not is_inside_tree():
 		return
 	var root := Toon.fresh_root(self)
-	var thick := 1.6
-	Toon.part(root, Toon.box(Vector3(width, thick, length)), stone, Vector3(0, -thick * 0.5, length * 0.5),
-		Vector3.ZERO, {"tile": 0.9, "moss": 0.12})
-	# parapets: chunky blocks, the odd one missing its cap
-	var blocks := int(length / 1.5)
-	for side in [-1, 1]:
-		for i in blocks:
-			var h := 1.0 + 0.25 * absf(sin(i * 2.1 + side))
-			var z := (i + 0.5) * length / blocks
-			Toon.part(root, Toon.box(Vector3(0.8, h + thick, length / blocks)), stone.darkened(0.06 * (i % 2)),
-				Vector3(side * (width * 0.5 + 0.4), (h - thick) * 0.5, z), Vector3.ZERO, {"moss": 0.6, "tile": 0.6})
-	var rng := RandomNumberGenerator.new()
-	rng.seed = 3
-	for i in 3:
-		var side := -1 if i % 2 == 0 else 1
-		var rock := Toon.part(root, Toon.sphere(0.32, 6, 3), stone.darkened(0.1),
-			Vector3(side * (width * 0.5 - 0.45), 0.12, rng.randf_range(1.0, length - 1.0)),
-			Vector3(rng.randf() * 40.0, rng.randf() * 360.0, 0), {"moss": 0.4})
-		rock.scale = Vector3(1.3, 0.75, 1.0)
+	GutterStrip.section(root, 0.0, length, width, 3)
+	# the far end: the panel border runs across it
+	Toon.part(root, Toon.box(Vector3(width + 0.36, GutterStrip.THICK + 0.16, 0.18)), GutterStrip.INK,
+		Vector3(0, -GutterStrip.THICK * 0.5 + 0.08, length + 0.09), Vector3.ZERO, {"outline": 0.0})
 	if not Engine.is_editor_hint():
+		var thick := GutterStrip.THICK
 		Toon.collider(root, Toon.box_shape(Vector3(width, thick, length)), Vector3(0, -thick * 0.5, length * 0.5))
 		for side in [-1, 1]:
-			Toon.collider(root, Toon.box_shape(Vector3(0.8, 4.0, length)), Vector3(side * (width * 0.5 + 0.4), 2.0, length * 0.5))
+			Toon.collider(root, Toon.box_shape(Vector3(0.4, 4.0, length)), Vector3(side * (width * 0.5 + 0.2), 2.0, length * 0.5))
 		Toon.collider(root, Toon.box_shape(Vector3(width, 4.0, 0.5)), Vector3(0, 2.0, length + 0.25))

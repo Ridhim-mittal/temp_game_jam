@@ -15,7 +15,7 @@ static var _materials := {}
 
 
 ## A cel-shaded material. opts: outline (width, 0 = none), from_center,
-## moss, tile, bark, line, emission (keys map to toon.gdshader uniforms).
+## moss, tile, bark, pages, line, emission (keys map to toon.gdshader uniforms).
 static func material(color: Color, opts := {}) -> ShaderMaterial:
 	var key := "%s|%s" % [color, opts]
 	if _materials.has(key):
@@ -27,6 +27,7 @@ static func material(color: Color, opts := {}) -> ShaderMaterial:
 	m.set_shader_parameter("moss_color", opts.get("moss_color", MOSS))
 	m.set_shader_parameter("tile_size", opts.get("tile", 0.0))
 	m.set_shader_parameter("bark", opts.get("bark", 0.0))
+	m.set_shader_parameter("pages", opts.get("pages", 0.0))
 	m.set_shader_parameter("line_color", opts.get("line", INK))
 	m.set_shader_parameter("emission_strength", opts.get("emission", 0.0))
 	var width: float = opts.get("outline", 0.045)
