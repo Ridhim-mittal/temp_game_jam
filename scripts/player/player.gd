@@ -41,7 +41,7 @@ const SAFE_EDGE := 24.0
 const HAZARD_LOOP_TIME := 1.5
 const HIT_WORDS := ["THWACK!", "SLASH!", "POW!", "WHAM!", "SHNK!"]
 const BODY_HALF_HEIGHT := 26.0
-const HAZARD_DAMAGE := 20.0
+const HAZARD_DAMAGE := 2.0  # one ink bottle
 
 @export_group("Run")
 @export var max_speed := 300.0
@@ -137,9 +137,10 @@ const HAZARD_DAMAGE := 20.0
 @export var slam_damage := 2
 
 @export_group("Health")
-## Continuous health in HP. Monsters deal different amounts (see their
-## damage_default()); spikes deal HAZARD_DAMAGE.
-@export var max_health := 100.0
+## Health in half ink bottles (12 = six bottles, ink_bottles.gd; the same in
+## 2.5D). Monsters deal different amounts (their damage_default(): 1 = half a
+## bottle for small ones); spikes deal HAZARD_DAMAGE.
+@export var max_health := 12.0
 @export var invuln_time := 1.2
 @export var hurt_knockback := Vector2(320, -380)
 @export var hurt_stun_time := 0.22
@@ -411,7 +412,7 @@ func _apply_loadout() -> void:
 	wave_damage += _sharp() + (2 if _master() else 0)
 	if _master():
 		wave_range *= 1.4
-	max_health += 20.0 * float(profile.effect("health_bonus", 0))
+	max_health += 2.0 * float(profile.effect("health_bonus", 0))  # bonus is in bottles
 	invuln_time *= profile.effect("invuln_mult", 1.0)
 	_seal_ready = profile.effect("seal", false)
 	_apply_look(profile.look())
@@ -450,7 +451,7 @@ func _master() -> bool:
 	return _tier >= 3
 
 
-## Restores HP (health pickups). Returns false when already at full health.
+## Restores half ink bottles (health pickups). Returns false when already at full health.
 func heal(amount: float) -> bool:
 	if dead or health >= max_health:
 		return false
@@ -942,7 +943,7 @@ func _check_hurtbox() -> void:
 		if _invuln_timer > 0.0 or _dash_timer > 0.0:
 			continue  # dash i-frames protect from enemies only
 		if body.is_in_group("enemy") and not ("dead" in body and body.dead):
-			var dmg := 15.0
+			var dmg := 1.0
 			if body.has_method("get_damage"):
 				dmg = body.get_damage()
 			elif "contact_damage" in body:
