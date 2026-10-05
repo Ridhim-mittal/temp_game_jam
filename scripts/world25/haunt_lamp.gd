@@ -344,7 +344,8 @@ func _strike() -> void:
 	if cam and cam.has_method("add_trauma"):
 		cam.add_trauma(0.55)
 	var player := get_tree().get_first_node_in_group("player") as Node3D
-	if player and not player.dead and lights(player.global_position):
+	if player and not player.dead and lights(player.global_position) \
+			and not (player.has_method("is_protected") and player.is_protected()):
 		erase = minf(erase + profile.strike_erase, 1.0)
 	for m in get_tree().get_nodes_in_group("enemy"):
 		if m is Node3D and not ("dead" in m and m.dead) and lights(m.global_position):
@@ -359,6 +360,8 @@ func _strike() -> void:
 
 ## The searchlight's meter, but a profile that can't damage only whitens.
 func _update_erase(player: Node3D, seen: bool, delta: float) -> void:
+	if seen and player.has_method("is_protected") and player.is_protected():
+		seen = false  # spawn protection: the light can't take hold yet
 	if player == null:
 		return
 	if seen:

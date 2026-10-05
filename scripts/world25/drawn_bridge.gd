@@ -1,16 +1,24 @@
 @tool
 extends Node3D
-## A drawn bridge (light rule 1): a walkway of planks, each solid and in
-## colour only while some light reaches it (the Ember's glow, a Flash's
-## afterglow, a lit lantern, a brazier, the searchlight). Unlit planks are
-## pale dashed ghosts you fall through. A plank flickers for `warn_time`
-## before vanishing, and never re-solidifies inside the player.
+## A drawn bridge: a pencil sketch of a walkway (pale dashed ghost planks you
+## fall through) that Vesper inks in, as in the 2D Sketchbook. Standing at
+## its end or on it, he holds the Ember up (Flash / Q, see
+## clearing_player.gd) and ink runs out from his feet along the planks, up
+## to `ink_reach` per hold, each plank costing `ink_cost` Ember fuel. Inked
+## planks stay for good. Nothing forms on its own.
+## With `ink_only` off it follows the old light rule instead: each plank is
+## solid only while some light reaches it, flickers for `warn_time` before
+## vanishing, and never re-solidifies inside the player.
 ## The bridge runs from this node along local -Z for `length`; its side
 ## rails are always solid, so you only fall through missing planks.
 
 const Toon = preload("res://scripts/clearing/toon.gd")
 const Light = preload("res://scripts/world25/light.gd")
+const Fx = preload("res://scripts/clearing/clearing_fx.gd")
+const ScreenAnchor = preload("res://scripts/clearing/screen_anchor.gd")
+const TITLE_FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
 const GHOST_SHADER = preload("res://shaders/world25/drawn_ghost.gdshader")
+const INK := Color(0.07, 0.04, 0.11)
 
 @export var length := 8.0:
 	set(v):
@@ -35,14 +43,28 @@ const GHOST_SHADER = preload("res://shaders/world25/drawn_ghost.gdshader")
 	set(v):
 		preview_solid = v
 		_rebuild()
+## Planks are made only by inking (hold Q by the bridge). Off: the old
+## light rule (solid wherever light reaches, gone when it leaves).
+@export var ink_only := true
+## How far along the bridge one hold of Q can ink, from Vesper's feet.
+@export var ink_reach := 5.0
+## How fast the ink runs out along the planks, units a second.
+@export var ink_speed := 6.0
+## Ember fuel each inked plank costs.
+@export var ink_cost := 3.0
 
 enum { SOLID, WARN, GHOST }
 
-var _planks: Array = []  # [{body, shape, solid_mesh, ghost_mesh, state, timer, center}]
+var _planks: Array = []  # [{shape, solid, ghost, state, timer, center, half, t, inked}]
 var _player: Node3D
+var _front := 0.0  # how far the ink has run from Vesper during this hold
+var _hold := 0.0  # > 0 while Vesper keeps inking (ink() refreshes it)
+var _anchor: Node2D  # the "HOLD Q" prompt
 
 
 func _ready() -> void:
+	if not Engine.is_editor_hint():
+		add_to_group("drawn_bridge")  # clearing_player.gd finds bridges to ink here
 	_rebuild()
 
 
@@ -79,7 +101,7 @@ func _rebuild() -> void:
 		if shape:
 			shape.disabled = true
 		_planks.append({"shape": shape, "solid": solid, "ghost": ghost, "state": GHOST, "timer": 0.0,
-			"center": center, "half": Vector3(width * 0.5, 0.6, step * 0.5)})
+			"center": center, "half": Vector3(width * 0.5, 0.6, step * 0.5), "t": (i + 0.5) * step, "inked": false})
 	# rope rails on both sides: posts and a sagging rope, always solid
 	for side in [-1, 1]:
 		var x: float = side * (width * 0.5 + 0.12)
@@ -95,6 +117,12 @@ func _physics_process(delta: float) -> void:
 	if Engine.is_editor_hint():
 		return
 	_player = get_tree().get_first_node_in_group("player")
+	if ink_only:
+		_hold -= delta
+		if _hold <= 0.0:
+			_front = 0.0  # each hold starts again from Vesper's feet
+		_update_prompt()
+		return
 	for p in _planks:
 		var lit := Light.is_lit(get_tree(), to_global(p.center))
 		match p.state:
@@ -132,6 +160,106 @@ func _player_inside(p: Dictionary) -> bool:
 		return false
 	var local: Vector3 = to_local(_player.global_position) - p.center
 	return absf(local.x) < p.half.x and absf(local.z) < p.half.z and local.y < 0.0 and local.y > -p.half.y * 3.0
+
+
+# ------------------------------------------------------------------ inking
+
+## Distance along the bridge of `pos` (0 at this node, `length` at the far
+## end), clamped to the bridge.
+func _along(pos: Vector3) -> float:
+	return clampf(-to_local(pos).z, 0.0, length)
+
+
+## True if Vesper at `pos` can ink here: he's at an end of the bridge or on
+## it, and a plank within ink_reach is still a sketch.
+func can_ink(pos: Vector3) -> bool:
+	if not ink_only or Engine.is_editor_hint():
+		return false
+	var l := to_local(pos)
+	if absf(l.x) > width * 0.5 + 1.5 or absf(l.y) > 2.0 or -l.z < -2.5 or -l.z > length + 2.5:
+		return false
+	return _sketch_within(_along(pos)) != null
+
+
+## The nearest sketched (uninked) plank within ink_reach of `t`, or null.
+func _sketch_within(t: float) -> Variant:
+	var best: Variant = null
+	var best_d := ink_reach
+	for p in _planks:
+		var d: float = absf(p.t - t) - p.half.z
+		if not p.inked and d <= best_d:
+			best = p
+			best_d = d
+	return best
+
+
+## One physics tick of Vesper (at `pos`) holding the Ember up: the ink runs
+## out from his feet both ways along the bridge, inking each plank it
+## reaches for `ink_cost` of `player`'s fuel. Returns false when there's
+## nothing left to ink within reach, or no fuel for the next plank.
+func ink(pos: Vector3, delta: float, player: Node) -> bool:
+	var t := _along(pos)
+	_hold = 0.15
+	_front = minf(_front + ink_speed * delta, ink_reach)
+	for p in _planks:
+		if p.inked or absf(p.t - t) - p.half.z > _front:
+			continue
+		if player.fuel < ink_cost:
+			return false
+		player.add_fuel(-ink_cost)
+		_ink_plank(p)
+	return _sketch_within(t) != null and player.fuel >= ink_cost
+
+
+func _ink_plank(p: Dictionary) -> void:
+	p.inked = true
+	_set_state(p, SOLID)
+	# the plank inks in from a flat line, with a splash of ink and sparks
+	p.solid.scale = Vector3(1.0, 0.15, 0.6)
+	create_tween().tween_property(p.solid, "scale", Vector3.ONE, 0.22).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	var at := to_global(p.center) + Vector3(0, 0.2, 0)
+	Fx.burst(get_tree(), at, INK, 8, 2.6)
+	Fx.burst(get_tree(), at, Color(1.0, 0.7, 0.3), 4, 2.0)
+
+
+## True once every plank is inked.
+func finished() -> bool:
+	for p in _planks:
+		if not p.inked:
+			return false
+	return true
+
+
+## "HOLD Q  INK" over the next sketched plank while Vesper could ink it.
+func _update_prompt() -> void:
+	var on := false
+	var at := Vector3.ZERO
+	if _player and not _player.dead and _player.is_on_floor() and not ("_inking" in _player and _player._inking != null) \
+			and can_ink(_player.global_position):
+		var p = _sketch_within(_along(_player.global_position))
+		if p:
+			on = true
+			at = to_global(p.center) + Vector3(0, 1.3, 0)
+	if on and _anchor == null:
+		var ui := get_tree().current_scene.get_node_or_null("UI")
+		if ui == null:
+			return
+		_anchor = ScreenAnchor.new()
+		var label := Label.new()
+		label.text = "HOLD Q  INK THE BRIDGE"
+		label.add_theme_font_override("font", TITLE_FONT)
+		label.add_theme_font_size_override("font_size", 26)
+		label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
+		label.add_theme_color_override("font_outline_color", Color(0.05, 0.03, 0.08))
+		label.add_theme_constant_override("outline_size", 10)
+		_anchor.add_child(label)
+		ui.add_child(_anchor)
+		label.position = -label.get_minimum_size() * Vector2(0.5, 1.0)
+	elif not on and _anchor != null:
+		_anchor.queue_free()
+		_anchor = null
+	if _anchor:
+		_anchor.world_position = at
 
 
 ## Number of planks solid right now (tests and puzzles).

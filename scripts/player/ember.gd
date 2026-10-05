@@ -4,8 +4,8 @@ extends Node2D
 ##  - its light makes sketch platforms solid (light rule 1) and is monster
 ##    light (rule 2: burns a Crossed-Out's X, unfolds Crumples, surfaces
 ##    Smudges, scatters Scribbles)
-##  - stand still while it is raised and it INKS nearby sketches in for good
-##    (unless they are drawn in non-photo blue, which never takes ink)
+##  - stand still while it is raised and ink spreads out from your feet along
+##    the sketch, inking it in for good (non-photo blue never takes ink)
 ##  - raising drains the meter. It refills slowly while lowered, fast in a
 ##    lit lantern's light. Running dry snuffs it until it recovers.
 ## Created by player.gd; the HUD reads `meter` / `max_meter`.
@@ -26,11 +26,17 @@ const CORE := Color(1.0, 0.95, 0.7)
 @export var regen_delay := 0.6
 ## Meter per second inside a lit lantern's light (raised or not).
 @export var lantern_regen := 60.0
+## Over a light-drinking sketch (sketch_platform.gd drinks_light) the light
+## drains this many times faster.
+@export var blue_drain_mult := 2.0
 ## After running dry, the Ember can't be raised again until this much is back.
 @export var relight_at := 20.0
-## Inking: cells within `ink_radius` of Vesper ink while she stands still.
-@export var ink_radius := 150.0
-@export var still_speed := 30.0
+## Inking: standing still with the Ember raised, ink spreads out from Vesper's
+## feet at `ink_speed` px/s (after `ink_delay`), up to `ink_radius` each way.
+@export var ink_radius := 170.0
+@export var ink_speed := 260.0
+@export var ink_delay := 0.15
+@export var still_speed := 20.0
 
 var meter := 100.0
 var raised := false
@@ -38,9 +44,12 @@ var inks := true
 var reach := 0.0  # current light radius (animates in and out)
 var snuffed := false
 var in_lantern := false
+var over_blue := false  # over a sketch that drinks the light
 var inking := false  # raised + standing still this frame
+var ink_front := 0.0  # how far the spreading ink has reached (px from Vesper)
 
 var _since_raised := 10.0
+var _still := 0.0
 var _time := 0.0
 var _player: CharacterBody2D
 var _glow: Node2D
@@ -72,8 +81,9 @@ func _physics_process(delta: float) -> void:
 	raised = want
 	if raised:
 		_since_raised = 0.0
+		over_blue = _over_blue()
 		if not in_lantern:
-			meter -= drain * delta
+			meter -= drain * delta * (blue_drain_mult if over_blue else 1.0)
 		if meter <= 0.0:
 			meter = 0.0
 			raised = false
@@ -88,10 +98,29 @@ func _physics_process(delta: float) -> void:
 	meter = clampf(meter, 0.0, max_meter)
 	if snuffed and meter >= relight_at:
 		snuffed = false
-	reach = move_toward(reach, radius if raised else 0.0, delta * radius * (6.0 if raised else 4.0))
-	inking = raised and _player != null and _player.velocity.length() < still_speed and _player.is_on_floor()
+	# light snaps up fast; when it gutters out it shrinks slowly, so the sketch
+	# under you is the last thing to go (a warning, not a trapdoor)
+	var rate := 10.0 if raised else (3.0 if snuffed else 5.0)
+	reach = move_toward(reach, radius if raised else 0.0, delta * radius * rate)
+	var still := raised and _player != null and _player.is_on_floor() and absf(_player.velocity.x) < still_speed
+	_still = _still + delta if still else 0.0
+	ink_front = clampf((_still - ink_delay) * ink_speed, 0.0, ink_radius)
+	inking = ink_front > 0.0
 	queue_redraw()
 	_glow.queue_redraw()
+
+
+func _over_blue() -> bool:
+	if _player == null:
+		return false
+	var feet := _player.global_position + Vector2(0, 26)
+	for s in get_tree().get_nodes_in_group("sketch"):
+		if not s.drinks_light:
+			continue
+		var p: Vector2 = s.to_local(feet)
+		if absf(p.x) <= s.size.x * 0.5 and p.y > -240.0 and p.y < 30.0:  # jumping over it still counts
+			return true
+	return false
 
 
 ## Light rule 1: does the raised Ember reach `point`?
@@ -105,7 +134,7 @@ func lights(point: Vector2) -> bool:
 
 
 func inks_at(point: Vector2) -> bool:
-	return inking and global_position.distance_to(point) <= minf(ink_radius, reach)
+	return inking and absf(point.x - global_position.x) <= ink_front and absf(point.y - global_position.y) < 80.0
 
 
 ## The little flame's position (local): bobs at her shoulder, rises when raised.
@@ -136,8 +165,6 @@ func _draw() -> void:
 			if i % 2 == 0:
 				var a0 := TAU * i / n + _time * 0.4
 				draw_arc(Vector2.ZERO, reach, a0, a0 + TAU / n, 3, Color(1.0, 0.85, 0.45, 0.8 * k), 2.5)
-		if inking:
-			draw_arc(Vector2.ZERO, minf(ink_radius, reach), 0, TAU, 40, Color(INK, 0.35), 2.0)
 	# the flame itself: ink-outlined teardrop, size shows the meter
 	var frac := meter / max_meter
 	var s := (0.55 + 0.45 * frac) * (1.0 + 0.35 * k)
@@ -153,6 +180,10 @@ func _draw() -> void:
 			p.x *= 1.0 - 0.4 * absf(p.y) / (r * 1.8)
 		pts.append(fp + p)
 	var body := FLAME if not snuffed else Color(0.55, 0.55, 0.6)
+	if raised and over_blue:
+		body = FLAME.lerp(Color(0.45, 0.75, 1.0), 0.6 + 0.2 * sin(_time * 20.0))  # the blue drinking it
+	if raised and frac < 0.25 and fmod(_time, 0.2) < 0.1:
+		body = Color(1.0, 0.95, 0.8)  # running low: the flame stutters
 	for poly in Geometry2D.offset_polygon(pts, 2.5, Geometry2D.JOIN_ROUND):
 		draw_colored_polygon(poly, INK)
 	draw_colored_polygon(pts, body)

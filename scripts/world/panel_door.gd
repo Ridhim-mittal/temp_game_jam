@@ -14,6 +14,8 @@ const H := 156.0
 
 ## Pencilled into the next panel during the transition.
 @export var next_title := ""
+## The next level is a vertical one: its panel on the page is tall.
+@export var tall_panel := false
 
 var _glow_node: Node2D
 
@@ -37,7 +39,7 @@ func _ready() -> void:
 func _on_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player") and _leaving == -1.0 and target_scene != "":
 		_leaving = -50.0  # gone for good (never the base class's ink wipe)
-		PanelTurn.start(self, target_scene, next_title)
+		PanelTurn.start(self, target_scene, next_title, tall_panel)
 
 
 func _process(delta: float) -> void:

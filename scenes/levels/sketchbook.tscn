@@ -51,7 +51,7 @@ size = Vector2(80, 1700)
 
 [node name="Caption1" type="Node2D" parent="World"]
 z_index = 5
-position = Vector2(8680, 420)
+position = Vector2(8680, 455)
 script = ExtResource("43_caption")
 text = "HOLD Q - RAISE YOUR EMBER\nLIGHT MAKES THE SKETCH REAL"
 tilt = -0.03
@@ -71,6 +71,7 @@ position = Vector2(8680, 610)
 script = ExtResource("41_sketch")
 size = Vector2(520, 20)
 inkable = true
+drinks_light = false
 
 [node name="Ground2" type="StaticBody2D" parent="World"]
 position = Vector2(9100, 850)
@@ -79,57 +80,73 @@ size = Vector2(320, 500)
 
 [node name="Caption2" type="Node2D" parent="World"]
 z_index = 5
-position = Vector2(9560, 400)
+position = Vector2(9470, 445)
 script = ExtResource("43_caption")
-text = "TOO FAR FOR ONE EMBER?\nSTAND STILL WITH IT RAISED: THE SKETCH INKS IN.\nINK STAYS. REST ON IT."
+text = "TOO FAR FOR ONE EMBER?\nSTAND STILL WITH IT RAISED: INK SPREADS FROM YOUR FEET.\nINK STAYS. REST ON IT."
 tilt = -0.03
 
 [node name="PitFloor2" type="StaticBody2D" parent="World"]
-position = Vector2(9960, 950)
+position = Vector2(9980, 950)
 script = ExtResource("3_block")
-size = Vector2(1400, 300)
+size = Vector2(1440, 300)
 
 [node name="PitSpikes2" type="StaticBody2D" parent="World"]
-position = Vector2(9960, 788)
+position = Vector2(9980, 788)
 script = ExtResource("4_spikes")
-size = Vector2(1400, 24)
+size = Vector2(1440, 24)
 
 [node name="Sketch2" type="StaticBody2D" parent="World"]
-position = Vector2(9960, 610)
+position = Vector2(9650, 610)
 script = ExtResource("41_sketch")
-size = Vector2(1400, 20)
+size = Vector2(780, 20)
 inkable = true
+drinks_light = false
 
-[node name="Ground3" type="StaticBody2D" parent="World"]
-position = Vector2(10780, 850)
-script = ExtResource("3_block")
-size = Vector2(240, 500)
+[node name="Sketch3" type="StaticBody2D" parent="World"]
+position = Vector2(10445, 610)
+script = ExtResource("41_sketch")
+size = Vector2(510, 20)
+inkable = false
+drinks_light = true
 
 [node name="Caption3" type="Node2D" parent="World"]
 z_index = 5
-position = Vector2(10990, 440)
+position = Vector2(10445, 470)
+script = ExtResource("43_caption")
+text = "BLUE PENCIL NEVER TAKES INK.\nIT DRINKS YOUR LIGHT."
+tilt = 0.03
+
+[node name="Ground3" type="StaticBody2D" parent="World"]
+position = Vector2(10820, 850)
+script = ExtResource("3_block")
+size = Vector2(240, 500)
+
+[node name="Caption4" type="Node2D" parent="World"]
+z_index = 5
+position = Vector2(11030, 470)
 script = ExtResource("43_caption")
 text = "LANTERNS ARE FREE LIGHT.\nSHADOWS ARE NOT."
 tilt = 0.03
 
 [node name="PitFloor3" type="StaticBody2D" parent="World"]
-position = Vector2(11170, 950)
+position = Vector2(11210, 950)
 script = ExtResource("3_block")
 size = Vector2(540, 300)
 
 [node name="PitSpikes3" type="StaticBody2D" parent="World"]
-position = Vector2(11170, 788)
+position = Vector2(11210, 788)
 script = ExtResource("4_spikes")
 size = Vector2(540, 24)
 
-[node name="Sketch3" type="StaticBody2D" parent="World"]
-position = Vector2(11170, 610)
+[node name="Sketch4" type="StaticBody2D" parent="World"]
+position = Vector2(11210, 610)
 script = ExtResource("41_sketch")
 size = Vector2(540, 20)
 inkable = true
+drinks_light = false
 
 [node name="Lantern1" type="Node2D" parent="World"]
-position = Vector2(11160, 220)
+position = Vector2(11200, 220)
 script = ExtResource("40_lantern")
 radius = 400
 chain = 120
@@ -138,24 +155,24 @@ lit = true
 casts_shadows = true
 
 [node name="Sign1" type="StaticBody2D" parent="World"]
-position = Vector2(11246.5, 451)
+position = Vector2(11286.5, 451)
 script = ExtResource("3_block")
 size = Vector2(63, 22)
 
-[node name="Caption4" type="Node2D" parent="World"]
+[node name="Caption5" type="Node2D" parent="World"]
 z_index = 5
-position = Vector2(11470, 360)
+position = Vector2(11510, 385)
 script = ExtResource("43_caption")
 text = "HIT THE LANTERN.\nA SHADOW IS INK TOO."
 tilt = -0.03
 
 [node name="Ground4" type="StaticBody2D" parent="World"]
-position = Vector2(11970, 850)
+position = Vector2(12010, 850)
 script = ExtResource("3_block")
 size = Vector2(1060, 500)
 
 [node name="Lantern2" type="Node2D" parent="World"]
-position = Vector2(11550, 520)
+position = Vector2(11590, 520)
 script = ExtResource("40_lantern")
 radius = 220
 chain = 0
@@ -164,12 +181,12 @@ lit = false
 casts_shadows = true
 
 [node name="Cutout1" type="StaticBody2D" parent="World"]
-position = Vector2(11640, 470)
+position = Vector2(11680, 470)
 script = ExtResource("42_caster")
 stick = 130
 
 [node name="Wall2" type="StaticBody2D" parent="World"]
-position = Vector2(11830, 435)
+position = Vector2(11870, 435)
 script = ExtResource("3_block")
 size = Vector2(60, 330)
 
@@ -178,25 +195,26 @@ position = Vector2(8250, 600)
 script = ExtResource("18_pen")
 
 [node name="Checkpoint2" type="Area2D" parent="World"]
-position = Vector2(10780, 600)
+position = Vector2(10820, 600)
 script = ExtResource("18_pen")
 
 [node name="Checkpoint3" type="Area2D" parent="World"]
-position = Vector2(11480, 600)
+position = Vector2(11520, 600)
 script = ExtResource("18_pen")
 
 [node name="Heart1" type="Area2D" parent="World"]
-position = Vector2(10720, 560)
+position = Vector2(10760, 560)
 script = ExtResource("19_heart")
 
 [node name="PanelDoor" type="Area2D" parent="World"]
-position = Vector2(12260, 600)
+position = Vector2(12300, 600)
 script = ExtResource("44_door")
 target_scene = "res://scenes/levels/long_drop.tscn"
 next_title = "THE LONG DROP"
+tall_panel = true
 
 [node name="Wall3" type="StaticBody2D" parent="World"]
-position = Vector2(12540, 250)
+position = Vector2(12580, 250)
 script = ExtResource("3_block")
 size = Vector2(80, 1700)
 
@@ -223,35 +241,31 @@ position = Vector2(8860, 560)
 script = ExtResource("9_coin")
 
 [node name="Coin6" type="Area2D" parent="Coins"]
-position = Vector2(9900, 560)
+position = Vector2(10080, 540)
 script = ExtResource("9_coin")
 
 [node name="Coin7" type="Area2D" parent="Coins"]
-position = Vector2(9960, 560)
+position = Vector2(10150, 540)
 script = ExtResource("9_coin")
 
 [node name="Coin8" type="Area2D" parent="Coins"]
-position = Vector2(10020, 560)
+position = Vector2(11760, 380)
 script = ExtResource("9_coin")
 
 [node name="Coin9" type="Area2D" parent="Coins"]
-position = Vector2(11720, 380)
-script = ExtResource("9_coin")
-
-[node name="Coin10" type="Area2D" parent="Coins"]
-position = Vector2(11760, 350)
+position = Vector2(11800, 350)
 script = ExtResource("9_coin")
 
 [node name="Enemies" type="Node2D" parent="."]
 
 [node name="Scribble1" parent="Enemies" instance=ExtResource("20_scribble")]
-position = Vector2(9800, 380)
+position = Vector2(9850, 360)
 
 [node name="Scribble2" parent="Enemies" instance=ExtResource("20_scribble")]
-position = Vector2(10150, 340)
+position = Vector2(10500, 340)
 
 [node name="Crossed1" parent="Enemies" instance=ExtResource("22_crossed")]
-position = Vector2(10820, 570)
+position = Vector2(10860, 570)
 
 [node name="Player" parent="." instance=ExtResource("1_player")]
 position = Vector2(8100, 570)
@@ -278,3 +292,24 @@ script = ExtResource("30_mood")
 [node name="ComicFrame" type="CanvasLayer" parent="."]
 script = ExtResource("45_frame")
 page_number = 2
+live_areas = Array[Rect2]([Rect2(7820, -1200, 4800, 1860), Rect2(8420, 590, 520, 222), Rect2(9260, 590, 1440, 222), Rect2(10940, 590, 540, 222)])
+
+[node name="Narration1" type="CanvasLayer" parent="."]
+script = ExtResource("46_narration")
+text = "PAST THE CITY, THE WORLD WAS STILL A SKETCH: PENCIL LINES THAT ONLY TURNED REAL IN THE LIGHT."
+trigger_x = -1e+09
+
+[node name="Narration2" type="CanvasLayer" parent="."]
+script = ExtResource("46_narration")
+text = "SOME BRIDGES WERE TOO LONG FOR ONE BREATH OF LIGHT. SO VESPER STOPPED, AND LET THE INK SET."
+trigger_x = 9100
+
+[node name="Narration3" type="CanvasLayer" parent="."]
+script = ExtResource("46_narration")
+text = "THE OLD LANTERNS STILL REMEMBERED HOW TO SHINE. BUT LIGHT CASTS SHADOWS."
+trigger_x = 10840
+
+[node name="Narration4" type="CanvasLayer" parent="."]
+script = ExtResource("46_narration")
+text = "AND BELOW THE LAST PAGE OF THE SKETCHBOOK, THE WORLD DROPPED AWAY INTO THE DARK..."
+trigger_x = 11940

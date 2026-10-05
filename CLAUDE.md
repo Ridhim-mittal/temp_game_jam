@@ -19,8 +19,11 @@ All art is drawn in code (`_draw()`, shaders, primitive meshes); no texture asse
 `cs_opening` → THE CITY (`scenes/levels/test_level.tscn`, a ~1 min controls tutorial) → glowing
 `panel_door.gd` ("MOVE TO THE NEXT PANEL") → THE SKETCHBOOK (`sketchbook.tscn`, light tutorial) →
 door into THE LONG DROP. Doors play `scripts/effects/panel_turn.gd` (the frame shrinks into a panel on
-a comic page, pan across the gutter, the next panel inks in and zooms up). Both levels sit inside a
-comic page (`scripts/ui/comic_frame.gd`); the City opens with the Writer's typed caption
+a comic page, pan across the gutter while the next level loads in the background, the next panel inks in
+and opens out; the live level inside it is scaled via the root's `global_canvas_transform`; a door's
+`tall_panel` gives a vertical level a tall panel that inks top-down). Both levels sit inside a
+comic page (`scripts/ui/comic_frame.gd`; outside its `live_areas` the world is redrawn as a pencil
+sketch by `shaders/pencil_outside.gdshader`, the HUD stays as is); the City opens with the Writer's typed caption
 (`scripts/ui/narration.gd`, once per run via GameState.seen; the controls tutorial waits for it).
 Both levels come from `tools/level2d/build_test_level.py`. The trapdoor
 (`trapdoor.gd` + `gutter_fall.gd`) is kept for a later level but no longer placed.
@@ -78,8 +81,8 @@ walls can't be climbed (keeps the light puzzles intact); a slide also resets the
   Ember's fuel covers, F), above the Ember bar.
 - The Writer's Haunting Lamp (`scripts/world25/haunt_lamp.gd`, built on `searchlight.gd`):
   room.gd spawns it in every room from the biome's `haunt` profile (`data/haunt/*.tres`,
-  `haunt_profile.gd`), scaled by Settings difficulty and the room's `haunt_scale` (set in the
-  generator). States DORMANT/SEEK/MARK/STRIKE/LINGER/LOST; standing in its light fills the erase
+  `haunt_profile.gd`), scaled by Settings difficulty and the room's `haunt_scale`; a room's
+  `haunt_lamps` (-1 = the profile's count) overrides how many hunt (both set in the generator). States DORMANT/SEEK/MARK/STRIKE/LINGER/LOST; standing in its light fills the erase
   meter (a full meter = an ink drop); hide behind solid props. `room.haunt_hold()` stops strikes
   during transitions and boss intros. The hub's lamp only searches. The circle steers with
   inertia (`_steer`), is interpolated between ticks, keeps to the floor (`room.on_floor()`) and
@@ -88,6 +91,8 @@ walls can't be climbed (keeps the light puzzles intact); a slide also resets the
   chevron follow; the mouse position is ignored (buttons only). Aim assist (`aim_assist_angle`,
   `aim_assist_range`, Settings toggle). World25 owns `Input.mouse_mode`: hidden while a room is
   in play (room.gd `in_gameplay()`), visible in menus; Settings "Cursor in game" keeps it shown.
+- Spawn protection: `spawn_protection` (2 s) on clearing_player.gd, on arriving in a room and after
+  dying: no damage, and lamps can't fill the erase meter (`is_protected()`); Vesper blinks.
 - Autoload `World25` (`scripts/world25/world25.gd`): story state, cleared rooms, ink-wipe
   transitions, player health between rooms.
 - Props are `@tool` scripts that build meshes under a "Generated" child (never saved); edit
@@ -96,12 +101,18 @@ walls can't be climbed (keeps the light puzzles intact); a slide also resets the
 ## 2.5D story (main menu → "Begin in the Margins")
 Zones (display names; code names stay): hub = The Spine, darkwood_* = The Inkwood, shallows_* =
 The Drowned Margin, wastes_* = The Torn Wastes, arena = The Rubbing Room.
-Hub `scenes/clearing/clearing.tscn` (hand-made, not generated) → cave → `scenes/world25/rooms/`: darkwood_1, darkwood_2,
-darkwood_bridge, darkwood_3 (blends forest into water) → shallows_1, shallows_2, shallows_field →
-shallows_pen (Red Pen boss, `scripts/clearing/red_pen_3d.gd`: wet-ink circles dry in light) →
-wastes_1, wastes_2, wastes_gap → arena (Eraser boss) → `cs_reveal` cutscene.
+Hub `scenes/clearing/clearing.tscn` (hand-made, not generated) → cave → four levels in
+`scenes/world25/rooms/`, a row running west: 1 darkwood_1 (one of every ordinary monster, easy) →
+2 shallows_pen (Red Pen boss, `scripts/clearing/red_pen_3d.gd`: wet-ink circles dry in light; two
+lamps) → 3 wastes_gap (a sketched bridge inked with Q; one slow lamp) → 4 arena (the Eraser, hard:
+`eraser_3d.gd` charges twice in a row below `double_charge_below` health) → `cs_reveal` cutscene.
+The other rooms there (darkwood_2/3/bridge, shallows_1/2/field, wastes_1/2) are retired: no gate
+leads to them and the generator only rebuilds them with `OLD_ROOMS = True`.
 Light: `scripts/world25/light.gd` (rules), Ember/Flash/Heal on `clearing_player.gd`, `flash.gd`,
-`drawn_bridge.gd`, `searchlight.gd`; braziers with `lit = false` are lanterns.
+`searchlight.gd`; braziers with `lit = false` are lanterns. `drawn_bridge.gd` is a pencil sketch that
+never forms on its own: next to it Q (the flash action) inks instead of flashing, and while held, ink
+runs from Vesper's feet along the planks for good (`ink_reach`, `ink_speed`, `ink_cost` Ember fuel
+a plank); `ink_only = false` brings back the old rule (solid only where light reaches).
 Rooms are generated by `tools/rooms25/build_rooms.py` (deterministic; re-running overwrites hand
 edits). Monsters stay dead in story rooms (room.gd sets `respawn_time = 0`).
 
@@ -126,7 +137,7 @@ Settings -> Tutorials or Pause -> Controls replays them).
 ## Checking work
 - Script errors: `godot --headless --path . --quit-after 60 res://<scene>.tscn`
 - Gutter checks (need a display, e.g. `xvfb-run`): `godot --path . --rendering-driver opengl3 -s
-  res://tests/gutter/test_phase1.gd` (also test_phase2, test_phase5); exit code = failures.
+  res://tests/gutter/test_phase1.gd` (also test_phase2, test_phase5, test_levels); exit code = failures.
 - Screenshots: from a script in a temporary scene, call `RenderingServer.force_draw(false)` then
   `get_viewport().get_texture().get_image().save_png(...)`. `--write-movie` stops drawing after a few
   frames when the screen is locked, and hit-stop freezes look far too long in it.

@@ -88,6 +88,10 @@ enum AttackStyle { INK_SLASH, NIB_SWORD, BOTH }
 @export_group("Health")
 @export var max_health := 5
 @export var invuln_time := 1.0
+## Spawn protection: nothing can hurt Vesper for this many seconds after he
+## arrives in a room or comes back after dying (monsters, falls, the
+## Writer's lamps); he blinks while it lasts.
+@export var spawn_protection := 2.0
 @export var hurt_knockback := 7.0
 @export var hurt_hop := 4.0
 
@@ -158,6 +162,7 @@ var _coyote := 0.0
 var _jump_buffer := 0.0
 var _jumping := false
 var _invuln := 0.0
+var _spawn_guard := 0.0  # seconds of spawn protection left (see spawn_protection)
 var _hurt_timer := 0.0
 var _slow_sources := {}  # source -> Vector2(speed_mult, jump_mult)
 var _channel := -1.0  # seconds spent channelling a heal; -1 = not healing
@@ -176,6 +181,8 @@ var _chevron: MeshInstance3D
 var _chevron_mat: ShaderMaterial
 var _chevron_flash := 0.0
 var _chevron_yaw := 0.0
+## The drawn bridge being inked while Q is held (drawn_bridge.gd), or null.
+var _inking: Node3D = null
 
 @onready var visual_3d: Node3D = $Visual3D
 @onready var sprite: Sprite3D = $Visual3D/Sprite
@@ -198,6 +205,7 @@ func _ready() -> void:
 	_apply_loadout()
 	health = max_health
 	fuel = minf(start_fuel, max_fuel)
+	_spawn_guard = spawn_protection
 	_safe_pos = global_position
 	add_to_group("light_3d")
 	_art_scale = visual.scale.y
@@ -265,6 +273,7 @@ func _physics_process(delta: float) -> void:
 	var in_control := _hurt_timer <= 0.0
 	if not in_control:
 		dir = Vector3.ZERO
+		_inking = null
 	if in_control and input.length() > facing_deadzone and _attack_timer <= 0.0:
 		set_facing(dir)
 
@@ -274,7 +283,11 @@ func _physics_process(delta: float) -> void:
 		if Input.is_action_just_pressed("jump"):
 			_jump_buffer = jump_buffer_time
 		if Input.is_action_just_pressed("flash"):
-			_flash()
+			var sketch := _sketch_near()
+			if sketch:
+				_inking = sketch  # by a drawn bridge, Q inks it instead of flashing
+			else:
+				_flash()
 		# right click is Flash here; Shift / C dash
 		var dash_pressed := Input.is_action_just_pressed("dash") and not Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT)
 		if dash_pressed and _dash_cooldown_timer <= 0.0:
@@ -284,8 +297,10 @@ func _physics_process(delta: float) -> void:
 			_attack_timer = 0.0  # a dash cancels a swing
 			_squash = Vector2(1.3, 0.75)
 		_update_heal(delta)
-		if _channel >= 0.0:
-			dir = Vector3.ZERO  # rooted while healing
+		if _inking:
+			_update_inking(delta)
+		if _channel >= 0.0 or _inking:
+			dir = Vector3.ZERO  # rooted while healing or inking
 		elif _attack_buffer > 0.0 and _attack_timer <= 0.0 and _dash_timer <= 0.0:
 			_start_attack(dir)
 
@@ -303,6 +318,7 @@ func _tick_timers(delta: float) -> void:
 	_combo_timer = maxf(_combo_timer - delta, 0.0)
 	_jump_buffer = maxf(_jump_buffer - delta, 0.0)
 	_invuln = maxf(_invuln - delta, 0.0)
+	_spawn_guard = maxf(_spawn_guard - delta, 0.0)
 	_hurt_timer = maxf(_hurt_timer - delta, 0.0)
 
 
@@ -679,6 +695,29 @@ func _flash() -> void:
 	_squash = Vector2(1.2, 0.85)
 
 
+## The drawn bridge Vesper could ink from where he stands, or null.
+func _sketch_near() -> Node3D:
+	if not is_on_floor():
+		return null
+	for b in get_tree().get_nodes_in_group("drawn_bridge"):
+		if b.can_ink(global_position):
+			return b
+	return null
+
+
+## Holding Q by a drawn bridge: the Ember is up and ink runs out from his
+## feet along the planks (drawn_bridge.gd ink()), until he lets go, it
+## reaches as far as one hold can, or the Ember runs dry.
+func _update_inking(delta: float) -> void:
+	if not Input.is_action_pressed("flash") or not is_on_floor() or _dash_timer > 0.0 or not is_instance_valid(_inking):
+		_inking = null
+		return
+	if not _inking.ink(global_position, delta, self):
+		if fuel < _inking.ink_cost and not _inking.finished():
+			Fx.pop_text(get_tree(), global_position + Vector3(0, 1.8, 0), "fzzt... no Ember left", Color(0.7, 0.6, 0.5), 24)
+		_inking = null
+
+
 ## Hold heal, standing on the ground, to turn fuel into one ink drop.
 func _update_heal(delta: float) -> void:
 	var can := Input.is_action_pressed("heal") and is_on_floor() and health < max_health \
@@ -702,7 +741,7 @@ func _update_heal(delta: float) -> void:
 ## Touching a harmful monster hurts (jumping over it, or dashing through it,
 ## avoids that).
 func _check_contact_damage() -> void:
-	if _invuln > 0.0 or _dash_timer > 0.0:
+	if _invuln > 0.0 or _spawn_guard > 0.0 or _dash_timer > 0.0:
 		return
 	var shape := SphereShape3D.new()
 	shape.radius = 0.42
@@ -717,8 +756,14 @@ func _check_contact_damage() -> void:
 			return
 
 
+## True during spawn protection: lamps don't fill the erase meter and
+## nothing deals damage.
+func is_protected() -> bool:
+	return _spawn_guard > 0.0
+
+
 func take_damage(amount: int, from_pos: Vector3) -> void:
-	if dead or _invuln > 0.0 or _dash_timer > 0.0:
+	if dead or _invuln > 0.0 or _spawn_guard > 0.0 or _dash_timer > 0.0:
 		return
 	if _seal_ready:
 		# Wax-Seal Mantle: the first hit in a room cracks the seal instead
@@ -799,6 +844,7 @@ func _die() -> void:
 	health = max_health
 	health_changed.emit(health, max_health)
 	_invuln = 1.5
+	_spawn_guard = spawn_protection
 	_slow_sources.clear()
 	dead = false
 	_snap_visuals()
@@ -849,9 +895,11 @@ func _update_model(delta: float) -> void:
 	_model.hurt = _hurt_timer / 0.2
 	_model.heal = clampf(_channel / heal_time, 0.0, 1.0) if _channel >= 0.0 else 0.0
 	_model.erase = erase
-	_model.blink = not dead and _invuln > 0.0 and fmod(_invuln, 0.16) < 0.08
+	var blink_t := maxf(_invuln, _spawn_guard)
+	_model.blink = not dead and blink_t > 0.0 and fmod(blink_t, 0.16) < 0.08
 	_model.dead = dead
 	_model.fuel = fuel / max_fuel
+	_model.inking = _inking != null
 	_update_ember_light()
 
 
@@ -872,7 +920,7 @@ func _update_ember_light() -> void:
 	var k := fuel / max_fuel
 	# the Gutter is dark: the Ember lights a real pool round Vesper
 	ember_light.omni_range = lerpf(3.4, 6.0, k)
-	ember_light.light_energy = lerpf(0.9, 1.9, k)
+	ember_light.light_energy = lerpf(0.9, 1.9, k) * (1.5 if _inking else 1.0)  # brighter while inking
 
 
 func _update_art(delta: float) -> void:
@@ -899,6 +947,7 @@ func _update_art(delta: float) -> void:
 		# (a dark flicker rather than fading out: the sprite is alpha-cut, so a
 		# faded frame would vanish entirely, e.g. if the game pauses on it)
 		var w := 1.0 + erase * 1.6
-		if _invuln > 0.0 and fmod(_invuln, 0.16) < 0.08:
+		var blink_t := maxf(_invuln, _spawn_guard)
+		if blink_t > 0.0 and fmod(blink_t, 0.16) < 0.08:
 			w *= 0.45
 		sprite.modulate = Color(w, w, w * 1.1, 1.0)

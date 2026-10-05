@@ -1,9 +1,9 @@
 extends CanvasLayer
 ## The Writer narrating: a yellow caption box in the top-left corner of the
-## panel whose text is written in letter by letter by a fountain-pen nib,
-## then it holds and fades. Plays once per run (GameState remembers), and
+## panel whose text types in letter by letter, then holds and fades. Plays once per run (GameState remembers), and
 ## the controls tutorial waits until it's done (busy()).
-## Drop one into a level and set `text`.
+## Drop several into a level, each with its `text` and the `trigger_x` the
+## player must pass; they queue up, so two never write at once.
 
 const FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
 const INK := Color(0.05, 0.03, 0.1)
@@ -13,11 +13,15 @@ const CAPTION := Color(1.0, 0.9, 0.45)
 @export var delay := 0.8
 @export var letters_per_second := 34.0
 @export var hold := 3.5
-@export var font_size := 24
-@export var width := 520.0
+## Starts once the player is right of this x (very negative = on arrival).
+@export var trigger_x := -1.0e9
+@export var font_size := 30
+@export var width := 660.0
 
 var _t := 0.0
 var _done := false
+var _started := false
+var _id := ""
 var _lines: PackedStringArray = []
 var _art: Control
 
@@ -29,13 +33,15 @@ func _enter_tree() -> void:
 func _ready() -> void:
 	layer = 3
 	var state := get_node_or_null("/root/GameState")
-	var id: String = "narration:" + (owner.scene_file_path if owner else String(name))
-	if text == "" or (state and "seen" in state and state.seen.has(id)):
+	_id = "narration:%s:%s" % [owner.scene_file_path if owner else "", name]
+	if text == "" or (state and "seen" in state and state.seen.has(_id)):
 		_done = true
 		return
-	if state and "seen" in state:
-		state.seen[id] = true
 	_lines = _wrap(text)
+	var widest := 0.0
+	for l in _lines:
+		widest = maxf(widest, FONT.get_string_size(l, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x)
+	width = widest + 6.0  # the box hugs its text
 	_art = Control.new()
 	_art.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_art.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -45,12 +51,31 @@ func _ready() -> void:
 
 ## Read by the controls tutorial: it waits while the Writer is writing.
 func busy() -> bool:
-	return not _done
+	return not _done and (_started or trigger_x < -1.0e8)
+
+
+## Writing (or waiting to write) right now.
+func showing() -> bool:
+	return _started and not _done
 
 
 func _process(delta: float) -> void:
 	if _done:
 		return
+	if not _started:
+		var p := get_tree().get_first_node_in_group("player") as Node2D
+		if p == null or p.global_position.x < trigger_x:
+			return
+		if trigger_x > -1.0e8 and p.global_position.x > trigger_x + 1400.0:
+			_done = true  # rushed past it while another was writing: skip, don't tell it late
+			return
+		for other in get_tree().get_nodes_in_group("narration"):
+			if other != self and other.showing():
+				return  # wait for the Writer to finish the last one
+		_started = true
+		var state := get_node_or_null("/root/GameState")
+		if state and "seen" in state:
+			state.seen[_id] = true
 	_t += delta
 	if _t > _total() + 0.5:
 		_done = true
@@ -92,29 +117,12 @@ func _draw_caption() -> void:
 	c.draw_rect(Rect2(box.position + Vector2(6, 6), box.size), Color(INK, 0.35 * a))
 	c.draw_rect(box.grow(3.0), Color(INK, a))
 	c.draw_rect(box, Color(CAPTION, a))
-	# letters appear one by one; the nib sits at the newest one
+	# letters appear one by one
 	var left := shown
-	var nib := Vector2.ZERO
 	for i in _lines.size():
 		var line: String = _lines[i]
 		var part := line.substr(0, clampi(left, 0, line.length()))
 		var base := box.position + Vector2(14, 12 + lh * (i + 0.8))
 		c.draw_string(FONT, base, part, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color(INK, a))
-		if left > 0 and left <= line.length():
-			nib = base + Vector2(FONT.get_string_size(part, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x, -font_size * 0.3)
 		left -= line.length() + 1
-	if shown < text.length() and nib != Vector2.ZERO:
-		_draw_nib(c, nib + Vector2(sin(_t * 30.0) * 1.5, cos(_t * 26.0) * 2.0), a)
 	c.draw_set_transform(Vector2.ZERO)
-
-
-## A gold fountain-pen nib writing, tip at `p`.
-func _draw_nib(c: Control, p: Vector2, a: float) -> void:
-	var tip := p
-	var nib := PackedVector2Array([tip, tip + Vector2(10, -16), tip + Vector2(20, -12), tip + Vector2(6, 2)])
-	var body := PackedVector2Array([tip + Vector2(10, -16), tip + Vector2(40, -58), tip + Vector2(52, -50), tip + Vector2(20, -12)])
-	c.draw_colored_polygon(body, Color(0.86, 0.13, 0.15, a))
-	c.draw_polyline(body + PackedVector2Array([body[0]]), Color(INK, a), 2.0)
-	c.draw_colored_polygon(nib, Color(0.98, 0.76, 0.28, a))
-	c.draw_polyline(nib + PackedVector2Array([nib[0]]), Color(INK, a), 2.0)
-	c.draw_circle(tip, 2.5, Color(INK, a))

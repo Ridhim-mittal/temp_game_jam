@@ -4,6 +4,9 @@ extends CanvasLayer
 ## screen and a thick, slightly hand-drawn ink border on the panel. The
 ## page and border match the next-panel transition (panel_turn.gd), so
 ## zooming out of the screen reveals the same page.
+## Outside the level's playable areas (`live_areas`, world rects) the world
+## is redrawn as a pencil sketch of itself (shaders/pencil_outside.gdshader),
+## like the unfinished part of the page; the HUD sits above and stays as is.
 ## Drop one into a level (layer 1: above the world, under the HUD).
 
 const INK := Color(0.05, 0.03, 0.1)
@@ -12,17 +15,47 @@ const PAPER := Color(0.96, 0.93, 0.86)
 const PANEL := Rect2(24, 18, 1232, 684)
 
 @export var page_number := 1
+## Playable parts of the level (world coordinates); the rest is pencil.
+@export var live_areas: Array[Rect2] = []
 
 var _art: Control
+var _sketch_mat: ShaderMaterial
 
 
 func _ready() -> void:
 	layer = 1
+	process_mode = Node.PROCESS_MODE_ALWAYS  # keeps the pencil mask right while paused (and in panel_turn.gd)
+	if not live_areas.is_empty():
+		var sketch := ColorRect.new()
+		sketch.set_anchors_preset(Control.PRESET_FULL_RECT)
+		sketch.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_sketch_mat = ShaderMaterial.new()
+		_sketch_mat.shader = preload("res://shaders/pencil_outside.gdshader")
+		var areas := PackedVector4Array()
+		for a in live_areas:
+			areas.append(Vector4(a.position.x, a.position.y, a.end.x, a.end.y))
+		while areas.size() < 8:
+			areas.append(Vector4.ZERO)
+		_sketch_mat.set_shader_parameter("areas", areas)
+		_sketch_mat.set_shader_parameter("area_count", mini(live_areas.size(), 8))
+		sketch.material = _sketch_mat
+		add_child(sketch)
 	_art = Control.new()
 	_art.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_art.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_art.draw.connect(_draw_frame)
 	add_child(_art)
+
+
+func _process(_delta: float) -> void:
+	if _sketch_mat == null:
+		return
+	# screen px -> world, for the pencil mask
+	var xf := get_viewport().get_canvas_transform().affine_inverse()
+	_sketch_mat.set_shader_parameter("xf_x", xf.x)
+	_sketch_mat.set_shader_parameter("xf_y", xf.y)
+	_sketch_mat.set_shader_parameter("xf_o", xf.origin)
+	_sketch_mat.set_shader_parameter("base_size", get_viewport().get_visible_rect().size)
 
 
 ## The page round a panel `r` (also used by panel_turn.gd).
