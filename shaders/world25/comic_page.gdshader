@@ -6,7 +6,8 @@ shader_type spatial;
 // pencil cross-hatching, speed lines round a POW burst, a Ben-Day dot sky,
 // a night with a halftone moon. The page drifts slowly.
 // With `single` the quad is one torn-out panel (the scraps floating in the
-// void), its picture picked by `seed`.
+// void), its picture picked by `seed`. Down in the dead zone the print has
+// faded: `faded` drains its colour towards a yellowed grey.
 render_mode unshaded, cull_disabled, shadows_disabled, specular_disabled, fog_disabled, depth_draw_opaque;
 
 uniform vec4 paper : source_color = vec4(0.93, 0.9, 0.82, 1.0);
@@ -19,6 +20,8 @@ uniform vec2 drift = vec2(0.05, 0.025);
 uniform bool single = false;
 uniform float seed = 0.0;
 uniform float alpha = 1.0;
+// 0 = fresh print .. 1 = all colour gone, only yellowed grey left.
+uniform float faded = 0.7;
 
 varying vec3 wpos;
 
@@ -149,6 +152,8 @@ void fragment() {
 	if (a < 0.02) {
 		discard;
 	}
+	float lum = dot(col, vec3(0.3, 0.55, 0.15));
+	col = mix(col, vec3(lum) * vec3(1.0, 0.94, 0.82), faded);
 	ALBEDO = col * brightness;
 	ALPHA = a;
 }

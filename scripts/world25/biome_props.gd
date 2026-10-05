@@ -6,20 +6,19 @@ extends Node3D
 ## (Color(0, 0, 0, 0) = the prop's own colours), `count`/`radius` are used by
 ## clusters. Set `solid` to block the player.
 ##
-## Everything in the Gutter is what the Writer threw away or left lying at the
-## edge of his desk (the kinds keep their old names; scenes store numbers):
-## Darkwood:  TOMBSTONE (discarded drafts: a cracked, dried ink blob, a
-##            snapped pen nib stuck in the ground, crumpled paper and
-##            crossed-out scraps), STUMP (a worn-down pencil stub)
-## Shrine:    PILLAR (a leaning stack of old books), RITUAL_CIRCLE (a
-##            glowing circle of the Writer's marks round a pen nib),
-##            SHADE_STATUE
-## Anywhere:  SKULL_PILE (a heap of `count` crumpled pages and snapped
-##            pencils), CANDLES (`count` candles), RUNE_STONE (a giant pen
-##            nib standing in the ground, one of the Writer's marks glowing
-##            in its breather hole)
+## The Gutter is the dead zone: everything here is worn out, broken and
+## torn apart (the kinds keep their old names; scenes store numbers):
+## Darkwood:  TOMBSTONE (a grave: a giant broken nib, greyed and rusted,
+##            in a mound wrapped in brambles, broken_nib.gd), STUMP (a
+##            split, dead stump)
+## Shrine:    PILLAR (a broken stone pillar), RITUAL_CIRCLE (a glowing
+##            circle of cryptic marks), SHADE_STATUE
+## Anywhere:  SKULL_PILE (a heap of `count` crumpled, yellowed pages),
+##            CANDLES (`count` candles), RUNE_STONE (a cracked standing
+##            stone, a cryptic mark glowing in its face)
 ## Shallows:  INK_POOL
-## Wastes:    CRYSTAL, PAPER_MOUND, PINS, PENCIL_TOTEM, INK_POT
+## Wastes:    CRYSTAL (torn pages), PAPER_MOUND, PINS (rusty),
+##            PENCIL_TOTEM (a giant broken nib driven in), INK_POT
 ##
 ## Retired (no longer placed anywhere, kept so the enum's integers stay put;
 ## never remove or reorder Kind values, scenes store them as numbers):
@@ -34,10 +33,13 @@ const SIGIL_GLOW := Color(1.0, 0.26, 0.16)
 const SPLAT_SHADER = preload("res://shaders/clearing/ink_splat.gdshader")
 const INK := Color(0.08, 0.06, 0.12)
 const PAPER := Color(0.82, 0.79, 0.7)
-const STEEL := Color(0.7, 0.72, 0.78)
-## Muted paints for pencils and book covers (the Gutter is dark).
-const PAINTS := [Color(0.78, 0.6, 0.2), Color(0.55, 0.16, 0.14), Color(0.18, 0.3, 0.45), Color(0.22, 0.36, 0.24),
-	Color(0.4, 0.26, 0.42), Color(0.5, 0.36, 0.22)]
+const EARTH := Color(0.2, 0.16, 0.14)
+## Grime and rust creeping over stone and iron (Toon "moss" in these colours).
+const GRIME := Color(0.17, 0.15, 0.15)
+const RUST := Color(0.36, 0.24, 0.19)
+const BrokenNib = preload("res://scripts/world25/broken_nib.gd")
+## What the graves say, scratched into their nibs ("" = nothing).
+const EPITAPHS := ["REST\nIN INK", "THE INK\nRUNS DRY", "UNFINISHED", "STRUCK\nOUT", "NEVER\nINKED", ""]
 
 enum Kind {
 	CANOPY, TOMBSTONE, STUMP, GARDEN_PLOT, BARN, SCARECROW,
@@ -169,49 +171,54 @@ func _canopy(root: Node3D, s: float) -> void:
 		Toon.billboard(root, EYES_SHADER, Vector2(0.9, 0.45) * s, hp + Vector3(0, 0, 0.12), {"color": Color(1.0, 0.15, 0.1)})
 
 
-## A grave: a leaning headstone on a low mound of dug earth. Most were
-## crossed out in red (cut characters); the rest bear a carved sigil that
-## glows faintly. Skulls and bones lie round it, and now and then a candle.
-## The Writer's discarded drafts, where the graves used to be: a dried ink
-## blob, cracked, with shards broken off it; a pen nib snapped in two, half
-## of it stuck point-first in the ground; crumpled balls of paper and torn
-## scraps with crossed-out scribbles.
+## A grave of the dead zone: a giant pen nib, greyed and rusted, snapped at
+## the point (broken_nib.gd), stuck leaning in a mound of dug earth wrapped
+## in thorny brambles, ink bleeding from the break into a puddle at its
+## foot, an epitaph scratched into it; a torn page lying in the dirt.
 func _tombstone(root: Node3D, s: float) -> void:
-	var ink := _col(INK)
-	var turn := Node3D.new()
-	turn.rotation_degrees.y = _rng.randf_range(-30, 30)
-	root.add_child(turn)
-	# the dried blob, glossy and cracked
-	var blob := Toon.part(turn, Toon.sphere(0.6 * s, 12, 6, true), ink, Vector3(0, 0, 0), Vector3.ZERO, {"outline": 0.03, "emission": 0.04})
-	blob.scale = Vector3(1.0, 0.5, 0.8)
-	Toon.part(turn, Toon.box(Vector3(0.22, 0.02, 0.06) * s), Color(0.7, 0.72, 0.8), Vector3(-0.15 * s, 0.29 * s, -0.1 * s),
-		Vector3(0, 30, 0), {"outline": 0.0, "emission": 0.6})
-	for k in 3:
-		var a := _rng.randf_range(-0.6, 0.6) + k * 2.1
-		Toon.part(turn, Toon.box(Vector3(0.02, 0.025, 0.4) * s), Color(0.32, 0.3, 0.36), Vector3(cos(a) * 0.2 * s, 0.27 * s, sin(a) * 0.2 * s),
-			Vector3(0, rad_to_deg(-a), 0), {"outline": 0.0})
-	for k in 3:
+	var mound := Toon.part(root, Toon.sphere(0.8 * s, 12, 6, true), _col(EARTH), Vector3(0, -0.04, 0), Vector3.ZERO, {"outline": 0.025})
+	mound.scale = Vector3(1.0, 0.38, 0.85)
+	for k in 4:  # clods of earth turned up round it
 		var a := _rng.randf() * TAU
-		var shard := Toon.part(turn, Toon.prism(Vector3(0.2, 0.16, 0.12) * s), ink, Vector3(cos(a) * 0.75 * s, 0.05 * s, sin(a) * 0.65 * s),
-			Vector3(_rng.randf_range(-40, 40), _rng.randf() * 180.0, _rng.randf_range(60, 110)), {"outline": 0.02})
-		shard.scale = Vector3.ONE
-	# the snapped nib: one half stuck in the ground, the tip lying by it
-	var nib := Node3D.new()
-	nib.position = Vector3(0.55 * s, 0.32 * s, 0.25 * s)
-	nib.rotation_degrees = Vector3(_rng.randf_range(-20, -10), _rng.randf_range(-40, 40), 160.0 + _rng.randf_range(-15, 15))
-	turn.add_child(nib)
-	Toon.part(nib, Toon.prism(Vector3(0.34, 0.75, 0.05) * s), STEEL, Vector3.ZERO, Vector3.ZERO, {"outline": 0.02, "emission": 0.1})
-	Toon.part(nib, Toon.box(Vector3(0.025, 0.5, 0.06) * s), INK, Vector3(0, 0.08 * s, 0), Vector3.ZERO, {"outline": 0.0})
-	Toon.part(nib, Toon.cylinder(0.04 * s, 0.04 * s, 0.07 * s, 8), INK, Vector3(0, -0.15 * s, 0), Vector3(90, 0, 0), {"outline": 0.0})
-	var tip := Toon.part(turn, Toon.prism(Vector3(0.2, 0.35, 0.04) * s), STEEL, Vector3(-0.7 * s, 0.03 * s, 0.45 * s),
-		Vector3(90, _rng.randf() * 180.0, 0), {"outline": 0.015, "emission": 0.1})
-	tip.scale = Vector3.ONE
-	# crumpled pages and torn scraps, crossed out in red pen
-	for k in 2 + _rng.randi() % 2:
-		_crumple(turn, Vector3(_rng.randf_range(-0.9, 0.9) * s, 0.0, _rng.randf_range(0.4, 0.9) * s), _rng.randf_range(0.16, 0.26) * s)
-	for k in 1 + _rng.randi() % 2:
-		_scrap(turn, Vector3(_rng.randf_range(-0.8, 0.8) * s, 0.01, _rng.randf_range(-0.7, 0.8) * s), s, true)
-	_collide(root, Toon.box_shape(Vector3(1.3, 1.0, 1.0) * s), Vector3(0, 0.4 * s, 0))
+		var clod := Toon.part(root, Toon.sphere(_rng.randf_range(0.08, 0.15) * s, 6, 3), EARTH.darkened(0.15),
+			Vector3(cos(a) * 0.85, 0.02, sin(a) * 0.75) * s, Vector3.ZERO, {"outline": 0.015})
+		clod.scale = Vector3(1.0, 0.6, 1.0)
+	var holder := Node3D.new()
+	holder.position = Vector3(0, 0.05 * s, -0.05 * s)
+	holder.rotation_degrees = Vector3(_rng.randf_range(-12, -3), _rng.randf_range(-25, 25), _rng.randf_range(-12, 12))
+	root.add_child(holder)
+	BrokenNib.build(holder, _rng.randf_range(0.75, 0.9) * s, seed * 3 + _rng.randi() % 100, EPITAPHS[_rng.randi() % EPITAPHS.size()])
+	var puddle := Toon.part(root, Toon.cylinder(0.32 * s, 0.36 * s, 0.02, 14), INK, Vector3(_rng.randf_range(-0.2, 0.2) * s, 0.01, 0.78 * s),
+		Vector3.ZERO, {"outline": 0.0})
+	puddle.scale = Vector3(1.3, 1.0, 0.7)
+	for k in 3 + _rng.randi() % 3:
+		_bramble(root, s)
+	if _rng.randf() < 0.6:
+		_scrap(root, Vector3(_rng.randf_range(-0.9, 0.9) * s, 0.01, _rng.randf_range(0.6, 1.0) * s), s, _rng.randf() < 0.3)
+	_collide(root, Toon.box_shape(Vector3(1.2, 1.8, 0.9) * s), Vector3(0, 0.9 * s, 0))
+
+
+## A thorny bramble creeping out of the earth round a grave: a dark stem
+## sweeping round and arching up in a few bends, a thorn on every bend.
+func _bramble(root: Node3D, s: float) -> void:
+	var a := _rng.randf() * TAU
+	var out := Vector3(cos(a), 0, sin(a))
+	var p := out * _rng.randf_range(0.35, 0.75) * s + Vector3(0, 0.02, 0)
+	var dir := Vector3(-out.z, 0, out.x) * (1.0 if _rng.randf() < 0.5 else -1.0)
+	var rise := _rng.randf_range(0.25, 0.65) * s
+	var col := Color(0.09, 0.07, 0.08)
+	for i in 6:
+		var t := (i + 0.5) / 6.0
+		var q := p + dir * 0.17 * s + Vector3(0, cos(t * PI) * rise * 0.45, 0) + out * _rng.randf_range(-0.05, 0.07) * s
+		dir = dir.rotated(Vector3.UP, _rng.randf_range(-0.6, 0.6))
+		var seg := Node3D.new()
+		seg.position = (p + q) * 0.5
+		seg.basis = Basis(Quaternion(Vector3.UP, (q - p).normalized()))
+		root.add_child(seg)
+		Toon.part(seg, Toon.cylinder(0.016 * s, 0.024 * s, p.distance_to(q) * 1.08, 5), col, Vector3.ZERO, Vector3.ZERO, {"outline": 0.008})
+		Toon.part(seg, Toon.cylinder(0.0, 0.018 * s, 0.07 * s, 4), col, Vector3(0.03 * s, 0, 0), Vector3(0, _rng.randf() * 360.0, -70),
+			{"outline": 0.0})
+		p = q
 
 
 ## A crumpled ball of paper: a lumpy low-poly ball, squashed a little.
@@ -230,7 +237,8 @@ func _scrap(parent: Node3D, at: Vector3, s: float, crossed: bool) -> void:
 	parent.add_child(scrap)
 	var w := _rng.randf_range(0.4, 0.6) * s
 	var d := _rng.randf_range(0.3, 0.45) * s
-	Toon.part(scrap, Toon.box(Vector3(w, 0.012, d)), PAPER.lightened(0.05), Vector3(0, 0.006, 0), Vector3.ZERO, {"outline": 0.012})
+	Toon.part(scrap, Toon.box(Vector3(w, 0.012, d)), PAPER.darkened(_rng.randf_range(0.1, 0.35)), Vector3(0, 0.006, 0), Vector3.ZERO,
+		{"outline": 0.012})
 	for k in 3:
 		Toon.part(scrap, Toon.box(Vector3(w * _rng.randf_range(0.4, 0.75), 0.004, 0.012)), INK, Vector3(-w * 0.08, 0.014, -d * 0.3 + k * d * 0.25),
 			Vector3.ZERO, {"outline": 0.0})
@@ -259,25 +267,17 @@ func _sigil_quad(parent: Node3D, pos: Vector3, w: float, rot := Vector3.ZERO, gl
 	parent.add_child(mi)
 
 
-## A worn-down pencil stub stuck upright in the ground, sharpened.
+## A dead tree's stump, split and grey.
 func _stump(root: Node3D, s: float) -> void:
-	var paint: Color = _col(PAINTS[_rng.randi() % PAINTS.size()])
-	var h := _rng.randf_range(0.5, 0.8) * s
-	var holder := Node3D.new()
-	holder.rotation_degrees = Vector3(_rng.randf_range(-8, 8), _rng.randf() * 60.0, _rng.randf_range(-8, 8))
-	root.add_child(holder)
-	Toon.part(holder, Toon.cylinder(0.42 * s, 0.42 * s, h, 6), paint, Vector3(0, h * 0.5, 0), Vector3.ZERO, {"outline": 0.03})
-	Toon.part(holder, Toon.cylinder(0.12 * s, 0.4 * s, 0.4 * s, 6), Color(0.85, 0.68, 0.48), Vector3(0, h + 0.2 * s, 0), Vector3.ZERO,
-		{"outline": 0.02})
-	Toon.part(holder, Toon.cylinder(0.0, 0.12 * s, 0.14 * s, 6), Color(0.18, 0.18, 0.2), Vector3(0, h + 0.47 * s, 0), Vector3.ZERO,
-		{"outline": 0.015})
-	# shavings curled round its foot
-	for k in 3:
-		var a := _rng.randf() * TAU
-		var curl := Toon.part(root, Toon.cylinder(0.12 * s, 0.03 * s, 0.05 * s, 8), Color(0.85, 0.68, 0.48), Vector3(cos(a), 0.03, sin(a)) * 0.6 * s,
-			Vector3(_rng.randf_range(-30, 30), _rng.randf() * 180.0, 0), {"outline": 0.01})
-		curl.scale = Vector3.ONE
-	_collide(root, Toon.cylinder_shape(0.45 * s, 1.0), Vector3(0, 0.5, 0))
+	var wood := _col(Color(0.3, 0.25, 0.24))
+	Toon.part(root, Toon.cylinder(0.5 * s, 0.6 * s, 0.6 * s, 10), wood, Vector3(0, 0.3 * s, 0), Vector3.ZERO,
+		{"bark": 1.0, "line": wood.darkened(0.5)})
+	Toon.part(root, Toon.cylinder(0.42 * s, 0.42 * s, 0.03, 10), Color(0.5, 0.45, 0.4), Vector3(0, 0.61 * s, 0), Vector3.ZERO,
+		{"outline": 0.0})
+	# split down the middle
+	Toon.part(root, Toon.box(Vector3(0.05, 0.4, 1.0) * s), Color(0.06, 0.05, 0.06), Vector3(0, 0.45 * s, 0), Vector3(0, _rng.randf() * 180.0, 0),
+		{"outline": 0.0})
+	_collide(root, Toon.cylinder_shape(0.55 * s, 1.0), Vector3(0, 0.5, 0))
 
 
 ## A tilled garden bed: dark soil with a sprout or a ripe ink-pumpkin.
@@ -328,51 +328,29 @@ func _scarecrow(root: Node3D, s: float) -> void:
 
 # ------------------------------------------------------------------ shrine
 
-## A leaning stack of old books, one fallen open beside it.
+## A broken stone pillar: drums stacked a little off true, grimed, its top
+## snapped off, a fallen drum lying beside it.
 func _pillar(root: Node3D, s: float) -> void:
+	var st := _col(Color(0.5, 0.49, 0.5))
 	var h := 0.0
-	var books := 5 + _rng.randi() % 4
-	var lean := 0.0
-	for i in books:
-		var bh := _rng.randf_range(0.22, 0.36) * s
-		var size := Vector3(_rng.randf_range(0.9, 1.15), bh, _rng.randf_range(0.7, 0.85)) * Vector3(s, 1, s)
-		lean += _rng.randf_range(-0.03, 0.04) * s
-		_book(root, Vector3(lean, h + bh * 0.5, _rng.randf_range(-0.05, 0.05) * s), size, _rng.randf_range(-12, 12))
-		h += bh
-	if _rng.randf() < 0.7:
-		_open_book(root, Vector3(0.95 * s, 0.0, 0.5 * s), s)
-	_collide(root, Toon.box_shape(Vector3(1.1, h + 0.5, 0.9) * Vector3(s, 1, s)), Vector3(0, (h + 0.5) * 0.5, 0))
-
-
-## A closed book: cover, a cream block of page edges, the spine.
-func _book(parent: Node3D, at: Vector3, size: Vector3, yaw: float) -> void:
-	var b := Node3D.new()
-	b.position = at
-	b.rotation_degrees.y = yaw
-	parent.add_child(b)
-	var cover: Color = _col(PAINTS[_rng.randi() % PAINTS.size()]).darkened(0.15)
-	var t := maxf(size.y * 0.12, 0.025)
-	for y in [-1.0, 1.0]:
-		Toon.part(b, Toon.box(Vector3(size.x, t, size.z)), cover, Vector3(0, y * (size.y - t) * 0.5, 0), Vector3.ZERO, {"outline": 0.02})
-	Toon.part(b, Toon.box(Vector3(size.x - 0.06, size.y - t * 2.0, size.z - 0.05)), PAPER, Vector3(0.02, 0, 0), Vector3.ZERO, {"outline": 0.015})
-	Toon.part(b, Toon.box(Vector3(0.07, size.y, size.z)), cover, Vector3(-size.x * 0.5 + 0.035, 0, 0), Vector3.ZERO, {"outline": 0.02})
-
-
-## A book lying open on the ground, pages up, a few lines of writing.
-func _open_book(parent: Node3D, at: Vector3, s: float) -> void:
-	var b := Node3D.new()
-	b.position = at
-	b.rotation_degrees.y = _rng.randf() * 360.0
-	parent.add_child(b)
-	var cover: Color = PAINTS[_rng.randi() % PAINTS.size()]
-	for side in [-1.0, 1.0]:
-		Toon.part(b, Toon.box(Vector3(0.5, 0.03, 0.7) * s), cover.darkened(0.2), Vector3(side * 0.26 * s, 0.015, 0), Vector3(0, 0, side * 6.0),
-			{"outline": 0.015})
-		Toon.part(b, Toon.box(Vector3(0.46, 0.05, 0.66) * s), PAPER, Vector3(side * 0.25 * s, 0.05 * s, 0), Vector3(0, 0, side * 6.0),
-			{"outline": 0.012})
-		for k in 4:
-			Toon.part(b, Toon.box(Vector3(0.32, 0.004, 0.015) * s), INK, Vector3(side * 0.25 * s, 0.077 * s + side * 0.0, -0.2 * s + k * 0.12 * s),
-				Vector3(0, 0, side * 6.0), {"outline": 0.0})
+	var segs := 2 + _rng.randi() % 3
+	for i in segs:
+		var sh := _rng.randf_range(0.6, 0.9) * s
+		var part := Toon.part(root, Toon.cylinder(0.42 * s, 0.46 * s, sh, 10), st.darkened(0.05 * (i % 2)),
+			Vector3(_rng.randf_range(-0.04, 0.04), h + sh * 0.5, 0), Vector3(_rng.randf_range(-4, 4), _rng.randf() * 90.0, 0),
+			{"moss": 0.45, "moss_color": GRIME})
+		part.scale = Vector3.ONE
+		h += sh
+	for k in 2:  # the snapped top: jagged chunks
+		Toon.part(root, Toon.box(Vector3(0.35, 0.25, 0.3) * s), st.darkened(0.1), Vector3(_rng.randf_range(-0.15, 0.15) * s, h + 0.05, 0),
+			Vector3(_rng.randf_range(-25, 25), _rng.randf() * 90.0, _rng.randf_range(-25, 25)), {"moss": 0.3, "moss_color": GRIME})
+	Toon.part(root, Toon.box(Vector3(1.1, 0.3, 1.1) * s), st.darkened(0.12), Vector3(0, 0.15 * s, 0), Vector3.ZERO,
+		{"moss": 0.3, "moss_color": GRIME})
+	if _rng.randf() < 0.6:
+		var chunk := Toon.part(root, Toon.cylinder(0.4 * s, 0.44 * s, 0.6 * s, 10), st, Vector3(0.9 * s, 0.3 * s, 0.4 * s),
+			Vector3(90, _rng.randf() * 180.0, 0), {"moss": 0.4, "moss_color": GRIME})
+		chunk.scale = Vector3.ONE
+	_collide(root, Toon.cylinder_shape(0.5 * s, h + 0.5), Vector3(0, (h + 0.5) * 0.5, 0))
 
 
 func _ritual_circle(root: Node3D, s: float) -> void:
@@ -500,9 +478,9 @@ func _paper_mound(root: Node3D, s: float) -> void:
 	_collide(root, Toon.cylinder_shape(radius * s * 0.7, 1.5), Vector3(0, 0.75, 0))
 
 
-## Giant pins stuck in the ground like spikes.
+## Giant pins stuck in the ground like spikes, gone dull and rusty.
 func _pins(root: Node3D, s: float) -> void:
-	var heads := [Color(0.9, 0.2, 0.25), Color(0.95, 0.85, 0.3), Color(0.3, 0.5, 0.9)]
+	var heads := [Color(0.4, 0.2, 0.18), Color(0.36, 0.33, 0.3), Color(0.24, 0.24, 0.28)]
 	for i in count:
 		var p := _rand_in_disc(radius * s)
 		var h := _rng.randf_range(1.0, 2.0) * s
@@ -510,8 +488,8 @@ func _pins(root: Node3D, s: float) -> void:
 		holder.position = p
 		holder.rotation_degrees = Vector3(_rng.randf_range(-22, 22), 0, _rng.randf_range(-22, 22))
 		root.add_child(holder)
-		Toon.part(holder, Toon.cylinder(0.035 * s, 0.05 * s, h, 6), Color(0.78, 0.8, 0.86), Vector3(0, h * 0.5, 0), Vector3.ZERO,
-			{"outline": 0.025})
+		Toon.part(holder, Toon.cylinder(0.035 * s, 0.05 * s, h, 6), Color(0.44, 0.43, 0.45), Vector3(0, h * 0.5, 0), Vector3.ZERO,
+			{"outline": 0.025, "moss": 0.3, "moss_color": RUST})
 		Toon.part(holder, Toon.sphere(0.16 * s, 8, 5), heads[_rng.randi() % heads.size()], Vector3(0, h, 0), Vector3.ZERO, {"outline": 0.03})
 
 
@@ -534,17 +512,19 @@ func _nest(root: Node3D, s: float) -> void:
 	_collide(root, Toon.cylinder_shape(radius * s * 0.6, 1.5), Vector3(0, 0.75, 0))
 
 
-## A pencil stub standing like a totem, eraser on top.
+## A giant broken nib (broken_nib.gd) driven into the ground like a
+## totem, a ring of rubble at its foot. (Was a pencil.)
 func _pencil_totem(root: Node3D, s: float) -> void:
-	var body := _col(Color(0.98, 0.78, 0.22))
-	var h := 2.2 * s
-	Toon.part(root, Toon.cylinder(0.3 * s, 0.3 * s, h, 6), body, Vector3(0, h * 0.5 + 0.55 * s, 0), Vector3.ZERO,
-		{"bark": 0.6, "line": body.darkened(0.35)})
-	# sharpened end buried point-down, wood and graphite showing
-	Toon.part(root, Toon.cylinder(0.3 * s, 0.05 * s, 0.55 * s, 6), Color(0.93, 0.78, 0.6), Vector3(0, 0.28 * s, 0))
-	Toon.part(root, Toon.cylinder(0.33 * s, 0.33 * s, 0.22 * s, 10), Color(0.72, 0.72, 0.76), Vector3(0, h + 0.66 * s, 0))
-	Toon.part(root, Toon.cylinder(0.3 * s, 0.32 * s, 0.4 * s, 10), Color(0.95, 0.55, 0.62), Vector3(0, h + 0.97 * s, 0))
-	_collide(root, Toon.cylinder_shape(0.35 * s, h + 1.0), Vector3(0, (h + 1.0) * 0.5, 0))
+	var holder := Node3D.new()
+	holder.rotation_degrees = Vector3(_rng.randf_range(-10, 4), _rng.randf_range(-30, 30), _rng.randf_range(-10, 10))
+	root.add_child(holder)
+	BrokenNib.build(holder, 1.1 * s, seed * 5 + 17)
+	for k in 4:
+		var a := _rng.randf() * TAU
+		var chunk := Toon.part(root, Toon.box(Vector3(0.3, 0.2, 0.25) * s), Color(0.25, 0.24, 0.26), Vector3(cos(a), 0.06, sin(a)) * 0.7 * s,
+			Vector3(_rng.randf() * 40.0, _rng.randf() * 90.0, _rng.randf() * 30.0), {"outline": 0.02})
+		chunk.scale = Vector3.ONE
+	_collide(root, Toon.box_shape(Vector3(1.4, 2.4, 0.8) * s), Vector3(0, 1.2 * s, 0))
 
 
 func _ink_pot(root: Node3D, s: float) -> void:
@@ -562,10 +542,9 @@ func _ink_pot(root: Node3D, s: float) -> void:
 
 # --------------------------------------------------------------- the dead
 
-## Skulls heaped into a mound, a couple of bones rolled away. `count` is how
-## many skulls, `radius` how wide; big ones make the background's heaps.
-## A heap of crumpled pages (`count` of them) with snapped pencils and a
-## scrap or two: the Writer's wastepaper spilling over.
+## A heap of crumpled, yellowed pages (`count` of them) and a torn scrap or
+## two: the Writer's rejects, rotting. `radius` is how wide; big ones make
+## the background's heaps. (Was a skull pile.)
 func _skull_pile(root: Node3D, s: float) -> void:
 	var n := maxi(count, 3)
 	var big := radius * s
@@ -576,25 +555,8 @@ func _skull_pile(root: Node3D, s: float) -> void:
 		var y := (1.0 - (d / big) * (d / big)) * big * 0.5
 		_crumple(root, Vector3(cos(a) * d, y, sin(a) * d), _rng.randf_range(0.22, 0.34) * s)
 	for k in 2:
-		_snapped_pencil(root, _rand_in_disc(big * 1.1), s)
-	_scrap(root, _rand_in_disc(big * 1.2) + Vector3(0, 0.01, 0), s, _rng.randf() < 0.5)
+		_scrap(root, _rand_in_disc(big * 1.2) + Vector3(0, 0.01, 0), s, _rng.randf() < 0.3)
 	_collide(root, Toon.cylinder_shape(big * 0.6, 1.2), Vector3(0, 0.6, 0))
-
-
-## Half a pencil, snapped, lying on the ground.
-func _snapped_pencil(parent: Node3D, at: Vector3, s: float) -> void:
-	var p := Node3D.new()
-	p.position = at + Vector3(0, 0.07 * s, 0)
-	p.rotation_degrees = Vector3(0, _rng.randf() * 360.0, 90)
-	parent.add_child(p)
-	var paint: Color = PAINTS[_rng.randi() % PAINTS.size()]
-	var len := _rng.randf_range(0.5, 0.8) * s
-	Toon.part(p, Toon.cylinder(0.07 * s, 0.07 * s, len, 6), paint, Vector3(0, 0, 0), Vector3.ZERO, {"outline": 0.012})
-	Toon.part(p, Toon.cylinder(0.0, 0.07 * s, 0.16 * s, 6), Color(0.85, 0.68, 0.48), Vector3(0, len * 0.5 + 0.08 * s, 0), Vector3.ZERO,
-		{"outline": 0.01})
-	# the splintered end
-	Toon.part(p, Toon.prism(Vector3(0.12, 0.1, 0.12) * s), Color(0.85, 0.68, 0.48), Vector3(0, -len * 0.5 - 0.04 * s, 0), Vector3(180, 0, 0),
-		{"outline": 0.01})
 
 
 ## Cream candles of every height melted onto a puddle of wax.
@@ -616,22 +578,22 @@ func _candles(root: Node3D, s: float) -> void:
 		root.add_child(l)
 
 
-## A giant pen nib stood point-first in the ground like a standing stone,
-## leaning, one of the Writer's marks glowing in its breather hole, a pool
-## of dried ink round its foot.
+## A rough standing stone, leaning, cracked and grimed, a cryptic mark
+## carved into its face that glows from inside; rubble at its foot.
 func _rune_stone(root: Node3D, s: float) -> void:
-	var steel := _col(STEEL)
+	var st := _col(Color(0.34, 0.32, 0.36))
 	var holder := Node3D.new()
-	holder.rotation_degrees = Vector3(_rng.randf_range(-7, 7), _rng.randf_range(-20, 20), _rng.randf_range(-7, 7))
+	holder.rotation_degrees = Vector3(_rng.randf_range(-7, 7), 0, _rng.randf_range(-7, 7))
 	root.add_child(holder)
-	var h := _rng.randf_range(1.8, 2.4) * s
-	# the nib, upside down: shoulders up top, the split point in the ground
-	Toon.part(holder, Toon.prism(Vector3(1.1 * s, h, 0.14 * s)), steel, Vector3(0, h * 0.5, 0), Vector3(180, 0, 0),
-		{"outline": 0.03, "emission": 0.08})
-	Toon.part(holder, Toon.box(Vector3(1.12, 0.3, 0.16) * s), steel.darkened(0.25), Vector3(0, h + 0.1 * s, 0), Vector3.ZERO, {"outline": 0.025})
-	Toon.part(holder, Toon.box(Vector3(0.05 * s, h * 0.55, 0.16 * s)), INK, Vector3(0, h * 0.27, 0.0), Vector3.ZERO, {"outline": 0.0})
-	Toon.part(holder, Toon.cylinder(0.17 * s, 0.17 * s, 0.17 * s, 14), INK, Vector3(0, h * 0.62, 0), Vector3(90, 0, 0), {"outline": 0.0})
-	_sigil_quad(holder, Vector3(0, h * 0.62, 0.09 * s), 0.36 * s, Vector3.ZERO, 2.0)
-	var pool := Toon.part(root, Toon.cylinder(0.75 * s, 0.8 * s, 0.03, 16), INK, Vector3(0, 0.015, 0), Vector3.ZERO, {"outline": 0.0})
-	pool.scale = Vector3(1.0, 1.0, 0.7)
-	_collide(root, Toon.box_shape(Vector3(1.0, 2.0, 0.4) * s), Vector3(0, 1.0, 0))
+	var h := _rng.randf_range(1.6, 2.2) * s
+	Toon.part(holder, Toon.box(Vector3(0.8, h, 0.45) * Vector3(s, 1, s)), st, Vector3(0, h * 0.5, 0), Vector3.ZERO,
+		{"moss": 0.3, "moss_color": GRIME})
+	Toon.part(holder, Toon.prism(Vector3(0.8, 0.45, 0.45) * s), st, Vector3(0, h + 0.22 * s, 0), Vector3.ZERO, {"moss": 0.3, "moss_color": GRIME})
+	Toon.part(holder, Toon.box(Vector3(0.04, h * 0.5, 0.02) * Vector3(s, 1, s)), INK, Vector3(-0.22 * s, h * 0.35, 0.231 * s),
+		Vector3(0, 0, _rng.randf_range(-15, 15)), {"outline": 0.0})  # a crack
+	_sigil_quad(holder, Vector3(0, h * 0.58, 0.235 * s), 0.6 * s, Vector3.ZERO, 2.0)
+	for k in 3:
+		var chunk := Toon.part(root, Toon.box(Vector3(0.28, 0.2, 0.24) * s), st.darkened(0.1), _rand_in_disc(0.7 * s) + Vector3(0, 0.08 * s, 0),
+			Vector3(_rng.randf() * 40.0, _rng.randf() * 90.0, _rng.randf() * 30.0))
+		chunk.scale = Vector3.ONE
+	_collide(root, Toon.box_shape(Vector3(0.9, 2.0, 0.55) * s), Vector3(0, 1.0, 0))

@@ -11,14 +11,13 @@ extends Node3D
 ## out through an open gate ink-wipes to `target_scene`, arriving at the
 ## gate there whose gate_id is `target_gate`.
 ##
-## The Margins are a comic's gutters, so a way on is one too
-## (gutter_strip.gd): the path is a strip of cream paper between two thick
-## ink panel borders, printed panels lying either side, and at its end two
-## panels stand upright with a bright slit between them to walk through.
-## Desk lamps (desk_lamp.gd) stand either side, off until it opens.
+## The Margins are a comic's dead gutters, so a way on is an old one
+## (gutter_strip.gd): a dark, cracked, ragged walkway between two broken ink
+## kerbs, ending in a broken portal (two snapped pillars, a broken lintel).
+## Stone-post lanterns stand either side, cold until it opens.
 ## The gate's local -Z points out of the room. Styles:
-##   THRESHOLD  the gutter jutting out over the void at a room edge (leave
-##              a gap in the island edge for it)
+##   THRESHOLD  the old gutter jutting out over the void at a room edge
+##              (leave a gap in the island edge for it)
 ##   DOORWAY    a trigger for walking into an archway: the sketch fills the
 ##              doorway until it opens
 
@@ -26,9 +25,9 @@ const Toon = preload("res://scripts/clearing/toon.gd")
 const MARKS_SHADER = preload("res://shaders/world25/gate_marks.gdshader")
 const GHOST_SHADER = preload("res://shaders/world25/drawn_ghost.gdshader")
 const LIGHT_SHADER = preload("res://shaders/world25/gate_light.gdshader")
+const FLAME_SHADER = preload("res://shaders/clearing/flame.gdshader")
 const Fx = preload("res://scripts/clearing/clearing_fx.gd")
 const GutterStrip = preload("res://scripts/world25/gutter_strip.gd")
-const DeskLamp = preload("res://scripts/clearing/desk_lamp.gd")
 
 enum Style { THRESHOLD, DOORWAY }
 
@@ -48,12 +47,13 @@ const DRAW_TIME := 0.8
 	set(v):
 		width = v
 		_rebuild()
-## Unused since the ways on became gutters (kept for scenes that set it).
+## The lanterns' stone posts.
 @export var stone := Color(0.42, 0.4, 0.44):
 	set(v):
 		stone = v
 		_rebuild()
-## The lamps' light once the way is open: white or pale gold, never red.
+## Lantern flames once the way is open (and the portal's seams): white or
+## pale gold, never red.
 @export var lantern_color := Color(1.0, 0.9, 0.62):
 	set(v):
 		lantern_color = v
@@ -174,8 +174,8 @@ func _rebuild() -> void:
 	var half := width * 0.5
 	var ghost_mat := _ghost_material()
 	if style == Style.THRESHOLD:
-		# the gutter running out of the room in sections, the slit at its end;
-		# each section has a sketch twin shown until the light reaches it
+		# the old gutter running out of the room in sections, the broken portal
+		# at its end; each has a sketch twin shown until the light reaches it
 		var d := STEP_DEPTH / SLABS
 		var seed := absi(hash(gate_id)) % 50
 		for i in SLABS:
@@ -184,19 +184,19 @@ func _rebuild() -> void:
 			var solid := GutterStrip.section(root, -d * i, -d * (i + 1), width, seed + i)
 			_add_slab(root, solid, size, c, ghost_mat, (i + 0.5) / SLABS * 0.85)
 		var slit_z := -STEP_DEPTH + 0.25
-		var slit := GutterStrip.slit(root, slit_z, width, seed)
-		# the slit's sketch: a pencil twin of each upright panel
+		var slit := GutterStrip.slit(root, slit_z, width, seed, lantern_color)
+		# the portal's sketch: a pencil twin of each pillar
 		var sketch := Node3D.new()
 		sketch.position = Vector3(0, 0, slit_z)
 		root.add_child(sketch)
-		for board in slit.get_children():
-			var g := _ghost_box(sketch, GutterStrip.BOARD, ghost_mat)
-			g.transform = Transform3D(Basis(), Vector3(0, 0, -slit_z)) * (board as Node3D).transform \
-				* Transform3D(Basis(), Vector3(0, GutterStrip.BOARD.y * 0.5, 0))
+		for k in 2:
+			var g := _ghost_box(sketch, GutterStrip.PILLAR, ghost_mat)
+			g.transform = Transform3D(Basis(), Vector3(0, 0, -slit_z)) * (slit.get_child(k) as Node3D).transform \
+				* Transform3D(Basis(), Vector3(0, GutterStrip.PILLAR.y * 0.5, 0))
 		_slabs.append({"solid": slit, "ghost": sketch, "at": 0.92})
 		_runes = _marks(root, 0, Vector2(width * 0.85, 0.6), Vector3(0, 0.012, -0.9), Vector3(-90, 0, 0), lantern_color.lightened(0.3))
 		for side in [-1, 1]:
-			_lantern(root, Vector3(side * (half + 0.55), 0, 0.35), side)
+			_lantern(root, Vector3(side * (half + 0.35), 0, -0.2))
 		_build_line(root, STEP_DEPTH + 0.8, Vector3(0, 0.03, -STEP_DEPTH * 0.5 + 0.2))
 	else:
 		# the doorway: a sketch of a door standing in the arch until it opens
@@ -210,7 +210,7 @@ func _rebuild() -> void:
 		_sketch.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		root.add_child(_sketch)
 		for side in [-1, 1]:
-			_lantern(root, Vector3(side * (half + 0.9), 0, 0.9), side)
+			_lantern(root, Vector3(side * (half + 0.9), 0, 0.9))
 		_build_line(root, 3.2, Vector3(0, 0.03, 0.6))
 	_set_progress(1.0 if is_open else 0.0)
 	if Engine.is_editor_hint():
@@ -293,16 +293,18 @@ func _marks(root: Node3D, mode: int, size: Vector2, pos: Vector3, rot: Vector3, 
 	return mi
 
 
-## A desk lamp (desk_lamp.gd) beside the way, leaning in over it: off while
-## sealed, its bulb on once the way opens.
-func _lantern(root: Node3D, pos: Vector3, side := 1) -> void:
-	var lamp := DeskLamp.build(root, pos, 0.8, -side * 115.0, lantern_color, lantern_color.lightened(0.5), false)
-	_flames.append(lamp.on)
+## A stone post with an iron cup: cold while sealed, a pale flame once open.
+func _lantern(root: Node3D, pos: Vector3) -> void:
+	Toon.part(root, Toon.box(Vector3(0.3, 1.1, 0.3)), stone.darkened(0.15), pos + Vector3(0, 0.55, 0), Vector3.ZERO, {"moss": 0.3})
+	Toon.part(root, Toon.cylinder(0.24, 0.14, 0.2, 8), Color(0.16, 0.13, 0.18), pos + Vector3(0, 1.2, 0))
+	var flame := Toon.billboard(root, FLAME_SHADER, Vector2(0.6, 0.8), pos + Vector3(0, 1.6, 0),
+		{"outer_color": lantern_color, "core_color": lantern_color.lightened(0.6)})
+	_flames.append(flame)
 	var l := OmniLight3D.new()
 	l.light_color = lantern_color
 	l.light_energy = 1.3
 	l.omni_range = 3.8
-	l.position = lamp.head
+	l.position = pos + Vector3(0, 1.6, 0)
 	l.visible = false
 	root.add_child(l)
 	_lights.append(l)

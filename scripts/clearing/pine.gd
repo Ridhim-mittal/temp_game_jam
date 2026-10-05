@@ -1,15 +1,12 @@
 @tool
 extends Node3D
-## One of the Writer's old quills, giant, stuck nib-first in the ground (or
-## rising out of the void below the cliffs): a dark feather (`color`) on a
-## pale shaft, its vane split in `tiers` places, ink pooled where the nib
-## went in. Stands in rings round the rooms where pines used to (the name
-## and exports are kept so the rooms and their generator still work).
+## A dead tree: a bare, crooked trunk forking into leafless branches that
+## reach up and out and end in thin twigs, dark against the void. Stands in
+## rings round the rooms and rises out of the void below the cliffs (it was
+## a pine, then a quill; the name and exports are kept so the rooms and
+## their generator still work: `tiers` is how many levels of branches).
 
 const Toon = preload("res://scripts/clearing/toon.gd")
-const SHAFT := Color(0.8, 0.77, 0.68)
-const STEEL := Color(0.24, 0.24, 0.28)
-const INK := Color(0.05, 0.04, 0.08)
 
 @export var height := 6.0:
 	set(v):
@@ -38,35 +35,55 @@ func _rebuild() -> void:
 	if not is_inside_tree():
 		return
 	var root := Toon.fresh_root(self)
-	var seed := absi(hash(Vector2i(roundi(position.x * 10.0), roundi(position.z * 10.0))))
-	Toon.part(root, Toon.cylinder(radius * 0.5, radius * 0.55, 0.02, 14), INK, Vector3(0, 0.01, 0), Vector3.ZERO, {"outline": 0.0})
-	# leaning a little its own way, the vane turned mostly to the camera
-	var quill := Node3D.new()
-	quill.rotation_degrees = Vector3(4.0 * sin(seed * 0.7), float(seed % 70) - 35.0, 5.0 * cos(seed * 1.3))
-	root.add_child(quill)
-	var shaft := SHAFT.lerp(color, 0.35)
-	var nib_h := height * 0.09
-	# the nib, buried to its shoulders, and the bare shaft above it
-	Toon.part(quill, Toon.cylinder(radius * 0.09, radius * 0.02, nib_h, 8), STEEL, Vector3(0, nib_h * 0.3, 0), Vector3.ZERO,
-		{"outline": 0.02})
-	Toon.part(quill, Toon.cylinder(radius * 0.035, radius * 0.08, height - nib_h * 0.8, 8), shaft,
-		Vector3(0, nib_h * 0.8 + (height - nib_h * 0.8) * 0.5, 0), Vector3.ZERO, {"outline": 0.025})
-	# the vane: a broad side and a narrow one, thin, from a third of the way up
-	var y0 := height * 0.3
-	var vane_h := height - y0
-	var mid := y0 + vane_h * 0.52
-	var broad := Toon.part(quill, Toon.sphere(1.0, 14, 8), color, Vector3(radius * 0.28, mid, 0), Vector3(0, 0, -4), {"outline": 0.05})
-	broad.scale = Vector3(radius * 0.62, vane_h * 0.5, radius * 0.035)
-	var narrow := Toon.part(quill, Toon.sphere(1.0, 14, 8), color.darkened(0.15), Vector3(-radius * 0.16, mid + vane_h * 0.04, 0),
-		Vector3(0, 0, 3), {"outline": 0.05})
-	narrow.scale = Vector3(radius * 0.36, vane_h * 0.46, radius * 0.03)
-	# splits in the vane: pale gaps slanting up from the edge to the shaft
-	for i in tiers:
-		var t := (i + 0.6) / (tiers + 0.4)
-		var side := 1.0 if i % 2 == 0 else -1.0
-		var reach := radius * (0.5 if side > 0 else 0.3)
-		var y := y0 + vane_h * lerpf(0.18, 0.78, t)
-		Toon.part(quill, Toon.box(Vector3(reach, 0.035 * radius + 0.02, radius * 0.09)), shaft.darkened(0.25),
-			Vector3(side * reach * 0.55, y, 0), Vector3(0, 0, side * 35.0), {"outline": 0.0})
+	var rng := RandomNumberGenerator.new()
+	rng.seed = absi(hash(Vector2i(roundi(position.x * 10.0), roundi(position.z * 10.0))))
+	var bark := color.lightened(0.08)
+	# the trunk: two crooked lengths, leaning a little
+	var lean := Vector3(rng.randf_range(-6, 6), rng.randf() * 360.0, rng.randf_range(-6, 6))
+	var trunk := Node3D.new()
+	trunk.rotation_degrees = lean
+	root.add_child(trunk)
+	var r0 := radius * 0.16
+	var mid := height * 0.55
+	Toon.part(trunk, Toon.cylinder(r0 * 0.75, r0, mid, 7), bark, Vector3(0, mid * 0.5, 0), Vector3.ZERO,
+		{"outline": 0.05, "bark": 0.8, "line": color.darkened(0.4)})
+	var upper := Node3D.new()
+	upper.position = Vector3(0, mid, 0)
+	upper.rotation_degrees = Vector3(rng.randf_range(-12, 12), 0, rng.randf_range(-12, 12))
+	trunk.add_child(upper)
+	Toon.part(upper, Toon.cylinder(r0 * 0.25, r0 * 0.75, height - mid, 6), bark, Vector3(0, (height - mid) * 0.5, 0), Vector3.ZERO,
+		{"outline": 0.045})
+	# roots clawing into the ground
+	for i in 3:
+		var a := TAU * i / 3.0 + rng.randf()
+		_branch(root, Vector3(0, r0 * 0.5, 0), Vector3(cos(a), -0.25, sin(a)), r0 * 2.6, r0 * 0.5, bark, rng, 0)
+	# bare branches, a level of them per tier, each forking into twigs
+	for t in tiers:
+		var y := mid * (0.55 + 0.45 * float(t) / maxf(tiers - 1, 1)) + rng.randf_range(-0.2, 0.2)
+		for k in 2:
+			var a := rng.randf() * TAU
+			var dir := Vector3(cos(a), rng.randf_range(0.5, 1.1), sin(a))
+			_branch(trunk, Vector3(0, y, 0), dir, radius * rng.randf_range(0.55, 0.95) * (1.0 - t * 0.15), r0 * 0.4, bark, rng, 2)
+	for k in 2:  # the crown splits too
+		var a := rng.randf() * TAU
+		_branch(upper, Vector3(0, (height - mid) * 0.8, 0), Vector3(cos(a), 1.2, sin(a)), radius * 0.45, r0 * 0.22, bark, rng, 1)
 	if solid and not Engine.is_editor_hint():
 		Toon.collider(root, Toon.cylinder_shape(radius * 0.3, 3.0), Vector3(0, 1.5, 0))
+
+
+## A branch from `at` along `dir`, `length` long, tapering from `thick`;
+## with `forks` left it splits into two thinner ones at its end.
+func _branch(parent: Node3D, at: Vector3, dir: Vector3, length: float, thick: float, col: Color, rng: RandomNumberGenerator,
+		forks: int) -> void:
+	var d := dir.normalized()
+	var b := Node3D.new()
+	b.position = at + d * length * 0.5
+	b.basis = Basis(Quaternion(Vector3.UP, d))
+	parent.add_child(b)
+	Toon.part(b, Toon.cylinder(thick * 0.45, thick, length, 5), col, Vector3.ZERO, Vector3.ZERO, {"outline": 0.03})
+	if forks <= 0:
+		return
+	for k in 2:
+		var twist := d.rotated(Vector3.UP, rng.randf_range(-1.2, 1.2)) + Vector3(0, rng.randf_range(0.1, 0.6), 0)
+		var side := d.cross(Vector3.UP).normalized() * (1.0 if k == 0 else -1.0) * rng.randf_range(0.3, 0.7)
+		_branch(parent, at + d * length * 0.95, twist + side, length * rng.randf_range(0.45, 0.65), thick * 0.5, col, rng, forks - 1)
