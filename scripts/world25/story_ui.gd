@@ -6,12 +6,14 @@ extends Control
 ##   ui.title_card("DARKWOOD MARGINS", "1 / 3")
 ##   ui.caption("Where did you go?")            # queued, auto-hides
 ##   ui.caption("THERE.", "shaky")              # the Writer losing it
+##   ui.caption("Woof.", "patch")               # Patch talking (pale tag)
 
 const TITLE_FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
 const INK := Color(0.06, 0.04, 0.09)
 const PAPER := Color(0.97, 0.95, 0.9)
 const CAPTION := Color(1.0, 0.88, 0.4)
 const SHAKY := Color(0.95, 0.93, 0.88)
+const PATCH := Color(0.8, 0.84, 0.86)
 
 var _title := ""
 var _subtitle := ""
@@ -153,10 +155,16 @@ func _draw_caption() -> void:
 	var line_h := fs + 8.0
 	var box := Rect2(Vector2((size.x - max_w - 40.0) * 0.5, 18.0), Vector2(max_w + 40.0, lines.size() * line_h + 26.0))
 	var shaky := _who == "shaky"
+	var patch := _who == "patch"
 	var jitter := Vector2(randf_range(-1, 1), randf_range(-1, 1)) * 1.5 if shaky else Vector2.ZERO
 	draw_rect(Rect2(box.position + Vector2(6, 6), box.size), Color(INK, 0.5 * _alpha))
-	draw_rect(box, Color(SHAKY if shaky else CAPTION, _alpha))
+	draw_rect(box, Color(SHAKY if shaky else (PATCH if patch else CAPTION), _alpha))
 	draw_rect(box, Color(INK, _alpha), false, 3.0)
+	if patch:
+		# a torn name tag on the box's corner: not the Writer talking
+		var tag := Rect2(box.position + Vector2(14, -16), Vector2(78, 26))
+		draw_rect(tag, Color(INK, _alpha))
+		draw_string(TITLE_FONT, tag.position + Vector2(10, 21), "PATCH", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color(PATCH, _alpha))
 	# type the text out line by line
 	var left := shown.length()
 	var y := box.position.y + 13.0 + fs

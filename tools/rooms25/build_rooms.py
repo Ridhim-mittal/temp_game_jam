@@ -11,22 +11,11 @@ R = "res://scenes/world25/rooms/"
 HUB = "res://scenes/clearing/clearing.tscn"
 
 
-def darkwood_dressing(r, graves=3, stumps=2, mushrooms=2, rocks=2, reeds=2):
+def darkwood_dressing(r, graves=3, stumps=2, rocks=2, pools=1):
     r.clear_path_to_gates()
-    for i in range(reeds):
-        spot = r.free_spot(clearance=2.5)
-        if spot:
-            x, z = spot
-            r.clear_zones.append((x, z, 1.8))
-            r.nodes.append(("Props", f"Reeds{i + 1}", "grass", (0, 0, 0), 0, {
-                "island_path": 'NodePath("../../Island")', "area": f"Rect2({x - 2:.1f}, {z - 1.5:.1f}, 4, 3)", "count": 22,
-                "size_range": "Vector2(1.4, 2.2)", "seed": r.rng.randint(1, 99), "blades": 7, "biome_tint": "Color(0.7, 0.75, 0.78, 1)"}))
     r.scatter("TOMBSTONE", graves, solid=True)
     r.scatter("STUMP", stumps, solid=True)
-    for i in range(mushrooms):
-        spot = r.free_spot()
-        if spot:
-            r.prop("scatter", spot[0], spot[1], name=f"Mushrooms{i + 1}", count=5, seed=r.rng.randint(1, 99))
+    r.scatter("INK_POOL", pools, radius=1.4)
     for i in range(rocks):
         spot = r.free_spot()
         if spot:
@@ -60,12 +49,12 @@ r.enemy("crumple", -5, -4)
 r.enemy("scribble", 0, 2)
 r.enemy("scribble", 7, 4)
 r.enemy("scribble", -7, 3)
-darkwood_dressing(r, graves=4, reeds=3)
+darkwood_dressing(r, graves=4)
 r.prop("altar", 0, -5.5, name="Altar")
 r.clear_zones.append((0, -5.5, 2.5))
 r.prop("brazier", -3.5, -6.5, name="Lantern1", flame_color="Color(1, 0.25, 0.15, 1)")
 r.prop("brazier", 3.5, -6.5, name="Lantern2", flame_color="Color(1, 0.25, 0.15, 1)")
-forest_ring(r, canopies=3)
+forest_ring(r)
 r.write("Darkwood Margins", "2 / 3",
         "Rolling pages. I crumpled those myself, one bad night after another.|They're armoured while they're balled up. Make them hit something, or lead them into the light.",
         "The wood is thinning out. Can you smell the ink?")
@@ -83,34 +72,30 @@ r.clear_path_to_gates()
 # forest half (east)
 for i, (x, z) in enumerate([(9, -6), (11, 5), (4, 6.5)]):
     r.prop("bprops", x, z, rot=r.rng.uniform(0, 360), name=f"Grave{i + 1}", kind=KIND["TOMBSTONE"], seed=i + 4, solid=True)
-r.prop("scatter", 10, -1, name="Mushrooms1", count=6, seed=7)
 r.prop("bprops", 6, -7, name="Stump1", kind=KIND["STUMP"], solid=True)
 # water half (west)
-r.prop("bprops", -10, -5.5, name="Coral1", kind=KIND["CORAL"], count=6, radius=1.4, seed=3, solid=True)
-r.prop("bprops", -11, 5, name="Tubes1", kind=KIND["TUBE_PLANT"], count=5, seed=5)
+r.prop("bprops", -10, -5.5, name="Pillar2", kind=KIND["PILLAR"], seed=3, solid=True)
+r.prop("bprops", -11, 5, name="Pool2", kind=KIND["INK_POOL"], radius=1.3, seed=5)
 r.prop("bprops", -5, -6.5, name="Pillar1", kind=KIND["PILLAR"], seed=8, solid=True)
 r.prop("bprops", -8, 1.5, name="Pool1", kind=KIND["INK_POOL"], radius=1.6, seed=2)
 r.prop("brazier", 2, 6.8, name="Lantern1", flame_color="Color(1, 0.25, 0.15, 1)")
 r.prop("brazier", -3, -7, name="SpiritFlame", flame_color="Color(0.25, 0.55, 1, 1)", core_color="Color(0.75, 0.92, 1, 1)")
-# surroundings: pines in the east, coral and tubes rising from the deep in the west
+# surroundings: pines in the east, drowned pillars rising from the deep in the west
 for i, (x, z) in enumerate([(12, -12), (17.5, -5), (17.5, 3), (6, -13)]):
     r.nodes.append(("Forest", f"Pine{i + 1}", "pine", (x, 0, z), 0, {"height": 8.5, "radius": 2.2}))
 for i, (x, z) in enumerate([(-10, -12.5), (-18, -4), (-17.5, 5), (-4, -13)]):
-    r.nodes.append(("Forest", f"DeepCoral{i + 1}", "bprops", (x, -4, z), 0, {"kind": KIND["CORAL"], "size": 2.2, "count": 7, "radius": 1.6, "seed": i + 20}))
-r.nodes.append(("Forest", "DeepTubes", "bprops", (-12, -6, 13), 0, {"kind": KIND["TUBE_PLANT"], "size": 3.0, "count": 6, "seed": 9}))
+    r.nodes.append(("Forest", f"DeepPillar{i + 1}", "bprops", (x, -6, z), 0, {"kind": KIND["PILLAR"], "size": 2.2, "seed": i + 20}))
 r.nodes.append(("Forest", "TrunkR", "trunk", (18.5, -8, 8.5), 0, {"height": 26.0, "radius": 1.6}))
-r.nodes.append(("Forest", "Canopy1", "bprops", (8, 0, -11.5), 0, {"kind": KIND["CANOPY"], "size": 1.1, "seed": 31}))
 r.write("Where the Ink Pools", "Darkwood, 3 / 3",
         "The ink is pooling up ahead. The woods give way to water here.|Something swims in it. Watch for ripples.",
         "...You're getting good at this. Too good.")
 
 
-def shallows_dressing(r, coral=3, tubes=2, pillars=2, pools=2):
+def shallows_dressing(r, pillars=2, pools=2, mounds=2):
     r.clear_path_to_gates()
-    r.scatter("CORAL", coral, count=6, radius=1.3, solid=True)
-    r.scatter("TUBE_PLANT", tubes, count=5)
     r.scatter("PILLAR", pillars, solid=True)
     r.scatter("INK_POOL", pools, radius=1.5)
+    r.scatter("PAPER_MOUND", mounds, count=4, radius=1.1, solid=True)
 
 
 def shallows_ring(r):
@@ -119,9 +104,8 @@ def shallows_ring(r):
         x, z = math.cos(a) * (r.hw + 4), math.sin(a) * (r.hd + 4)
         if any(math.dist((x, z), r.gate_pos(s)) < 5.5 for s in r.gates):
             continue
-        k = "CORAL" if i % 2 == 0 else "TUBE_PLANT"
-        r.nodes.append(("Deep", f"Deep{i + 1}", "bprops", (x, -4.5 if k == "CORAL" else -6, z), 0,
-                        {"kind": KIND[k], "size": 2.4, "count": 7, "radius": 1.8, "seed": r.rng.randint(1, 99)}))
+        r.nodes.append(("Deep", f"Deep{i + 1}", "bprops", (x, -6, z), 0,
+                        {"kind": KIND["PILLAR"], "size": 2.4, "seed": r.rng.randint(1, 99)}))
     for i, sx in enumerate((-1, 1)):
         r.nodes.append(("Deep", f"RuinPillar{i + 1}", "bprops", (sx * (r.hw + 3), -6, -r.hd - 1.5), 0,
                         {"kind": KIND["PILLAR"], "size": 2.4, "seed": 40 + i}))
@@ -161,7 +145,7 @@ r.enemy("crossed_out", 4, 1)
 r.enemy("inkwell", 9, -6.5)
 r.enemy("smudge", -8, 5)
 r.enemy("smudge", 7, 6)
-shallows_dressing(r, coral=3, tubes=3, pillars=0, pools=1)
+shallows_dressing(r, pillars=0, pools=1, mounds=3)
 r.prop("brazier", -9.5, -7, name="Spirit1", **SPIRIT)
 r.prop("brazier", 9.5, 7, name="Spirit2", **SPIRIT)
 shallows_ring(r)
@@ -183,9 +167,8 @@ r.enemy("red_pen", 0, -2.5, hp=18, arena="Rect2(-10, -6.5, 20, 13)")
 for i, (x, z) in enumerate([(-7, -4.5), (7, -4.5), (-7, 4.5), (7, 4.5)]):
     r.prop("brazier", x, z, name=f"Lantern{i + 1}", lit=False, light_radius=3.2, **SPIRIT)
     r.clear_zones.append((x, z, 1.2))
-r.scatter("CORAL", 3, count=5, radius=1.1, solid=True)
-r.scatter("TUBE_PLANT", 3, count=5)
-r.scatter("INK_POOL", 1, radius=1.3)
+r.scatter("PAPER_MOUND", 3, count=4, radius=1.1, solid=True)
+r.scatter("INK_POOL", 2, radius=1.3)
 shallows_ring(r)
 r.write("The Red Pen", "Inkwell Shallows",
         "~My editor marked every page in red. Every single page.|Wet ink dries in the light. Make the nib miss, then hit it while it's stuck.",
@@ -193,12 +176,11 @@ r.write("The Red Pen", "Inkwell Shallows",
         extra_room_props='boss_path = NodePath("Enemies/RedPen1")\nboss_name = "THE RED PEN"')
 
 
-def wastes_dressing(r, crystals=3, mounds=3, pins=2, nests=1, totems=2, pots=2):
+def wastes_dressing(r, crystals=3, mounds=3, pins=2, totems=2, pots=2):
     r.clear_path_to_gates()
     r.scatter("CRYSTAL", crystals, count=4, radius=1.2, solid=True)
     r.scatter("PAPER_MOUND", mounds, count=5, radius=1.3, solid=True)
     r.scatter("PINS", pins, count=6, radius=1.2)
-    r.scatter("NEST", nests, count=4, radius=1.2, solid=True)
     r.scatter("PENCIL_TOTEM", totems, solid=True)
     r.scatter("INK_POT", pots, count=3, radius=0.9, solid=True)
 
@@ -245,7 +227,7 @@ r.enemy("inkwell", -10, 6)
 r.enemy("inkwell", 10, -6.5)
 r.enemy("smudge", 0, 4)
 r.enemy("crossed_out", 3, -4)
-wastes_dressing(r, crystals=4, mounds=2, pins=3, nests=2, totems=2, pots=1)
+wastes_dressing(r, crystals=4, mounds=2, pins=3, totems=2, pots=1)
 r.prop("brazier", -5, -8, name="Ember1", **EMBER)
 r.prop("brazier", 5, 8, name="Ember2", **EMBER)
 wastes_ring(r)
@@ -349,11 +331,7 @@ r.enemy("scribble_diver", 0, 3.5)
 r.enemy("crumple", -10, 2)
 r.scatter("TOMBSTONE", 3, solid=True)
 r.scatter("STUMP", 2, solid=True)
-for i in range(2):
-    spot = r.free_spot()
-    if spot:
-        r.prop("scatter", spot[0], spot[1], name=f"Mushrooms{i + 1}", count=5, seed=r.rng.randint(1, 99))
-forest_ring(r, canopies=2)
+forest_ring(r)
 chasm_depths(r, [(("pine", {"height": 12.0, "radius": 2.4, "color": "Color(0.06, 0.06, 0.11, 1)"}), 0, 7),
                  (("pine", {"height": 11.0, "radius": 2.0, "color": "Color(0.06, 0.06, 0.11, 1)"}), 1.5, -6.5),
                  (("eyes", {}), 0, 2)], y=-9)
@@ -375,9 +353,8 @@ r.enemy("crossed_out", -4, 0)
 r.enemy("crossed_out", 5, 0)
 r.enemy("smudge", -8, -5)
 r.enemy("smudge", 9, 5)
-r.scatter("CORAL", 2, count=5, radius=1.1, solid=True)
+r.scatter("PAPER_MOUND", 2, count=4, radius=1.1, solid=True)
 r.scatter("INK_POOL", 2, radius=1.5)
-r.scatter("TUBE_PLANT", 2, count=5)
 shallows_ring(r)
 r.write("The Lamplit Field", "Inkwell Shallows",
         "~I can't see you down there. But I can look.|Shadows hide you from the lamp. And anything crossed out that it catches... burns.",

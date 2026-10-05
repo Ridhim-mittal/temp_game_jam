@@ -4,7 +4,6 @@
 [ext_resource type="Script" path="res://scripts/clearing/island.gd" id="island"]
 [ext_resource type="Script" path="res://scripts/world25/gate.gd" id="gate"]
 [ext_resource type="Script" path="res://scripts/world25/biome_props.gd" id="bprops"]
-[ext_resource type="Script" path="res://scripts/clearing/grass_field.gd" id="grass"]
 [ext_resource type="Script" path="res://scripts/clearing/pine.gd" id="pine"]
 [ext_resource type="Script" path="res://scripts/clearing/trunk.gd" id="trunk"]
 [ext_resource type="Script" path="res://scripts/clearing/brazier.gd" id="brazier"]
@@ -47,24 +46,6 @@ open_edges = PackedInt32Array(6, 2)
 script = ExtResource("island")
 polygon = PackedVector2Array(-12.50, -9.00, -5.00, -6.50, -5.00, -1.80, -5.00, 1.80, -7.50, 9.00, -15.00, 6.50, -15.00, 1.80, -15.00, -1.80)
 open_edges = PackedInt32Array(2, 6)
-
-[node name="GrassWestIsland" type="Node3D" parent="."]
-script = ExtResource("grass")
-island_path = NodePath("../WestIsland")
-area = Rect2(-15, -9, 10.0, 18)
-count = 72
-size_range = Vector2(0.55, 0.95)
-seed = 18
-keep_clear = PackedVector3Array(0.0, 0.0, 2.1, 6.5, 0.0, 1.4, -6.5, 0.0, 1.4, 13.8, 0.0, 1.5, 11.0, 0.0, 1.5, 8.3, 0.0, 1.5, 5.5, 0.0, 1.5, 2.8, 0.0, 1.5, 0.0, 0.0, 1.5, -13.8, 0.0, 1.5, -11.0, 0.0, 1.5, -8.3, 0.0, 1.5, -5.5, 0.0, 1.5, -2.8, 0.0, 1.5, -0.0, 0.0, 1.5, 6.3, 2.2, 0.8, -6.3, -2.2, 0.8, 10.0, -4.0, 0.8, 10.0, 4.0, 0.8, -11.0, -5.0, 0.8, -11.0, 5.0, 0.8, 0.0, 4.0, 0.8, 7.0, 6.6, 0.6, -7.2, 6.4, 0.6, -7.5, -6.1, 0.6, -8.7, 3.6, 0.6, 13.1, 5.2, 0.6, 9.0, -6.6, 0.7, 12.6, -5.0, 0.7)
-
-[node name="Grass" type="Node3D" parent="."]
-script = ExtResource("grass")
-island_path = NodePath("../Island")
-area = Rect2(-15, -9, 30, 18)
-count = 216
-size_range = Vector2(0.55, 0.95)
-seed = 80
-keep_clear = PackedVector3Array(0.0, 0.0, 2.1, 6.5, 0.0, 1.4, -6.5, 0.0, 1.4, 13.8, 0.0, 1.5, 11.0, 0.0, 1.5, 8.3, 0.0, 1.5, 5.5, 0.0, 1.5, 2.8, 0.0, 1.5, 0.0, 0.0, 1.5, -13.8, 0.0, 1.5, -11.0, 0.0, 1.5, -8.3, 0.0, 1.5, -5.5, 0.0, 1.5, -2.8, 0.0, 1.5, -0.0, 0.0, 1.5, 6.3, 2.2, 0.8, -6.3, -2.2, 0.8, 10.0, -4.0, 0.8, 10.0, 4.0, 0.8, -11.0, -5.0, 0.8, -11.0, 5.0, 0.8, 0.0, 4.0, 0.8, 7.0, 6.6, 0.6, -7.2, 6.4, 0.6, -7.5, -6.1, 0.6, -8.7, 3.6, 0.6, 13.1, 5.2, 0.6, 9.0, -6.6, 0.7, 12.6, -5.0, 0.7)
 
 [node name="GateEast" type="Node3D" parent="."]
 transform = Transform3D(0.0000, 0, -1.0000, 0, 1, 0, 1.0000, 0, 0.0000, 15.00, 0.00, 0.00)

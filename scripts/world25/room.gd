@@ -8,9 +8,9 @@ extends Node3D
 ## Gates stay sealed until every monster under "Enemies" is beaten; then
 ## they open and the room is remembered as cleared (World25).
 ##
-## Two biomes: set `biome_b` and the blend line; the islands and grass
-## take B's look past the wavy seam, and the light and air shift as the
-## player walks across.
+## Two biomes: set `biome_b` and the blend line; the islands take B's look
+## past the wavy seam, and the light and air shift as the player walks
+## across.
 
 const PLAYER_SCENE = preload("res://scenes/clearing/clearing_player.tscn")
 const CameraScript = preload("res://scripts/clearing/clearing_camera.gd")
@@ -23,7 +23,6 @@ const RectScript = preload("res://scripts/background/screen_shader_rect.gd")
 const DEFAULT_BIOME = preload("res://data/biomes/darkwood.tres")
 const PauseMenu = preload("res://scripts/ui/pause_menu.gd")
 const SkillTree = preload("res://scripts/ui/skill_tree.gd")
-const Shop = preload("res://scripts/ui/shop.gd")
 const SettingsMenu = preload("res://scripts/ui/settings_menu.gd")
 const Tutorial = preload("res://scripts/ui/tutorial.gd")
 
@@ -334,7 +333,8 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 ## Opens a full-screen menu over the room and pauses the game:
-## "pause", "skills", "shop" or "settings".
+## "pause", "skills" or "settings". (The Gutter has no shop: shop.gd and
+## catalog.gd stay in the project, unused.)
 func open_overlay(action: String) -> void:
 	if _overlay != null or player == null or player.dead:
 		return
@@ -347,10 +347,6 @@ func open_overlay(action: String) -> void:
 		"skills":
 			_overlay = Control.new()
 			_overlay.set_script(SkillTree)
-			_overlay.closed.connect(_on_overlay_closed)
-		"shop":
-			_overlay = Control.new()
-			_overlay.set_script(Shop)
 			_overlay.closed.connect(_on_overlay_closed)
 		"settings":
 			_overlay = Control.new()

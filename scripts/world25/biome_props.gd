@@ -6,13 +6,15 @@ extends Node3D
 ## (Color(0, 0, 0, 0) = the prop's own colours), `count`/`radius` are used by
 ## clusters. Set `solid` to block the player.
 ##
-## Darkwood:  CANOPY (hanging foliage with watching eyes), TOMBSTONE, STUMP,
-##            GARDEN_PLOT, BARN, SCARECROW
+## Darkwood:  TOMBSTONE, STUMP
 ## Shrine:    PILLAR (broken), RITUAL_CIRCLE (red correction marks),
 ##            SHADE_STATUE
-## Shallows:  CORAL (shell clusters), TUBE_PLANT, INK_POOL
-## Wastes:    CRYSTAL, PAPER_MOUND, PINS, NEST (cocoons + glowing bulbs),
-##            PENCIL_TOTEM, INK_POT
+## Shallows:  INK_POOL
+## Wastes:    CRYSTAL, PAPER_MOUND, PINS, PENCIL_TOTEM, INK_POT
+##
+## Retired (no longer placed anywhere, kept so the enum's integers stay put;
+## never remove or reorder Kind values, scenes store them as numbers):
+## CANOPY, GARDEN_PLOT, BARN, SCARECROW, CORAL, TUBE_PLANT, NEST.
 
 const Toon = preload("res://scripts/clearing/toon.gd")
 const EYES_SHADER = preload("res://shaders/clearing/glow_eyes.gdshader")
@@ -105,8 +107,8 @@ func _rand_in_disc(r: float) -> Vector3:
 
 # ---------------------------------------------------------------- darkwood
 
-## Foliage hanging from the canopy above (Cult of the Lamb's Darkwood):
-## leafy lumps with dangling vines and dark hollows where red eyes watch.
+## Retired. Foliage hanging from a canopy above: leafy lumps with dangling
+## vines and dark hollows where red eyes watch.
 ## Place it at the room edge; it floats at height `size * 5`.
 func _canopy(root: Node3D, s: float) -> void:
 	var leaf := _col(Color(0.36, 0.52, 0.3))
@@ -264,8 +266,8 @@ func _shade_statue(root: Node3D, s: float) -> void:
 
 # ---------------------------------------------------------------- shallows
 
-## Shell coral: a heap of round shells with dark mouths (Cult of the Lamb's
-## Anura), in sea-glass greens and blues.
+## Retired. Shell coral: a heap of round shells with dark mouths, in
+## sea-glass greens and blues.
 func _coral(root: Node3D, s: float) -> void:
 	var base := _col(Color(0.36, 0.7, 0.62))
 	for i in count:

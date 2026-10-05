@@ -1,6 +1,6 @@
 @tool
 extends Node3D
-## Rune gate between 2.5D rooms (Cult of the Lamb style). Sealed with a
+## Gate between the Gutter's rooms. Sealed with a
 ## glowing red X while monsters remain; when the room is cleared (room.gd
 ## calls open()) the X fades, and walking out through the gate ink-wipes to
 ## `target_scene`, arriving at the gate there whose gate_id is `target_gate`.
