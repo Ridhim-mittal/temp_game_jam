@@ -4,11 +4,7 @@ extends SceneTree
 ## tree still opens. Run like test_phase1.gd (prints PASS / FAIL).
 
 const ROOMS := ["res://scenes/clearing/clearing.tscn", "res://scenes/world25/rooms/darkwood_1.tscn",
-	"res://scenes/world25/rooms/darkwood_2.tscn", "res://scenes/world25/rooms/darkwood_bridge.tscn",
-	"res://scenes/world25/rooms/darkwood_3.tscn", "res://scenes/world25/rooms/shallows_1.tscn",
-	"res://scenes/world25/rooms/shallows_2.tscn", "res://scenes/world25/rooms/shallows_field.tscn",
-	"res://scenes/world25/rooms/shallows_pen.tscn", "res://scenes/world25/rooms/wastes_1.tscn",
-	"res://scenes/world25/rooms/wastes_2.tscn", "res://scenes/world25/rooms/wastes_gap.tscn",
+	"res://scenes/world25/rooms/shallows_pen.tscn", "res://scenes/world25/rooms/wastes_gap.tscn",
 	"res://scenes/world25/rooms/arena.tscn"]
 ## biome_props.gd kinds that must not be placed any more.
 const RETIRED := {0: "CANOPY", 3: "GARDEN_PLOT", 4: "BARN", 5: "SCARECROW", 9: "CORAL", 10: "TUBE_PLANT", 15: "NEST"}

@@ -154,6 +154,8 @@ func _physics_process(delta: float) -> void:
 
 
 func _update_erase(player: Node3D, seen: bool, delta: float) -> void:
+	if seen and player.has_method("is_protected") and player.is_protected():
+		seen = false  # spawn protection: the light can't take hold yet
 	if player == null:
 		return
 	if seen:

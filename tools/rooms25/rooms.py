@@ -72,6 +72,8 @@ class Room:
         # the Writer's lamp: > 1 hunts a little harder than the biome's
         # profile (room.gd haunt_scale); later rooms in a biome go higher
         self.haunt_scale = 1.0
+        # how many lamps hunt here (room.gd haunt_lamps); -1 = the profile's
+        self.haunt_lamps = -1
 
     def gate(self, side, target, target_gate, offset=0.0, always_open=False):
         self.gates[side] = (target, target_gate, offset, always_open)
@@ -144,6 +146,8 @@ class Room:
             room.append(f"blend_to = Vector2({self.blend[1][0]}, {self.blend[1][1]})")
         if self.haunt_scale != 1.0:
             room.append(f"haunt_scale = {self.haunt_scale}")
+        if self.haunt_lamps >= 0:
+            room.append(f"haunt_lamps = {self.haunt_lamps}")
         if extra_room_props:
             room.append(extra_room_props)
         lines.append("\n".join(room) + "\n")

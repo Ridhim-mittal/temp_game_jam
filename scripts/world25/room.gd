@@ -67,6 +67,9 @@ const BiomeProps = preload("res://scripts/world25/biome_props.gd")
 ## This room's lamp is a bit harder (> 1) or easier: scales how fast it
 ## moves and how often it strikes. Set per room by the generator.
 @export var haunt_scale := 1.0
+## How many lamps hunt here; -1 = the biome profile's `lamps`. Set per room
+## by the generator (the Red Pen's room has two).
+@export var haunt_lamps := -1
 
 @export_group("Blend into another biome")
 @export var biome_b: Resource:
@@ -416,7 +419,10 @@ func _spawn_player(world: Node) -> void:
 ## setting and this room's haunt_scale, starting far from the player.
 func _spawn_haunt() -> void:
 	var prof: Resource = _biome().haunt
-	if not haunt_enabled or prof == null or prof.lamps <= 0:
+	if not haunt_enabled or prof == null:
+		return
+	var lamps: int = prof.lamps if haunt_lamps < 0 else haunt_lamps
+	if lamps <= 0:
 		return
 	var settings := get_node_or_null("/root/Settings")
 	var diff: String = settings.get_value("difficulty") if settings else "normal"
@@ -424,7 +430,7 @@ func _spawn_haunt() -> void:
 	var tele: float = {"relaxed": 1.3, "normal": 1.0, "hard": 0.8}.get(diff, 1.0)
 	var roam := camera_bounds.grow_individual(3.5, 2.5, 3.5, 2.5)
 	var taken: Array[Vector3] = [player.global_position]
-	for i in prof.lamps:
+	for i in lamps:
 		var lamp := HauntLamp.new()
 		lamp.name = "HauntLamp%d" % (i + 1)
 		lamp.profile = prof

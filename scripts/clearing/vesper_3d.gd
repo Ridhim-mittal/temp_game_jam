@@ -69,6 +69,7 @@ var swing := -1.0
 var combo := 1
 var hurt := 0.0  # 1 just hit, eases to 0
 var heal := 0.0  # 0..1 heal channel
+var inking := false  # holding the Ember up to ink a drawn bridge
 var erase := 0.0  # 0..1 Writer's light erasing him
 var blink := false
 var dead := false
@@ -104,6 +105,7 @@ var _arm_r: Node3D
 var _sword: Node3D
 var _back_sword: Node3D
 var _ember: MeshInstance3D
+var _ink_w := 0.0  # eases towards `inking`
 var _scarf: Array[MeshInstance3D] = []
 var _scarf_pts: Array[Vector3] = []
 var _scarf_prev: Array[Vector3] = []
@@ -490,7 +492,8 @@ func _pose_limbs(delta: float) -> void:
 	_sword.rotation = sword
 	_torso.rotation.y = twist
 	var e := 0.55 + 0.45 * fuel
-	_ember.scale = Vector3.ONE * e * (1.0 + 0.12 * sin(_time * 9.0) + heal * 0.8)
+	_ink_w = move_toward(_ink_w, 1.0 if inking else 0.0, delta * 6.0)
+	_ember.scale = Vector3.ONE * e * (1.0 + 0.12 * sin(_time * 9.0) + heal * 0.8 + _ink_w * (1.4 + 0.3 * sin(_time * 14.0)))
 
 
 func _pose_face(delta: float) -> void:
