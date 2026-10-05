@@ -142,6 +142,13 @@ const HAZARD_DAMAGE := 2.0  # one ink bottle
 ## bottle for small ones); spikes deal HAZARD_DAMAGE.
 @export var max_health := 12.0
 @export var invuln_time := 1.2
+## Light or life (the same in 2.5D): hold heal (F) standing on the ground with
+## the Ember lowered for `heal_time` s to pour `heal_cost` of its meter (a
+## third) into `heal_amount` half bottles of ink. Moving, jumping, attacking or
+## a hit stops it; nothing is spent until it finishes.
+@export var heal_time := 1.0
+@export var heal_cost := 100.0 / 3.0
+@export var heal_amount := 1.0
 @export var hurt_knockback := Vector2(320, -380)
 @export var hurt_stun_time := 0.22
 
@@ -177,6 +184,7 @@ var _safe_time := 0.0          # seconds stood on safe ground without a break
 var _safe_since_hazard := true  # found safe ground again since the last spike hit
 var _since_hazard := 10.0      # seconds since the last spike hit
 var _charge := -1.0  # seconds attack has been held; -1 = not charging
+var _heal_t := -1.0  # seconds F has been pouring the Ember into ink (-1 = not)
 var _charge_ready := false
 var _slow_sources := {}  # source -> Vector2(speed_mult, jump_mult)
 var _weapon := "nib"  # equipped weapon (catalog.gd id)
@@ -254,6 +262,14 @@ func _physics_process(delta: float) -> void:
 		_charge = 0.0
 		_charge_ready = false
 	_update_charge(delta)
+
+	# Light or life: pouring the Ember into ink, standing still.
+	if _update_heal(delta, input_x):
+		velocity.x = move_toward(velocity.x, 0.0, max_speed * 8.0 * delta)
+		_apply_gravity(delta)
+		move_and_slide()
+		_post_move(delta)
+		return
 
 	# Hit-stun: no control, just fall with knockback.
 	if _hurt_timer > 0.0:
@@ -452,6 +468,34 @@ func _master() -> bool:
 
 
 ## Restores half ink bottles (health pickups). Returns false when already at full health.
+## 0..1 while pouring the Ember into ink (ember.gd draws the light going in), else -1.
+func heal_progress() -> float:
+	return _heal_t / heal_time if _heal_t >= 0.0 else -1.0
+
+
+## Could hold F right now and heal (the HUD and the tutorial ask).
+func can_heal() -> bool:
+	return not dead and health < max_health and is_on_floor() and ember != null and not ember.raised \
+		and not ember.snuffed and ember.meter >= heal_cost and _hurt_timer <= 0.0 and _dash_timer <= 0.0 \
+		and _attack_timer <= 0.0
+
+
+func _update_heal(delta: float, input_x: float) -> bool:
+	if not Input.is_action_pressed("heal") or not can_heal() or absf(input_x) >= 0.2 \
+			or Input.is_action_pressed("jump") or _charge >= 0.0:
+		_heal_t = -1.0
+		return false
+	_heal_t = maxf(_heal_t, 0.0) + delta
+	if _heal_t >= heal_time:
+		_heal_t = 0.0  # keep holding to pour the next third
+		ember.meter -= heal_cost
+		ember.hold_regen()
+		heal(heal_amount)
+		_pop_text(global_position + Vector2(0, -60), "+½ INK", Color(1.0, 0.85, 0.45))
+		_squash = Vector2(0.85, 1.2)
+	return true
+
+
 func heal(amount: float) -> bool:
 	if dead or health >= max_health:
 		return false
@@ -965,6 +1009,7 @@ func take_damage(amount: float, source_pos: Vector2, from_hazard := false) -> vo
 		_shake(0.3)
 		return
 	health = maxf(health - amount, 0.0)
+	_heal_t = -1.0  # a hit spills the pour
 	_cancel_charge()
 	_crouch = -1.0
 	health_changed.emit(health, max_health)

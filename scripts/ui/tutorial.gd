@@ -41,6 +41,8 @@ const LATER := {
 		{"id": "ember", "word": "EMBER", "keys": [["RMB", "ember"]], "hold": 0.8, "when": "near_light"},
 		# hold attack past player.gd's charge_time (0.6 s), let go: an ink wave flies out
 		{"id": "inkwave", "word": "LONG-RANGE INK WAVE", "keys": [["LMB", "attack"]], "hold": 0.7, "when": "near_flyer"},
+		# light or life (player.gd): pour a third of the Ember into half a bottle of ink
+		{"id": "heal", "word": "HEAL: YOUR LIGHT BECOMES INK", "keys": [["F", "heal"]], "hold": 1.0, "when": "hurt_2d"},
 	],
 	"25d": [
 		{"id": "ember25", "word": "EMBER", "keys": [["RMB", "flash"]], "hold": 0.8, "when": "near_monster"},
@@ -239,6 +241,13 @@ func _ready_for(when: String) -> bool:
 					return true
 		"near_monster":
 			return _nearest_monster() < 6.0
+		"hurt_2d":  # lost some ink, could heal right now, and nothing is about to hit him
+			if not (player.has_method("can_heal") and player.can_heal()):
+				return false
+			for m in get_tree().get_nodes_in_group("enemy"):
+				if m is Node2D and not ("dead" in m and m.dead) and m.global_position.distance_to(player.global_position) < 420.0:
+					return false
+			return true
 		"near_flyer":  # a Scribble circling out of sword reach
 			for m in get_tree().get_nodes_in_group("enemy"):
 				if m is Node2D and m.scene_file_path.ends_with("scribble.tscn") and not ("dead" in m and m.dead) \

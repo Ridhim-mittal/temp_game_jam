@@ -29,6 +29,7 @@ var _time := 0.0
 var _bump := 0.0  # 1 right after a pickup, decays: counter pops
 var _ember: Node
 var _bottles := InkBottles.new()
+var _player: Node
 var _can_shop := false  # enough coins for something in the shop
 var _hint := 0.0  # seconds the "PRESS B" caption has left
 
@@ -39,6 +40,7 @@ func _ready() -> void:
 	if player:
 		player.health_changed.connect(_on_health_changed)
 		_ember = player.get_node_or_null("Ember")
+		_player = player
 		_on_health_changed(player.health, player.max_health)
 		if player.has_signal("coins_changed"):
 			player.coins_changed.connect(_on_coins_changed)
@@ -108,6 +110,22 @@ func _draw_ember() -> void:
 			fill = fill.lerp(Color(1.0, 0.95, 0.75), 0.4)
 		_slanted(Rect2(r.position, Vector2(r.size.x * frac, r.size.y)), fill)
 		_slanted(Rect2(r.position + Vector2(0, 2), Vector2(r.size.x * frac, 3)), fill.lightened(0.4))
+	# light or life: the bar in thirds, each third one heal (F); an ink drop marks each
+	if is_instance_valid(_player) and "heal_cost" in _player:
+		var third: float = _player.heal_cost / maxf(_ember.max_meter, 1.0)
+		var k := third
+		while k < 0.999:
+			var hx := r.position.x + r.size.x * k
+			draw_line(Vector2(hx + 2, r.position.y), Vector2(hx - 2, r.end.y), Color(INK, 0.85), 2.5)
+			k += third
+		if _player.can_heal():  # F would heal right now: a little key cap at the end of the bar
+			var pulse := 0.6 + 0.4 * sin(_time * 6.0)
+			var kc := Rect2(Vector2(r.end.x + 12, r.position.y - 6), Vector2(22, 22))
+			draw_rect(kc.grow(2.0), Color(INK, pulse))
+			draw_rect(kc, Color(1.0, 0.95, 0.85, pulse))
+			draw_string(FONT, kc.position + Vector2(6, 18), "F", HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color(INK, pulse))
+			draw_string_outline(FONT, kc.position + Vector2(30, 18), "HEAL", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, 5, Color(INK, pulse))
+			draw_string(FONT, kc.position + Vector2(30, 18), "HEAL", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color(1.0, 0.85, 0.45, pulse))
 	# relight mark: below it a snuffed Ember stays out
 	var rx: float = r.position.x + r.size.x * _ember.relight_at / _ember.max_meter
 	draw_line(Vector2(rx + 2, r.position.y), Vector2(rx - 2, r.end.y), Color(INK, 0.6), 2.0)

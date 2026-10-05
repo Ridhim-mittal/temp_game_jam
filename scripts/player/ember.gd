@@ -53,6 +53,7 @@ var _still := 0.0
 var _time := 0.0
 var _player: CharacterBody2D
 var _glow: Node2D
+var _pour_fx: Node2D  # in front of Vesper: the light going into him while healing
 
 
 func _ready() -> void:
@@ -67,6 +68,10 @@ func _ready() -> void:
 	_glow.material = mat
 	_glow.draw.connect(_draw_glow)
 	add_child(_glow)
+	_pour_fx = Node2D.new()
+	_pour_fx.z_index = 12  # above the player's art (the Ember itself sits behind it)
+	_pour_fx.draw.connect(_draw_pour)
+	add_child(_pour_fx)
 
 
 func _physics_process(delta: float) -> void:
@@ -108,6 +113,12 @@ func _physics_process(delta: float) -> void:
 	inking = ink_front > 0.0
 	queue_redraw()
 	_glow.queue_redraw()
+	_pour_fx.queue_redraw()
+
+
+## Spent on healing (player.gd, light or life): wait before refilling, as after raising it.
+func hold_regen() -> void:
+	_since_raised = 0.0
 
 
 func _over_blue() -> bool:
@@ -146,9 +157,36 @@ func flame_pos() -> Vector2:
 	return Vector2(-16.0 * face * (1.0 - k) + 10.0 * face * k, -34.0 - 26.0 * k + sin(_time * 3.0) * 3.0)
 
 
+## Light or life: sparks of the Ember spiral down into his chest, a ring of
+## light tightens round him as the half bottle fills.
+func _draw_pour() -> void:
+	var pour := _pour()
+	if pour < 0.0:
+		return
+	var fp := flame_pos()
+	var chest := Vector2(0, -10)
+	for m in 12:
+		var ph := fmod(_time * 1.8 + m / 12.0, 1.0)
+		var p := fp.lerp(chest, ph) + Vector2.from_angle(ph * TAU * 1.5 + m) * 26.0 * (1.0 - ph)
+		var r := 3.4 * (1.0 - ph * 0.5)
+		_pour_fx.draw_circle(p, r + 1.5, Color(INK, 0.5 * (1.0 - ph)))
+		_pour_fx.draw_circle(p, r, Color(1.0, 0.85, 0.4, 1.0 - ph * 0.5))
+	var rr := 46.0 * (1.0 - pour) + 12.0
+	_pour_fx.draw_arc(chest, rr, 0, TAU, 32, Color(1.0, 0.9, 0.55, 0.35 + 0.6 * pour), 3.0)
+	_pour_fx.draw_arc(chest, rr + 4.0, 0, TAU, 32, Color(INK, 0.35 * pour), 1.5)
+
+
+## 0..1 while Vesper pours the Ember into ink (player.gd heal), else -1.
+func _pour() -> float:
+	return _player.heal_progress() if _player and _player.has_method("heal_progress") else -1.0
+
+
 func _draw_glow() -> void:
 	var k := reach / radius
 	var fp := flame_pos()
+	var pour := _pour()
+	if pour >= 0.0:  # light going into him: his whole body glows warmer as it fills
+		Lights.draw_glow(_glow, Vector2(0, -10), 60.0 + 40.0 * pour, Color(1.0, 0.75, 0.35, 0.5 + 0.35 * pour))
 	var flick := 1.0 + sin(_time * 17.0) * 0.03 + sin(_time * 7.3) * 0.04
 	Lights.draw_glow(_glow, fp, (26.0 + 6.0 * meter / max_meter) * flick, Color(1.0, 0.6, 0.2, 0.55))
 	if k > 0.02:
