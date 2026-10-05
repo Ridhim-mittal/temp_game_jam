@@ -6,16 +6,11 @@ extends Node3D
 ## (Color(0, 0, 0, 0) = the prop's own colours), `count`/`radius` are used by
 ## clusters. Set `solid` to block the player.
 ##
-## Gothic:    DEAD_TREE (twisted, bare), IRON_FENCE (railings, `count`
-##            bays), RUIN_WALL (broken wall and arch), GRAVE_CLUSTER
-##            (leaning headstones, some crossed out in red), DEAD_LAMPPOST
-##            (unlit, bent), PAGE_DRIFT (torn pages blown flat), HANGING_CHAINS
-## Inkwood:   TOMBSTONE, STUMP
+## Darkwood:  TOMBSTONE, STUMP
 ## Shrine:    PILLAR (broken), RITUAL_CIRCLE (red correction marks),
 ##            SHADE_STATUE
-## Drowned:   INK_POOL
-## Wastes:    CRYSTAL (folded paper), PAPER_MOUND, PINS, PENCIL_TOTEM, INK_POT
-## Red is kept for the Writer's corrections (crossed-out graves, circles).
+## Shallows:  INK_POOL
+## Wastes:    CRYSTAL, PAPER_MOUND, PINS, PENCIL_TOTEM, INK_POT
 ##
 ## Retired (no longer placed anywhere, kept so the enum's integers stay put;
 ## never remove or reorder Kind values, scenes store them as numbers):
@@ -31,8 +26,6 @@ enum Kind {
 	PILLAR, RITUAL_CIRCLE, SHADE_STATUE,
 	CORAL, TUBE_PLANT, INK_POOL,
 	CRYSTAL, PAPER_MOUND, PINS, NEST, PENCIL_TOTEM, INK_POT,
-	# added by the Gutter rework; new kinds always go at the end
-	DEAD_TREE, IRON_FENCE, RUIN_WALL, GRAVE_CLUSTER, DEAD_LAMPPOST, PAGE_DRIFT, HANGING_CHAINS,
 }
 
 @export var kind := Kind.TOMBSTONE:
@@ -80,7 +73,6 @@ func _rebuild() -> void:
 		return
 	var root := Toon.fresh_root(self)
 	_rng.seed = seed
-	set_process(kind == Kind.HANGING_CHAINS and not Engine.is_editor_hint())
 	var s := size
 	match kind:
 		Kind.CANOPY: _canopy(root, s)
@@ -101,13 +93,6 @@ func _rebuild() -> void:
 		Kind.NEST: _nest(root, s)
 		Kind.PENCIL_TOTEM: _pencil_totem(root, s)
 		Kind.INK_POT: _ink_pot(root, s)
-		Kind.DEAD_TREE: _dead_tree(root, s)
-		Kind.IRON_FENCE: _iron_fence(root, s)
-		Kind.RUIN_WALL: _ruin_wall(root, s)
-		Kind.GRAVE_CLUSTER: _grave_cluster(root, s)
-		Kind.DEAD_LAMPPOST: _dead_lamppost(root, s)
-		Kind.PAGE_DRIFT: _page_drift(root, s)
-		Kind.HANGING_CHAINS: _hanging_chains(root, s)
 
 
 func _collide(root: Node3D, shape: Shape3D, pos: Vector3) -> void:
@@ -154,7 +139,7 @@ func _canopy(root: Node3D, s: float) -> void:
 
 
 func _tombstone(root: Node3D, s: float) -> void:
-	var st := _col(Color(0.3, 0.31, 0.33))
+	var st := _col(Color(0.55, 0.54, 0.56))
 	var tilt := Vector3(_rng.randf_range(-8, 8), _rng.randf_range(-20, 20), _rng.randf_range(-8, 8))
 	var holder := Node3D.new()
 	holder.rotation_degrees = tilt
@@ -170,10 +155,10 @@ func _tombstone(root: Node3D, s: float) -> void:
 
 
 func _stump(root: Node3D, s: float) -> void:
-	var wood := _col(Color(0.13, 0.12, 0.12))
+	var wood := _col(Color(0.36, 0.26, 0.24))
 	Toon.part(root, Toon.cylinder(0.5 * s, 0.6 * s, 0.6 * s, 10), wood, Vector3(0, 0.3 * s, 0), Vector3.ZERO,
 		{"bark": 1.0, "line": wood.darkened(0.5)})
-	Toon.part(root, Toon.cylinder(0.42 * s, 0.42 * s, 0.03, 10), Color(0.3, 0.28, 0.26), Vector3(0, 0.61 * s, 0), Vector3.ZERO,
+	Toon.part(root, Toon.cylinder(0.42 * s, 0.42 * s, 0.03, 10), Color(0.78, 0.66, 0.5), Vector3(0, 0.61 * s, 0), Vector3.ZERO,
 		{"outline": 0.0})
 	_collide(root, Toon.cylinder_shape(0.55 * s, 1.0), Vector3(0, 0.5, 0))
 
@@ -227,7 +212,7 @@ func _scarecrow(root: Node3D, s: float) -> void:
 # ------------------------------------------------------------------ shrine
 
 func _pillar(root: Node3D, s: float) -> void:
-	var st := _col(Color(0.32, 0.33, 0.35))
+	var st := _col(Color(0.62, 0.6, 0.58))
 	var h := 0.0
 	var segs := 2 + _rng.randi() % 3
 	for i in segs:
@@ -264,7 +249,7 @@ func _ritual_circle(root: Node3D, s: float) -> void:
 ## The Shade, carved in black stone: a tall shape of ink with white slit eyes.
 func _shade_statue(root: Node3D, s: float) -> void:
 	var ink := Color(0.07, 0.06, 0.1)
-	Toon.part(root, Toon.box(Vector3(2.0, 0.5, 2.0) * s), Color(0.24, 0.24, 0.27), Vector3(0, 0.25 * s, 0), Vector3.ZERO, {"moss": 0.4})
+	Toon.part(root, Toon.box(Vector3(2.0, 0.5, 2.0) * s), Color(0.4, 0.38, 0.42), Vector3(0, 0.25 * s, 0), Vector3.ZERO, {"moss": 0.4})
 	var body := Toon.part(root, Toon.cylinder(0.25 * s, 0.85 * s, 3.4 * s, 9), ink, Vector3(0, 2.2 * s, 0), Vector3.ZERO, {"outline": 0.06})
 	body.scale = Vector3(1.0, 1.0, 0.75)
 	Toon.part(root, Toon.sphere(0.55 * s, 10, 6), ink, Vector3(0, 4.1 * s, 0), Vector3.ZERO, {"outline": 0.06})
@@ -323,7 +308,7 @@ func _ink_pool(root: Node3D, s: float) -> void:
 	var mat := ShaderMaterial.new()
 	mat.shader = SPLAT_SHADER
 	mat.set_shader_parameter("seed", float(seed) * 7.3)
-	mat.set_shader_parameter("ink", _col(Color(0.02, 0.025, 0.04)))
+	mat.set_shader_parameter("ink", _col(Color(0.05, 0.08, 0.2)))
 	mat.render_priority = -1
 	var mi := MeshInstance3D.new()
 	mi.mesh = q
@@ -337,7 +322,7 @@ func _ink_pool(root: Node3D, s: float) -> void:
 
 ## Shards of folded paper standing up like crystals.
 func _crystal(root: Node3D, s: float) -> void:
-	var c := _col(Color(0.46, 0.44, 0.42))
+	var c := _col(Color(0.82, 0.72, 0.95))
 	for i in count:
 		var h := _rng.randf_range(0.9, 2.2) * s
 		var p := _rand_in_disc(radius * s * 0.6)
@@ -345,14 +330,14 @@ func _crystal(root: Node3D, s: float) -> void:
 		holder.position = p
 		holder.rotation_degrees = Vector3(_rng.randf_range(-25, 25), _rng.randf() * 360.0, _rng.randf_range(-25, 25))
 		root.add_child(holder)
-		Toon.part(holder, Toon.cylinder(0.0, 0.3 * s * h, h, 4), c.lerp(Color(0.7, 0.68, 0.62), _rng.randf() * 0.4), Vector3(0, h * 0.5, 0),
-			Vector3.ZERO, {"outline": 0.035})
+		Toon.part(holder, Toon.cylinder(0.0, 0.3 * s * h, h, 4), c.lerp(Color(1, 1, 1), _rng.randf() * 0.4), Vector3(0, h * 0.5, 0),
+			Vector3.ZERO, {"outline": 0.035, "emission": 0.25})
 	_collide(root, Toon.cylinder_shape(radius * s * 0.6, 2.0), Vector3(0, 1.0, 0))
 
 
 ## A heap of crumpled pages (Silk Cradle's cocoon mounds, in paper).
 func _paper_mound(root: Node3D, s: float) -> void:
-	var c := _col(Color(0.48, 0.45, 0.4))
+	var c := _col(Color(0.86, 0.76, 0.7))
 	for i in count:
 		var p := _rand_in_disc(radius * s * 0.7)
 		var r := _rng.randf_range(0.45, 0.85) * s
@@ -364,7 +349,7 @@ func _paper_mound(root: Node3D, s: float) -> void:
 
 ## Giant pins stuck in the ground like spikes.
 func _pins(root: Node3D, s: float) -> void:
-	var heads := [Color(0.55, 0.52, 0.47), Color(0.16, 0.16, 0.18), Color(0.38, 0.36, 0.33)]
+	var heads := [Color(0.9, 0.2, 0.25), Color(0.95, 0.85, 0.3), Color(0.3, 0.5, 0.9)]
 	for i in count:
 		var p := _rand_in_disc(radius * s)
 		var h := _rng.randf_range(1.0, 2.0) * s
@@ -372,7 +357,7 @@ func _pins(root: Node3D, s: float) -> void:
 		holder.position = p
 		holder.rotation_degrees = Vector3(_rng.randf_range(-22, 22), 0, _rng.randf_range(-22, 22))
 		root.add_child(holder)
-		Toon.part(holder, Toon.cylinder(0.035 * s, 0.05 * s, h, 6), Color(0.42, 0.43, 0.47), Vector3(0, h * 0.5, 0), Vector3.ZERO,
+		Toon.part(holder, Toon.cylinder(0.035 * s, 0.05 * s, h, 6), Color(0.78, 0.8, 0.86), Vector3(0, h * 0.5, 0), Vector3.ZERO,
 			{"outline": 0.025})
 		Toon.part(holder, Toon.sphere(0.16 * s, 8, 5), heads[_rng.randi() % heads.size()], Vector3(0, h, 0), Vector3.ZERO, {"outline": 0.03})
 
@@ -396,21 +381,21 @@ func _nest(root: Node3D, s: float) -> void:
 	_collide(root, Toon.cylinder_shape(radius * s * 0.6, 1.5), Vector3(0, 0.75, 0))
 
 
-## A graphite pencil stub standing like a totem, a dim eraser on top.
+## A pencil stub standing like a totem, eraser on top.
 func _pencil_totem(root: Node3D, s: float) -> void:
-	var body := _col(Color(0.2, 0.2, 0.23))
+	var body := _col(Color(0.98, 0.78, 0.22))
 	var h := 2.2 * s
 	Toon.part(root, Toon.cylinder(0.3 * s, 0.3 * s, h, 6), body, Vector3(0, h * 0.5 + 0.55 * s, 0), Vector3.ZERO,
 		{"bark": 0.6, "line": body.darkened(0.35)})
 	# sharpened end buried point-down, wood and graphite showing
-	Toon.part(root, Toon.cylinder(0.3 * s, 0.05 * s, 0.55 * s, 6), Color(0.4, 0.36, 0.31), Vector3(0, 0.28 * s, 0))
-	Toon.part(root, Toon.cylinder(0.33 * s, 0.33 * s, 0.22 * s, 10), Color(0.38, 0.38, 0.42), Vector3(0, h + 0.66 * s, 0))
-	Toon.part(root, Toon.cylinder(0.3 * s, 0.32 * s, 0.4 * s, 10), Color(0.54, 0.35, 0.4), Vector3(0, h + 0.97 * s, 0))
+	Toon.part(root, Toon.cylinder(0.3 * s, 0.05 * s, 0.55 * s, 6), Color(0.93, 0.78, 0.6), Vector3(0, 0.28 * s, 0))
+	Toon.part(root, Toon.cylinder(0.33 * s, 0.33 * s, 0.22 * s, 10), Color(0.72, 0.72, 0.76), Vector3(0, h + 0.66 * s, 0))
+	Toon.part(root, Toon.cylinder(0.3 * s, 0.32 * s, 0.4 * s, 10), Color(0.95, 0.55, 0.62), Vector3(0, h + 0.97 * s, 0))
 	_collide(root, Toon.cylinder_shape(0.35 * s, h + 1.0), Vector3(0, (h + 1.0) * 0.5, 0))
 
 
 func _ink_pot(root: Node3D, s: float) -> void:
-	var glass := _col(Color(0.17, 0.19, 0.23))
+	var glass := _col(Color(0.82, 0.42, 0.38))
 	for i in count:
 		var p := _rand_in_disc(radius * s * 0.7)
 		var k := _rng.randf_range(0.6, 1.1) * s
@@ -420,247 +405,3 @@ func _ink_pot(root: Node3D, s: float) -> void:
 		Toon.part(root, Toon.cylinder(0.17 * k, 0.17 * k, 0.03, 10), Color(0.05, 0.03, 0.08), p + Vector3(0, 0.94 * k, 0),
 			Vector3.ZERO, {"outline": 0.0})
 	_collide(root, Toon.cylinder_shape(radius * s * 0.6, 1.2), Vector3(0, 0.6, 0))
-
-
-# ------------------------------------------------------------------ gothic
-
-const IRON := Color(0.09, 0.09, 0.11)
-const DEAD_WOOD := Color(0.07, 0.07, 0.085)
-const CORRECTION := Color(0.78, 0.1, 0.09)
-
-
-## A twisted, leafless tree: the trunk bends at every joint, then forks
-## into bare branches that fork again. Black against the fog.
-func _dead_tree(root: Node3D, s: float) -> void:
-	var wood := _col(DEAD_WOOD)
-	var node := Node3D.new()
-	root.add_child(node)
-	var r := 0.32 * s
-	var tip := node
-	for i in 5:
-		var seg_h := _rng.randf_range(0.8, 1.15) * s
-		var seg := Node3D.new()
-		seg.position = Vector3(0, 0 if i == 0 else tip.get_meta("len", 0.0), 0)
-		seg.rotation_degrees = Vector3(_rng.randf_range(-16, 16), _rng.randf_range(0, 360), _rng.randf_range(-16, 16)) if i > 0 else Vector3.ZERO
-		seg.set_meta("len", seg_h)
-		tip.add_child(seg)
-		Toon.part(seg, Toon.cylinder(r * 0.78, r, seg_h, 7), wood, Vector3(0, seg_h * 0.5, 0), Vector3.ZERO,
-			{"bark": 0.9, "line": wood.lightened(0.07), "outline": 0.05})
-		r *= 0.78
-		tip = seg
-	_branches(tip, wood, r, 0.9 * s, 3)
-	# roots clawing at the ground
-	for k in 4:
-		var a := k * 90.0 + _rng.randf_range(-20, 20)
-		var root_arm := Node3D.new()
-		root_arm.rotation_degrees = Vector3(0, a, 0)
-		root.add_child(root_arm)
-		Toon.part(root_arm, Toon.cylinder(0.02 * s, 0.14 * s, 0.9 * s, 5), wood, Vector3(0.4 * s, 0.05 * s, 0), Vector3(0, 0, 75),
-			{"outline": 0.03})
-	_collide(root, Toon.cylinder_shape(0.4 * s, 3.0), Vector3(0, 1.5, 0))
-
-
-func _branches(parent: Node3D, wood: Color, r: float, length: float, depth: int) -> void:
-	if depth <= 0:
-		return
-	var n := 2 + _rng.randi() % 2
-	for k in n:
-		var b := Node3D.new()
-		b.position = Vector3(0, parent.get_meta("len", 0.0), 0)
-		b.rotation_degrees = Vector3(_rng.randf_range(25, 55), TAU * k / n * 57.3 + _rng.randf_range(-30, 30), 0)
-		var l := length * _rng.randf_range(0.7, 1.1)
-		b.set_meta("len", l)
-		parent.add_child(b)
-		Toon.part(b, Toon.cylinder(r * 0.55, r, l, 5), wood, Vector3(0, l * 0.5, 0), Vector3.ZERO, {"outline": 0.035})
-		_branches(b, wood, r * 0.6, length * 0.7, depth - 1)
-
-
-## Wrought-iron railings along local +X: `count` bays of spear-tipped bars
-## between heavy posts. Rotate the node to aim it.
-func _iron_fence(root: Node3D, s: float) -> void:
-	var iron := _col(IRON)
-	var bay := 1.1 * s
-	var h := 1.5 * s
-	var bays := maxi(count, 1)
-	for b in bays + 1:
-		var x := b * bay
-		Toon.part(root, Toon.box(Vector3(0.18, h * 1.2, 0.18) * Vector3(s, 1, s)), iron, Vector3(x, h * 0.6, 0))
-		Toon.part(root, Toon.sphere(0.14 * s, 8, 5), iron, Vector3(x, h * 1.2 + 0.08 * s, 0), Vector3.ZERO, {"outline": 0.03})
-		if b == bays:
-			break
-		for k in range(1, 4):
-			if _rng.randf() < 0.1:
-				continue  # a bar gone missing
-			var bx := x + bay * k / 4.0
-			var bar := Node3D.new()
-			bar.position = Vector3(bx, 0, 0)
-			bar.rotation_degrees = Vector3(0, 0, _rng.randf_range(-5, 5))
-			root.add_child(bar)
-			Toon.part(bar, Toon.cylinder(0.025 * s, 0.03 * s, h, 6), iron, Vector3(0, h * 0.5, 0), Vector3.ZERO, {"outline": 0.022})
-			Toon.part(bar, Toon.prism(Vector3(0.12, 0.2, 0.05) * s), iron, Vector3(0, h + 0.08 * s, 0), Vector3.ZERO, {"outline": 0.022})
-	for y in [0.2, 0.85]:
-		Toon.part(root, Toon.box(Vector3(bays * bay, 0.05 * s, 0.05 * s)), iron, Vector3(bays * bay * 0.5, h * y, 0), Vector3.ZERO, {"outline": 0.022})
-	_collide(root, Toon.box_shape(Vector3(bays * bay + 0.3, 2.0, 0.4)), Vector3(bays * bay * 0.5, 1.0, 0))
-
-
-## A broken stone wall with a jagged top, ending in a standing arch whose
-## crown has half fallen in. Runs along local X, about 4.5 units long.
-func _ruin_wall(root: Node3D, s: float) -> void:
-	var st := _col(Color(0.27, 0.28, 0.3))
-	var blk := Vector3(0.6, 0.4, 0.5) * s
-	# the wall: columns of blocks of uneven height
-	for c in 5:
-		var x := (-2.2 + c * 0.6) * s
-		var rows := 2 + _rng.randi() % 4
-		for r in rows:
-			if r == rows - 1 and _rng.randf() < 0.3:
-				continue
-			var off := 0.1 * s * (r % 2)
-			Toon.part(root, Toon.box(blk * Vector3(0.96, 0.96, 1.0)), st.darkened(_rng.randf() * 0.15), Vector3(x + off, blk.y * (r + 0.5), 0),
-				Vector3(0, _rng.randf_range(-3, 3), 0), {"moss": 0.25})
-	# fallen blocks at the foot
-	for k in 3:
-		Toon.part(root, Toon.box(blk * 0.9), st.darkened(0.1), Vector3(_rng.randf_range(-2.2, 0.5) * s, blk.y * 0.4, _rng.randf_range(0.5, 1.0) * s),
-			Vector3(_rng.randf_range(-20, 20), _rng.randf_range(0, 90), _rng.randf_range(-15, 15)), {"moss": 0.2})
-	# the arch: two piers and a crown of wedge blocks, a few missing
-	var span := 1.6 * s
-	var pier_h := 2.2 * s
-	for x in [0.9 * s, 0.9 * s + span]:
-		Toon.part(root, Toon.box(Vector3(0.5 * s, pier_h, 0.6 * s)), st, Vector3(x, pier_h * 0.5, 0), Vector3.ZERO, {"tile": 0.4 * s, "moss": 0.2})
-	var centre := Vector3(0.9 * s + span * 0.5, pier_h, 0)
-	for k in 7:
-		if k in [4, 5]:
-			continue  # fallen
-		var a := PI * (k + 0.5) / 7.0
-		var p := centre + Vector3(-cos(a) * span * 0.55, sin(a) * span * 0.55, 0)
-		Toon.part(root, Toon.box(Vector3(0.3, 0.42, 0.6) * s), st.darkened(0.05 * (k % 2)), p, Vector3(0, 0, rad_to_deg(PI * 0.5 - a)))
-	_collide(root, Toon.box_shape(Vector3(3.2 * s, 2.0, 0.6 * s)), Vector3(-0.9 * s, 1.0, 0))
-	for x in [0.9 * s, 0.9 * s + span]:
-		_collide(root, Toon.box_shape(Vector3(0.5 * s, 2.0, 0.6 * s)), Vector3(x, 1.0, 0))
-
-
-## Leaning headstones in a huddle; some were crossed out in red (cut
-## characters: the Writer's corrections).
-func _grave_cluster(root: Node3D, s: float) -> void:
-	var st := _col(Color(0.3, 0.31, 0.33))
-	var n := maxi(count, 2)
-	for i in n:
-		var p := _rand_in_disc(radius * s)
-		var g := Node3D.new()
-		g.position = p
-		g.rotation_degrees = Vector3(_rng.randf_range(-14, 14), _rng.randf_range(-35, 35), _rng.randf_range(-14, 14))
-		root.add_child(g)
-		var k := _rng.randf() * s * 0.25 + s * 0.8
-		var shape := _rng.randi() % 3
-		var top := 0.0
-		match shape:
-			0:  # rounded slab
-				Toon.part(g, Toon.box(Vector3(0.7, 0.85, 0.2) * k), st.darkened(_rng.randf() * 0.12), Vector3(0, 0.42 * k, 0), Vector3.ZERO, {"moss": 0.35})
-				Toon.part(g, Toon.cylinder(0.35 * k, 0.35 * k, 0.2 * k, 12), st.darkened(_rng.randf() * 0.12), Vector3(0, 0.85 * k, 0), Vector3(90, 0, 0), {"moss": 0.35})
-				top = 0.55
-			1:  # cross
-				Toon.part(g, Toon.box(Vector3(0.18, 1.2, 0.16) * k), st, Vector3(0, 0.6 * k, 0), Vector3.ZERO, {"moss": 0.3})
-				Toon.part(g, Toon.box(Vector3(0.7, 0.16, 0.16) * k), st, Vector3(0, 0.85 * k, 0), Vector3.ZERO, {"moss": 0.3})
-				top = 0.85
-			_:  # squat block with a slanted top
-				Toon.part(g, Toon.box(Vector3(0.6, 0.6, 0.3) * k), st.darkened(0.08), Vector3(0, 0.3 * k, 0), Vector3.ZERO, {"moss": 0.4})
-				Toon.part(g, Toon.prism(Vector3(0.6, 0.25, 0.3) * k), st.darkened(0.08), Vector3(0, 0.72 * k, 0), Vector3.ZERO, {"moss": 0.4})
-				top = 0.35
-		if _rng.randf() < 0.45:
-			for a in [38.0, -38.0]:
-				Toon.part(g, Toon.box(Vector3(0.07, 0.6, 0.03) * k), CORRECTION, Vector3(0, top * k, 0.13 * k), Vector3(0, 0, a), {"outline": 0.0})
-	_collide(root, Toon.cylinder_shape(radius * s * 0.8, 1.6), Vector3(0, 0.8, 0))
-
-
-## An old street lamp, never lit: the post bent over, the cage dangling
-## with its glass gone dark.
-func _dead_lamppost(root: Node3D, s: float) -> void:
-	var iron := _col(IRON)
-	Toon.part(root, Toon.cylinder(0.18 * s, 0.24 * s, 0.4 * s, 8), iron, Vector3(0, 0.2 * s, 0))
-	var lower := Node3D.new()
-	lower.rotation_degrees = Vector3(0, _rng.randf_range(0, 360), _rng.randf_range(4, 9))
-	root.add_child(lower)
-	Toon.part(lower, Toon.cylinder(0.05 * s, 0.07 * s, 2.4 * s, 7), iron, Vector3(0, 1.4 * s, 0), Vector3.ZERO, {"outline": 0.03})
-	var upper := Node3D.new()
-	upper.position = Vector3(0, 2.6 * s, 0)
-	upper.rotation_degrees = Vector3(0, 0, _rng.randf_range(28, 46))
-	lower.add_child(upper)
-	Toon.part(upper, Toon.cylinder(0.04 * s, 0.05 * s, 1.0 * s, 6), iron, Vector3(0, 0.5 * s, 0), Vector3.ZERO, {"outline": 0.03})
-	# the arm and the dangling cage
-	var arm_end := Vector3(-0.5 * s, 1.0 * s, 0)
-	Toon.part(upper, Toon.box(Vector3(0.55, 0.05, 0.05) * s), iron, Vector3(-0.25 * s, 0.95 * s, 0))
-	var cage := Node3D.new()
-	cage.position = arm_end
-	cage.rotation_degrees = Vector3(0, 0, -upper.rotation_degrees.z - lower.rotation_degrees.z + _rng.randf_range(-12, 12))
-	upper.add_child(cage)
-	Toon.part(cage, Toon.cylinder(0.01 * s, 0.01 * s, 0.25 * s, 4), iron, Vector3(0, -0.12 * s, 0), Vector3.ZERO, {"outline": 0.0})
-	Toon.part(cage, Toon.cylinder(0.1 * s, 0.24 * s, 0.2 * s, 6), iron, Vector3(0, -0.3 * s, 0))
-	Toon.part(cage, Toon.cylinder(0.2 * s, 0.16 * s, 0.4 * s, 6), Color(0.12, 0.14, 0.16), Vector3(0, -0.6 * s, 0), Vector3.ZERO, {"outline": 0.03})
-	_collide(root, Toon.cylinder_shape(0.25 * s, 2.0), Vector3(0, 1.0, 0))
-
-
-## Torn pages blown flat against the ground, a few curling up at a corner,
-## some with a line of ink still on them.
-func _page_drift(root: Node3D, s: float) -> void:
-	var paper := _col(Color(0.5, 0.48, 0.43))
-	for i in maxi(count, 3):
-		var p := _rand_in_disc(radius * s)
-		var pg := Node3D.new()
-		pg.position = p + Vector3(0, 0.02 + i * 0.004, 0)
-		pg.rotation_degrees = Vector3(_rng.randf_range(-4, 4), _rng.randf_range(0, 360), _rng.randf_range(-4, 4))
-		root.add_child(pg)
-		var w := Vector3(0.42, 0.012, 0.55) * s * _rng.randf_range(0.75, 1.1)
-		var shade := paper.darkened(_rng.randf() * 0.25)
-		Toon.part(pg, Toon.box(w), shade, Vector3.ZERO, Vector3.ZERO, {"outline": 0.015})
-		if _rng.randf() < 0.4:
-			# a corner lifting in the wind
-			Toon.part(pg, Toon.box(Vector3(w.x * 0.5, w.y, w.z * 0.35)), shade.lightened(0.05),
-				Vector3(w.x * 0.25, 0.06 * s, w.z * 0.6), Vector3(-28, 0, 12), {"outline": 0.015})
-		if _rng.randf() < 0.6:
-			for l in 3:
-				Toon.part(pg, Toon.box(Vector3(w.x * 0.7, 0.004, 0.012)), Toon.INK, Vector3(0, w.y, (l - 1) * w.z * 0.22), Vector3.ZERO, {"outline": 0.0})
-
-
-## Chains hanging from a crooked beam on two posts, some ending in a hook
-## or a page pinned through. They sway a little.
-func _hanging_chains(root: Node3D, s: float) -> void:
-	var iron := _col(IRON)
-	var top := 3.6 * s
-	var span := 2.6 * s
-	for x in [-span * 0.5, span * 0.5]:
-		Toon.part(root, Toon.box(Vector3(0.22, top, 0.22) * Vector3(s, 1, s)), _col(DEAD_WOOD), Vector3(x, top * 0.5, 0), Vector3(0, 0, _rng.randf_range(-3, 3)),
-			{"bark": 0.6, "line": DEAD_WOOD.lightened(0.08)})
-	Toon.part(root, Toon.box(Vector3(span + 0.6 * s, 0.22 * s, 0.22 * s)), _col(DEAD_WOOD), Vector3(0, top, 0), Vector3(0, 0, _rng.randf_range(-4, 4)))
-	var n := clampi(count, 2, 5)
-	for i in n:
-		var holder := Node3D.new()
-		holder.position = Vector3(lerpf(-span * 0.35, span * 0.35, float(i) / maxf(n - 1, 1)), top - 0.1 * s, 0)
-		holder.set_meta("sway", _rng.randf() * TAU)
-		root.add_child(holder)
-		var links := 5 + _rng.randi() % 5
-		var link_h := 0.16 * s
-		for k in links:
-			var lk := Toon.part(holder, Toon.box(Vector3(0.07, link_h, 0.02) * Vector3(s, 1, s)), iron, Vector3(0, -link_h * (k + 0.5), 0),
-				Vector3(0, PI * 0.5 * (k % 2), 0), {"outline": 0.018})
-			lk.scale = Vector3.ONE
-		var end := Vector3(0, -link_h * links, 0)
-		if _rng.randf() < 0.5:
-			Toon.part(holder, Toon.cylinder(0.02 * s, 0.03 * s, 0.25 * s, 5), iron, end + Vector3(0.05 * s, -0.1 * s, 0), Vector3(0, 0, 0.6), {"outline": 0.018})
-		else:
-			Toon.part(holder, Toon.box(Vector3(0.36, 0.48, 0.012) * s), _col(Color(0.48, 0.46, 0.41)), end + Vector3(0, -0.26 * s, 0),
-				Vector3(0, 0, _rng.randf_range(-0.2, 0.2)), {"outline": 0.015})
-	_collide(root, Toon.box_shape(Vector3(0.3, 2.0, 0.3) * Vector3(s, 1, s)), Vector3(-span * 0.5, 1.0, 0))
-	_collide(root, Toon.box_shape(Vector3(0.3, 2.0, 0.3) * Vector3(s, 1, s)), Vector3(span * 0.5, 1.0, 0))
-
-
-func _process(_delta: float) -> void:
-	if kind != Kind.HANGING_CHAINS or Engine.is_editor_hint():
-		return
-	var root := get_node_or_null("Generated")
-	if root == null:
-		return
-	var t := Time.get_ticks_msec() * 0.001
-	for c in root.get_children():
-		if c.has_meta("sway"):
-			c.rotation.z = sin(t * 0.9 + c.get_meta("sway")) * 0.06
-			c.rotation.x = sin(t * 0.7 + c.get_meta("sway") * 1.7) * 0.04

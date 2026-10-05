@@ -91,7 +91,6 @@ func _apply_biomes(mat: ShaderMaterial) -> void:
 	mat.set_shader_parameter("mode_a", a.ground)
 	mat.set_shader_parameter("mode_b", b.ground)
 	mat.set_shader_parameter("use_blend", 1.0 if biome_b else 0.0)
-	mat.set_shader_parameter("void_color", a.background)
 	mat.set_shader_parameter("blend_from", blend_from)
 	mat.set_shader_parameter("blend_to", blend_to)
 

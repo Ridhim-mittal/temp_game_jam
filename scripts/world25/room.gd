@@ -20,11 +20,6 @@ const StoryUI = preload("res://scripts/world25/story_ui.gd")
 const ClearingFX = preload("res://scripts/clearing/clearing_fx.gd")
 const OVERLAY_SHADER = preload("res://shaders/comic_overlay.gdshader")
 const RectScript = preload("res://scripts/background/screen_shader_rect.gd")
-const FOG_SHADER = preload("res://shaders/world25/fog_bank.gdshader")
-## Fog banks: [height, alpha (x the biome's fog_bank_alpha), scale, patchiness].
-## Two below the ground make the void read as deep fog; a faint one hugs
-## the floor.
-const FOG_LAYERS := [[-1.4, 1.0, 9.0, 0.45], [-4.5, 1.25, 16.0, 0.3], [0.3, 0.32, 6.0, 0.8]]
 const DEFAULT_BIOME = preload("res://data/biomes/darkwood.tres")
 const PauseMenu = preload("res://scripts/ui/pause_menu.gd")
 const SkillTree = preload("res://scripts/ui/skill_tree.gd")
@@ -77,7 +72,6 @@ var ui: Control
 var _env: Environment
 var _sun: DirectionalLight3D
 var _motes: CPUParticles3D
-var _fog_mats: Array[ShaderMaterial] = []
 var _cleared := false
 var _overlay: Control
 var _check_timer := 0.0
@@ -162,12 +156,9 @@ func _build_environment() -> void:
 	_env.glow_bloom = 0.05
 	_env.glow_hdr_threshold = 1.0
 	_env.fog_enabled = true
-	_env.fog_mode = Environment.FOG_MODE_EXPONENTIAL
-	_env.fog_density = b.fog_density
-	_env.fog_sky_affect = 0.0
-	# thicker below the floor: the void under a room fills with fog
-	_env.fog_height = -0.8
-	_env.fog_height_density = 0.45
+	_env.fog_density = 0.0
+	_env.fog_height = -1.5
+	_env.fog_height_density = 0.35
 	var we := WorldEnvironment.new()
 	we.environment = _env
 	add_child(we)
@@ -177,7 +168,6 @@ func _build_environment() -> void:
 	_sun.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL
 	_sun.directional_shadow_max_distance = 60.0
 	add_child(_sun)
-	_build_fog()
 	_motes = CPUParticles3D.new()
 	var q := QuadMesh.new()
 	q.size = Vector2(0.07, 0.07)
@@ -187,7 +177,7 @@ func _build_environment() -> void:
 	mm.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
 	q.material = mm
 	_motes.mesh = q
-	_motes.amount = 50
+	_motes.amount = 70
 	_motes.lifetime = 9.0
 	_motes.preprocess = 9.0
 	_motes.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
@@ -207,41 +197,12 @@ func _build_environment() -> void:
 	_apply_air(b, b, 0.0)
 
 
-## Big drifting sheets of fog at different heights (fog_bank.gdshader).
-func _build_fog() -> void:
-	var c := camera_bounds.get_center()
-	for layer in FOG_LAYERS:
-		var q := QuadMesh.new()
-		q.orientation = PlaneMesh.FACE_Y
-		q.size = Vector2(camera_bounds.size.x + 70.0, camera_bounds.size.y + 60.0)
-		var mat := ShaderMaterial.new()
-		mat.shader = FOG_SHADER
-		mat.set_shader_parameter("scale", layer[2])
-		mat.set_shader_parameter("patchiness", layer[3])
-		mat.set_shader_parameter("drift", Vector2(0.25, 0.08) * (1.0 + _fog_mats.size() * 0.4))
-		if layer[0] > 0.0:
-			# the floor mist thins out towards the camera
-			mat.set_shader_parameter("fade_z", camera_bounds.end.y + 2.0)
-		var mi := MeshInstance3D.new()
-		mi.name = "FogBank%d" % (_fog_mats.size() + 1)
-		mi.mesh = q
-		mi.material_override = mat
-		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		mi.position = Vector3(c.x, layer[0], c.y - 6.0)
-		add_child(mi)
-		_fog_mats.append(mat)
-
-
 ## Light, air and motes, mixed between two biomes (t = 0 -> a, 1 -> b).
 func _apply_air(a: Resource, b: Resource, t: float) -> void:
 	_env.background_color = a.background.lerp(b.background, t)
 	_env.ambient_light_color = a.ambient.lerp(b.ambient, t)
 	_env.ambient_light_energy = lerpf(a.ambient_energy, b.ambient_energy, t)
 	_env.fog_light_color = a.fog.lerp(b.fog, t)
-	_env.fog_density = lerpf(a.fog_density, b.fog_density, t)
-	for i in _fog_mats.size():
-		_fog_mats[i].set_shader_parameter("color", a.fog_bank.lerp(b.fog_bank, t))
-		_fog_mats[i].set_shader_parameter("alpha", lerpf(a.fog_bank_alpha, b.fog_bank_alpha, t) * FOG_LAYERS[i][1])
 	_sun.light_color = a.sun.lerp(b.sun, t)
 	_sun.light_energy = lerpf(a.sun_energy, b.sun_energy, t)
 	_motes.color = a.motes.lerp(b.motes, t)

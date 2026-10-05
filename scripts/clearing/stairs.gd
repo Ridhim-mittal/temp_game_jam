@@ -25,7 +25,7 @@ const Toon = preload("res://scripts/clearing/toon.gd")
 @export var base_depth := 7.0
 ## Wall off the top (when the stairs lead nowhere yet).
 @export var top_wall := true
-@export var stone := Color(0.3, 0.31, 0.34):
+@export var stone := Color(0.62, 0.6, 0.58):
 	set(v):
 		stone = v
 		_rebuild()

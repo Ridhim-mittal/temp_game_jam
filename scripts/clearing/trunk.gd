@@ -13,7 +13,7 @@ const Toon = preload("res://scripts/clearing/toon.gd")
 	set(v):
 		radius = v
 		_rebuild()
-@export var color := Color(0.07, 0.07, 0.09):
+@export var color := Color(0.22, 0.15, 0.17):
 	set(v):
 		color = v
 		_rebuild()

@@ -39,7 +39,7 @@ clear_captions = "Still here? Fine. Keep going."
 
 [node name="Island" type="Node3D" parent="."]
 script = ExtResource("island")
-polygon = PackedVector2Array(-10.50, -9.50, -7.00, -9.48, -3.50, -9.50, 0.20, -9.50, 3.80, -9.50, 7.00, -9.91, 13.00, -7.00, 12.69, -3.50, 13.00, -1.80, 13.00, 1.80, 13.32, 3.50, 10.50, 9.50, 7.00, 9.12, 3.50, 9.87, 0.00, 9.98, -3.50, 9.96, -7.00, 10.03, -13.00, 7.00, -13.27, 3.50, -12.41, 0.00, -13.04, -3.50)
+polygon = PackedVector2Array(-10.50, -9.50, -7.00, -10.07, -3.50, -9.34, 0.20, -9.50, 3.80, -9.50, 7.00, -9.48, 13.00, -7.00, 13.56, -3.50, 13.00, -1.80, 13.00, 1.80, 13.33, 3.50, 10.50, 9.50, 7.00, 9.61, 3.50, 10.09, 0.00, 9.49, -3.50, 9.52, -7.00, 9.43, -13.00, 7.00, -12.41, 3.50, -12.92, 0.00, -13.05, -3.50)
 open_edges = PackedInt32Array(8, 3)
 
 [node name="GateEast" type="Node3D" parent="."]
@@ -58,63 +58,51 @@ target_gate = "south"
 
 [node name="Props" type="Node3D" parent="."]
 
-[node name="RuinWall1" type="Node3D" parent="Props"]
+[node name="Pillar1" type="Node3D" parent="Props"]
 transform = Transform3D(0.4960, 0, -0.8683, 0, 1, 0, 0.8683, 0, 0.4960, -7.57, 0.00, 4.95)
 script = ExtResource("bprops")
-kind = 20
-radius = 2.4
+kind = 6
 solid = true
 seed = 237
 
-[node name="Pillar1" type="Node3D" parent="Props"]
-transform = Transform3D(-0.9903, 0, 0.1393, 0, 1, 0, -0.1393, 0, -0.9903, -8.65, 0.00, 0.60)
-script = ExtResource("bprops")
-kind = 6
-solid = true
-seed = 34
-
 [node name="Pillar2" type="Node3D" parent="Props"]
-transform = Transform3D(-0.5944, 0, -0.8041, 0, 1, 0, 0.8041, 0, -0.5944, 6.40, 0.00, 6.57)
+transform = Transform3D(0.9797, 0, -0.2005, 0, 1, 0, 0.2005, 0, 0.9797, -5.47, 0.00, 5.66)
 script = ExtResource("bprops")
 kind = 6
 solid = true
-seed = 781
-
-[node name="DeadLamppost1" type="Node3D" parent="Props"]
-transform = Transform3D(0.5210, 0, -0.8536, 0, 1, 0, 0.8536, 0, 0.5210, 5.92, 0.00, -7.25)
-script = ExtResource("bprops")
-kind = 22
-solid = true
-seed = 980
+seed = 562
 
 [node name="InkPool1" type="Node3D" parent="Props"]
-transform = Transform3D(0.4496, 0, -0.8932, 0, 1, 0, 0.8932, 0, 0.4496, -0.67, 0.00, 6.26)
+transform = Transform3D(-0.3255, 0, -0.9455, 0, 1, 0, 0.9455, 0, -0.3255, -3.13, 0.00, 7.65)
 script = ExtResource("bprops")
 kind = 11
-radius = 1.7
-seed = 109
+radius = 1.5
+seed = 414
 
 [node name="InkPool2" type="Node3D" parent="Props"]
-transform = Transform3D(0.8496, 0, -0.5274, 0, 1, 0, 0.5274, 0, 0.8496, -10.84, 0.00, -1.01)
+transform = Transform3D(-0.7466, 0, -0.6653, 0, 1, 0, 0.6653, 0, -0.7466, 3.94, 0.00, 6.83)
 script = ExtResource("bprops")
 kind = 11
-radius = 1.7
-seed = 425
+radius = 1.5
+seed = 356
 
-[node name="InkPool3" type="Node3D" parent="Props"]
-transform = Transform3D(-0.8195, 0, 0.5730, 0, 1, 0, -0.5730, 0, -0.8195, 4.17, 0.00, 7.30)
+[node name="PaperMound1" type="Node3D" parent="Props"]
+transform = Transform3D(0.0896, 0, -0.9960, 0, 1, 0, 0.9960, 0, 0.0896, 9.55, 0.00, 4.04)
 script = ExtResource("bprops")
-kind = 11
-radius = 1.7
-seed = 411
+kind = 13
+count = 4
+radius = 1.1
+solid = true
+seed = 198
 
-[node name="PageDrift1" type="Node3D" parent="Props"]
-transform = Transform3D(0.9784, 0, 0.2066, 0, 1, 0, -0.2066, 0, 0.9784, -3.84, 0.00, -6.95)
+[node name="PaperMound2" type="Node3D" parent="Props"]
+transform = Transform3D(0.9962, 0, -0.0866, 0, 1, 0, 0.0866, 0, 0.9962, 6.56, 0.00, -6.04)
 script = ExtResource("bprops")
-kind = 23
-count = 5
-radius = 1.4
-seed = 281
+kind = 13
+count = 4
+radius = 1.1
+solid = true
+seed = 563
 
 [node name="Spirit1" type="Node3D" parent="Props"]
 transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -3.00, 0.00, -7.50)
@@ -131,39 +119,39 @@ core_color = Color(0.75, 0.92, 1, 1)
 [node name="Deep" type="Node3D" parent="."]
 
 [node name="Deep2" type="Node3D" parent="Deep"]
-transform = Transform3D(-0.4494, 0, 0.8933, 0, 1, 0, -0.8933, 0, -0.4494, 3.77, -4.50, 13.16)
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 3.77, -6.00, 13.16)
 script = ExtResource("bprops")
-kind = 18
+kind = 6
 size = 2.4
-seed = 1
+seed = 60
 
 [node name="Deep3" type="Node3D" parent="Deep"]
-transform = Transform3D(-0.2454, 0, 0.9694, 0, 1, 0, -0.9694, 0, -0.2454, -12.47, -6.00, 9.17)
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -12.47, -6.00, 9.17)
 script = ExtResource("bprops")
 kind = 6
 size = 2.4
-seed = 58
+seed = 3
 
 [node name="Deep4" type="Node3D" parent="Deep"]
-transform = Transform3D(0.8985, 0, 0.4389, 0, 1, 0, -0.4389, 0, 0.8985, -16.24, -4.50, -3.99)
-script = ExtResource("bprops")
-kind = 18
-size = 2.4
-seed = 62
-
-[node name="Deep5" type="Node3D" parent="Deep"]
-transform = Transform3D(-0.1346, 0, -0.9909, 0, 1, 0, 0.9909, 0, -0.1346, -3.77, -6.00, -13.16)
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -16.24, -6.00, -3.99)
 script = ExtResource("bprops")
 kind = 6
 size = 2.4
-seed = 71
+seed = 88
+
+[node name="Deep5" type="Node3D" parent="Deep"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -3.77, -6.00, -13.16)
+script = ExtResource("bprops")
+kind = 6
+size = 2.4
+seed = 56
 
 [node name="Deep6" type="Node3D" parent="Deep"]
-transform = Transform3D(0.6304, 0, 0.7763, 0, 1, 0, -0.7763, 0, 0.6304, 12.47, -4.50, -9.17)
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 12.47, -6.00, -9.17)
 script = ExtResource("bprops")
-kind = 18
+kind = 6
 size = 2.4
-seed = 36
+seed = 54
 
 [node name="RuinPillar1" type="Node3D" parent="Deep"]
 transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -16.00, -6.00, -11.00)
@@ -180,7 +168,7 @@ size = 2.4
 seed = 41
 
 [node name="Eyes1" type="Node3D" parent="Deep"]
-transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -10.93, -4.00, 12.50)
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 10.70, -4.00, 12.50)
 script = ExtResource("eyes")
 color = Color(0.4, 1, 0.85, 1)
 

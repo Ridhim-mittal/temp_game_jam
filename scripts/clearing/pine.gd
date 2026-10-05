@@ -1,9 +1,7 @@
 @tool
 extends Node3D
-## Dead fir silhouette: a tall black trunk with bare, drooping branches
-## stacked in tiers, needles long gone. Used in rings round the Gutter's
-## rooms and rising out of the fog below the cliffs, where it reads as a
-## black shape against the lighter fog banks.
+## Dark pine silhouette: stacked cones on a short trunk. Used in rings
+## around the clearing and rising out of the void below the cliffs.
 
 const Toon = preload("res://scripts/clearing/toon.gd")
 
@@ -15,7 +13,7 @@ const Toon = preload("res://scripts/clearing/toon.gd")
 	set(v):
 		radius = v
 		_rebuild()
-@export var color := Color(0.06, 0.06, 0.08):
+@export var color := Color(0.1, 0.11, 0.17):
 	set(v):
 		color = v
 		_rebuild()
@@ -34,26 +32,16 @@ func _rebuild() -> void:
 	if not is_inside_tree():
 		return
 	var root := Toon.fresh_root(self)
-	var rng := RandomNumberGenerator.new()
-	rng.seed = int(height * 31.0 + radius * 7.0 + position.x * 13.0)
-	# trunk tapering to a snapped-off spike
-	Toon.part(root, Toon.cylinder(radius * 0.03, radius * 0.16, height, 7), color, Vector3(0, height * 0.5, 0),
-		Vector3(rng.randf_range(-3, 3), 0, rng.randf_range(-3, 3)), {"bark": 0.8, "line": color.lightened(0.08), "outline": 0.05})
-	# bare branches: whorls that droop, shorter towards the top
-	var whorls := tiers * 3
-	for i in whorls:
-		var t := (i + 1.0) / (whorls + 1.0)
-		var y := height * lerpf(0.25, 0.95, t)
-		var reach := radius * lerpf(1.0, 0.25, t) * rng.randf_range(0.7, 1.05)
-		var n := 3 + rng.randi() % 2
-		for k in n:
-			var yaw := TAU * k / n + rng.randf() * 0.9 + i * 0.7
-			var droop := rng.randf_range(-18.0, 8.0)
-			var arm := Node3D.new()
-			arm.position = Vector3(0, y, 0)
-			arm.rotation_degrees = Vector3(0, rad_to_deg(yaw), 90.0 - droop)
-			root.add_child(arm)
-			# a branch lying along the arm's local +Y, thinning to a point
-			Toon.part(arm, Toon.cylinder(0.0, radius * 0.045, reach, 5), color, Vector3(0, reach * 0.5, 0), Vector3.ZERO, {"outline": 0.03})
+	var trunk_h := height * 0.18
+	Toon.part(root, Toon.cylinder(radius * 0.12, radius * 0.16, trunk_h, 8), Color(0.16, 0.11, 0.12),
+		Vector3(0, trunk_h * 0.5, 0))
+	var cone_h := (height - trunk_h) / tiers * 1.55
+	for i in tiers:
+		var t := float(i) / tiers
+		var r := radius * lerpf(1.0, 0.45, t)
+		var y := trunk_h + (height - trunk_h - cone_h) * t + cone_h * 0.5
+		# each tier a little darker towards the top, slightly twisted
+		Toon.part(root, Toon.cylinder(0.0, r, cone_h, 9), color.darkened(t * 0.2), Vector3(0, y, 0),
+			Vector3(0, i * 23.0, 0), {"outline": 0.06})
 	if solid and not Engine.is_editor_hint():
-		Toon.collider(root, Toon.cylinder_shape(radius * 0.25, 3.0), Vector3(0, 1.5, 0))
+		Toon.collider(root, Toon.cylinder_shape(radius * 0.3, 3.0), Vector3(0, 1.5, 0))

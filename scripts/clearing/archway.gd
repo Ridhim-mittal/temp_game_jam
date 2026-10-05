@@ -27,7 +27,7 @@ const DOOR_COLORS := {
 	set(v):
 		pillar_height = v
 		_rebuild()
-@export var stone := Color(0.3, 0.3, 0.33):
+@export var stone := Color(0.6, 0.6, 0.56):
 	set(v):
 		stone = v
 		_rebuild()

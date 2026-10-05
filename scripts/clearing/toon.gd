@@ -8,9 +8,8 @@ extends RefCounted
 const TOON_SHADER = preload("res://shaders/clearing/toon.gdshader")
 const OUTLINE_SHADER = preload("res://shaders/clearing/toon_outline.gdshader")
 const INK := Color(0.06, 0.04, 0.09)
-## Ruined stone and the grey-green lichen on it: the Gutter is dark and cold.
-const STONE := Color(0.34, 0.35, 0.37)
-const MOSS := Color(0.17, 0.22, 0.21)
+const STONE := Color(0.64, 0.6, 0.58)
+const MOSS := Color(0.36, 0.6, 0.42)
 
 static var _materials := {}
 

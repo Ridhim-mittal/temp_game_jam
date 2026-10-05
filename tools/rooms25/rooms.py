@@ -36,10 +36,7 @@ EXT = [
     ("Resource", "res://data/biomes/wastes.tres", "b_wastes"),
     ("Resource", "res://data/biomes/arena.tres", "b_arena"),
 ]
-# biome_props.gd Kind, in enum order (never reorder; new kinds go at the end).
-# Retired, placed nowhere: CANOPY GARDEN_PLOT BARN SCARECROW CORAL TUBE_PLANT NEST.
-KIND = {k: i for i, k in enumerate("CANOPY TOMBSTONE STUMP GARDEN_PLOT BARN SCARECROW PILLAR RITUAL_CIRCLE SHADE_STATUE CORAL TUBE_PLANT INK_POOL CRYSTAL PAPER_MOUND PINS NEST PENCIL_TOTEM INK_POT "
-                                   "DEAD_TREE IRON_FENCE RUIN_WALL GRAVE_CLUSTER DEAD_LAMPPOST PAGE_DRIFT HANGING_CHAINS".split())}
+KIND = {k: i for i, k in enumerate("CANOPY TOMBSTONE STUMP GARDEN_PLOT BARN SCARECROW PILLAR RITUAL_CIRCLE SHADE_STATUE CORAL TUBE_PLANT INK_POOL CRYSTAL PAPER_MOUND PINS NEST PENCIL_TOTEM INK_POT".split())}
 ROT = {"north": 0, "south": 180, "east": -90, "west": 90}
 
 
@@ -216,9 +213,8 @@ def rect_polygon(rng, x0, x1, z0, z1, gaps, gap_half=1.8):
 
 
 def forest_ring(r, n_pines=10, void_pines=4, canopies=2):
-    """Inkwood surroundings: twisted dead trees on the rim, dead firs rising
-    out of the fog below, giant trunks. (`canopies` is ignored: the hanging
-    CANOPY foliage is no longer used.)"""
+    """Darkwood surroundings: pines on the rim and trunks. (`canopies` is
+    ignored: the hanging CANOPY foliage is no longer used.)"""
     for i in range(n_pines):
         side = r.rng.choice(["n", "e", "w"])
         if side == "n":
@@ -227,8 +223,7 @@ def forest_ring(r, n_pines=10, void_pines=4, canopies=2):
             x, z = (r.hw if side == "e" else -r.hw) + (1 if side == "e" else -1) * r.rng.uniform(2.5, 5), r.rng.uniform(-r.hd, r.hd * 0.5)
         if any(math.dist((x, z), r.gate_pos(s)) < 5 for s in r.gates):
             continue
-        r.nodes.append(("Forest", f"DeadTree{i + 1}", "bprops", (x, -0.5, z), r.rng.uniform(0, 360),
-                        {"kind": KIND["DEAD_TREE"], "size": round(r.rng.uniform(1.6, 2.3), 2), "seed": r.rng.randint(1, 999)}))
+        r.nodes.append(("Forest", f"Pine{i + 1}", "pine", (x, 0, z), 0, {"height": round(r.rng.uniform(7, 10), 1), "radius": round(r.rng.uniform(1.8, 2.4), 1)}))
     for i in range(void_pines):
         x = r.rng.uniform(-r.hw, r.hw)
         z = r.hd + r.rng.uniform(3, 5)
@@ -238,22 +233,3 @@ def forest_ring(r, n_pines=10, void_pines=4, canopies=2):
     for sx in (-1, 1):
         r.nodes.append(("Forest", f"Trunk{'L' if sx < 0 else 'R'}", "trunk", (sx * (r.hw + 3.5), -8, r.hd - 1), 0, {"height": 26.0, "radius": 1.6}))
     r.nodes.append(("Forest", "Eyes1", "eyes", (r.rng.uniform(-r.hw, r.hw), -4, r.hd + 3), 0, {}))
-
-
-def edge_fence(r, side="north", inset=1.3, bays=3):
-    """Iron railings along the inside of a room edge, leaving the gates
-    clear: black bars against the fog at the back of the room."""
-    if side != "north":
-        return
-    z = -r.hd + inset
-    x = -r.hw + 3.5
-    k = 0
-    while x + bays * 1.1 < r.hw - 3.0:
-        run = bays * 1.1
-        if not any(abs(z - r.gate_pos(s)[1]) < 3 and r.gate_pos(s)[0] - 3.2 < x + run and x < r.gate_pos(s)[0] + 3.2 for s in r.gates):
-            if r.rng.random() < 0.7:
-                r.nodes.append(("Props", f"Railing{k + 1}", "bprops", (x, 0, z), 0,
-                                {"kind": KIND["IRON_FENCE"], "count": bays, "seed": r.rng.randint(1, 999), "solid": True}))
-                r.clear_zones.append((x + run * 0.5, z, run * 0.55))
-                k += 1
-        x += run + r.rng.uniform(1.5, 4.0)

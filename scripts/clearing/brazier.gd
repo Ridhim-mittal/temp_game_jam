@@ -1,8 +1,7 @@
 @tool
 extends Node3D
 ## Stone pedestal with an iron bowl and a flickering comic flame. Lights
-## the area around it with a cold, pale cel-shaded pool (Vesper's Ember is
-## the only warm light in the Gutter), and
+## the area around it with a warm (or spirit-blue) cel-shaded pool, and
 ## counts as light for monsters and drawn things (world25/light.gd).
 ## Set `lit` off for a lantern the player lights by hitting it or with a
 ## Flash; it then stays lit for good.
@@ -11,11 +10,11 @@ const Toon = preload("res://scripts/clearing/toon.gd")
 const FLAME_SHADER = preload("res://shaders/clearing/flame.gdshader")
 const Fx = preload("res://scripts/clearing/clearing_fx.gd")
 
-@export var flame_color := Color(0.62, 0.72, 0.82):
+@export var flame_color := Color(1.0, 0.34, 0.12):
 	set(v):
 		flame_color = v
 		_rebuild()
-@export var core_color := Color(0.95, 0.97, 1.0):
+@export var core_color := Color(1.0, 0.82, 0.38):
 	set(v):
 		core_color = v
 		_rebuild()
@@ -27,7 +26,7 @@ const Fx = preload("res://scripts/clearing/clearing_fx.gd")
 	set(v):
 		lit = v
 		_rebuild()
-@export var light_energy := 1.6
+@export var light_energy := 1.9
 @export var light_range := 6.0
 ## Radius of the pool that counts as light for the monsters (the design
 ## doc's light rules: Crumples unfold, Crossed-Out X's burn, Smudges show).
@@ -71,7 +70,7 @@ func _rebuild() -> void:
 	var root := Toon.fresh_root(self)
 	var h := pedestal_height
 	Toon.part(root, Toon.cylinder(0.32, 0.42, h, 8), Toon.STONE, Vector3(0, h * 0.5, 0), Vector3.ZERO, {"moss": 0.4})
-	Toon.part(root, Toon.cylinder(0.5, 0.25, 0.32, 10), Color(0.1, 0.1, 0.12), Vector3(0, h + 0.16, 0))
+	Toon.part(root, Toon.cylinder(0.5, 0.25, 0.32, 10), Color(0.18, 0.15, 0.2), Vector3(0, h + 0.16, 0))
 	_light = null
 	if not lit:
 		# cold wick and ash: hit it or Flash near it to light it

@@ -6,8 +6,8 @@ extends Camera3D
 ## eases height changes (stairs) more gently than ground movement.
 
 @export var target_path: NodePath
-@export var pitch_deg := 32.0
-@export var distance := 20.0
+@export var pitch_deg := 48.0
+@export var distance := 19.0
 ## Follow speed on the ground plane (higher = tighter).
 @export var smoothing := 4.0
 ## Follow speed for height changes, so stairs don't bob the view.
