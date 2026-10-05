@@ -6,6 +6,7 @@ extends CharacterBody3D
 ## scribbles itself back into existence a few seconds later.
 
 const Fx = preload("res://scripts/clearing/clearing_fx.gd")
+const Lumen = preload("res://scripts/world25/lumen.gd")
 
 enum State { WANDER, CHASE, STUNNED, DEAD, WINDUP, POUNCE }
 
@@ -19,8 +20,7 @@ enum State { WANDER, CHASE, STUNNED, DEAD, WINDUP, POUNCE }
 @export var pounce_speed := 7.0
 @export var pounce_cooldown := 1.2
 @export var contact_damage := 1
-## Unused: the Gutter has no coins any more (lumen.gd is unhooked). Kept so
-## scenes that set it still load.
+## Coins it drops when beaten (lumen.gd).
 @export var lumens := 1
 @export var knockback := 9.0
 @export var stun_time := 0.3
@@ -213,6 +213,8 @@ func _die() -> void:
 	collision_layer = 0
 	Fx.splat(get_tree(), global_position)
 	Fx.burst(get_tree(), global_position + Vector3(0, 0.6, 0), Color(0.08, 0.05, 0.12), 16, 4.5)
+	if global_position.y > _home.y - 4.0:
+		Lumen.spill(get_tree(), global_position, lumens)  # not when it fell into the void
 	var t := create_tween()
 	t.tween_property(visual, "scale", Vector3(1.6, 0.1, 1.6), 0.08)
 	t.tween_callback(func(): visual.visible = false)

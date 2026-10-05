@@ -32,7 +32,7 @@ const QUIPS := ["Quire's the name. Blades, hats, cloaks. All barely used.",
 	"That drill? Twisted it myself. Mind your fingers.",
 	"The prism came off the Writer's own lamp. Shh.",
 	"A new hat won't save you. It will help, though."]
-const ROW_STEP := 52.0
+const ROW_STEP := 50.0
 
 var _tab := 0
 var _row := 0
@@ -43,6 +43,7 @@ var _art: Node2D
 var _sword: Node2D
 var _message := ""
 var _message_t := 0.0
+var _message_good := true  # gold for a sale, red for "not enough coins"
 var _quip := ""
 
 
@@ -199,20 +200,27 @@ func _use(id: String) -> void:
 		elif profile.buy_upgrade(id):
 			_say("%s: %s!" % [item.name, Catalog.UPGRADES[lvl].name])
 		else:
-			_say("Not enough coins. The bright pages are full of them.")
+			_short(profile.next_upgrade_price(id) - profile.lumens)
 	elif profile.owned.has(id):
 		profile.equip(id)
 		_say("Equipped %s." % item.name)
 	elif profile.buy(id):
 		_say("Bought %s! Pleasure doing business." % item.name)
 	else:
-		_say("Not enough coins. The bright pages are full of them.")
+		_short(int(item.price) - profile.lumens)
 	_preview()
 
 
-func _say(text: String) -> void:
+## Not enough coins: say how many more.
+func _short(missing: int) -> void:
+	_say("Not enough coins: %d more. Beat monsters or pick them up on the bright pages." % missing, false)
+
+
+## Quire's reply, shown in the line under the sign (clear of the preview).
+func _say(text: String, good := true) -> void:
 	_message = text
-	_message_t = 2.5
+	_message_good = good
+	_message_t = 3.0
 
 
 ## Shows the highlighted item on Vesper, over what's equipped.
@@ -238,12 +246,15 @@ func _preview() -> void:
 
 
 func _draw() -> void:
-	draw_rect(Rect2(Vector2.ZERO, size), Color(INK, 0.95))
+	draw_rect(Rect2(Vector2.ZERO, size), INK)  # opaque: captions and HUD behind it must not show through
 	var profile := get_node_or_null("/root/Profile")
 	# header: the shop's sign and Quire's line
 	draw_string_outline(TITLE_FONT, Vector2(66, 82), "QUIRE'S CURIOS", HORIZONTAL_ALIGNMENT_LEFT, -1, 54, 12, Color(NAVY, 0.95))
 	draw_string(TITLE_FONT, Vector2(60, 76), "QUIRE'S CURIOS", HORIZONTAL_ALIGNMENT_LEFT, -1, 54, PAPER)
-	draw_string(ThemeDB.fallback_font, Vector2(64, 108), "Quire: \"%s\"" % _quip, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color(PAPER, 0.7))
+	if _message_t > 0.0:
+		_draw_message()
+	else:
+		draw_string(ThemeDB.fallback_font, Vector2(64, 108), "Quire: \"%s\"" % _quip, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color(PAPER, 0.7))
 	# money
 	var money := "%d" % (profile.lumens if profile else 0)
 	var mw := TITLE_FONT.get_string_size(money, HORIZONTAL_ALIGNMENT_LEFT, -1, 40).x
@@ -276,11 +287,25 @@ func _draw() -> void:
 	draw_polyline(ped + PackedVector2Array([ped[0]]), RED, 3.0)
 	if _row < items.size():
 		_draw_details(items[_row], profile)
-	if _message_t > 0.0:
-		var a := clampf(_message_t / 0.4, 0.0, 1.0)
-		draw_string(TITLE_FONT, Vector2(680, 200), _message, HORIZONTAL_ALIGNMENT_LEFT, 560, 26, Color(GOLD, a))
 	draw_string(TITLE_FONT, Vector2(60, size.y - 22), "W/S  CHOOSE     A/D  TAB     ENTER  BUY / EQUIP     ESC / B  LEAVE",
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 20, DIM)
+
+
+## Quire's reply in a little ink box under the sign: gold for a sale, red
+## (and a shake) when there aren't enough coins.
+func _draw_message() -> void:
+	var a := clampf(_message_t / 0.4, 0.0, 1.0)
+	var col := GOLD if _message_good else Color(1.0, 0.42, 0.36)
+	var font := ThemeDB.fallback_font
+	var text := "Quire: \"%s\"" % _message
+	var w := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 19).x
+	var shake := Vector2.ZERO
+	if not _message_good and _message_t > 2.6:
+		shake.x = sin(_time * 60.0) * 4.0
+	var box := Rect2(Vector2(54, 88) + shake, Vector2(w + 24, 28))
+	draw_rect(box, Color(0.1, 0.08, 0.12, 0.95 * a))
+	draw_rect(box, Color(col, a), false, 2.0)
+	draw_string(font, box.position + Vector2(12, 20), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 19, Color(col, a))
 
 
 func _draw_row(i: int, id: String, profile: Node) -> void:

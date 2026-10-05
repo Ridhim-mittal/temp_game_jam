@@ -60,6 +60,7 @@ func _run() -> void:
 	await coins_2d_test()
 	await specials_2d_test()
 	await specials_25d_test()
+	await margins_coins_test()
 	await outfit_test()
 	p.lumens = _saved.lumens
 	p.owned = _saved.owned
@@ -76,10 +77,10 @@ func profile_test() -> void:
 	check(p.weapon() == "nib" and p.owned.has("nib") and p.owned.has("topper"), "a fresh profile has the Nib-Sword and the black topper")
 	check(not p.buy("corkscrew"), "no coins, no Corkscrew Nib")
 	p.lumens = 200
-	check(p.buy("corkscrew") and p.weapon() == "corkscrew" and p.lumens == 145, "buying the Corkscrew Nib (55) equips it (%d left)" % p.lumens)
+	check(p.buy("corkscrew") and p.weapon() == "corkscrew" and p.lumens == 155, "buying the Corkscrew Nib (45) equips it (%d left)" % p.lumens)
 	check(not p.buy("compass"), "the retired Compass Edge isn't sold")
-	check(p.next_upgrade_price("corkscrew") == 15 and p.buy_upgrade("corkscrew") and p.upgrade_level("corkscrew") == 1,
-		"its first upgrade (SHARPENED) costs 15")
+	check(p.next_upgrade_price("corkscrew") == 12 and p.buy_upgrade("corkscrew") and p.upgrade_level("corkscrew") == 1,
+		"its first upgrade (SHARPENED) costs 12")
 	p.buy_upgrade("corkscrew")
 	p.buy_upgrade("corkscrew")
 	check(p.upgrade_level("corkscrew") == 3 and p.next_upgrade_price("corkscrew") == -1 and not p.buy_upgrade("corkscrew"),
@@ -110,12 +111,10 @@ func coins_2d_test() -> void:
 	player.add_coins(6)
 	await frames(3)
 	check(hud != null and hud._can_shop and hud._hint > 0.0 and state.seen.has("shop_hint"),
-		"10 coins: \"PRESS B TO OPEN THE SHOP\" shows (and the B SHOP tag)")
+		"10 coins collected: \"PRESS B TO OPEN THE SHOP\" shows (and the B SHOP tag)")
 	await pframes(2)
-	Input.action_press("shop")
-	await pframes(2)
-	Input.action_release("shop")
-	await frames(3)
+	_key(KEY_B)
+	await frames(4)
 	var shop: Node = null
 	for n in current_scene.find_children("*", "Control", true, false):
 		if n.get_script() and n.get_script().resource_path.ends_with("ui/shop.gd"):
@@ -126,13 +125,21 @@ func coins_2d_test() -> void:
 		var items: Array = shop._items()
 		shop._row = items.find("crimson_hat")
 		shop._use("crimson_hat")
-		check(p.owned.has("crimson_hat") and p.equipped.hat == "crimson_hat" and p.lumens == 0, "buying the Crimson Topper in the shop")
-		var esc := InputEventKey.new()
-		esc.physical_keycode = KEY_ESCAPE
-		esc.pressed = true
-		Input.parse_input_event(esc)
+		check(p.owned.has("crimson_hat") and p.equipped.hat == "crimson_hat" and p.lumens == 2, "buying the Crimson Topper (8) in the shop")
+		shop._use("ivory_hat")
+		check(not shop._message_good and shop._message.contains("8 more") and shop._message_t > 0.0,
+			"too few coins: Quire says how many more (\"%s\")" % shop._message)
+		_key(KEY_ESCAPE)
 		await frames(4)
 	check(not paused and current_scene.scene_file_path == LEVEL_2D, "Esc closes the shop and play goes on (not to the main menu)")
+	_key(KEY_B)
+	await frames(4)
+	check(paused, "B opens it again")
+	_key(KEY_B)
+	for i in 4:
+		await physics_frame
+	await frames(2)
+	check(not paused and _find(current_scene, "ui/shop.gd") == null, "B closes it, and it stays closed (doesn't reopen the same frame)")
 	check(player.art.hat_color.is_equal_approx(Color(0.55, 0.09, 0.11)), "the 2D Vesper wears the new hat at once")
 	# the pause screen (Esc, 2D and 2.5D) has SHOP in place of the skill tree
 	load("res://scripts/ui/pause_menu.gd").open_2d(player)
@@ -154,6 +161,25 @@ func coins_2d_test() -> void:
 		menu._act("resume")
 		await frames(3)
 	check(not paused, "resume: play goes on")
+
+
+## Presses and lets go of a key, as a real key event.
+func _key(code: Key) -> void:
+	var down := InputEventKey.new()
+	down.physical_keycode = code
+	down.keycode = code
+	down.pressed = true
+	Input.parse_input_event(down)
+	var up := down.duplicate()
+	up.pressed = false
+	Input.parse_input_event(up)
+
+
+func _find(under: Node, script_tail: String) -> Node:
+	for n in under.find_children("*", "", true, false):
+		if n.get_script() and n.get_script().resource_path.ends_with(script_tail):
+			return n
+	return null
 
 
 func _crawler(at: Vector2) -> Node2D:
@@ -370,6 +396,48 @@ func specials_25d_test() -> void:
 		dummy.revealed = true
 	check(dummy.health < hp, "QUILL VOLLEY: the quills fly and hit (%d -> %d)" % [hp, dummy.health])
 	_equip("nib")
+
+
+## The Margins: a beaten monster spills small dark-silver coins in a
+## cluster; they fly to Vesper and fill the purse; the HUD counts them.
+func margins_coins_test() -> void:
+	var p := profile()
+	root.get_node("World25").cleared.clear()
+	change_scene_to_file(ROOM)
+	await frames(6)
+	var room := current_scene
+	var player = room.player
+	player._invuln = 999.0
+	for l in get_nodes_in_group("haunt_lamp"):
+		l.queue_free()
+	var g = room.get_node("Enemies").get_child(0)
+	g.set_physics_process(false)
+	g.global_position = Vector3(5.0, 0.05, 0)
+	player.global_position = Vector3(0, 0.05, 0)
+	player._snap_visuals()
+	var before: int = p.lumens
+	check(g.lumens == 4, "a Half-Drawn is worth 4 coins (a Scribble 1, the Red Pen 30, the Eraser 45)")
+	g._die()
+	await frames(2)
+	var coins := get_nodes_in_group("margin_coin")
+	var spread := 0.0
+	for c in coins:
+		spread = maxf(spread, Vector2(c.global_position.x - 5.0, c.global_position.z).length())
+	check(coins.size() == 4, "it spills 4 coins (%d)" % coins.size())
+	var radius: float = coins[0]._coin.get_child(0).mesh.top_radius if coins.size() > 0 else 1.0
+	check(radius < 0.15, "small coins (radius %.2f; the 2D ones are much bigger)" % radius)
+	var col: Color = coins[0].SILVER if coins.size() > 0 else Color.GOLD
+	check(absf(col.r - col.b) < 0.15 and col.v < 0.75, "dark silver, not gold (%s)" % col)
+	await seconds(0.6)
+	spread = 0.0
+	for c in get_nodes_in_group("margin_coin"):
+		spread = maxf(spread, Vector2(c.global_position.x - 5.0, c.global_position.z).length())
+	check(spread < 1.2, "clustered where it fell (within %.2f)" % spread)
+	player.global_position = Vector3(4.6, 0.05, 0)
+	await seconds(1.2)
+	check(get_nodes_in_group("margin_coin").is_empty() and p.lumens == before + 4, "they fly to Vesper and fill the purse (%d -> %d)" % [before, p.lumens])
+	var hud: Node = _find(room, "clearing/clearing_hud.gd")
+	check(hud != null and hud.coins == p.lumens, "the HUD's coin counter shows it (%d)" % (hud.coins if hud else -1))
 
 
 ## The hat and its band reach both Vespers.
