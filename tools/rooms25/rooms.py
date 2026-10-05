@@ -66,6 +66,9 @@ class Room:
         self.props = {}
         self.story = {}
         self.extra_islands = []  # (name, points, open_edges)
+        # the Writer's lamp: > 1 hunts a little harder than the biome's
+        # profile (room.gd haunt_scale); later rooms in a biome go higher
+        self.haunt_scale = 1.0
 
     def gate(self, side, target, target_gate, offset=0.0, always_open=False):
         self.gates[side] = (target, target_gate, offset, always_open)
@@ -136,6 +139,8 @@ class Room:
             room.append(f'biome_b = ExtResource("b_{self.biome_b}")')
             room.append(f"blend_from = Vector2({self.blend[0][0]}, {self.blend[0][1]})")
             room.append(f"blend_to = Vector2({self.blend[1][0]}, {self.blend[1][1]})")
+        if self.haunt_scale != 1.0:
+            room.append(f"haunt_scale = {self.haunt_scale}")
         if extra_room_props:
             room.append(extra_room_props)
         lines.append("\n".join(room) + "\n")

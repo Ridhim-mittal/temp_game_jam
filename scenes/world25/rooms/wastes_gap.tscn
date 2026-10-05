@@ -36,6 +36,7 @@ title = "The Torn Page"
 subtitle = "Crumple Wastes"
 enter_captions = "~My lamp makes that bridge real too. Funny, isn't it?|~The only way across is my light... and my light hurts you."
 clear_captions = "~Stop. Please. You don't want to see the last page."
+haunt_scale = 1.12
 
 [node name="Island" type="Node3D" parent="."]
 script = ExtResource("island")

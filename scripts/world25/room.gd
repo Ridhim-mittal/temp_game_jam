@@ -25,6 +25,7 @@ const PauseMenu = preload("res://scripts/ui/pause_menu.gd")
 const SkillTree = preload("res://scripts/ui/skill_tree.gd")
 const SettingsMenu = preload("res://scripts/ui/settings_menu.gd")
 const Tutorial = preload("res://scripts/ui/tutorial.gd")
+const HauntLamp = preload("res://scripts/world25/haunt_lamp.gd")
 
 @export var room_id := "room"
 @export var biome: Resource:
@@ -51,6 +52,13 @@ const Tutorial = preload("res://scripts/ui/tutorial.gd")
 ## A monster under "Enemies" shown with a big health bar (boss fights).
 @export var boss_path: NodePath
 @export var boss_name := ""
+
+@export_group("The Writer's lamp")
+## Spawn the Haunting Lamp(s) from the biome's HauntProfile.
+@export var haunt_enabled := true
+## This room's lamp is a bit harder (> 1) or easier: scales how fast it
+## moves and how often it strikes. Set per room by the generator.
+@export var haunt_scale := 1.0
 
 @export_group("Blend into another biome")
 @export var biome_b: Resource:
@@ -90,6 +98,7 @@ func _ready() -> void:
 	_build_ui()
 	_spawn_player(world)
 	_build_camera()
+	_spawn_haunt()
 	_play_music(b.music)
 	_prepare_enemies(world)
 	ui.title_card((title if title != "" else b.display_name).to_upper(), subtitle)
@@ -262,6 +271,60 @@ func _spawn_player(world: Node) -> void:
 		player._invuln = 2.5
 		world.arrive_from_sky = 0.0
 		_land_from_sky()
+
+
+## The Writer's Haunting Lamp(s) (haunt_lamp.gd), scaled by the difficulty
+## setting and this room's haunt_scale, starting far from the player.
+func _spawn_haunt() -> void:
+	var prof: Resource = _biome().haunt
+	if not haunt_enabled or prof == null or prof.lamps <= 0:
+		return
+	var settings := get_node_or_null("/root/Settings")
+	var diff: String = settings.get_value("difficulty") if settings else "normal"
+	var speed: float = {"relaxed": 0.75, "normal": 1.0, "hard": 1.25}.get(diff, 1.0)
+	var tele: float = {"relaxed": 1.3, "normal": 1.0, "hard": 0.8}.get(diff, 1.0)
+	var roam := camera_bounds.grow_individual(3.5, 2.5, 3.5, 2.5)
+	var taken: Array[Vector3] = [player.global_position]
+	for i in prof.lamps:
+		var lamp := HauntLamp.new()
+		lamp.name = "HauntLamp%d" % (i + 1)
+		lamp.profile = prof
+		lamp.index = i
+		lamp.roam = roam
+		lamp.speed_scale = speed * haunt_scale
+		lamp.strike_scale = haunt_scale
+		lamp.telegraph_scale = tele
+		lamp.spot = _far_point(roam, taken)
+		taken.append(lamp.spot)
+		add_child(lamp)
+
+
+## The point of `r` (corners and edge middles) farthest from all of `from`:
+## a lamp never starts on the player's arrival point.
+func _far_point(r: Rect2, from: Array[Vector3]) -> Vector3:
+	var best := Vector3(r.get_center().x, 0.0, r.get_center().y)
+	var best_d := -1.0
+	for fx in [0.0, 0.5, 1.0]:
+		for fz in [0.0, 0.5, 1.0]:
+			var p := Vector3(r.position.x + r.size.x * fx, 0.0, r.position.y + r.size.y * fz)
+			var d := INF
+			for f in from:
+				d = minf(d, Vector2(p.x - f.x, p.z - f.z).length())
+			if d > best_d:
+				best_d = d
+				best = p
+	return best
+
+
+## True while the lamps must hold their strikes: an ink-wipe transition, a
+## paused game, a dead Vesper, or a boss room's intro captions.
+func haunt_hold() -> bool:
+	var world := get_node_or_null("/root/World25")
+	if world and world.transitioning:
+		return true
+	if get_tree().paused or player == null or player.dead:
+		return true
+	return not boss_path.is_empty() and not _cleared and ui != null and ui.busy()
 
 
 func _land_from_sky() -> void:

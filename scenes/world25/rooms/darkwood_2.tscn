@@ -36,6 +36,7 @@ title = "Darkwood Margins"
 subtitle = "2 / 3"
 enter_captions = "Rolling pages. I crumpled those myself, one bad night after another.|They're armoured while they're balled up. Make them hit something, or lead them into the light."
 clear_captions = "The wood is thinning out. Can you smell the ink?"
+haunt_scale = 1.06
 
 [node name="Island" type="Node3D" parent="."]
 script = ExtResource("island")

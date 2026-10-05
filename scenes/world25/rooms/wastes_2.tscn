@@ -36,6 +36,7 @@ title = "The Pinboard"
 subtitle = "Crumple Wastes, 2 / 2"
 enter_captions = "~I used to pin the bad drafts to the wall. Right here.|~Something is still rubbing them out, past that gate."
 clear_captions = "~No. Not that door. Please."
+haunt_scale = 1.08
 
 [node name="Island" type="Node3D" parent="."]
 script = ExtResource("island")

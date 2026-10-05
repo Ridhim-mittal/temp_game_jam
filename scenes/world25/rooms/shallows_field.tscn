@@ -36,6 +36,7 @@ title = "The Lamplit Field"
 subtitle = "Inkwell Shallows"
 enter_captions = "~I can't see you down there. But I can look.|Shadows hide you from the lamp. And anything crossed out that it catches... burns."
 clear_captions = "~Where did you GO?"
+haunt_scale = 1.12
 
 [node name="Island" type="Node3D" parent="."]
 script = ExtResource("island")

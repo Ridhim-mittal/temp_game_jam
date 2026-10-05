@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Builds the 2.5D story rooms: python3 tools/rooms25/build_rooms.py
 Each block below describes one room: size, gates (and where they lead),
-monsters, props and the Writer's captions. Rooms are deterministic (seeded),
+monsters, props, the Writer's captions and how hard the Writer's lamp
+hunts there (r.haunt_scale, 1 = the biome's HauntProfile as is). Rooms are deterministic (seeded),
 so re-running gives the same layout. Re-running overwrites hand edits."""
 import sys, math
 sys.path.insert(0, __file__.rsplit("/", 1)[0])
@@ -55,6 +56,7 @@ r.clear_zones.append((0, -5.5, 2.5))
 r.prop("brazier", -3.5, -6.5, name="Lantern1", flame_color="Color(1, 0.25, 0.15, 1)")
 r.prop("brazier", 3.5, -6.5, name="Lantern2", flame_color="Color(1, 0.25, 0.15, 1)")
 forest_ring(r)
+r.haunt_scale = 1.06  # the Writer's lamp hunts a little harder here
 r.write("Darkwood Margins", "2 / 3",
         "Rolling pages. I crumpled those myself, one bad night after another.|They're armoured while they're balled up. Make them hit something, or lead them into the light.",
         "The wood is thinning out. Can you smell the ink?")
@@ -86,6 +88,7 @@ for i, (x, z) in enumerate([(12, -12), (17.5, -5), (17.5, 3), (6, -13)]):
 for i, (x, z) in enumerate([(-10, -12.5), (-18, -4), (-17.5, 5), (-4, -13)]):
     r.nodes.append(("Forest", f"DeepPillar{i + 1}", "bprops", (x, -6, z), 0, {"kind": KIND["PILLAR"], "size": 2.2, "seed": i + 20}))
 r.nodes.append(("Forest", "TrunkR", "trunk", (18.5, -8, 8.5), 0, {"height": 26.0, "radius": 1.6}))
+r.haunt_scale = 1.15  # the Writer's lamp hunts a little harder here
 r.write("Where the Ink Pools", "Darkwood, 3 / 3",
         "The ink is pooling up ahead. The woods give way to water here.|Something swims in it. Watch for ripples.",
         "...You're getting good at this. Too good.")
@@ -149,6 +152,7 @@ shallows_dressing(r, pillars=0, pools=1, mounds=3)
 r.prop("brazier", -9.5, -7, name="Spirit1", **SPIRIT)
 r.prop("brazier", 9.5, 7, name="Spirit2", **SPIRIT)
 shallows_ring(r)
+r.haunt_scale = 1.08  # the Writer's lamp hunts a little harder here
 r.write("The Drowned Circle", "Inkwell Shallows, 2 / 2",
         "~This circle... I drew it the night I gave up on page three.|~Don't read it. Just keep walking.",
         "~You read it, didn't you.")
@@ -231,6 +235,7 @@ wastes_dressing(r, crystals=4, mounds=2, pins=3, totems=2, pots=1)
 r.prop("brazier", -5, -8, name="Ember1", **EMBER)
 r.prop("brazier", 5, 8, name="Ember2", **EMBER)
 wastes_ring(r)
+r.haunt_scale = 1.08  # the Writer's lamp hunts a little harder here
 r.write("The Pinboard", "Crumple Wastes, 2 / 2",
         "~I used to pin the bad drafts to the wall. Right here.|~Something is still rubbing them out, past that gate.",
         "~No. Not that door. Please.")
@@ -335,6 +340,7 @@ forest_ring(r)
 chasm_depths(r, [(("pine", {"height": 12.0, "radius": 2.4, "color": "Color(0.06, 0.06, 0.11, 1)"}), 0, 7),
                  (("pine", {"height": 11.0, "radius": 2.0, "color": "Color(0.06, 0.06, 0.11, 1)"}), 1.5, -6.5),
                  (("eyes", {}), 0, 2)], y=-9)
+r.haunt_scale = 1.1  # the Writer's lamp hunts a little harder here
 r.write("The Unlit Bridge", "Darkwood",
         "That bridge only exists where light touches it.|Your ember will carry you across. Keep it fed: every hit stokes the flame.|Strike the old lanterns to light them. Light stays where you leave it.",
         "...Clever little thing.")
@@ -356,6 +362,7 @@ r.enemy("smudge", 9, 5)
 r.scatter("PAPER_MOUND", 2, count=4, radius=1.1, solid=True)
 r.scatter("INK_POOL", 2, radius=1.5)
 shallows_ring(r)
+r.haunt_scale = 1.12  # the Writer's lamp hunts a little harder here
 r.write("The Lamplit Field", "Inkwell Shallows",
         "~I can't see you down there. But I can look.|Shadows hide you from the lamp. And anything crossed out that it catches... burns.",
         "~Where did you GO?")
@@ -383,6 +390,7 @@ r.scatter("PAPER_MOUND", 2, count=4, radius=1.2, solid=True)
 wastes_ring(r)
 chasm_depths(r, [(("bprops", {"kind": KIND["CRYSTAL"], "size": 3.0, "count": 5, "radius": 1.6, "seed": 7}), 0, 7),
                  (("bprops", {"kind": KIND["PENCIL_TOTEM"], "size": 3.0, "seed": 8}), 1, -7)], y=-8)
+r.haunt_scale = 1.12  # the Writer's lamp hunts a little harder here
 r.write("The Torn Page", "Crumple Wastes",
         "~My lamp makes that bridge real too. Funny, isn't it?|~The only way across is my light... and my light hurts you.",
         "~Stop. Please. You don't want to see the last page.")

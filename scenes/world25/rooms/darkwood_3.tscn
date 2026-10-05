@@ -39,6 +39,7 @@ clear_captions = "...You're getting good at this. Too good."
 biome_b = ExtResource("b_shallows")
 blend_from = Vector2(5, 0)
 blend_to = Vector2(-6, 0)
+haunt_scale = 1.15
 
 [node name="Island" type="Node3D" parent="."]
 script = ExtResource("island")

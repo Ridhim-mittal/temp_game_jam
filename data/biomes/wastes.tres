@@ -1,6 +1,7 @@
-[gd_resource type="Resource" load_steps=2 format=3]
+[gd_resource type="Resource" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/world25/biome.gd" id="1_biome"]
+[ext_resource type="Resource" path="res://data/haunt/wastes.tres" id="2_haunt"]
 
 [resource]
 script = ExtResource("1_biome")
@@ -27,3 +28,4 @@ motes = Color(1.0, 0.6, 0.7, 1)
 music = "margins"
 vignette = 0.55
 edge_darkness = 0.8
+haunt = ExtResource("2_haunt")

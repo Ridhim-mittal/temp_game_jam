@@ -36,6 +36,7 @@ title = "The Unlit Bridge"
 subtitle = "Darkwood"
 enter_captions = "That bridge only exists where light touches it.|Your ember will carry you across. Keep it fed: every hit stokes the flame.|Strike the old lanterns to light them. Light stays where you leave it."
 clear_captions = "...Clever little thing."
+haunt_scale = 1.1
 
 [node name="Island" type="Node3D" parent="."]
 script = ExtResource("island")

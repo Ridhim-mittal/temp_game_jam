@@ -36,6 +36,7 @@ title = "The Drowned Circle"
 subtitle = "Inkwell Shallows, 2 / 2"
 enter_captions = "~This circle... I drew it the night I gave up on page three.|~Don't read it. Just keep walking."
 clear_captions = "~You read it, didn't you."
+haunt_scale = 1.08
 
 [node name="Island" type="Node3D" parent="."]
 script = ExtResource("island")

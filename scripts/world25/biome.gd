@@ -46,6 +46,11 @@ enum Ground { GRASS, WATER_STONE, CRACKED }
 ## middle stays lit, the corners go near black.
 @export var edge_darkness := 0.0
 
+@export_group("The Writer's lamp")
+## How the Haunting Lamp hunts here (data/haunt/*.tres, haunt_profile.gd);
+## empty = no lamp.
+@export var haunt: Resource
+
 
 ## The nine ground colours in the order ground.gdshader expects.
 func ground_palette() -> Array[Color]:
