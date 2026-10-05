@@ -7,7 +7,7 @@ extends CharacterBody2D
 ##  - dash with brief invincibility (vs enemies), resets on ground / pogo
 ##  - directional slashes (side / up / down-in-air)
 ##  - down-slash pogo off enemies and hazards, side-slash recoil
-##  - damage, knockback, i-frames; spikes send you back to the last checkpoint
+##  - damage, knockback, i-frames; spikes put you back on the last safe ground
 ##  - the Ember (ember.gd): hold Q/E to raise a light that makes sketches real
 
 signal health_changed(current: float, maximum: float)
@@ -24,6 +24,13 @@ const Ember = preload("res://scripts/player/ember.gd")
 
 const MASK_ENEMY := 4   # physics layer 3
 const MASK_HAZARD := 8  # physics layer 4
+## How long you must stand somewhere before spikes may put you back there.
+const SAFE_STAND_TIME := 0.15
+## Safe ground must reach this far either side of Vesper (keeps respawns off lips).
+const SAFE_EDGE := 24.0
+## A second spike hit this soon after the last one, before you have found safe
+## ground again, sends you to the checkpoint instead (no respawn loops).
+const HAZARD_LOOP_TIME := 1.5
 const HIT_WORDS := ["THWACK!", "SLASH!", "POW!", "WHAM!", "SHNK!"]
 const BODY_HALF_HEIGHT := 26.0
 const HAZARD_DAMAGE := 20.0
@@ -124,6 +131,10 @@ var _hurt_timer := 0.0
 var _was_on_floor := false
 var _squash := Vector2.ONE
 var _level_start := Vector2.ZERO  # where the level put Vesper (before any checkpoint)
+var _last_safe_position := Vector2.ZERO
+var _safe_time := 0.0          # seconds stood on safe ground without a break
+var _safe_since_hazard := true  # found safe ground again since the last spike hit
+var _since_hazard := 10.0      # seconds since the last spike hit
 var _charge := -1.0  # seconds attack has been held; -1 = not charging
 var _charge_ready := false
 var _slow_sources := {}  # source -> Vector2(speed_mult, jump_mult)
@@ -147,6 +158,7 @@ func _ready() -> void:
 		if spawn != null:
 			global_position = spawn  # respawn at the last checkpoint pen
 		coins = state.coins
+	_last_safe_position = global_position
 	health_changed.emit(health, max_health)
 	coins_changed.emit(coins)
 	# first run only; waits while the Writer's narration (narration.gd) is writing
@@ -364,6 +376,15 @@ func _post_move(delta: float) -> void:
 			is_jumping = false
 		if not _was_on_floor:
 			_squash = Vector2(1.25, 0.8)
+	_since_hazard += delta
+	# safe ground: stood on for a moment, solid for good, nowhere near spikes
+	if on_floor and _on_stable_floor() and not _touching_hazard() and _floor_under(global_position):
+		_safe_time += delta
+		if _safe_time >= SAFE_STAND_TIME:
+			_last_safe_position = global_position
+			_safe_since_hazard = true
+	else:
+		_safe_time = 0.0
 	_was_on_floor = on_floor
 	_check_hurtbox()
 	_update_visuals(delta)
@@ -516,6 +537,31 @@ func _hurtbox_overlaps(grow := Vector2.ZERO) -> Array:
 	return out
 
 
+## False while standing on something light holds up (an un-inked sketch,
+## shadow ink) or something that moves: it may not be there when you come back.
+func _on_stable_floor() -> bool:
+	for i in get_slide_collision_count():
+		var c := get_slide_collision(i)
+		if c.get_normal().y > -0.7:
+			continue
+		var body := c.get_collider()
+		if body is AnimatableBody2D:
+			return false
+		if body is CollisionObject2D and body.collision_layer & 16:
+			if not (body.has_method("is_stable_at") and body.is_stable_at(c.get_position())):
+				return false
+	return true
+
+
+## True if a hazard is within `margin` px on any side: safe ground is never
+## recorded at the lip of a spike pit or right under spikes.
+func _touching_hazard(margin := 64.0) -> bool:
+	for body in _hurtbox_overlaps(Vector2(margin * 2.0, margin)):
+		if body.is_in_group("hazard"):
+			return true
+	return false
+
+
 func _check_hurtbox() -> void:
 	for body in _hurtbox_overlaps():
 		# Hazards always hurt, even during i-frames (Hollow Knight spikes).
@@ -558,7 +604,7 @@ func take_damage(amount: float, source_pos: Vector2, from_hazard := false) -> vo
 		return
 	if from_hazard:
 		velocity = Vector2.ZERO
-		global_position = _respawn_point()
+		global_position = _hazard_respawn_point()
 		_hurt_timer = 0.4  # brief freeze after respawn
 		var cam := get_node_or_null("Camera2D") as Camera2D
 		if cam:
@@ -570,9 +616,54 @@ func take_damage(amount: float, source_pos: Vector2, from_hazard := false) -> vo
 		velocity = Vector2(dir * hurt_knockback.x, hurt_knockback.y)
 
 
-## Where spikes send you: the last checkpoint pen in this level, else the
-## level's start. Never "the last ground you stood on": that could be right
-## next to the spikes and loop you into them.
+## Where spikes send you: back onto the last safe ground you stood on, like
+## Hollow Knight. It can never loop: if that spot touches a hazard or has no
+## floor under it any more, or you hit spikes again before standing anywhere
+## safe, you go to the checkpoint instead (and that becomes the safe spot).
+func _hazard_respawn_point() -> Vector2:
+	var looping := not _safe_since_hazard and _since_hazard < HAZARD_LOOP_TIME
+	var spot := _last_safe_position
+	if looping or not _spot_is_safe(spot):
+		spot = _respawn_point()
+		_last_safe_position = spot
+	_safe_since_hazard = false
+	_since_hazard = 0.0
+	_safe_time = 0.0
+	return spot
+
+
+## Room for Vesper at `spot` with no hazard touching her and solid ground
+## (world, or a sketch that is solid right now) just under her feet.
+func _spot_is_safe(spot: Vector2) -> bool:
+	var cs: CollisionShape2D = hurtbox.get_node("CollisionShape2D")
+	var shape := RectangleShape2D.new()
+	shape.size = (cs.shape as RectangleShape2D).size + Vector2(16, 16)
+	var params := PhysicsShapeQueryParameters2D.new()
+	params.shape = shape
+	params.transform = Transform2D(0.0, spot + (cs.global_position - global_position))
+	params.collision_mask = MASK_HAZARD
+	params.collide_with_bodies = true
+	params.collide_with_areas = true
+	var space := get_world_2d().direct_space_state
+	for result in space.intersect_shape(params, 8):
+		if result.collider is Node and result.collider.is_in_group("hazard"):
+			return false
+	return _floor_under(spot)
+
+
+## Solid ground (world, or a sketch that is solid right now) under Vesper at
+## `spot` and `SAFE_EDGE` px to either side: never on the lip of a drop.
+func _floor_under(spot: Vector2) -> bool:
+	var space := get_world_2d().direct_space_state
+	for dx in [-SAFE_EDGE, 0.0, SAFE_EDGE]:
+		var from := spot + Vector2(dx, 10)
+		var ray := PhysicsRayQueryParameters2D.create(from, from + Vector2(0, 40), 1 | 16, [get_rid()])
+		if space.intersect_ray(ray).is_empty():
+			return false
+	return true
+
+
+## The last checkpoint pen in this level, else the level's start.
 func _respawn_point() -> Vector2:
 	var state := get_node_or_null("/root/GameState")
 	if state:

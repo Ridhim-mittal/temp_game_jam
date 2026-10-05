@@ -68,8 +68,10 @@ draw call, so the depth scenery, trims, ledges, overlay and lanterns draw throug
 `scripts/depth/ink_batch.gd` (same draw_* method names, `flush(self)` at the end of `_draw()` =
 one triangle-array draw call). Use it for any new procedural art that draws many shapes.
 The 2D player has a double jump (`air_jumps`, `air_jump_velocity` in player.gd; set 0 to turn off).
-Spikes (group `hazard`) cost health and send the 2D player back to the last checkpoint pen in the
-level, or the level start (`_respawn_point()` in player.gd); never to the last ground stood on.
+Spikes (group `hazard`) cost health and put the 2D player back on the last safe ground
+(`_hazard_respawn_point()` in player.gd: stood on for 0.15 s, solid for good, no hazard within 64 px).
+No loops: if that spot fails a hazard/floor check, or spikes hit again within 1.5 s before new safe
+ground, it falls back to the last checkpoint pen / level start (`_respawn_point()`).
 
 ## 2.5D framework
 - Rooms are scenes whose root uses `scripts/world25/room.gd`; it builds environment, light,
