@@ -8,7 +8,8 @@ extends StaticBody2D
 ## Stand still with the Ember raised and ink spreads out from your feet along
 ## the sketch: inked cells are solid for good and are safe ground (hazard
 ## respawns return you there). Sketches in non-photo blue (`inkable = false`)
-## never take ink: keep them lit all the way across.
+## never take ink: keep them lit all the way across. With `drinks_light` the
+## Ember drains twice as fast while you're over it (ember.gd).
 ## One-way like a plank: jump up through it, land on top.
 
 const Lights = preload("res://scripts/world/lights.gd")
@@ -30,6 +31,11 @@ const INKED_FILL := Color(0.98, 0.96, 0.9)
 @export var inkable := true:
 	set(value):
 		inkable = value
+		queue_redraw()
+## Drinks the light: the Ember drains faster over it (drawn with drip marks).
+@export var drinks_light := false:
+	set(value):
+		drinks_light = value
 		queue_redraw()
 ## Seconds a cell keeps holding (fading) after its light leaves.
 @export var warn_time := 0.45
@@ -53,6 +59,7 @@ func _ready() -> void:
 	_n = maxi(1, int(round(size.x / cell)))
 	if Engine.is_editor_hint():
 		return
+	add_to_group("sketch")
 	collision_layer = Lights.LAYER_SKETCH
 	collision_mask = 0
 	var w := size.x / _n
@@ -174,6 +181,13 @@ func _draw() -> void:
 	var pencil := PENCIL if inkable else BLUE
 	# the pencil sketch underneath everything, always there to plan by
 	_draw_pencil(r, pencil)
+	if drinks_light:  # little drips hanging under it: it soaks light up
+		var dx := r.position.x + 18.0
+		while dx < r.end.x - 10.0:
+			var ln := 8.0 + 6.0 * sin(dx * 0.37 + _time * 2.0)
+			draw_line(Vector2(dx, r.end.y), Vector2(dx, r.end.y + ln), Color(pencil, 0.7), 1.5)
+			draw_circle(Vector2(dx, r.end.y + ln), 2.0, Color(pencil, 0.7))
+			dx += 34.0
 	if Engine.is_editor_hint() or _glow.is_empty():
 		if start_inked:
 			_draw_inked(r)

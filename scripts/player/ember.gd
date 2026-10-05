@@ -26,6 +26,9 @@ const CORE := Color(1.0, 0.95, 0.7)
 @export var regen_delay := 0.6
 ## Meter per second inside a lit lantern's light (raised or not).
 @export var lantern_regen := 60.0
+## Over a light-drinking sketch (sketch_platform.gd drinks_light) the light
+## drains this many times faster.
+@export var blue_drain_mult := 2.0
 ## After running dry, the Ember can't be raised again until this much is back.
 @export var relight_at := 20.0
 ## Inking: standing still with the Ember raised, ink spreads out from Vesper's
@@ -41,6 +44,7 @@ var inks := true
 var reach := 0.0  # current light radius (animates in and out)
 var snuffed := false
 var in_lantern := false
+var over_blue := false  # over a sketch that drinks the light
 var inking := false  # raised + standing still this frame
 var ink_front := 0.0  # how far the spreading ink has reached (px from Vesper)
 
@@ -77,8 +81,9 @@ func _physics_process(delta: float) -> void:
 	raised = want
 	if raised:
 		_since_raised = 0.0
+		over_blue = _over_blue()
 		if not in_lantern:
-			meter -= drain * delta
+			meter -= drain * delta * (blue_drain_mult if over_blue else 1.0)
 		if meter <= 0.0:
 			meter = 0.0
 			raised = false
@@ -95,7 +100,7 @@ func _physics_process(delta: float) -> void:
 		snuffed = false
 	# light snaps up fast; when it gutters out it shrinks slowly, so the sketch
 	# under you is the last thing to go (a warning, not a trapdoor)
-	var rate := 10.0 if raised else (1.6 if snuffed else 5.0)
+	var rate := 10.0 if raised else (3.0 if snuffed else 5.0)
 	reach = move_toward(reach, radius if raised else 0.0, delta * radius * rate)
 	var still := raised and _player != null and _player.is_on_floor() and absf(_player.velocity.x) < still_speed
 	_still = _still + delta if still else 0.0
@@ -103,6 +108,19 @@ func _physics_process(delta: float) -> void:
 	inking = ink_front > 0.0
 	queue_redraw()
 	_glow.queue_redraw()
+
+
+func _over_blue() -> bool:
+	if _player == null:
+		return false
+	var feet := _player.global_position + Vector2(0, 26)
+	for s in get_tree().get_nodes_in_group("sketch"):
+		if not s.drinks_light:
+			continue
+		var p: Vector2 = s.to_local(feet)
+		if absf(p.x) <= s.size.x * 0.5 and p.y > -240.0 and p.y < 30.0:  # jumping over it still counts
+			return true
+	return false
 
 
 ## Light rule 1: does the raised Ember reach `point`?
@@ -162,6 +180,8 @@ func _draw() -> void:
 			p.x *= 1.0 - 0.4 * absf(p.y) / (r * 1.8)
 		pts.append(fp + p)
 	var body := FLAME if not snuffed else Color(0.55, 0.55, 0.6)
+	if raised and over_blue:
+		body = FLAME.lerp(Color(0.45, 0.75, 1.0), 0.6 + 0.2 * sin(_time * 20.0))  # the blue drinking it
 	if raised and frac < 0.25 and fmod(_time, 0.2) < 0.1:
 		body = Color(1.0, 0.95, 0.8)  # running low: the flame stutters
 	for poly in Geometry2D.offset_polygon(pts, 2.5, Geometry2D.JOIN_ROUND):

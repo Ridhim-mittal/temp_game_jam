@@ -13,7 +13,6 @@ uniform vec2 xf_y = vec2(0.0, 1.0);
 uniform vec2 xf_o = vec2(0.0, 0.0);
 uniform vec4 areas[8];   // playable world rects: (x0, y0, x1, y1)
 uniform int area_count = 0;
-uniform float edge_soft = 14.0;
 
 const vec3 PAPER = vec3(0.94, 0.93, 0.9);
 const vec3 GRAPHITE = vec3(0.3, 0.3, 0.33);
@@ -31,7 +30,7 @@ float lum(vec2 uv) {
 	return dot(texture(screen_tex, uv).rgb, vec3(0.3, 0.55, 0.15));
 }
 
-// 1 inside the playable areas, 0 outside, with a rough hand-drawn edge
+// 1 inside the playable areas, 0 outside
 float live(vec2 w) {
 	float best = -1e6;
 	for (int i = 0; i < 8; i++) {
@@ -40,8 +39,7 @@ float live(vec2 w) {
 		float d = min(min(w.x - a.x, a.z - w.x), min(w.y - a.y, a.w - w.y));
 		best = max(best, d);
 	}
-	best += (noise(w * 0.05) - 0.5) * 16.0;  // wobbly sketch border
-	return smoothstep(-edge_soft, edge_soft, best);
+	return best >= 0.0 ? 1.0 : 0.0;  // a clean, hard edge
 }
 
 void fragment() {
