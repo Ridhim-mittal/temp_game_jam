@@ -1,9 +1,10 @@
 extends CharacterBody3D
 ## Shared base for the clearing's monsters (crumple, crossed-out, smudge,
-## inkwell, eraser). Mirrors the platformer's enemy_base.gd in 3D: health,
+## inkwell, eraser, the Half-Drawn). Mirrors the platformer's enemy_base.gd in 3D: health,
 ## hits and knockback, stun, contact damage, death and respawn, and the
 ## "am I in light?" question (the clearing's braziers are the light).
-## The look comes from the platformer's own 2D monster via MonsterPuppet.
+## The look comes from the platformer's own 2D monster via MonsterPuppet,
+## or from a 3D model of the monster's own (setup_monster_model()).
 ##
 ## A monster script extends this, sets `art_scene` / `hp` / sizes, and
 ## overrides:
@@ -44,6 +45,21 @@ var _player: Node3D
 
 ## Called by the subclass in _ready().
 func setup_monster(art_scene: String, viewport_size := 256, feet_margin := 40, blend := false) -> void:
+	_setup_common()
+	puppet = Puppet.new()
+	add_child(puppet)
+	puppet.setup(art_scene, viewport_size, feet_margin, blend)
+
+
+## Like setup_monster(), for a monster with its own 3D model instead of the
+## platformer's 2D art (the Half-Drawn): `model`, already a child, takes the
+## puppet's place, so it needs `facing`, look_at_point() and flash().
+func setup_monster_model(model: Node3D) -> void:
+	_setup_common()
+	puppet = model
+
+
+func _setup_common() -> void:
 	add_to_group("enemy")
 	collision_layer = 4
 	collision_mask = 5
@@ -53,9 +69,6 @@ func setup_monster(art_scene: String, viewport_size := 256, feet_margin := 40, b
 		contact_damage += 1
 	health = hp
 	_home = global_position
-	puppet = Puppet.new()
-	add_child(puppet)
-	puppet.setup(art_scene, viewport_size, feet_margin, blend)
 	time = randf() * 10.0
 
 
