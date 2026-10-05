@@ -269,7 +269,7 @@ position = Vector2(10860, 570)
 
 [node name="Player" parent="." instance=ExtResource("1_player")]
 position = Vector2(8100, 570)
-tutorial_steps = PackedStringArray("ember")
+tutorial_steps = PackedStringArray("ember", "heal")
 
 [node name="UI" type="CanvasLayer" parent="."]
 layer = 2

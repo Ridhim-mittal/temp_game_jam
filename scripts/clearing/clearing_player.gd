@@ -1199,10 +1199,12 @@ func _update_inking(delta: float) -> void:
 		_inking = null
 
 
-## Hold heal, standing on the ground, to turn fuel into one ink bottle.
+## Light or life (the same in 2D, player.gd): hold heal (F), standing on the
+## ground with the Ember lowered, to pour `heal_cost` of its fuel (a third)
+## into half a bottle of ink.
 func _update_heal(delta: float) -> void:
 	var can := Input.is_action_pressed("heal") and is_on_floor() and health < max_health \
-		and fuel >= heal_cost and _attack_timer <= 0.0 and _dash_timer <= 0.0
+		and fuel >= heal_cost and _attack_timer <= 0.0 and _dash_timer <= 0.0 and not ember_raised
 	if not can:
 		_channel = -1.0
 		return
@@ -1210,9 +1212,9 @@ func _update_heal(delta: float) -> void:
 	if _channel >= heal_time:
 		_channel = -1.0
 		add_fuel(-heal_cost)
-		health = mini(health + 2, max_health)  # one ink bottle
+		health = mini(health + 1, max_health)  # half a bottle, as in 2D
 		health_changed.emit(health, max_health)
-		Fx.pop_text(get_tree(), global_position + Vector3(0, 1.8, 0), "+1", Color(0.6, 1.0, 0.7), 32)
+		Fx.pop_text(get_tree(), global_position + Vector3(0, 1.8, 0), "+½ INK", Color(1.0, 0.85, 0.45), 32)
 		Fx.burst(get_tree(), global_position + Vector3(0, 0.8, 0), Color(1.0, 0.75, 0.35), 14, 2.5)
 		_squash = Vector2(0.85, 1.2)
 
