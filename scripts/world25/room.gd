@@ -25,6 +25,7 @@ const PauseMenu = preload("res://scripts/ui/pause_menu.gd")
 const SkillTree = preload("res://scripts/ui/skill_tree.gd")
 const Shop = preload("res://scripts/ui/shop.gd")
 const SettingsMenu = preload("res://scripts/ui/settings_menu.gd")
+const Tutorial = preload("res://scripts/ui/tutorial.gd")
 
 @export var room_id := "room"
 @export var biome: Resource:
@@ -98,6 +99,7 @@ func _ready() -> void:
 		ui.set_boss(boss, boss_name)
 	if enter_captions != "" and (world == null or world.once(room_id + ":enter")):
 		_captions(enter_captions)
+	Tutorial.start(self, player, "25d", ui)  # first run only; waits for the captions
 
 
 ## "|" separates captions; a leading "~" makes one shaky (the Writer

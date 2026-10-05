@@ -8,6 +8,7 @@ extends Node
 ##   Profile.buy("quill") -> bool / Profile.equip("quill")
 ##   Profile.effect("reach_mult", 1.0)             # combined from skills + gear
 ##   Profile.record_clear("darkwood_1")            # first clear -> Ink Points
+##   Profile.tutorial_seen("2d.jump") / Profile.mark_tutorial("2d.jump")
 ## Items and skills are defined in scripts/core/catalog.gd.
 
 signal changed
@@ -21,6 +22,7 @@ var skills := {}  # id -> true
 var owned := {}  # item id -> true
 var equipped := Catalog.STARTING.duplicate()
 var first_clears := {}  # room id -> true
+var tutorials := {}  # tutorial step id (scripts/ui/tutorial.gd) -> true once seen
 
 
 func _ready() -> void:
@@ -43,6 +45,23 @@ func record_clear(room_id: String) -> int:
 	skill_points += pts
 	_changed()
 	return pts
+
+
+## Tutorial steps play once; these remember which ones have been seen.
+func tutorial_seen(id: String) -> bool:
+	return tutorials.has(id)
+
+
+func mark_tutorial(id: String) -> void:
+	if not tutorials.has(id):
+		tutorials[id] = true
+		_changed()
+
+
+## Settings -> Tutorials: play every tutorial again.
+func reset_tutorials() -> void:
+	tutorials.clear()
+	_changed()
 
 
 func can_unlock(id: String) -> bool:
@@ -114,7 +133,7 @@ func look() -> Dictionary:
 	return out
 
 
-## Wipe all progress (Settings -> Reset progress).
+## Wipe all progress (Settings -> Reset progress). Seen tutorials stay seen.
 func reset() -> void:
 	lumens = 0
 	skill_points = 0
@@ -140,6 +159,7 @@ func _save() -> void:
 	cfg.set_value("profile", "owned", owned.keys())
 	cfg.set_value("profile", "equipped", equipped)
 	cfg.set_value("profile", "first_clears", first_clears.keys())
+	cfg.set_value("profile", "tutorials", tutorials.keys())
 	cfg.save(PATH)
 
 
@@ -161,3 +181,5 @@ func _load() -> void:
 			equipped[slot] = eq[slot]
 	for id in cfg.get_value("profile", "first_clears", []):
 		first_clears[id] = true
+	for id in cfg.get_value("profile", "tutorials", []):
+		tutorials[id] = true
