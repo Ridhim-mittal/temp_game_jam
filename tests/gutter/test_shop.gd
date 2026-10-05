@@ -9,8 +9,8 @@ extends SceneTree
 ##    bursts), the blinding sweep (stuns), the whirl (its light makes
 ##    sketches solid)
 ##  - the same in the Gutter: the drill pulls, the sweep blinds and dazzles a
-##    Haunting Lamp, the whirl shows a Half-Drawn without raising the Ember, the Prism Saber
-##    cuts one unseen, the slam (end to end) and the volley hit
+##    Haunting Lamp, neither the whirl nor the Prism Saber shows or cuts an unseen Half-Drawn
+##    (only the raised Ember does), the slam (end to end) and the volley hit
 ##  - outfits: the hat and band reach the 2D art and the 3D model
 ## The player's real progress is put back afterwards.
 ## Run like test_phase1.gd (prints PASS / FAIL; exit code = failures).
@@ -311,7 +311,7 @@ func specials_25d_test() -> void:
 	player._snap_visuals()
 	player.facing_dir = Vector3(1, 0, 0)
 	await pframes(4)
-	# the Prism Saber cuts an unseen Half-Drawn
+	# not even the Prism Saber cuts an unseen Half-Drawn: only the raised Ember shows it
 	_equip("prism")
 	player.refresh_loadout()
 	g.global_position = Vector3(1.2, 0.05, 0)
@@ -319,7 +319,7 @@ func specials_25d_test() -> void:
 	await pframes(2)
 	check(not g.revealed, "a Half-Drawn out of the Ember's light is unseen")
 	var landed: bool = g.take_hit(1, Vector3(1, 0, 0))
-	check(landed, "the Prism Saber's light cuts it anyway")
+	check(not landed, "the Prism Saber goes through it unseen")
 	g.set_physics_process(false)
 	g.health = 99
 	# the sweep blinds and dazzles a hunting lamp
@@ -351,21 +351,21 @@ func specials_25d_test() -> void:
 	player._drill_burst()
 	check(player._model.spin == 0.0, "the burst ends the spin")
 	g.set_physics_process(false)
-	# the whirl's light shows a Half-Drawn without raising the Ember
+	# the whirl is light for other monsters, but doesn't show a Half-Drawn
 	_equip("lantern")
 	player.refresh_loadout()
 	player.fuel = player.max_fuel
 	g.global_position = Vector3(1.5, 0.05, 0)
 	player._start_whirl()
 	await pframes(2)
-	check(player.ember_reveals(g.global_position + Vector3(0, 1, 0)) and player.monster_light, "LANTERN WHIRL: its light shows the Half-Drawn without raising the Ember")
+	check(not player.ember_reveals(g.global_position + Vector3(0, 1, 0)) and player.monster_light, "LANTERN WHIRL: it's monster light, but only the raised Ember shows a Half-Drawn")
 	var f0: float = player.fuel
 	for i in 20:
 		await physics_frame
 		player._update_whirl(1.0 / Engine.physics_ticks_per_second)
 	check(player.fuel < f0, "the whirl burns the Ember (%.0f -> %.0f)" % [f0, player.fuel])
 	player._cancel_charge()
-	check(not player.ember_reveals(g.global_position + Vector3(0, 1, 0)), "and stops showing it once it stops")
+	check(not player.monster_light, "and stops being light once it stops")
 	# the slam, end to end: hold attack, let go
 	_equip("brush")
 	player.refresh_loadout()
