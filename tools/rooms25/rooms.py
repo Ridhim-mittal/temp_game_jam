@@ -36,7 +36,10 @@ EXT = [
     ("Resource", "res://data/biomes/wastes.tres", "b_wastes"),
     ("Resource", "res://data/biomes/arena.tres", "b_arena"),
 ]
-KIND = {k: i for i, k in enumerate("CANOPY TOMBSTONE STUMP GARDEN_PLOT BARN SCARECROW PILLAR RITUAL_CIRCLE SHADE_STATUE CORAL TUBE_PLANT INK_POOL CRYSTAL PAPER_MOUND PINS NEST PENCIL_TOTEM INK_POT".split())}
+# biome_props.gd Kind, in enum order (never reorder; new kinds go at the end).
+# Retired, placed nowhere: CANOPY GARDEN_PLOT BARN SCARECROW CORAL TUBE_PLANT NEST.
+KIND = {k: i for i, k in enumerate("CANOPY TOMBSTONE STUMP GARDEN_PLOT BARN SCARECROW PILLAR RITUAL_CIRCLE SHADE_STATUE CORAL TUBE_PLANT INK_POOL CRYSTAL PAPER_MOUND PINS NEST PENCIL_TOTEM INK_POT "
+                                   "SKULL_PILE CANDLES RUNE_STONE".split())}
 ROT = {"north": 0, "south": 180, "east": -90, "west": 90}
 
 

@@ -103,6 +103,47 @@ kind = 7
 radius = 4.5
 color = Color(1, 0.35, 0.2, 1)
 
+[node name="Candles1" type="Node3D" parent="Props"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -5.60, 0.00, -3.40)
+script = ExtResource("bprops")
+kind = 19
+count = 4
+radius = 0.5
+seed = 95
+
+[node name="Candles2" type="Node3D" parent="Props"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 3.60, 0.00, -3.40)
+script = ExtResource("bprops")
+kind = 19
+count = 4
+radius = 0.5
+seed = 96
+
+[node name="Candles3" type="Node3D" parent="Props"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -5.60, 0.00, 3.40)
+script = ExtResource("bprops")
+kind = 19
+count = 4
+radius = 0.5
+seed = 97
+
+[node name="Candles4" type="Node3D" parent="Props"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 3.60, 0.00, 3.40)
+script = ExtResource("bprops")
+kind = 19
+count = 4
+radius = 0.5
+seed = 98
+
+[node name="Skulls1" type="Node3D" parent="Props"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -9.40, 0.00, 1.20)
+script = ExtResource("bprops")
+kind = 18
+count = 9
+radius = 0.9
+seed = 99
+solid = true
+
 [node name="Pins1" type="Node3D" parent="Props"]
 transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -6.00, 0.00, -5.00)
 script = ExtResource("bprops")

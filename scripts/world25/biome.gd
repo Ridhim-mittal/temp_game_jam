@@ -1,11 +1,16 @@
 extends Resource
 ## A 2.5D biome: everything that gives a region of the Margins its look.
 ## Rooms (room.gd) apply it to the environment, light and fog; islands
-## (island.gd) and grass (grass_field.gd) read its palette. A BlendZone
-## morphs one biome into another across a room.
-## Saved as .tres files in data/biomes/.
+## (island.gd) read its palette. A room's biome_b morphs one biome into
+## another across it. Saved as .tres files in data/biomes/.
 
-enum Ground { GRASS, WATER_STONE, CRACKED }
+## How the ground is painted (ground.gdshader); new modes go at the end.
+##   GRASS        stone tiles (the old grass, paved over; the Inkwood)
+##   WATER_STONE  flagstones under rippling light (the Drowned Margin)
+##   CRACKED      cracked earth with pale grit (the Wastes, the arena)
+##   DIRT         bare packed earth with roots, pebbles, bones and faint
+##                cryptic symbols scratched into it (the Spine)
+enum Ground { GRASS, WATER_STONE, CRACKED, DIRT }
 
 @export var display_name := "The Margins"
 @export var ground := Ground.GRASS
@@ -22,6 +27,12 @@ enum Ground { GRASS, WATER_STONE, CRACKED }
 @export var cliff := Color(0.14, 0.11, 0.17)
 @export var cliff_line := Color(0.25, 0.2, 0.28)
 @export var lip := Color(0.36, 0.28, 0.26)
+
+## Cryptic sigils scratched into the ground (ground.gdshader): share of
+## 3-unit cells with one (0 = none); about half of them smoulder in
+## `rune_color`.
+@export var runes := 0.0
+@export var rune_color := Color(1.0, 0.28, 0.18)
 
 @export_group("Plants")
 @export var tuft_base := Color(0.18, 0.33, 0.27)
@@ -45,6 +56,9 @@ enum Ground { GRASS, WATER_STONE, CRACKED }
 ## How far the screen edges sink into darkness (0 = not at all): the
 ## middle stays lit, the corners go near black.
 @export var edge_darkness := 0.0
+## The darkness round Vesper (darkness.gd): 0 = off .. 1 = black everywhere
+## outside the pools of light (his Ember, lit braziers, glowing props).
+@export var darkness := 0.0
 
 @export_group("The Writer's lamp")
 ## How the Haunting Lamp hunts here (data/haunt/*.tres, haunt_profile.gd);

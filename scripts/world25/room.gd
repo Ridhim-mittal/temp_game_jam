@@ -26,6 +26,10 @@ const SkillTree = preload("res://scripts/ui/skill_tree.gd")
 const SettingsMenu = preload("res://scripts/ui/settings_menu.gd")
 const Tutorial = preload("res://scripts/ui/tutorial.gd")
 const HauntLamp = preload("res://scripts/world25/haunt_lamp.gd")
+const DarknessScript = preload("res://scripts/world25/darkness.gd")
+const RING_SHADER = preload("res://shaders/world25/sigil_ring.gdshader")
+const MIST_SHADER = preload("res://shaders/world25/void_mist.gdshader")
+const BiomeProps = preload("res://scripts/world25/biome_props.gd")
 
 @export var room_id := "room"
 @export var biome: Resource:
@@ -37,6 +41,10 @@ const HauntLamp = preload("res://scripts/world25/haunt_lamp.gd")
 @export var camera_bounds := Rect2(-10, -8, 20, 16)
 ## Where the player starts when not arriving through a gate.
 @export var default_spawn := Vector3(0, 0.05, 0)
+## The living background round the floor (_build_backdrop): a great sigil
+## turning far below, mist, rising embers, skull heaps and ink statues in
+## the void.
+@export var backdrop := true
 
 @export_group("Story")
 ## Big title shown on entering (defaults to the biome's name).
@@ -204,6 +212,130 @@ func _build_environment() -> void:
 	_motes.color_ramp = g
 	add_child(_motes)
 	_apply_air(b, b, 0.0)
+	if backdrop:
+		_build_backdrop(b)
+
+
+## The void round the room, so the floor floats in something: a huge
+## ritual circle turning slowly far below (the zone's sigil colour), two
+## sheets of mist drifting over it, embers rising out of the dark, and
+## heaps of skulls and black ink statues standing in the fog round the
+## edges, kept clear of the gates. Deterministic per room.
+func _build_backdrop(b: Resource) -> void:
+	var c := camera_bounds.get_center()
+	var span := maxf(camera_bounds.size.x, camera_bounds.size.y) + 40.0
+	var glow: Color = b.rune_color if "rune_color" in b else Color(1.0, 0.26, 0.16)
+	var holder := Node3D.new()
+	holder.name = "Backdrop"
+	add_child(holder)
+	# the sigil in the abyss
+	var q := QuadMesh.new()
+	q.orientation = PlaneMesh.FACE_Y
+	q.size = Vector2(span, span)
+	var rm := ShaderMaterial.new()
+	rm.shader = RING_SHADER
+	rm.set_shader_parameter("color", glow)
+	rm.set_shader_parameter("glow", 1.5)
+	rm.set_shader_parameter("alpha", 0.6)
+	rm.set_shader_parameter("spin", 0.015)
+	var ring := MeshInstance3D.new()
+	ring.mesh = q
+	ring.material_override = rm
+	ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	ring.position = Vector3(c.x, -16.0, c.y - 4.0)
+	holder.add_child(ring)
+	# mist over it
+	for layer in [[-6.0, 0.4, 12.0], [-11.0, 0.3, 18.0]]:
+		var mq := QuadMesh.new()
+		mq.orientation = PlaneMesh.FACE_Y
+		mq.size = Vector2(span * 1.2, span * 1.2)
+		var mm := ShaderMaterial.new()
+		mm.shader = MIST_SHADER
+		mm.set_shader_parameter("color", b.background.lerp(glow, 0.12).lightened(0.05))
+		mm.set_shader_parameter("alpha", layer[1])
+		mm.set_shader_parameter("scale", layer[2])
+		var mist := MeshInstance3D.new()
+		mist.mesh = mq
+		mist.material_override = mm
+		mist.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mist.position = Vector3(c.x, layer[0], c.y - 4.0)
+		holder.add_child(mist)
+	# embers rising out of the abyss
+	var embers := CPUParticles3D.new()
+	var eq := QuadMesh.new()
+	eq.size = Vector2(0.09, 0.09)
+	var em := StandardMaterial3D.new()
+	em.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	em.vertex_color_use_as_albedo = true
+	em.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	em.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	em.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
+	eq.material = em
+	embers.mesh = eq
+	embers.amount = 90
+	embers.lifetime = 11.0
+	embers.preprocess = 11.0
+	embers.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
+	embers.emission_box_extents = Vector3(span * 0.45, 1.0, span * 0.4)
+	embers.position = Vector3(c.x, -9.0, c.y - 4.0)
+	embers.direction = Vector3(0.1, 1, 0)
+	embers.spread = 25.0
+	embers.gravity = Vector3(0.15, 0.25, 0)
+	embers.initial_velocity_min = 0.6
+	embers.initial_velocity_max = 1.6
+	embers.scale_amount_min = 0.6
+	embers.scale_amount_max = 1.6
+	var eg := Gradient.new()
+	eg.offsets = PackedFloat32Array([0, 0.15, 0.7, 1])
+	eg.colors = PackedColorArray([Color(glow, 0), Color(glow.lightened(0.3), 0.9), Color(glow, 0.5), Color(glow, 0)])
+	embers.color_ramp = eg
+	holder.add_child(embers)
+	# skull heaps and ink statues in the fog round the floor
+	var rng := RandomNumberGenerator.new()
+	rng.seed = room_id.hash()
+	var half := camera_bounds.size * 0.5 + Vector2(9.0, 7.0)
+	var placed := 0
+	var spots := 14
+	for i in spots:
+		var a := TAU * (i + rng.randf_range(-0.25, 0.25)) / spots
+		var p := Vector3(c.x + cos(a) * half.x * rng.randf_range(1.0, 1.25), 0.0, c.y + sin(a) * half.y * rng.randf_range(1.0, 1.2))
+		if on_floor(p) or _near_gate(p, 9.0):
+			continue
+		var prop := Node3D.new()
+		prop.set_script(BiomeProps)
+		prop.position = p
+		prop.rotation_degrees.y = rng.randf_range(-40, 40) + (180.0 if sin(a) > 0.0 else 0.0)
+		holder.add_child(prop)
+		prop.seed = rng.randi_range(1, 999)
+		if placed % 3 == 1:
+			prop.size = rng.randf_range(2.2, 2.8)
+			prop.position.y = rng.randf_range(-6.0, -4.0)
+			prop.kind = BiomeProps.Kind.SHADE_STATUE
+		else:
+			prop.size = rng.randf_range(2.0, 2.8)
+			prop.count = 8
+			prop.radius = 1.6
+			prop.position.y = rng.randf_range(-3.5, -1.5)
+			prop.kind = BiomeProps.Kind.SKULL_PILE
+		# lit red from the abyss, and visible through the darkness
+		var up := OmniLight3D.new()
+		up.light_color = glow
+		up.light_energy = 2.2
+		up.omni_range = 7.0
+		up.position = Vector3(0, -1.0, 1.5)
+		prop.add_child(up)
+		prop.set_meta("glow_radius", 3.2 * prop.size)
+		prop.add_to_group("glow")
+		placed += 1
+		if placed >= 7:
+			break
+
+
+func _near_gate(p: Vector3, dist: float) -> bool:
+	for g in find_children("*", "Node3D", true, false):
+		if g.get_script() == preload("res://scripts/world25/gate.gd") and Vector2(g.global_position.x - p.x, g.global_position.z - p.z).length() < dist:
+			return true
+	return false
 
 
 ## Light, air and motes, mixed between two biomes (t = 0 -> a, 1 -> b).
@@ -221,6 +353,13 @@ func _build_ui() -> void:
 	var layer := CanvasLayer.new()
 	layer.name = "UI"
 	add_child(layer)
+	if _biome().get("darkness") and _biome().darkness > 0.0:
+		var dark := ColorRect.new()
+		dark.name = "Darkness"
+		dark.set_script(DarknessScript)
+		dark.darkness = _biome().darkness
+		dark.tint = _biome().background.darkened(0.3)
+		layer.add_child(dark)
 	var overlay := ColorRect.new()
 	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
 	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -314,6 +453,15 @@ func _far_point(r: Rect2, from: Array[Vector3]) -> Vector3:
 				best_d = d
 				best = p
 	return best
+
+
+## True if (x, z) of `p` is on one of the room's islands (the floor, not
+## the void round it). The Haunting Lamp only wanders over the floor.
+func on_floor(p: Vector3) -> bool:
+	for n in find_children("*", "Node3D", true, false):
+		if n.has_method("contains") and n.contains(Vector2(p.x, p.z)):
+			return true
+	return false
 
 
 ## True while the lamps must hold their strikes: an ink-wipe transition, a

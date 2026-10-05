@@ -2,7 +2,8 @@ extends SceneTree
 ## Gutter rework, Haunting Lamp checks: every room spawns the right lamps
 ## with its biome's profile; a strike always comes after its full
 ## telegraph; hiding behind a solid prop makes the lamp lose Vesper; the
-## Spine's lamp never takes an ink drop. Run like test_phase1.gd.
+## Spine's lamp never takes an ink drop; the circles glide without jumps.
+## Run like test_phase1.gd.
 
 const ROOMS := {"res://scenes/clearing/clearing.tscn": "spine", "res://scenes/world25/rooms/darkwood_1.tscn": "inkwood",
 	"res://scenes/world25/rooms/darkwood_2.tscn": "inkwood", "res://scenes/world25/rooms/darkwood_bridge.tscn": "inkwood",
@@ -74,9 +75,15 @@ func telegraph_test() -> void:
 	var player = room.player
 	Engine.time_scale = 4.0
 	var t := 0.0
+	var all := lamps(room)
+	var last: Array = all.map(func(l): return l.spot)
+	var max_jump := 0.0
 	while t < 90.0:  # game seconds
 		await physics_frame
 		t += 1.0 / 120.0 * 4.0
+		for i in all.size():
+			max_jump = maxf(max_jump, all[i].spot.distance_to(last[i]))
+			last[i] = all[i].spot
 		# wander round the middle so the lamps can find and lose him
 		var a := t * 0.35
 		player.global_position = Vector3(cos(a) * 5.0, player.global_position.y, sin(a * 1.3) * 3.0)
@@ -94,6 +101,9 @@ func telegraph_test() -> void:
 					bad += 1
 	check(strikes > 0, "the Wastes' lamps struck during 90 s of hunting (%d strikes)" % strikes)
 	check(bad == 0, "every strike came after its full telegraph (%d without)" % bad)
+	# a physics tick here is 4 x 1/120 s; even the fastest glide onto a mark
+	# moves well under a unit in that time
+	check(max_jump < 0.6, "the circles glide: no jumps (largest step per tick %.2f u)" % max_jump)
 
 
 ## A solid wall between the lamp and Vesper hides him: it loses him.

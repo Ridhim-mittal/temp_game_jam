@@ -6,8 +6,12 @@ extends "res://scripts/world25/searchlight.gd"
 ## the light whitens Vesper; a full meter costs an ink drop), its shadow
 ## rays (solid props between the lamp and a point block it: hide behind
 ## them), the Flash investigation (`hear`), erasing monsters it catches and
-## lighting drawn bridges. The light comes down at a slant from the back of
-## the room (SOURCE_DIR), so props throw their shadows towards the camera.
+## lighting drawn bridges. For shadows the light counts as coming from up
+## and towards the back of the room (SOURCE_DIR), so props hide you on
+## their camera side; the pillar itself is drawn straight up.
+## The circle moves like something with weight (`_steer`: it accelerates,
+## eases off on arrival, never jumps), is drawn between physics ticks, and
+## only wanders over the room's floor.
 ##
 ## States:
 ##   DORMANT  grace on entering a room; the column glows far away
@@ -57,6 +61,9 @@ var _strike_t := 0.0
 var _unseen := 0.0
 var _wander := Vector3.ZERO
 var _flash := 0.0
+var _vel := Vector3.ZERO
+var _prev_spot := Vector3.ZERO
+var _lean := Vector3.ZERO
 var _column: MeshInstance3D
 var _column_mat: ShaderMaterial
 var _circle_mat: ShaderMaterial
@@ -77,6 +84,7 @@ func _ready() -> void:
 	erase_fill = profile.erase_fill
 	erase_drain = maxf(profile.erase_fill * 1.4, 1.0)
 	spot.y = ground_y
+	_prev_spot = spot
 	last_known = spot
 	_strike_t = _strike_every() * (1.0 + 0.5 * index)
 	_wander = spot
@@ -145,7 +153,7 @@ func _build() -> void:
 	_motes.top_level = true
 	_motes.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
 	_motes.emission_sphere_radius = spot_radius * 0.7
-	_motes.direction = SOURCE_DIR.normalized()
+	_motes.direction = Vector3.UP
 	_motes.spread = 8.0
 	_motes.gravity = Vector3.ZERO
 	_motes.initial_velocity_min = 0.6
@@ -214,15 +222,61 @@ func _clamp_roam(p: Vector3) -> Vector3:
 	return Vector3(clampf(p.x, roam.position.x, roam.end.x), ground_y, clampf(p.z, roam.position.y, roam.end.y))
 
 
+## Steers the circle towards `target` like something with weight: it
+## accelerates up to `max_speed`, eases off as it arrives, and never jumps.
+func _steer(target: Vector3, max_speed: float, delta: float, accel_mult := 3.0) -> void:
+	target += _separation()
+	var to := Vector3(target.x - spot.x, 0.0, target.z - spot.z)
+	var dist := to.length()
+	var want := Vector3.ZERO
+	if dist > 0.02:
+		want = to / dist * minf(max_speed, dist * 2.2)  # slow down on arrival
+	_vel = _vel.move_toward(want, max_speed * accel_mult * delta)
+	spot += _vel * delta
+	spot.y = ground_y
+
+
+## Two lamps in a room keep their distance: each is pushed away from any
+## other circle closer than two widths, so they flank Vesper instead of
+## piling up on the same spot. (Not while marking: a strike lands where it
+## was marked.)
+func _separation() -> Vector3:
+	if hunt == Hunt.MARK:
+		return Vector3.ZERO
+	var push := Vector3.ZERO
+	for other in get_tree().get_nodes_in_group("haunt_lamp"):
+		if other == self:
+			continue
+		var d := Vector3(spot.x - other.spot.x, 0.0, spot.z - other.spot.z)
+		var gap: float = spot_radius + other.spot_radius
+		var dist := d.length()
+		if dist < gap * 1.1:
+			var away := d / dist if dist > 0.01 else Vector3(1.0 if index % 2 == 0 else -1.0, 0.0, 0.0)
+			push += away * (gap * 1.1 - dist) * 1.5
+	return push
+
+
+## A random point on the room's floor (never out over the void).
+func _floor_point() -> Vector3:
+	var room := get_tree().current_scene
+	for i in 12:
+		var p := Vector3(randf_range(roam.position.x, roam.end.x), ground_y, randf_range(roam.position.y, roam.end.y))
+		if room == null or not room.has_method("on_floor") or room.on_floor(p):
+			return p
+	return spot
+
+
 func _physics_process(delta: float) -> void:
 	_caption_cd -= delta
 	_age += delta
 	_t += delta
+	_prev_spot = spot
 	var player := get_tree().get_first_node_in_group("player") as Node3D
 	var alive: bool = player != null and not player.dead
 	var hold := _held()
 	match hunt:
 		Hunt.DORMANT:
+			_steer(spot, _speed(), delta)  # settle in place
 			if _t >= profile.grace and not hold:
 				if alive:
 					last_known = _flat(player.global_position)
@@ -233,10 +287,10 @@ func _physics_process(delta: float) -> void:
 				_unseen = 0.0
 			else:
 				_unseen += delta
-			spot = spot.move_toward(_clamp_roam(last_known), _speed() * delta)
+			_steer(_clamp_roam(last_known), _speed(), delta)
 			if _unseen >= profile.lose_after:
 				_set_hunt(Hunt.LOST)
-				_wander = spot
+				_wander = _floor_point()
 				_line(profile.say_on_lost)
 			elif profile.strike_every > 0.0 and alive and not hold:
 				_strike_t -= delta
@@ -245,8 +299,11 @@ func _physics_process(delta: float) -> void:
 					_set_hunt(Hunt.MARK)
 					_line(profile.say_on_spot)
 		Hunt.MARK:
-			# the pool slides onto the marked circle while its outline fills
-			spot = spot.move_toward(mark, _speed() * 2.5 * delta)
+			# the pool glides onto the marked circle while its outline fills, fast
+			# enough to be there when the telegraph runs out
+			var left := maxf(_telegraph() - _t, 0.05)
+			var need := Vector2(mark.x - spot.x, mark.z - spot.z).length() / left * 1.4
+			_steer(mark, maxf(_speed() * 2.0, need), delta, 6.0)
 			if hold:
 				_strike_t = _strike_every() * 0.5  # never strike out of a cutscene
 				_set_hunt(Hunt.SEEK)
@@ -254,15 +311,15 @@ func _physics_process(delta: float) -> void:
 				_strike()
 		Hunt.LINGER:
 			if alive:
-				spot = spot.move_toward(_clamp_roam(player.global_position), _speed() * 0.3 * delta)
+				_steer(_clamp_roam(player.global_position), _speed() * 0.3, delta, 1.5)
 			if _t >= profile.linger:
 				_strike_t = _strike_every()
 				_unseen = 0.0
 				_set_hunt(Hunt.SEEK)
 		Hunt.LOST:
-			if spot.distance_to(_wander) < 0.3:
-				_wander = Vector3(randf_range(roam.position.x, roam.end.x), ground_y, randf_range(roam.position.y, roam.end.y))
-			spot = spot.move_toward(_wander, _speed() * 0.6 * delta)
+			if Vector2(spot.x - _wander.x, spot.z - _wander.z).length() < 0.5:
+				_wander = _floor_point()
+			_steer(_wander, _speed() * 0.6, delta, 1.5)
 			if alive and sees(player.global_position):
 				last_known = _flat(player.global_position)
 				_unseen = 0.0
@@ -276,8 +333,11 @@ func _physics_process(delta: float) -> void:
 
 
 func _strike() -> void:
-	spot = mark
-	global_position = spot + SOURCE_DIR.normalized() * SOURCE_DIST
+	# it has glided onto the mark by now; settle the last few centimetres
+	if spot.distance_to(mark) < 0.6:
+		spot = mark
+	_vel *= 0.2
+	global_position = mark + SOURCE_DIR.normalized() * SOURCE_DIST
 	_set_hunt(Hunt.STRIKE)
 	_flash = 1.0
 	var cam := get_tree().get_first_node_in_group("camera")
@@ -335,19 +395,24 @@ func _line(text: String) -> void:
 
 func _process(delta: float) -> void:
 	_flash = maxf(_flash - delta * 1.6, 0.0)
-	var dir := SOURCE_DIR.normalized()
-	var length := 22.0
-	var basis := Basis(Quaternion(Vector3.UP, dir)) * Basis.from_scale(Vector3(spot_radius * 0.82, length, spot_radius * 0.82))
-	_column.global_transform = Transform3D(basis, spot + dir * length * 0.5)
-	var level: float = {Hunt.DORMANT: 0.22, Hunt.SEEK: 0.42, Hunt.MARK: 0.5, Hunt.STRIKE: 1.0, Hunt.LINGER: 0.75, Hunt.LOST: 0.3}[hunt]
+	# draw between physics ticks, so the circle glides instead of stepping
+	var at := _prev_spot.lerp(spot, Engine.get_physics_interpolation_fraction())
+	# the pillar stands straight and leans a little against its motion, like a
+	# hanging beam swinging behind its spot
+	_lean = _lean.lerp(Vector3(-_vel.z, 0.0, _vel.x) * 0.035, 1.0 - exp(-4.0 * delta))
+	var length := 24.0
+	var basis := Basis.from_euler(Vector3(_lean.x, 0.0, -_lean.z)) * Basis.from_scale(Vector3(spot_radius * 0.82, length, spot_radius * 0.82))
+	_column.global_transform = Transform3D(basis, at + basis.y.normalized() * length * 0.5)
+	# every lamp looks the same: only the telegraph and the strike brighten it
+	var level: float = 0.75 if hunt == Hunt.LINGER else 0.45
 	var telegraph: float = clampf(_t / maxf(_telegraph(), 0.01), 0.0, 1.0) if hunt == Hunt.MARK else 0.0
-	_column_mat.set_shader_parameter("intensity", level + _flash * 1.2 + telegraph * 0.2)
-	_circle.global_position = spot + Vector3(0, 0.05, 0)
-	_circle_mat.set_shader_parameter("intensity", 0.45 + level * 0.5 + _flash)
+	_column_mat.set_shader_parameter("intensity", level + _flash * 1.2 + telegraph * 0.25)
+	_circle.global_position = at + Vector3(0, 0.05, 0)
+	_circle_mat.set_shader_parameter("intensity", 0.7 + _flash)
 	_mark_circle.visible = hunt == Hunt.MARK
 	_mark_circle.global_position = mark + Vector3(0, 0.06, 0)
 	_mark_mat.set_shader_parameter("fill", telegraph)
 	_mark_mat.set_shader_parameter("intensity", 0.5 + telegraph * 0.5)
-	_base_light.global_position = spot + Vector3(0, 1.8, 0)
-	_base_light.light_energy = 0.8 + level * 1.4 + _flash * 5.0
-	_motes.global_position = spot + dir * 1.5
+	_base_light.global_position = at + Vector3(0, 1.8, 0)
+	_base_light.light_energy = 1.4 + _flash * 5.0 + telegraph * 0.6
+	_motes.global_position = at + Vector3(0, 1.0, 0)

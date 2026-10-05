@@ -51,7 +51,31 @@ Branch `gutter-rework`, made from `main`. Everything here is the 2.5D part (the 
      the full telegraph, and it never starts on the arrival point.
    - **Hub:** the hub lamp only searches.
    - **Writer's lines:** escalate by zone, each once per room.
-7. **Names:** title cards, captions and biome names use The Spine, The Inkwood, The Drowned
+7. **Third round (your feedback on the map):**
+   - **The Spine (hub):**
+     - Near the original layout again, on bare dirt (new ground mode).
+     - The original altar is back, standing in a glowing ritual circle with red candles and
+       skulls.
+     - My walkway pillars and braziers are gone.
+     - Rune stones flank the cave, there's a second glowing circle in the east, and the
+       graveyard has candles and a skull heap.
+   - **Cryptic symbols everywhere:**
+     - Glowing sigils are scratched into every zone's floor.
+     - Rune stones, red candles and skull heaps appear in the rooms.
+     - Graves now have a dirt mound, skulls and bones, and sometimes a candle.
+   - **Darkness:** the screen is dark around Vesper except where there's light (his Ember,
+     braziers, candles, open gates, the lamp). Glowing things still shine through.
+   - **HUD:** a health bar and a healing counter replace the hearts.
+   - **Living background:**
+     - A huge sigil circle turns slowly in the abyss below each room.
+     - Mist drifts over it and embers rise.
+     - Skull heaps and ink statues stand in the void, lit red from below.
+   - **The Writer's lamp:**
+     - It moves with weight: it accelerates, eases in, and never jumps or snaps.
+     - It's drawn smoothly between physics ticks and only wanders over the floor.
+     - When there are two, they flank Vesper instead of stacking.
+     - Both always look the same: a straight pillar with a slight lean as it moves.
+8. **Names:** title cards, captions and biome names use The Spine, The Inkwood, The Drowned
    Margin, The Torn Wastes and The Rubbing Room.
 
 ## Tuning knobs
@@ -66,6 +90,10 @@ Branch `gutter-rework`, made from `main`. Everything here is the 2.5D part (the 
 | Ember pool | `clearing_player.gd` `_update_ember_light()` (range 3.4–6, energy 0.9–1.9) |
 | Darkness per zone | `data/biomes/*.tres`: `ambient_energy`, `sun_energy`, `sun`, `vignette`, `edge_darkness`, palette |
 | Edge rubble | `island.gd`: `rubble` (0 = none, 1 = default) |
+| Darkness round Vesper | `data/biomes/*.tres` `darkness` (0 = off); `darkness.gd` `ember_scale`; shader `glow_through` |
+| Floor sigils | `data/biomes/*.tres` `runes` (density), `rune_color` |
+| Background | `room.gd` `backdrop` (on/off) and `_build_backdrop()` |
+| Lamp spacing / feel | `haunt_lamp.gd` `_steer()` (accel), `_separation()` |
 | Gate timing / colour | `gate.gd`: `DRAW_TIME` (0.8 s), `lantern_color` |
 | Lamp per zone | `data/haunt/*.tres` (`haunt_profile.gd`): lamps, grace, seek_speed, circle_radius, strike_every, telegraph, erase_fill, lose_after, can_damage, strike_erase, linger, the Writer's lines |
 | Lamp per room | `room.gd` `haunt_scale` / `haunt_enabled`; set in `tools/rooms25/build_rooms.py` (`r.haunt_scale`) |
@@ -93,6 +121,7 @@ These ran with Godot 4.7-stable under Xvfb with software OpenGL.
   - 90 s of the Wastes' lamps hunting: every strike came after its full telegraph.
   - Hiding behind a wall makes the lamp lose Vesper.
   - The Spine's lamp never damages or strikes.
+  - The circles glide, with no jumps between physics ticks.
 
 ## Not verified
 

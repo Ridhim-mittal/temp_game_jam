@@ -101,6 +101,9 @@ func _apply_biomes(mat: ShaderMaterial) -> void:
 	mat.set_shader_parameter("use_blend", 1.0 if biome_b else 0.0)
 	mat.set_shader_parameter("blend_from", blend_from)
 	mat.set_shader_parameter("blend_to", blend_to)
+	if "runes" in a:
+		mat.set_shader_parameter("rune_density", a.runes)
+		mat.set_shader_parameter("rune_color", a.rune_color)
 
 
 ## Rocks and broken flagstones along every closed edge, some hanging over

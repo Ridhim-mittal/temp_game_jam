@@ -12,8 +12,16 @@ R = "res://scenes/world25/rooms/"
 HUB = "res://scenes/clearing/clearing.tscn"
 
 
+def the_dead(r, stones=1, candles=1, skulls=1):
+    """Cryptic rune stones, red candles and heaps of skulls: some in every room."""
+    r.scatter("RUNE_STONE", stones, clearance=1.6, solid=True)
+    r.scatter("CANDLES", candles, count=4, radius=0.5)
+    r.scatter("SKULL_PILE", skulls, count=8, radius=0.8, solid=True)
+
+
 def darkwood_dressing(r, graves=3, stumps=2, rocks=2, pools=1):
     r.clear_path_to_gates()
+    the_dead(r)
     r.scatter("TOMBSTONE", graves, solid=True)
     r.scatter("STUMP", stumps, solid=True)
     r.scatter("INK_POOL", pools, radius=1.4)
@@ -96,6 +104,7 @@ r.write("Where the Ink Pools", "The Inkwood, 3 / 3",
 
 def shallows_dressing(r, pillars=2, pools=2, mounds=2):
     r.clear_path_to_gates()
+    the_dead(r, skulls=0)
     r.scatter("PILLAR", pillars, solid=True)
     r.scatter("INK_POOL", pools, radius=1.5)
     r.scatter("PAPER_MOUND", mounds, count=4, radius=1.1, solid=True)
@@ -182,6 +191,7 @@ r.write("The Red Pen", "The Drowned Margin",
 
 def wastes_dressing(r, crystals=3, mounds=3, pins=2, totems=2, pots=2):
     r.clear_path_to_gates()
+    the_dead(r)
     r.scatter("CRYSTAL", crystals, count=4, radius=1.2, solid=True)
     r.scatter("PAPER_MOUND", mounds, count=5, radius=1.3, solid=True)
     r.scatter("PINS", pins, count=6, radius=1.2)
@@ -272,6 +282,9 @@ for i in range(8):
         continue
     r.prop("bprops", x, z, name=f"Totem{i + 1}", kind=KIND["PENCIL_TOTEM"], seed=i + 90, solid=True)
 r.prop("bprops", -1, 0, name="Circle", kind=KIND["RITUAL_CIRCLE"], radius=4.5, color="Color(1, 0.35, 0.2, 1)")
+for i, (x, z) in enumerate([(-5.6, -3.4), (3.6, -3.4), (-5.6, 3.4), (3.6, 3.4)]):
+    r.prop("bprops", x, z, name=f"Candles{i + 1}", kind=KIND["CANDLES"], count=4, radius=0.5, seed=95 + i)
+r.prop("bprops", -9.4, 1.2, name="Skulls1", kind=KIND["SKULL_PILE"], count=9, radius=0.9, seed=99, solid=True)
 r.prop("bprops", -6, -5, name="Pins1", kind=KIND["PINS"], count=7, radius=1.2, seed=91)
 r.prop("bprops", -6, 5, name="Pins2", kind=KIND["PINS"], count=7, radius=1.2, seed=92)
 r.prop("bprops", 5, -6, name="Mound1", kind=KIND["PAPER_MOUND"], count=5, radius=1.2, seed=93, solid=True)

@@ -43,17 +43,28 @@ The 2D player has a double jump (`air_jumps`, `air_jump_velocity` in player.gd; 
   with cold lanterns; `open()` draws a line of light outwards (`gate_light.gdshader`), fills the
   path in, lights pale-gold lanterns and chimes. A room's `biome_b` + blend line morphs one biome
   into another inside it.
-- Look: biomes (`data/biomes/`) are dark versions of the original palettes; `edge_darkness`
-  sinks the screen corners (comic_overlay.gdshader). Ground mode 0 is stone tiles, not grass.
-  `island.gd` piles rubble along closed edges. No grass fields, farms or shops in the Gutter;
-  retired `biome_props.gd` kinds (CANOPY, GARDEN_PLOT, BARN, SCARECROW, CORAL, TUBE_PLANT,
-  NEST) stay in the enum but are placed nowhere.
+- Look: biomes (`data/biomes/`) are dark versions of the original palettes. Ground modes
+  (ground.gdshader): 0 stone tiles (Inkwood), 1 wet flagstones, 2 cracked, 3 DIRT (the hub);
+  `Biome.runes` / `rune_color` scatter glowing cryptic sigils on any floor. `island.gd` piles
+  rubble along closed edges. Darkness round Vesper: `darkness.gd` (+ darkness.gdshader) on the
+  room's UI layer, strength `Biome.darkness`; pools of light at the Ember, lit lanterns, open
+  gates, the lamp and anything in group "glow" (`glow_radius` property or meta); bright pixels
+  shine through. room.gd `_build_backdrop()` fills the void (a huge turning sigil far below,
+  mist, rising embers, uplit skull heaps and ink statues). No grass, farms or shops; retired
+  `biome_props.gd` kinds (CANOPY, GARDEN_PLOT, BARN, SCARECROW, CORAL, TUBE_PLANT, NEST) stay
+  in the enum but are placed nowhere. Newer kinds: SKULL_PILE, CANDLES, RUNE_STONE; TOMBSTONE
+  graves carry skulls; RITUAL_CIRCLE uses sigil_ring.gdshader. Helpers `Toon.skull()`,
+  `Toon.bones()`, `Toon.candle()`. The hub's altar.gd is the original shrine in a ritual circle.
+- HUD (clearing_hud.gd): health bar (one notch per ink drop) and a healing counter (heals the
+  Ember's fuel covers, F), above the Ember bar.
 - The Writer's Haunting Lamp (`scripts/world25/haunt_lamp.gd`, built on `searchlight.gd`):
   room.gd spawns it in every room from the biome's `haunt` profile (`data/haunt/*.tres`,
   `haunt_profile.gd`), scaled by Settings difficulty and the room's `haunt_scale` (set in the
   generator). States DORMANT/SEEK/MARK/STRIKE/LINGER/LOST; standing in its light fills the erase
   meter (a full meter = an ink drop); hide behind solid props. `room.haunt_hold()` stops strikes
-  during transitions and boss intros. The hub's lamp only searches.
+  during transitions and boss intros. The hub's lamp only searches. The circle steers with
+  inertia (`_steer`), is interpolated between ticks, keeps to the floor (`room.on_floor()`) and
+  keeps apart from other lamps (`_separation`).
 - Controls (clearing_player.gd): `facing_dir` (8-way snap) is what swings, dashes and the facing
   chevron follow; the mouse position is ignored (buttons only). Aim assist (`aim_assist_angle`,
   `aim_assist_range`, Settings toggle). World25 owns `Input.mouse_mode`: hidden while a room is
