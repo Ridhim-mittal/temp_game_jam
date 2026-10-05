@@ -103,7 +103,7 @@ def spider(x, hang=0.0):
 
 
 def blot(name, x):
-    node(name, None, "Enemies", [("position", v(x, FLOOR - 75)), ("hp", "15"),
+    node(name, None, "Enemies", [("position", v(x, FLOOR - 75)), ("hp", "12"),
          ("display_name", f'"{"THE INK BLOT" if name.endswith("A") else "ITS TWIN"}"')], instance=BLOT)
 
 

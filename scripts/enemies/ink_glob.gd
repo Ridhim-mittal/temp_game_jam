@@ -6,7 +6,7 @@ const INK := Color(0.06, 0.04, 0.09)
 const Puddle = preload("res://scripts/enemies/ink_puddle.gd")
 
 var velocity := Vector2.ZERO
-var damage := 12.0
+var damage := 8.0
 var dead := false
 var _time := 0.0
 

@@ -20,12 +20,12 @@ const EYE := Color(1.0, 0.86, 0.32)
 const RAGE_EYE := Color(1.0, 0.25, 0.2)
 const FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
 
-@export var hp := 18
+@export var hp := 15
 @export var walk_speed := 140.0
 @export var wake_range := 420.0
-@export var swipe_damage := 22.0
-@export var slam_damage := 32.0
-@export var touch_damage := 13.0
+@export var swipe_damage := 15.0
+@export var slam_damage := 22.0
+@export var touch_damage := 9.0
 @export var art_scale := 0.78
 ## Starts asleep (a gatekeeper); false = awake and hunting at once.
 @export var asleep := true
@@ -96,7 +96,7 @@ func _tick(delta: float) -> void:
 		_enraged = true
 		pop("RAAARGH!!", Color(1.0, 0.3, 0.25), Vector2(0, -190), 44)
 		Sfx.play("boss_intro", 0.0, 1.2)
-	var rage := 1.4 if _enraged else 1.0
+	var rage := 1.3 if _enraged else 1.0
 	delta *= rage  # everything it does speeds up
 	_timer -= delta
 	_cooldown -= delta
