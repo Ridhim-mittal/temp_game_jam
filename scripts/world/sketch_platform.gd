@@ -6,8 +6,7 @@ extends StaticBody2D
 ## When the light leaves, the cell fades out over `warn_time` and then you
 ## fall through it, so the edge of your light reads as a soft glow, not a cliff.
 ## Stand still with the Ember raised and ink spreads out from your feet along
-## the sketch: inked cells are solid for good and are safe ground (hazard
-## respawns return you there). Sketches in non-photo blue (`inkable = false`)
+## the sketch: inked cells are solid for good. Sketches in non-photo blue (`inkable = false`)
 ## never take ink: keep them lit all the way across. With `drinks_light` the
 ## Ember drains twice as fast while you're over it (ember.gd).
 ## One-way like a plank: jump up through it, land on top.
@@ -136,7 +135,7 @@ func _set_solid(i: int, on: bool) -> void:
 	_shapes[i].set_deferred("disabled", not on)
 
 
-## Safe ground for hazard respawns: only inked cells (light can go away).
+## Solid for good here (inked; lit cells can go away).
 func is_stable_at(point: Vector2) -> bool:
 	var i := _cell_at(point)
 	return i >= 0 and _inked[i]

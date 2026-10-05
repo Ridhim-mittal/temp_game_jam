@@ -56,6 +56,8 @@ Wall cling (player.gd "Wall" exports, `wall_cling = false` turns it off): pushin
 falling slides down it slowly (pose in player_visual.gd, scrape in `wall_fx.gd`); jump kicks off.
 The wall just kicked off can't be re-grabbed until landing or touching the other wall, so single
 walls can't be climbed (keeps the light puzzles intact); a slide also resets the fall height.
+Spikes (group `hazard`) cost health and send the 2D player back to the last checkpoint pen in the
+level, or the level start (`_respawn_point()` in player.gd); never to the last ground stood on.
 
 ## 2.5D framework
 - Rooms are scenes whose root uses `scripts/world25/room.gd`; it builds environment, light,
