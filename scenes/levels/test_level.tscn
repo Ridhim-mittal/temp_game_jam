@@ -32,6 +32,8 @@
 [ext_resource type="Script" path="res://scripts/world/panel_door.gd" id="44_door"]
 [ext_resource type="Script" path="res://scripts/ui/comic_frame.gd" id="45_frame"]
 [ext_resource type="Script" path="res://scripts/ui/narration.gd" id="46_narration"]
+[ext_resource type="Script" path="res://scripts/world/city_block.gd" id="47_cityblock"]
+[ext_resource type="Script" path="res://scripts/world/city_ledge.gd" id="48_cityledge"]
 
 [node name="TestLevel" type="Node2D"]
 
@@ -41,32 +43,32 @@
 
 [node name="Ground1" type="StaticBody2D" parent="World"]
 position = Vector2(290, 850)
-script = ExtResource("3_block")
+script = ExtResource("47_cityblock")
 size = Vector2(1060, 500)
 
 [node name="Wall1" type="StaticBody2D" parent="World"]
 position = Vector2(-200, 250)
-script = ExtResource("3_block")
+script = ExtResource("47_cityblock")
 size = Vector2(80, 1700)
 
 [node name="Step1" type="StaticBody2D" parent="World"]
 position = Vector2(660, 550)
-script = ExtResource("3_block")
+script = ExtResource("47_cityblock")
 size = Vector2(200, 100)
 
 [node name="Platform1" type="StaticBody2D" parent="World"]
 position = Vector2(960, 412)
-script = ExtResource("3_block")
+script = ExtResource("47_cityblock")
 size = Vector2(200, 24)
 
 [node name="Platform2" type="StaticBody2D" parent="World"]
 position = Vector2(1260, 482)
-script = ExtResource("3_block")
+script = ExtResource("47_cityblock")
 size = Vector2(200, 24)
 
 [node name="Ground2" type="StaticBody2D" parent="World"]
 position = Vector2(1600, 850)
-script = ExtResource("3_block")
+script = ExtResource("47_cityblock")
 size = Vector2(1560, 500)
 
 [node name="Spikes1" type="StaticBody2D" parent="World"]
@@ -80,7 +82,7 @@ script = ExtResource("18_pen")
 
 [node name="PitFloor1" type="StaticBody2D" parent="World"]
 position = Vector2(2530, 950)
-script = ExtResource("3_block")
+script = ExtResource("47_cityblock")
 size = Vector2(300, 300)
 
 [node name="PitSpikes1" type="StaticBody2D" parent="World"]
@@ -90,22 +92,22 @@ size = Vector2(300, 24)
 
 [node name="Ground3" type="StaticBody2D" parent="World"]
 position = Vector2(3190, 850)
-script = ExtResource("3_block")
+script = ExtResource("47_cityblock")
 size = Vector2(1020, 500)
 
 [node name="Plank1" type="StaticBody2D" parent="World"]
 position = Vector2(2980, 498)
-script = ExtResource("11_oneway")
+script = ExtResource("48_cityledge")
 size = Vector2(180, 16)
 
 [node name="Plank2" type="StaticBody2D" parent="World"]
 position = Vector2(3220, 398)
-script = ExtResource("11_oneway")
+script = ExtResource("48_cityledge")
 size = Vector2(180, 16)
 
 [node name="Plank3" type="StaticBody2D" parent="World"]
 position = Vector2(3460, 498)
-script = ExtResource("11_oneway")
+script = ExtResource("48_cityledge")
 size = Vector2(160, 16)
 
 [node name="Heart1" type="Area2D" parent="World"]
@@ -120,7 +122,7 @@ next_title = "THE SKETCHBOOK"
 
 [node name="Wall2" type="StaticBody2D" parent="World"]
 position = Vector2(3740, 250)
-script = ExtResource("3_block")
+script = ExtResource("47_cityblock")
 size = Vector2(80, 1700)
 
 [node name="Coins" type="Node2D" parent="."]

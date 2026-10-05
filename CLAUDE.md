@@ -39,9 +39,13 @@ and opens out; the live level inside it is scaled via the root's `global_canvas_
 comic page (`scripts/ui/comic_frame.gd`; outside its `live_areas` the world is redrawn as a pencil
 sketch by `shaders/pencil_outside.gdshader`, the HUD stays as is); the City opens with the Writer's typed caption
 (`scripts/ui/narration.gd`, once per run via GameState.seen; the controls tutorial waits for it).
-Both levels come from `tools/level2d/build_test_level.py`. Text is kept light: two story captions
-a level, and the only signs in the world (`caption.gd`) are "HIT THE LANTERN" at the shadow-ink ramps
-(the Sketchbook and the Long Drop's Shadow Gallery); every other rule is taught by the tutorial's keys. The trapdoor
+Both levels come from `tools/level2d/build_test_level.py`. Their ground, rooftops and walls are `city_block.gd`
+(futuristic building tops: neon edge, cap band with indicator lights, lit window slits) and the
+planks are `city_ledge.gd` hover decks with thrusters (one-way); both draw through InkBatch. The City's
+trim is cyan, the Sketchbook's warm gold (generator `trim_props`) so solid ground never reads as blue pencil.
+Text is kept light: two story captions a level, and the only signs in the world (`caption.gd`) are
+"HIT THE LANTERN" at the shadow-ink ramps (the Sketchbook and the Long Drop's Shadow Gallery); every
+other rule is taught by the tutorial's keys. The trapdoor
 (`trapdoor.gd` + `gutter_fall.gd`) is kept for a later level but no longer placed.
 
 ## 2D light mechanic (the Sketchbook level)
