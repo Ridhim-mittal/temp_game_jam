@@ -185,7 +185,8 @@ def reset():
     counts.clear()
 
 
-def write(path, root, player_pos, page=1, narration=""):
+def write(path, root, player_pos, page=1, story=()):
+    """story: the Writer's captions, [(text, trigger_x)] in order (-1e9 = on arrival)."""
     out = ["[gd_scene format=3]", ""] + ext + ["", f'[node name="{root}" type="Node2D"]', "",
            '[node name="ComicBackground" parent="." instance=ExtResource("6_background")]', "",
            '[node name="World" type="Node2D" parent="."]', ""]
@@ -204,9 +205,9 @@ def write(path, root, player_pos, page=1, narration=""):
             '[node name="LevelMusic" type="Node" parent="."]', 'script = ExtResource("8_music")', "",
             '[node name="LevelMood" type="Node" parent="."]', 'script = ExtResource("30_mood")', "",
             '[node name="ComicFrame" type="CanvasLayer" parent="."]', 'script = ExtResource("45_frame")', f"page_number = {page}", ""]
-    if narration:
-        out += ['[node name="Narration" type="CanvasLayer" parent="."]', 'script = ExtResource("46_narration")',
-                f'text = "{narration}"', ""]
+    for k, (text, x) in enumerate(story):
+        out += [f'[node name="Narration{k + 1}" type="CanvasLayer" parent="."]', 'script = ExtResource("46_narration")',
+                f'text = "{text}"', f"trigger_x = {x:g}", ""]
     open(os.path.join(ROOT, path), "w").write("\n".join(out))
     print(f"{path}: {len(world)} world nodes, {len(enemies)} enemies, {len(coins)} coins")
 
@@ -249,8 +250,12 @@ heart(3220, 350)
 # the way on
 door(3600, "res://scenes/levels/sketchbook.tscn", "THE SKETCHBOOK")
 block(3700, 3780, -600, BOTTOM, name="Wall")
-write("scenes/levels/test_level.tscn", "TestLevel", (100, 570), page=1,
-      narration="VESPER STARTS OUT IN A CITY INFECTED BY EVIL MONSTERS. HE FIGHTS THEM OFF WITH THE LIGHT AND HIS SWORD.")
+write("scenes/levels/test_level.tscn", "TestLevel", (100, 570), page=1, story=[
+    ("VESPER STARTS OUT IN A CITY INFECTED BY EVIL MONSTERS. HE FIGHTS THEM OFF WITH THE LIGHT AND HIS SWORD.", -1e9),
+    ("THE MONSTERS WERE ONLY BAD INK, SPILT FROM THE GUTTERS. ONE SWING OF THE NIB SENT THEM BACK.", 1350),
+    ("THE CITY WAS COMING APART, ONE PANEL AT A TIME. WHERE THE STREET BROKE, VESPER LEAPT.", 2250),
+    ("AND AT THE EDGE OF THE PAGE, A DOOR OF LIGHT WAS WAITING.", 3150),
+])
 
 # ======================================================== THE SKETCHBOOK (light tutorial)
 # Pencil sketches are only solid in light (scripts/world/lights.gd). Each beat
@@ -261,42 +266,47 @@ reset()
 block(7900, 8420, GROUND, BOTTOM, name="Ground")
 block(7820, 7900, -600, BOTTOM, name="Wall")
 # 9a. first light: a sketch bridge over spikes, too wide to jump (~470 px max)
-caption(8680, 420, "HOLD Q - RAISE YOUR EMBER\nLIGHT MAKES THE SKETCH REAL")
+caption(8680, 455, "HOLD Q - RAISE YOUR EMBER\nLIGHT MAKES THE SKETCH REAL")
 block(8420, 8940, 800, BOTTOM, name="PitFloor")
 spikes(8420, 8940, 800)
 sketch(8420, 8940, GROUND)
 coin_row(8500, 8860, 560, 5)
 block(8940, 9260, GROUND, BOTTOM, name="Ground")
-# 9b. ink a stepping stone: 1400 px is more than one Ember (100 meter at 25/s
-# = 4 s = 1200 px of running). Stop halfway, stand still to ink, rest on it.
+# 9b. ink a stepping stone: 1700 px is clearly more than one Ember (100 meter
+# at 25/s = 4 s = 1200 px of running, plus the sputter). Stop halfway, stand still to ink, rest on it.
 # Scribbles flee your light, so they dive the moment you lower it.
-caption(9560, 400, "TOO FAR FOR ONE EMBER?\nSTAND STILL WITH IT RAISED: THE SKETCH INKS IN.\nINK STAYS. REST ON IT.")
-block(9260, 10660, 800, BOTTOM, name="PitFloor")
-spikes(9260, 10660, 800)
-sketch(9260, 10660, GROUND)
+caption(9560, 445, "TOO FAR FOR ONE EMBER?\nSTAND STILL WITH IT RAISED: INK SPREADS FROM YOUR FEET.\nINK STAYS. REST ON IT.")
+block(9260, 10960, 800, BOTTOM, name="PitFloor")
+spikes(9260, 10960, 800)
+sketch(9260, 10960, GROUND)
 coin_row(9900, 10020, 560, 3)
 enemy("scribble", 9800, 380)
 enemy("scribble", 10150, 340)
-block(10660, 10900, GROUND, BOTTOM, name="Ground")
-enemy("crossed", 10820, 570)                             # its X only burns in light
+block(10960, 11200, GROUND, BOTTOM, name="Ground")
+enemy("crossed", 11120, 570)                             # its X only burns in light
 # 9c. lanterns: free light that refills the Ember, but a sign shadows the far end
-caption(10990, 440, "LANTERNS ARE FREE LIGHT.\nSHADOWS ARE NOT.", tilt=0.03)
-block(10900, 11440, 800, BOTTOM, name="PitFloor")
-spikes(10900, 11440, 800)
-sketch(10900, 11440, GROUND)
-lantern(11160, 220, 400, chain=120)                      # lamp at (11160, 340)
-block(11215, 11278, 440, 462, name="Sign")                # shadows x 11300-11440 of the bridge
+caption(11290, 470, "LANTERNS ARE FREE LIGHT.\nSHADOWS ARE NOT.", tilt=0.03)
+block(11200, 11740, 800, BOTTOM, name="PitFloor")
+spikes(11200, 11740, 800)
+sketch(11200, 11740, GROUND)
+lantern(11460, 220, 400, chain=120)                      # lamp at (11460, 340)
+block(11515, 11578, 440, 462, name="Sign")                # shadows x 11600-11740 of the bridge
 # 9d. shadow ink: hit the lantern, the cut-out star's shadow is a ramp over the wall
-caption(11470, 360, "HIT THE LANTERN.\nA SHADOW IS INK TOO.")
-block(11440, 12500, GROUND, BOTTOM, name="Ground")
-lantern(11550, 520, 220, chain=0, post=80, lit=False)
-caster(11640, 470, stick=130)
-block(11800, 11860, 270, GROUND, name="Wall")
-coins += [(11720, 380), (11760, 350)]
-for x in [8250, 10780, 11480]:
+caption(11770, 385, "HIT THE LANTERN.\nA SHADOW IS INK TOO.")
+block(11740, 12800, GROUND, BOTTOM, name="Ground")
+lantern(11850, 520, 220, chain=0, post=80, lit=False)
+caster(11940, 470, stick=130)
+block(12100, 12160, 270, GROUND, name="Wall")
+coins += [(12020, 380), (12060, 350)]
+for x in [8250, 11080, 11780]:
     checkpoint(x, GROUND)
-heart(10720, 560)
+heart(11020, 560)
 # over the wall: the way on, down the Long Drop
-door(12260, "res://scenes/levels/long_drop.tscn", "THE LONG DROP")
-block(12500, 12580, -600, BOTTOM, name="Wall")
-write("scenes/levels/sketchbook.tscn", "Sketchbook", (8100, 570), page=2)
+door(12560, "res://scenes/levels/long_drop.tscn", "THE LONG DROP")
+block(12800, 12880, -600, BOTTOM, name="Wall")
+write("scenes/levels/sketchbook.tscn", "Sketchbook", (8100, 570), page=2, story=[
+    ("PAST THE CITY, THE WORLD WAS STILL A SKETCH: PENCIL LINES THAT ONLY TURNED REAL IN THE LIGHT.", -1e9),
+    ("SOME BRIDGES WERE TOO LONG FOR ONE BREATH OF LIGHT. SO VESPER STOPPED, AND LET THE INK SET.", 9150),
+    ("THE OLD LANTERNS STILL REMEMBERED HOW TO SHINE. BUT LIGHT CASTS SHADOWS.", 11100),
+    ("AND BELOW THE LAST PAGE OF THE SKETCHBOOK, THE WORLD DROPPED AWAY INTO THE DARK...", 12200),
+])

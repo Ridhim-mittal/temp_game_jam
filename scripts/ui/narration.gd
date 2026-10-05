@@ -3,7 +3,8 @@ extends CanvasLayer
 ## panel whose text is written in letter by letter by a fountain-pen nib,
 ## then it holds and fades. Plays once per run (GameState remembers), and
 ## the controls tutorial waits until it's done (busy()).
-## Drop one into a level and set `text`.
+## Drop several into a level, each with its `text` and the `trigger_x` the
+## player must pass; they queue up, so two never write at once.
 
 const FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
 const INK := Color(0.05, 0.03, 0.1)
@@ -13,11 +14,15 @@ const CAPTION := Color(1.0, 0.9, 0.45)
 @export var delay := 0.8
 @export var letters_per_second := 34.0
 @export var hold := 3.5
-@export var font_size := 24
-@export var width := 520.0
+## Starts once the player is right of this x (very negative = on arrival).
+@export var trigger_x := -1.0e9
+@export var font_size := 30
+@export var width := 660.0
 
 var _t := 0.0
 var _done := false
+var _started := false
+var _id := ""
 var _lines: PackedStringArray = []
 var _art: Control
 
@@ -29,13 +34,15 @@ func _enter_tree() -> void:
 func _ready() -> void:
 	layer = 3
 	var state := get_node_or_null("/root/GameState")
-	var id: String = "narration:" + (owner.scene_file_path if owner else String(name))
-	if text == "" or (state and "seen" in state and state.seen.has(id)):
+	_id = "narration:%s:%s" % [owner.scene_file_path if owner else "", name]
+	if text == "" or (state and "seen" in state and state.seen.has(_id)):
 		_done = true
 		return
-	if state and "seen" in state:
-		state.seen[id] = true
 	_lines = _wrap(text)
+	var widest := 0.0
+	for l in _lines:
+		widest = maxf(widest, FONT.get_string_size(l, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x)
+	width = widest + 6.0  # the box hugs its text
 	_art = Control.new()
 	_art.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_art.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -45,12 +52,31 @@ func _ready() -> void:
 
 ## Read by the controls tutorial: it waits while the Writer is writing.
 func busy() -> bool:
-	return not _done
+	return not _done and (_started or trigger_x < -1.0e8)
+
+
+## Writing (or waiting to write) right now.
+func showing() -> bool:
+	return _started and not _done
 
 
 func _process(delta: float) -> void:
 	if _done:
 		return
+	if not _started:
+		var p := get_tree().get_first_node_in_group("player") as Node2D
+		if p == null or p.global_position.x < trigger_x:
+			return
+		if trigger_x > -1.0e8 and p.global_position.x > trigger_x + 1400.0:
+			_done = true  # rushed past it while another was writing: skip, don't tell it late
+			return
+		for other in get_tree().get_nodes_in_group("narration"):
+			if other != self and other.showing():
+				return  # wait for the Writer to finish the last one
+		_started = true
+		var state := get_node_or_null("/root/GameState")
+		if state and "seen" in state:
+			state.seen[_id] = true
 	_t += delta
 	if _t > _total() + 0.5:
 		_done = true

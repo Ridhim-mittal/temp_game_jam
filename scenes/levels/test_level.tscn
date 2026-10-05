@@ -231,6 +231,22 @@ script = ExtResource("30_mood")
 script = ExtResource("45_frame")
 page_number = 1
 
-[node name="Narration" type="CanvasLayer" parent="."]
+[node name="Narration1" type="CanvasLayer" parent="."]
 script = ExtResource("46_narration")
 text = "VESPER STARTS OUT IN A CITY INFECTED BY EVIL MONSTERS. HE FIGHTS THEM OFF WITH THE LIGHT AND HIS SWORD."
+trigger_x = -1e+09
+
+[node name="Narration2" type="CanvasLayer" parent="."]
+script = ExtResource("46_narration")
+text = "THE MONSTERS WERE ONLY BAD INK, SPILT FROM THE GUTTERS. ONE SWING OF THE NIB SENT THEM BACK."
+trigger_x = 1350
+
+[node name="Narration3" type="CanvasLayer" parent="."]
+script = ExtResource("46_narration")
+text = "THE CITY WAS COMING APART, ONE PANEL AT A TIME. WHERE THE STREET BROKE, VESPER LEAPT."
+trigger_x = 2250
+
+[node name="Narration4" type="CanvasLayer" parent="."]
+script = ExtResource("46_narration")
+text = "AND AT THE EDGE OF THE PAGE, A DOOR OF LIGHT WAS WAITING."
+trigger_x = 3150
