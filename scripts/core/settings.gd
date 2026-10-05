@@ -24,6 +24,10 @@ const OPTIONS := {
 	"aim_assist": ["on", ["on", "off"]],
 }
 
+## Not in the settings menu any more: always the default (an old save can't
+## leave a player stuck on a value they can no longer change).
+const FIXED := ["difficulty", "scribble_style", "aim_assist"]
+
 var _values := {}
 
 
@@ -34,6 +38,8 @@ func _ready() -> void:
 	var cfg := ConfigFile.new()
 	if cfg.load(PATH) == OK:
 		for key in OPTIONS:
+			if key in FIXED:
+				continue
 			var v = cfg.get_value("options", key, OPTIONS[key][0])
 			if v in OPTIONS[key][1]:
 				_values[key] = v

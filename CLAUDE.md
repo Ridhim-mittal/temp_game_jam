@@ -169,7 +169,7 @@ Shade fight later, for now SHADE AWAITS / TO BE CONTINUED and the main menu.
   drains `raise_drain`, comes back at `regen` after `regen_delay`, faster by lit lanterns, gutters
   out at 0 until `relight_at`); the old Flash is retired from the controls. `facing_dir` (8-way snap)
   is what swings, dashes and the facing chevron follow; the mouse position is ignored (buttons only). Aim assist (`aim_assist_angle`,
-  `aim_assist_range`, Settings toggle). World25 owns `Input.mouse_mode`: hidden while a room is
+  `aim_assist_range`; always on, no longer in the Settings menu). World25 owns `Input.mouse_mode`: hidden while a room is
   in play (room.gd `in_gameplay()`), visible in menus; Settings "Cursor in game" keeps it shown.
 - Spawn protection: `spawn_protection` (2 s) on clearing_player.gd, on arriving in a room and after
   dying: no damage, and lamps can't fill the erase meter (`is_protected()`); Vesper blinks.
@@ -237,8 +237,9 @@ ember at its first sketch; other levels none). Main menu PLAY forgets the
 "2d." steps so every new run teaches the controls again; 2.5D rooms start none, the keys are the
 same, but Pause -> Controls still replays the 2.5D one on request). The 2D
 ink wave (hold attack) is taught the first time a Scribble is near, in the City's plank section; steps
-are remembered in Profile; Esc / controller Back skips; shows controller buttons when one is used;
-Settings -> Tutorials or Pause -> Controls replays them).
+are remembered in Profile; Enter / controller Back skips; shows controller buttons when one is used;
+PLAY replays them; the Settings menu no longer has Tutorials, Difficulty, Scribbles or Aim assist:
+those stay at their defaults, settings.gd FIXED).
 
 ## Sound effects
 Autoload `Sfx` (`scripts/audio/sfx.gd`) plays the team's SFX pack in `assets/sfx/` by name:
