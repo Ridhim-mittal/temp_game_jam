@@ -1,9 +1,9 @@
 extends "res://scripts/clearing/monster_3d.gd"
-## The Half-Drawn: scribbles the Writer started and never finished
-## (unfinished_model.gd: pencil and ink strokes, a head of construction
-## lines, a nib-blade for a hand). They are barely on the page: out of the
-## Ember's light each is a faint pale ghost (only its eyes catch the eye),
-## and a sword goes straight through it ("NOT DRAWN YET"). Hold Q: inside the
+## The Half-Drawn: hooded ghosts the Writer started and never finished
+## (unfinished_model.gd: half inked, half dashed pencil, a nib-blade for a
+## hand). They are barely on the page: out of the Ember's light only hints
+## of one show (its eyes, a few motes, a flicker of line), and a sword goes
+## straight through it ("NOT DRAWN YET"). Hold Q: inside the
 ## raised Ember's light it inks in, solid enough to cut
 ## (clearing_player.gd ember_reveals()). Vesper shows a "HOLD Q" prompt when
 ## one is near and unseen (group "needs_ember").

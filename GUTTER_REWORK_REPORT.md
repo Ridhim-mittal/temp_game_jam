@@ -173,6 +173,19 @@ Branch `gutter-rework`, made from `main`. Everything here is the 2.5D part (the 
         comic pages and cream candles with golden flames, in an Ember-gold ring of the
         Writer's marks. The skulls are gone.
 
+13. **The Half-Drawn, redrawn as a figure again** (your note: "too much like random
+    squiggles"):
+    - **Look:** back to the hooded ghost from your sheet, now drawn like an unfinished ink
+      drawing. The left half is drawn in: a pale ghostly-teal fill with comic hatching in
+      its shadows, inked outlines that jitter like hand-drawn animation, a tattered robe, a
+      pointed hood round a skull face, a nib-blade in its hand and a torn hole in its chest.
+      The right half is only dashed pencil construction lines, and that arm stops in a stub.
+    - **Unseen:** much harder to see. Out of the Ember's light only hints of it show:
+      - its two glowing eyes, which flare orange when it raises the blade
+      - a few motes of ink and pencil dust drifting off it
+      - now and then a short piece of one of its lines, flickering in and out
+    - **Seen:** hold Q and the ones in the light ink in, as before.
+
 ## Tuning knobs
 
 | What | Where |
@@ -196,7 +209,7 @@ Branch `gutter-rework`, made from `main`. Everything here is the 2.5D part (the 
 | Inking the bridge | `drawn_bridge.gd`: `ink_reach` (5), `ink_speed` (6), `ink_cost` (3 Ember a plank); `ink_only` off = old light rule |
 | Eraser difficulty | `build_rooms.py` arena block (hp, walk_speed, lunge_speed, windup_time, tired_time, cooldown); `eraser_3d.gd` `double_charge_below` (0.5) |
 | Which monsters where | `build_rooms.py`, one block per level (`r.enemy(...)`) |
-| Half-Drawn | `half_drawn_3d.gd`: `drift_speed` (3.2), `strike_range`, `reach`, `arc`, `windup_time` (0.38), `strike_time` (0.14), `recover_time`, `cooldown`, `blade_damage`, `hp` (3); look in `unfinished_model.gd` (`model_scale`, strokes) and `scribble_stroke.gdshader` (`width`, `boil`, `ghost_alpha`) |
+| Half-Drawn | `half_drawn_3d.gd`: `drift_speed` (3.2), `strike_range`, `reach`, `arc`, `windup_time` (0.38), `strike_time` (0.14), `recover_time`, `cooldown`, `blade_damage`, `hp` (3); look in `unfinished_model.gd` (`model_scale`, `hover`, eye glow, motes), `scribble_stroke.gdshader` (`width`, `boil`, `ghost_alpha`, `glimpse`, `glimpse_size`) and `ink_fill.gdshader` (`fill`, `fill_alpha`, `hatch_px`) |
 | Raised Ember (Q) | `clearing_player.gd`: `raised_radius` (5), `raise_drain` (16/s), `regen` (14/s), `regen_delay` (0.6 s), `lantern_regen` (40/s), `relight_at` (20) |
 | Hearts | `clearing_player.gd` `max_health` (6); look in `clearing_hud.gd` (`HEARTS_AT`, `HEART_STEP`) |
 | Vesper's shrine | `altar.gd`: `statue_scale`, `ring_color`, offerings in `_rebuild()` |

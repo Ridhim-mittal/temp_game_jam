@@ -14,14 +14,16 @@ All art is drawn in code (`_draw()`, shaders, primitive meshes); no texture asse
   comes out on swings; dash = lunge + ghost afterimages; `use_3d_model = false` on the player
   brings back the 2D art on a billboard). Monsters reuse the 2D art drawn into a
   SubViewport (`monster_puppet.gd`), except the Half-Drawn (`half_drawn_3d.gd`), which has its own
-  3D model (set up with monster_3d.gd `setup_monster_model()`): `unfinished_model.gd`, a scribble the
-  Writer never finished, drawn in camera-facing pencil/ink strokes (`scribble_stroke.gdshader`, the
-  lines "boil"): tangled body, a head of construction lines, a nib-blade arm, a dashed stub arm, a
-  scribble tail. Out of the raised Ember's light it is a faint ghost a sword passes through ("NOT
-  DRAWN YET"); hold Q and inside the light it inks in and can be cut (`revealed`, player
-  `ember_reveals()`; group "needs_ember" drives a "HOLD Q TO SEE THEM" prompt over Vesper). Quick
-  windup, arc slash, only the blade hurts, hp 3. (The earlier hooded-ghost model,
-  `half_drawn_model.gd` + `half_drawn.gdshader`, is kept but unused.)
+  3D model (set up with monster_3d.gd `setup_monster_model()`): `unfinished_model.gd`, the hooded
+  ghost as an unfinished ink drawing: a pale teal fill with comic hatching (`ink_fill.gdshader`)
+  under camera-facing ink strokes (`scribble_stroke.gdshader`, the lines "boil"); left half drawn in
+  (tattered robe, pointed hood round a skull face, nib-blade arm, a torn chest hole), right half only
+  dashed pencil guides and a stub arm. Out of the raised Ember's light only hints show (glowing eyes
+  that flare orange on a windup, ink motes, short flickering pieces of line: `glimpse`) and a sword
+  passes through ("NOT DRAWN YET"); hold Q and inside the light it inks in and can be cut
+  (`revealed`, player `ember_reveals()`; group "needs_ember" drives a "HOLD Q TO SEE THEM" prompt
+  over Vesper). Quick windup, arc slash, only the blade hurts, hp 3. (The earlier toon-shaded
+  model, `half_drawn_model.gd` + `half_drawn.gdshader`, is kept but unused.)
 
 ## 2D story start (main menu PLAY)
 `cs_opening` → THE CITY (`scenes/levels/test_level.tscn`, a ~1 min controls tutorial) → glowing
