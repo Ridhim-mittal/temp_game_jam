@@ -8,9 +8,10 @@ extends Node3D
 ##
 ## Darkwood:  TOMBSTONE (a grave: headstone, mound, skulls and bones), STUMP
 ## Shrine:    PILLAR (broken), RITUAL_CIRCLE (a glowing ritual circle of
-##            cryptic sigils), SHADE_STATUE
+##            the Writer's marks round a pen nib), SHADE_STATUE
 ## Anywhere:  SKULL_PILE (`count` skulls heaped up), CANDLES (`count` red
-##            candles), RUNE_STONE (a standing stone with a glowing sigil)
+##            candles), RUNE_STONE (a standing stone with one of the
+##            Writer's marks glowing on it)
 ## Shallows:  INK_POOL
 ## Wastes:    CRYSTAL, PAPER_MOUND, PINS, PENCIL_TOTEM, INK_POT
 ##
@@ -194,13 +195,14 @@ func _tombstone(root: Node3D, s: float) -> void:
 	_collide(root, Toon.box_shape(Vector3(0.9, 1.4, 0.4) * s), Vector3(0, 0.7 * s, 0))
 
 
-## A glowing carved sigil (sigil_mark.gdshader) on a quad facing local +Z.
+## A glowing carved mark (sigil_mark.gdshader: one of the Writer's marks,
+## writers_marks.gdshaderinc) on a quad facing local +Z.
 func _sigil_quad(parent: Node3D, pos: Vector3, w: float, rot := Vector3.ZERO, glow := 1.6) -> void:
 	var q := QuadMesh.new()
 	q.size = Vector2(w, w)
 	var m := ShaderMaterial.new()
 	m.shader = MARK_SHADER
-	m.set_shader_parameter("sigil", _rng.randi() % 5)
+	m.set_shader_parameter("sigil", _rng.randi() % 10)  # one of the Writer's marks
 	m.set_shader_parameter("seed", float(seed) + _rng.randf() * 10.0)
 	m.set_shader_parameter("glow", glow)
 	m.set_shader_parameter("color", _col(SIGIL_GLOW) if kind != Kind.TOMBSTONE else SIGIL_GLOW)

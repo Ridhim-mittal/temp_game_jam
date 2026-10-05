@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Builds the 2.5D story rooms: python3 tools/rooms25/build_rooms.py
 The Gutter is four levels, west of the hub (The Spine, hand-made):
-  1 The Inkwood       darkwood_1    one of every ordinary monster, gently
+  1 The Inkwood       darkwood_1    a few Half-Drawn ghosts (after the hub's Scribbles)
   2 The Red Pen       shallows_pen  the boss, with two of the Writer's lamps
   3 The Torn Page     wastes_gap    ink the sketched bridge across with Q
   4 The Rubbing Room  arena         the Eraser, hard
@@ -10,6 +10,7 @@ props, the Writer's captions and how hard the Writer's lamp hunts there
 (r.haunt_scale, 1 = the biome's HauntProfile as is; r.haunt_lamps, -1 = the
 profile's lamp count). Rooms are deterministic (seeded), so re-running gives
 the same layout. Re-running overwrites hand edits.
+Every room's way in is entry_only: the Gutter only goes forward.
 The older rooms at the bottom are retired: no gate leads to them, and they
 are only rebuilt with OLD_ROOMS = True (their scenes stay on disk)."""
 import sys, math
@@ -151,27 +152,28 @@ def chasm_depths(r, kind_list, y=-7):
 # ======================================================== the four levels
 
 # ------------------------------------------------------------ Level 1: The Inkwood
-# Where Vesper lands after slipping out from under the eraser: one of every
-# ordinary monster (Scribbles, a Crumple, a Smudge, an Inkwell, a
-# Crossed-Out and a diving Scribble), spread out, with a gentle lamp.
+# Level 1 is the hub (scenes/clearing/clearing.tscn, a few Scribbles) and
+# this room: where Vesper lands after slipping out from under the eraser.
+# Its only monsters are the Half-Drawn (half_drawn_3d.gd): ghosts the Writer
+# began and never finished, who cut at you with a nib-blade. A few of them,
+# easy to read and quick to fall, with a slow lamp. The page round it is a
+# comic book (room.gd backdrop_style).
 r = Room("darkwood_1", "darkwood", CELLS[0], 14, 9.5, seed=11)
-r.gate("east", HUB, "cave")
+r.gate("east", HUB, "cave", entry_only=True)  # the Gutter only goes forward
 r.gate("west", R + "shallows_pen.tscn", "east", offset=0)
-r.enemy("scribble", 5, -4)
-r.enemy("scribble", 6, 4)
-r.enemy("crumple", 1, 4.5)
-r.enemy("smudge", 0, -4)
-r.enemy("scribble_diver", -4, 2)
-r.enemy("crossed_out", -7, -3)
-r.enemy("inkwell", -9.5, 5.5)
+r.enemy("half_drawn", 4, -4)
+r.enemy("half_drawn", 3, 4.5)
+r.enemy("half_drawn", -4, -1)
+r.enemy("half_drawn", -8, 4)
 darkwood_dressing(r)
 r.prop("brazier", -9.5, -6, name="Lantern1", flame_color="Color(1, 0.25, 0.15, 1)")
 r.prop("brazier", 9.5, 6, name="Lantern2", flame_color="Color(1, 0.25, 0.15, 1)")
 forest_ring(r)
 r.haunt_scale = 0.85  # the first level: the lamp is slow and patient
 r.write("The Inkwood", "1 / 4",
-        "~You slipped out from under my eraser. Into the gutter, of all places.|Everything I threw away ends up down here. Clear a path: the way on is on the far side.|The bottles spit: cut the blobs out of the air. Balled-up pages are armoured until they hit something.|That red X? Get behind it, or come down on it from above.",
-        "See? Nothing in here you can't handle. ...Yet.")
+        "~You slipped out from under my eraser. Into the gutter, of all places.|~These ones I never finished. I ran out of ink. I ran out of time.|They still remember how to swing. Watch the blade go up, step back, then cut them down.",
+        "See? Nothing in here you can't handle. ...Yet.",
+        extra_room_props="backdrop_style = 1")
 
 # ------------------------------------------------------------ Level 2: The Red Pen
 # scripts/clearing/red_pen_3d.gd: its wet-ink circles (its ink domain) dry
@@ -179,7 +181,7 @@ r.write("The Inkwood", "1 / 4",
 # their light dries the circles and, in phase 2, dazzles the pen. Two of the
 # Writer's lamps hunt Vesper through the fight.
 r = Room("shallows_pen", "shallows", CELLS[1], 13, 9.5, seed=131)
-r.gate("east", R + "darkwood_1.tscn", "west", offset=0)
+r.gate("east", R + "darkwood_1.tscn", "west", offset=0, entry_only=True)
 r.gate("west", R + "wastes_gap.tscn", "east", offset=0)
 r.clear_path_to_gates()
 r.clear_zones.append((0, 0, 7.0))  # open floor for the fight
@@ -204,7 +206,7 @@ r.write("The Red Pen", "The Drowned Margin, 2 / 4",
 # searchlight, no Inkwells or Crumples.
 r = ChasmRoom("wastes_gap", "wastes", CELLS[2], 15, 9, seed=127)
 r.gap = 4.0
-r.gate("east", R + "shallows_pen.tscn", "west", offset=0)
+r.gate("east", R + "shallows_pen.tscn", "west", offset=0, entry_only=True)
 r.gate("west", R + "arena.tscn", "east", offset=0)
 r.add_bridge()
 r.clear_path_to_gates()
@@ -233,7 +235,7 @@ r.write("The Torn Page", "The Torn Wastes, 3 / 4",
 # faster charges, shorter rests, and below half health it charges twice in
 # a row. The room's own lamps (data/haunt/rubbing.tres: two) hunt as well.
 r = Arena("arena", "arena", CELLS[3], 12, 10, seed=97)
-r.gate("east", R + "wastes_gap.tscn", "west", offset=0)
+r.gate("east", R + "wastes_gap.tscn", "west", offset=0, entry_only=True)
 r.enemy("eraser", -3, 0, hp=26, walk_speed=2.0, lunge_speed=12.5, windup_time=0.45, tired_time=1.5, cooldown=0.8)
 for i in range(8):
     a = math.radians(i * 45 + 22.5)

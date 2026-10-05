@@ -5,8 +5,9 @@ shader_type spatial;
 //   mode 1 WATER_STONE  flagstones under rippling caustic light (Shallows)
 //   mode 2 CRACKED      cracked earth with pale grit (Crumple Wastes)
 //   mode 3 DIRT         bare packed earth, roots, pebbles, bone (the Spine)
-// Any mode can carry cryptic sigils scratched into it (`rune_density`),
-// some of them glowing (`rune_color`).
+// Any mode can carry the Writer's marks scratched into it
+// (`rune_density`; writers_marks.gdshaderinc: ink drops, nibs, quills, the
+// Ember, proofing and comic marks), some of them glowing (`rune_color`).
 // Two palettes (A and B) can be blended across the island: biome A on the
 // `blend_from` side, B past `blend_to`, meeting along a wavy inked line.
 // Palette order: base, light, dark, accent, accent_dark, stain, cliff,
@@ -14,6 +15,7 @@ shader_type spatial;
 render_mode specular_disabled;
 
 #include "res://shaders/clearing/toon_common.gdshaderinc"
+#include "res://shaders/world25/writers_marks.gdshaderinc"
 
 uniform vec4 pal_a[9];
 uniform vec4 pal_b[9];
@@ -241,51 +243,7 @@ vec3 top_color(vec2 p, int w, int mode, out float glow) {
 	return grass_top(p, w);
 }
 
-float seg_d(vec2 p, vec2 a, vec2 b) {
-	vec2 pa = p - a;
-	vec2 ba = b - a;
-	float h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);
-	return length(pa - ba * h);
-}
-
-// One of six cryptic sigils in a local frame (about -1..1): distance to
-// its strokes.
-float sigil(int id, vec2 q) {
-	float d = 10.0;
-	if (id == 0) {  // the eye in the margin
-		d = abs(length(q) - 0.62);
-		d = min(d, seg_d(q, vec2(-0.95, 0.0), vec2(0.95, 0.0)));
-		d = min(d, max(length(q) - 0.16, 0.0));
-	} else if (id == 1) {  // triangle with a mark
-		d = seg_d(q, vec2(0.0, -0.8), vec2(0.75, 0.55));
-		d = min(d, seg_d(q, vec2(0.75, 0.55), vec2(-0.75, 0.55)));
-		d = min(d, seg_d(q, vec2(-0.75, 0.55), vec2(0.0, -0.8)));
-		d = min(d, max(length(q - vec2(0.0, 0.12)) - 0.13, 0.0));
-	} else if (id == 2) {  // tally, struck through
-		for (int k = 0; k < 4; k++) {
-			float x = -0.6 + float(k) * 0.4;
-			d = min(d, seg_d(q, vec2(x, -0.6), vec2(x, 0.6)));
-		}
-		d = min(d, seg_d(q, vec2(-0.85, 0.5), vec2(0.85, -0.5)));
-	} else if (id == 3) {  // a fork / trident
-		d = seg_d(q, vec2(0.0, 0.9), vec2(0.0, -0.3));
-		d = min(d, seg_d(q, vec2(0.0, -0.3), vec2(-0.6, -0.85)));
-		d = min(d, seg_d(q, vec2(0.0, -0.3), vec2(0.6, -0.85)));
-		d = min(d, seg_d(q, vec2(-0.4, 0.45), vec2(0.4, 0.45)));
-	} else if (id == 4) {  // two rings, broken
-		float r = length(q);
-		float a = atan(q.y, q.x);
-		d = abs(r - 0.75) + step(0.7, sin(a * 3.0)) * 10.0;
-		d = min(d, abs(r - 0.35));
-	} else {  // the inverted cross of a crossed-out name
-		d = seg_d(q, vec2(0.0, -0.9), vec2(0.0, 0.9));
-		d = min(d, seg_d(q, vec2(-0.5, 0.35), vec2(0.5, 0.35)));
-		d = min(d, seg_d(q, vec2(-0.7, -0.7), vec2(0.7, 0.7)));
-	}
-	return d;
-}
-
-// Sigils scratched into the ground, one in some cells of a 3-unit grid,
+// The Writer's marks scratched into the ground, one in some cells of a 3-unit grid,
 // each turned its own way; `hot` = this one glows.
 float runes(vec2 p, out float hot, out float phase) {
 	hot = 0.0;
@@ -301,8 +259,8 @@ float runes(vec2 p, out float hot, out float phase) {
 	vec2 f = fract(cs) - 0.5 - (vec2(hash(cell + 2.0), hash(cell + 5.0)) - 0.5) * 0.3;
 	float a = hash(cell + 7.0) * 6.283;
 	vec2 q = vec2(cos(a) * f.x + sin(a) * f.y, -sin(a) * f.x + cos(a) * f.y) / 0.3;
-	int id = int(hash(cell + 3.0) * 6.0);
-	float m = 1.0 - smoothstep(0.05, 0.1, sigil(id, q));
+	int id = int(hash(cell + 3.0) * float(WM_COUNT));
+	float m = 1.0 - smoothstep(0.05, 0.1, writers_mark(id, q));
 	hot = step(0.45, hash(cell + 13.0));
 	phase = hash(cell + 17.0) * 6.283;
 	return m * (0.75 + 0.25 * noise(p * 9.0));

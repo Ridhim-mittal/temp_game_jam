@@ -53,6 +53,10 @@ const DRAW_TIME := 0.8
 		_rebuild()
 ## Open from the start (no seal).
 @export var always_open := false
+## The way Vesper came in. The Gutter only goes forward, so this gate never
+## opens; a moment after he arrives its sketched path rubs itself out,
+## slab by slab, from the far end in.
+@export var entry_only := false
 
 var is_open := false
 
@@ -76,7 +80,11 @@ func _ready() -> void:
 	if not Engine.is_editor_hint():
 		add_to_group("gate")
 	_rebuild()
-	if always_open and not Engine.is_editor_hint():
+	if Engine.is_editor_hint():
+		return
+	if entry_only:
+		_rub_out()
+	elif always_open:
 		open(false)
 
 
@@ -86,7 +94,7 @@ func arrival_point() -> Vector3:
 
 
 func open(animate := true) -> void:
-	if is_open:
+	if is_open or entry_only:
 		return
 	is_open = true
 	if _wall_shape:
@@ -99,6 +107,28 @@ func open(animate := true) -> void:
 	_play_chime()
 	if target_scene != "":
 		Fx.burst(get_tree(), global_transform * Vector3(0, 0.6, -0.4), lantern_color, 10, 2.0)
+
+
+## An entry gate's sketch rubbed away behind Vesper: no going back.
+func _rub_out() -> void:
+	await get_tree().create_timer(1.0, false).timeout
+	if not is_inside_tree():
+		return
+	var order := _slabs.duplicate()
+	order.sort_custom(func(a, b): return a.at > b.at)
+	var delay := 0.0
+	for s in order:
+		var ghost: MeshInstance3D = s.ghost
+		var t := create_tween()
+		t.tween_interval(delay)
+		t.tween_callback(func(): Fx.burst(get_tree(), ghost.global_position + Vector3(0, 0.2, 0), Color(0.78, 0.78, 0.8), 5, 1.4))
+		t.tween_property(ghost, "scale", Vector3(1.0, 0.05, 0.05), 0.22).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+		t.tween_callback(ghost.hide)
+		delay += 0.12
+	if _sketch:
+		create_tween().tween_property(_sketch, "scale", Vector3(1.0, 0.02, 1.0), 0.4)
+	if _line:
+		_line.hide()
 
 
 ## 0 = sealed sketch .. 1 = drawn in, lit and glowing.

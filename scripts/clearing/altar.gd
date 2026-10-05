@@ -2,8 +2,8 @@
 extends Node3D
 ## The Spine's centrepiece: a tiered stone shrine topped by a horned stele
 ## with a red eye that bleeds ink down the steps, standing in a ritual
-## circle burnt into the dirt (sigil_ring.gdshader: rings, a star and a band
-## of cryptic sigils, glowing and turning). Red candles burn on the tiers
+## circle burnt into the dirt (sigil_ring.gdshader: rings, a great pen nib
+## and a band of the Writer's marks, glowing and turning). Red candles burn on the tiers
 ## and old skulls are heaped round its foot. It lights its own pool in the
 ## Gutter's darkness (group "glow").
 

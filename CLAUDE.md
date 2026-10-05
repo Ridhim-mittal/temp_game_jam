@@ -13,7 +13,10 @@ All art is drawn in code (`_draw()`, shaders, primitive meshes); no texture asse
   hat with a red band, white egg head, red scarf, open purple cloak, broadsword on his back that
   comes out on swings; dash = lunge + ghost afterimages; `use_3d_model = false` on the player
   brings back the 2D art on a billboard). Monsters reuse the 2D art drawn into a
-  SubViewport (`monster_puppet.gd`).
+  SubViewport (`monster_puppet.gd`), except the Half-Drawn (`half_drawn_3d.gd`), which has its own
+  3D model (`half_drawn_model.gd`, set up with monster_3d.gd `setup_monster_model()`): a hooded
+  ghost, left half inked, right half pencil wireframe (`shaders/clearing/half_drawn.gdshader`), a
+  chest hole, a stub arm and a nib-blade; telegraphed windup, an arc slash, only the blade hurts, hp 3.
 
 ## 2D story start (main menu PLAY)
 `cs_opening` → THE CITY (`scenes/levels/test_level.tscn`, a ~1 min controls tutorial) → glowing
@@ -56,16 +59,23 @@ The 2D player has a double jump (`air_jumps`, `air_jump_velocity` in player.gd; 
 - `Gate` nodes (`scripts/world25/gate.gd`) seal until every monster in the room is dead, then
   load the target room. Sealed = the path is a grey dashed pencil sketch (`drawn_ghost.gdshader`)
   with cold lanterns; `open()` draws a line of light outwards (`gate_light.gdshader`), fills the
-  path in, lights pale-gold lanterns and chimes. A room's `biome_b` + blend line morphs one biome
+  path in, lights pale-gold lanterns and chimes. The Gutter only goes forward: each room's way in
+  is `entry_only` (never opens; its sketch rubs itself out a moment after Vesper arrives). A room's `biome_b` + blend line morphs one biome
   into another inside it.
 - Look: biomes (`data/biomes/`) are dark versions of the original palettes. Ground modes
   (ground.gdshader): 0 stone tiles (Inkwood), 1 wet flagstones, 2 cracked, 3 DIRT (the hub);
-  `Biome.runes` / `rune_color` scatter glowing cryptic sigils on any floor. `island.gd` piles
+  `Biome.runes` / `rune_color` scatter glowing marks on any floor. Every symbol in the Gutter is
+  one of the Writer's marks (`shaders/world25/writers_marks.gdshaderinc`: the eye, an ink drop, a
+  nib, a quill, the Ember's flame, ¶, *, a speech bubble, a POW burst, ?), shared by ground.gdshader,
+  sigil_mark (rune stones, graves) and sigil_ring (ritual circles, a great pen nib in the middle). `island.gd` piles
   rubble along closed edges. Darkness round Vesper: `darkness.gd` (+ darkness.gdshader) on the
   room's UI layer, strength `Biome.darkness`; pools of light at the Ember, lit lanterns, open
   gates, the lamp and anything in group "glow" (`glow_radius` property or meta); bright pixels
-  shine through. room.gd `_build_backdrop()` fills the void (a huge turning sigil far below,
-  mist, rising embers, uplit skull heaps and ink statues). No grass, farms or shops; retired
+  shine through. room.gd fills the void per `backdrop_style`: SIGIL `_build_backdrop()` (a huge
+  turning sigil far below, mist, rising embers, uplit skull heaps and ink statues) or COMIC
+  `_build_comic_backdrop()` (level 1: a printed comic page of panels far below,
+  `comic_page.gdshader`; torn-out panels and sound-effect words drifting round the floor, giant
+  pencils, paper dust). No grass, farms or shops; retired
   `biome_props.gd` kinds (CANOPY, GARDEN_PLOT, BARN, SCARECROW, CORAL, TUBE_PLANT, NEST) stay
   in the enum but are placed nowhere. Newer kinds: SKULL_PILE, CANDLES, RUNE_STONE; TOMBSTONE
   graves carry skulls; RITUAL_CIRCLE uses sigil_ring.gdshader. Helpers `Toon.skull()`,
@@ -95,7 +105,8 @@ The 2D player has a double jump (`air_jumps`, `air_jump_velocity` in player.gd; 
 Zones (display names; code names stay): hub = The Spine, darkwood_* = The Inkwood, shallows_* =
 The Drowned Margin, wastes_* = The Torn Wastes, arena = The Rubbing Room.
 Hub `scenes/clearing/clearing.tscn` (hand-made, not generated) → cave → four levels in
-`scenes/world25/rooms/`, a row running west: 1 darkwood_1 (one of every ordinary monster, easy) →
+`scenes/world25/rooms/`, a row running west: 1 the hub (3 Scribbles) + darkwood_1 (a few Half-Drawn;
+both with the COMIC backdrop) →
 2 shallows_pen (Red Pen boss, `scripts/clearing/red_pen_3d.gd`: wet-ink circles dry in light; two
 lamps) → 3 wastes_gap (a sketched bridge inked with Q; one slow lamp) → 4 arena (the Eraser, hard:
 `eraser_3d.gd` charges twice in a row below `double_charge_below` health) → `cs_reveal` cutscene.

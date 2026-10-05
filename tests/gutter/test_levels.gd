@@ -1,9 +1,12 @@
 extends SceneTree
 ## The four-level Gutter: the gates chain hub -> Inkwood -> Red Pen ->
-## Torn Page -> Rubbing Room and back, with nothing leading to a retired
-## room; each level has its monsters and lamps; spawn protection holds for
-## two seconds; the sketched bridge only forms when Vesper holds Q, and he
-## can then walk across it; the Eraser gets furious at half health.
+## Torn Page -> Rubbing Room, with nothing leading to a retired room, and
+## every way in is one-way (entry_only: it never opens, even once the room
+## is cleared); each level has its monsters and lamps; the Half-Drawn swing
+## a blade that hurts, stagger when hit mid-windup and fall in three hits;
+## spawn protection holds for two seconds; the sketched bridge only forms
+## when Vesper holds Q, and he can then walk across it; the Eraser gets
+## furious at half health.
 ## Run like test_phase1.gd (prints PASS / FAIL; exit code = failures).
 
 const R := "res://scenes/world25/rooms/"
@@ -40,6 +43,8 @@ func seconds(t: float) -> void:
 func _run() -> void:
 	chain_test()
 	roster_test()
+	await one_way_test()
+	await half_drawn_test()
 	await protection_test()
 	await bridge_test()
 	await eraser_test()
@@ -84,9 +89,10 @@ func enemy_kinds(path: String) -> Dictionary:
 
 
 func roster_test() -> void:
+	var hub := enemy_kinds(HUB)
+	check(hub.keys() == ["scribble"] and hub.scribble == 3, "level 1, the hub: three ink blobs (Scribbles) %s" % hub)
 	var l1 := enemy_kinds(LEVELS[0])
-	var all_there: bool = ["scribble", "crumple", "smudge", "inkwell", "crossed_out", "scribble_diver"].all(func(k): return l1.has(k))
-	check(all_there and l1.values().reduce(func(a, b): return a + b) <= 8, "level 1: every ordinary monster, a handful in all %s" % l1)
+	check(l1.keys() == ["half_drawn"] and l1.half_drawn >= 3 and l1.half_drawn <= 5, "level 1, second room: only a few Half-Drawn %s" % l1)
 	var l2 := enemy_kinds(LEVELS[1])
 	check(l2.keys() == ["red_pen"], "level 2: the Red Pen alone %s" % l2)
 	var l3 := enemy_kinds(LEVELS[2])
@@ -96,6 +102,74 @@ func roster_test() -> void:
 	var eraser: Node = arena.get_node("Enemies/Eraser1")
 	check(eraser.hp >= 24 and eraser.lunge_speed > 11.0, "level 4: a tougher Eraser (hp %d, lunge %.1f)" % [eraser.hp, eraser.lunge_speed])
 	arena.free()
+
+
+## Every way in is entry_only and stays shut, even once the room is cleared;
+## the way on opens.
+func one_way_test() -> void:
+	for path in LEVELS:
+		var state := (load(path) as PackedScene).get_state()
+		var entries := []
+		for i in state.get_node_count():
+			for k in state.get_node_property_count(i):
+				if state.get_node_property_name(i, k) == "entry_only" and state.get_node_property_value(i, k):
+					entries.append(str(state.get_node_name(i)))
+		check(entries == ["GateEast"], "%s: the way in (east) is one-way %s" % [path.get_file(), entries])
+	change_scene_to_file(LEVELS[0])
+	await frames(4)
+	var room := current_scene
+	for m in room.get_node("Enemies").get_children():
+		m.queue_free()
+	await frames(2)
+	room._on_cleared()
+	await seconds(1.5)
+	var east = room.get_node("GateEast")
+	var west = room.get_node("GateWest")
+	check(west.is_open and not east.is_open and not east._wall_shape.disabled,
+		"cleared: the way on opens, the way back stays shut (west %s, east %s)" % [west.is_open, east.is_open])
+	root.get_node("World25").cleared.clear()  # its monsters come back for the next test
+
+
+## The Half-Drawn: only the blade hurts, a swing lands on a Vesper standing
+## in front, a hit mid-windup staggers it, three hits finish it.
+func half_drawn_test() -> void:
+	change_scene_to_file(LEVELS[0])
+	await frames(4)
+	var room := current_scene
+	for l in get_nodes_in_group("haunt_lamp"):
+		l.queue_free()
+	var ghosts: Array = room.get_node("Enemies").get_children()
+	var g = ghosts[0]
+	for other in ghosts.slice(1):
+		other.queue_free()
+	var player = room.player
+	await seconds(2.1)  # past spawn protection
+	g.global_position = Vector3(0, 0.05, 0)
+	g.state = g.State.DRIFT  # a fresh start: not already mid-swing at its old spot
+	g._cd = 0.0
+	player.global_position = Vector3(1.5, 0.05, 0)
+	player.velocity = Vector3.ZERO
+	player._snap_visuals()
+	player._invuln = 0.0
+	var hp: int = player.health
+	check(not g.is_harmful(), "touching a Half-Drawn doesn't hurt (only its blade does)")
+	var swung := false
+	for i in 240:  # up to 4 s
+		await physics_frame
+		player.global_position = Vector3(1.5, 0.05, 0)
+		if g.state == g.State.WINDUP:
+			swung = true
+		if player.health < hp:
+			break
+	check(swung and player.health == hp - 1, "it winds up, swings and its blade takes an ink drop (%d -> %d)" % [hp, player.health])
+	player._invuln = 999.0
+	g.state = g.State.WINDUP
+	g._timer = g.windup_time
+	g.take_hit(1, Vector3(-1, 0, 0))
+	check(g.state == g.State.RECOVER, "hit mid-windup, it staggers out of the swing")
+	g.take_hit(1, Vector3(-1, 0, 0))
+	g.take_hit(1, Vector3(-1, 0, 0))
+	check(g.dead and g.hp == 3, "three hits and it's unwritten (hp %d)" % g.hp)
 
 
 func protection_test() -> void:
