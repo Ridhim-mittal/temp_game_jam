@@ -67,9 +67,13 @@ The 2D player has a double jump (`air_jumps`, `air_jump_velocity` in player.gd; 
   during transitions and boss intros. The hub's lamp only searches. The circle steers with
   inertia (`_steer`), is interpolated between ticks, keeps to the floor (`room.on_floor()`) and
   keeps apart from other lamps (`_separation`).
-- Controls (clearing_player.gd): `facing_dir` (8-way snap) is what swings, dashes and the facing
-  chevron follow; the mouse position is ignored (buttons only). Aim assist (`aim_assist_angle`,
-  `aim_assist_range`, Settings toggle). World25 owns `Input.mouse_mode`: hidden while a room is
+- Controls (clearing_player.gd): swings go towards the mouse pointer (`aim_dir`, `mouse_dir()`,
+  read on a plane `mouse_aim_height` above the feet); Settings "Aim" = movement, or touching a
+  gamepad (static `pad_aim`), makes them follow the held direction or `facing_dir` (8-way snap)
+  instead. Dashes follow `facing_dir`. A swing hits an arc (`attack_arc`, `finisher_arc`) and its
+  lunge stops short of a close monster. `scripts/world25/aim_reticle.gd` (room UI) draws the
+  pointer; the ground chevron shows `aim_dir`. Aim assist (`aim_assist_angle`,
+  `mouse_assist_angle`, `aim_assist_range`, Settings toggle). World25 owns `Input.mouse_mode`: hidden while a room is
   in play (room.gd `in_gameplay()`), visible in menus; Settings "Cursor in game" keeps it shown.
 - Autoload `World25` (`scripts/world25/world25.gd`): story state, cleared rooms, ink-wipe
   transitions, player health between rooms.

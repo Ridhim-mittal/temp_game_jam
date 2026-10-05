@@ -5,12 +5,19 @@ extends CharacterBody3D
 ## third hit is a heavier overhead finisher). Q / right click Flash, F heals.
 ##
 ## Aiming: `facing_dir` (a unit vector on the XZ plane, snapped to
-## `snap_directions`) is the source of truth. It follows the movement input
-## and keeps its last value when idle; a swing goes along the direction held
-## at the moment of the attack (turn and swing in one press), otherwise along
-## `facing_dir`, then aim assist turns it towards the nearest monster in a
-## cone. The mouse pointer is ignored; its buttons are just buttons. A faint
-## chevron on the ground shows where Vesper faces.
+## `snap_directions`) follows the movement input and keeps its last value
+## when idle. Where a swing goes (`aim_dir`):
+##  - mouse aim (Settings -> Aim = mouse, the default): towards the mouse
+##    pointer on the ground, at any angle, as in Hades or Cult of the Lamb.
+##    aim_reticle.gd draws the pointer; a gamepad switches back to stick aim
+##    as soon as it is touched, the mouse takes over again when it moves.
+##  - movement aim (gamepad, or Aim = movement): the direction held at the
+##    moment of the attack (turn and swing in one press), otherwise
+##    `facing_dir`.
+## Aim assist then turns it towards the nearest monster in a cone (narrower
+## with the mouse). Vesper turns into each swing, which sweeps an arc in
+## front of him (wider for the finisher). A faint chevron on the ground
+## shows the aim.
 ##
 ## Attacking in the air strikes from above: it gets past a Crossed-Out's
 ## shield and bounces you off what you hit.
@@ -73,6 +80,11 @@ enum AttackStyle { INK_SLASH, NIB_SWORD, BOTH }
 ## Settings -> Aim Assist turns it off.
 @export var aim_assist_angle := 50.0
 @export var aim_assist_range := 3.5
+## Mouse aim: the pointer is read on a plane this high above Vesper's feet
+## (about sword height), so pointing at a monster's body aims at it.
+@export var mouse_aim_height := 0.6
+## Aim assist cone with the mouse, which is already precise.
+@export var mouse_assist_angle := 20.0
 
 @export_group("Jump")
 @export var jump_velocity := 9.5
@@ -109,9 +121,14 @@ enum AttackStyle { INK_SLASH, NIB_SWORD, BOTH }
 @export var attack_style := AttackStyle.BOTH
 @export var attack_damage := 1
 @export var finisher_damage := 2
-## Centre of the hit circle, in front of the player.
+## A swing reaches attack_reach + attack_radius from Vesper (the
+## finisher's radius is 25% bigger) and sweeps `attack_arc` degrees either
+## side of the aim; `finisher_arc` for the third hit. Lanterns and ink blobs
+## are struck in a circle of attack_radius, attack_reach in front.
 @export var attack_reach := 1.1
 @export var attack_radius := 1.15
+@export var attack_arc := 65.0
+@export var finisher_arc := 95.0
 ## Forward burst when swinging (the finisher lunges further).
 @export var attack_lunge := 6.5
 ## Swing lockout; the finisher takes longer.
@@ -121,9 +138,14 @@ enum AttackStyle { INK_SLASH, NIB_SWORD, BOTH }
 @export var combo_window := 0.35
 @export var attack_buffer_time := 0.15
 
-## Where Vesper faces (unit vector on the XZ plane): swings, dashes and the
-## facing chevron follow it.
+## Where Vesper faces (unit vector on the XZ plane): dashes follow it, and
+## swings when not aiming with the mouse.
 var facing_dir := Vector3(0, 0, 1)
+## Where a swing would go right now (see the header); the chevron shows it.
+var aim_dir := Vector3(0, 0, 1)
+## The last aiming device: true after a gamepad stick or button, false
+## after the mouse moves or clicks. Shared by every room's player.
+static var pad_aim := false
 ## Left / right, derived from facing_dir.x (the 2D art and older code).
 var facing := 1
 var health := 0
@@ -238,7 +260,7 @@ func _build_model() -> void:
 		_model.apply_look(profile.look())
 
 
-## Faint white chevron on the ground in front of Vesper, along facing_dir.
+## Faint white chevron on the ground in front of Vesper, along aim_dir.
 func _build_chevron() -> void:
 	var q := QuadMesh.new()
 	q.orientation = PlaneMesh.FACE_Y
@@ -267,6 +289,7 @@ func _physics_process(delta: float) -> void:
 		dir = Vector3.ZERO
 	if in_control and input.length() > facing_deadzone and _attack_timer <= 0.0:
 		set_facing(dir)
+	_update_aim()
 
 	if in_control:
 		if Input.is_action_just_pressed("attack"):
@@ -293,6 +316,15 @@ func _physics_process(delta: float) -> void:
 	_update_vertical(delta)
 	move_and_slide()
 	_post_move()
+
+
+## Mouse or gamepad: whichever was used last aims (see `pad_aim`).
+func _input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion or (event is InputEventMouseButton and event.pressed):
+		pad_aim = false
+	elif (event is InputEventJoypadButton and event.pressed) \
+			or (event is InputEventJoypadMotion and absf(event.axis_value) > 0.5):
+		pad_aim = true
 
 
 func _tick_timers(delta: float) -> void:
@@ -383,6 +415,7 @@ func _process(delta: float) -> void:
 	var height := maxf(smooth_position.y - ground_height, 0.0)
 	shadow.position.y = -height + 0.03
 	shadow.scale = Vector3.ONE * clampf(1.0 - height * 0.25, 0.45, 1.0)
+	_update_aim()
 	_update_chevron(height, delta)
 	if _model:
 		_update_model(delta)
@@ -398,9 +431,15 @@ func _start_attack(move_dir: Vector3) -> void:
 	var finisher := _combo == 3
 	var dir := _aim_direction(move_dir)
 	facing_dir = dir  # Vesper turns into the swing (aim assist included)
+	aim_dir = dir
 	if absf(dir.x) > 0.15:
 		facing = 1 if dir.x > 0.0 else -1
 	var lunge := attack_lunge * (1.4 if finisher else 1.0)
+	# step in, but stop short of a monster that's already close instead of
+	# sliding through it (the lunge decelerates at 32 u/s², see _update_planar)
+	var near := _nearest_in_arc(dir, deg_to_rad(finisher_arc if finisher else attack_arc), 4.0)
+	if near < INF:
+		lunge = minf(lunge, sqrt(64.0 * maxf(near - 1.0, 0.0)))
 	velocity.x = dir.x * lunge
 	velocity.z = dir.z * lunge
 	_attack_timer = finisher_time if finisher else attack_time
@@ -432,14 +471,20 @@ func _sword_direction(dir: Vector3) -> Vector2:
 	return Vector2(signf(dir.x), 0.0)
 
 
-## A swing goes along the direction held right now (so you can turn and
-## swing in one press), otherwise where Vesper faces; aim assist may then
-## turn it towards a monster. The mouse position plays no part.
+## With mouse aim a swing goes towards the pointer; otherwise along the
+## direction held right now (so you can turn and swing in one press), else
+## where Vesper faces. Aim assist may then turn it towards a monster.
 func _aim_direction(move_dir: Vector3) -> Vector3:
 	var dir := facing_dir
-	if Vector2(move_dir.x, move_dir.z).length() > facing_deadzone:
+	var cone := aim_assist_angle
+	if is_mouse_aiming():
+		var m := mouse_dir()
+		if m != Vector3.ZERO:
+			dir = m
+		cone = mouse_assist_angle
+	elif Vector2(move_dir.x, move_dir.z).length() > facing_deadzone:
 		dir = snap_dir(move_dir)
-	var target := aim_assist_target(dir)
+	var target := aim_assist_target(dir, cone)
 	if target:
 		var d := target.global_position - global_position
 		d.y = 0.0
@@ -473,15 +518,65 @@ func snap_dir(dir: Vector3) -> Vector3:
 	return Vector3(cos(a), 0.0, sin(a))
 
 
-## The nearest living monster within aim_assist_angle of `dir` and
-## aim_assist_range, or null (also null with Settings -> Aim Assist off).
-func aim_assist_target(dir: Vector3) -> Node3D:
+## True when swings follow the mouse pointer: Settings -> Aim is "mouse"
+## and the mouse, not a gamepad, was used last.
+func is_mouse_aiming() -> bool:
+	if pad_aim:
+		return false
+	var settings := get_node_or_null("/root/Settings")
+	return settings == null or settings.get_value("aim") == "mouse"
+
+
+## The point under the mouse pointer on the plane mouse_aim_height above
+## Vesper's feet, or Vector3.INF (no camera, or pointing above the horizon).
+func mouse_ground_point() -> Vector3:
+	var cam := get_viewport().get_camera_3d()
+	if cam == null:
+		return Vector3.INF
+	var at := get_viewport().get_mouse_position()
+	var plane := Plane(Vector3.UP, ground_height + mouse_aim_height)
+	var hit = plane.intersects_ray(cam.project_ray_origin(at), cam.project_ray_normal(at))
+	return hit if hit is Vector3 else Vector3.INF
+
+
+## Flat unit direction from Vesper to the mouse pointer, or zero when the
+## pointer is on him (or there is none).
+func mouse_dir() -> Vector3:
+	var p := mouse_ground_point()
+	if not p.is_finite():
+		return Vector3.ZERO
+	var d := p - global_position
+	d.y = 0.0
+	return d.normalized() if d.length() > 0.35 else Vector3.ZERO
+
+
+## 1 on a swing, easing back to 0 (the chevron and the reticle flare).
+func swing_flash() -> float:
+	return _chevron_flash
+
+
+## True when a swing along aim_dir right now would reach a monster.
+func swing_would_hit() -> bool:
+	return _nearest_in_arc(aim_dir, deg_to_rad(attack_arc), attack_reach + attack_radius + 0.3) < INF
+
+
+func _update_aim() -> void:
+	if _attack_timer > 0.0:
+		return  # holds the swing's direction until it ends
+	var m := mouse_dir() if is_mouse_aiming() else Vector3.ZERO
+	aim_dir = m if m != Vector3.ZERO else facing_dir
+
+
+## The nearest living monster within `cone` degrees (aim_assist_angle by
+## default) of `dir` and aim_assist_range, or null (also null with Settings
+## -> Aim Assist off).
+func aim_assist_target(dir: Vector3, cone := -1.0) -> Node3D:
 	var settings := get_node_or_null("/root/Settings")
 	if aim_assist_range <= 0.0 or (settings and settings.get_value("aim_assist") == "off"):
 		return null
 	var best: Node3D = null
 	var best_dist := aim_assist_range
-	var min_dot := cos(deg_to_rad(aim_assist_angle))
+	var min_dot := cos(deg_to_rad(aim_assist_angle if cone < 0.0 else cone))
 	for e in get_tree().get_nodes_in_group("enemy"):
 		if not (e is Node3D) or ("dead" in e and e.dead):
 			continue
@@ -497,22 +592,55 @@ func aim_assist_target(dir: Vector3) -> Node3D:
 	return best
 
 
+## True when `pos` is inside a swing's arc along `dir` (half angle
+## `half_arc`, radians); anything right against Vesper always counts.
+func _in_arc(pos: Vector3, dir: Vector3, half_arc: float) -> bool:
+	var d := pos - global_position
+	d.y = 0.0
+	if d.length() < 0.9:
+		return true
+	return (d / d.length()).dot(dir) >= cos(half_arc)
+
+
+## Distance to the nearest living monster inside the arc along `dir`, within
+## `max_dist`, or INF.
+func _nearest_in_arc(dir: Vector3, half_arc: float, max_dist: float) -> float:
+	var best := INF
+	for e in get_tree().get_nodes_in_group("enemy"):
+		if not (e is Node3D) or ("dead" in e and e.dead):
+			continue
+		var d: Vector3 = e.global_position - global_position
+		if absf(d.y) > 2.5:
+			continue
+		d.y = 0.0
+		if d.length() < minf(best, max_dist) and _in_arc(e.global_position, dir, half_arc):
+			best = d.length()
+	return best
+
+
+## The swing: everything on the enemy layer within reach and inside the arc
+## takes the hit (each once), then lanterns, ink blobs and grass in front.
 func _hit_in_front(dir: Vector3, finisher: bool) -> void:
 	var aerial := not is_on_floor()
 	var center := global_position + dir * attack_reach
 	var radius := attack_radius * (1.25 if finisher else 1.0)
+	var half_arc := deg_to_rad(finisher_arc if finisher else attack_arc)
 	# airborne swings reach a bit lower, to catch things you jumped over
 	var probe_y := -0.3 if aerial else 0.5
-	var shape := SphereShape3D.new()
-	shape.radius = radius
+	var shape := CylinderShape3D.new()
+	shape.radius = attack_reach + radius
+	shape.height = radius * 2.0
 	var params := PhysicsShapeQueryParameters3D.new()
 	params.shape = shape
-	params.transform = Transform3D(Basis(), center + Vector3(0.0, probe_y, 0.0))
+	params.transform = Transform3D(Basis(), global_position + Vector3(0.0, probe_y, 0.0))
 	params.collision_mask = MASK_ENEMY
 	var hits := 0
-	for result in get_world_3d().direct_space_state.intersect_shape(params, 16):
+	var struck := {}
+	for result in get_world_3d().direct_space_state.intersect_shape(params, 32):
 		var target: Object = result.collider
-		if target and target.has_method("take_hit") and not ("dead" in target and target.dead):
+		if target is Node3D and not struck.has(target) and target.has_method("take_hit") \
+				and not ("dead" in target and target.dead) and _in_arc(target.global_position, dir, half_arc):
+			struck[target] = true
 			var dmg: int = (finisher_damage if finisher else attack_damage) + (_aerial_bonus if aerial else 0)
 			var landed = target.take_hit(dmg, dir, aerial)
 			if landed == false:
@@ -855,12 +983,12 @@ func _update_model(delta: float) -> void:
 	_update_ember_light()
 
 
-## The ground chevron eases round to facing_dir and flares on each swing.
+## The ground chevron eases round to aim_dir and flares on each swing.
 func _update_chevron(height: float, delta: float) -> void:
 	if _chevron == null:
 		return
 	_chevron_flash = maxf(_chevron_flash - delta * 3.0, 0.0)
-	_chevron_yaw = lerp_angle(_chevron_yaw, atan2(-facing_dir.x, -facing_dir.z), 1.0 - exp(-22.0 * delta))
+	_chevron_yaw = lerp_angle(_chevron_yaw, atan2(-aim_dir.x, -aim_dir.z), 1.0 - exp(-22.0 * delta))
 	var fwd := Vector3(-sin(_chevron_yaw), 0.0, -cos(_chevron_yaw))
 	_chevron.position = fwd * 0.8 + Vector3(0.0, -height + 0.05, 0.0)
 	_chevron.rotation = Vector3(0.0, _chevron_yaw, 0.0)

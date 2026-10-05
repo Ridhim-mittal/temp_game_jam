@@ -8,10 +8,12 @@ Branch `gutter-rework`, made from `main`. Everything here is the 2.5D part (the 
 1. **Controls and combat** (`scripts/clearing/clearing_player.gd`)
    - **Cursor:** hidden while you play a room, shown in every menu, overlay and cutscene.
      World25 `_update_cursor()` is the only place that sets it.
-   - **Aiming:** swings and dashes follow `facing_dir`, snapped to 8 directions, or the
-     direction held as you press. The mouse position is ignored.
-   - **Aim assist:** turns swings toward a nearby monster. The hit radius is +15%.
-   - **Facing chevron:** sits on the ground in front of Vesper.
+   - **Aiming:** swings go toward the mouse pointer (see 10 below). With a gamepad, or
+     Settings → Aim = Movement, they follow `facing_dir` (snapped to 8 directions) or the
+     direction held as you press. Dashes follow `facing_dir`.
+   - **Aim assist:** turns swings toward a nearby monster (a narrower cone with the mouse).
+   - **Facing chevron:** sits on the ground in front of Vesper and points where the next
+     swing goes.
 2. **3D Vesper** (`scripts/clearing/vesper_3d.gd`)
    - **Model:** a procedural model with scarf physics and poses for idle, run, jump, dash,
      three combo swings, hurt, heal and death.
@@ -87,13 +89,31 @@ Branch `gutter-rework`, made from `main`. Everything here is the 2.5D part (the 
 9. **Names:** title cards, captions and biome names use The Spine, The Inkwood, The Drowned
    Margin, The Torn Wastes and The Rubbing Room.
 
+10. **Mouse-aimed sword swings** (as in Hades or Cult of the Lamb on PC):
+    - **Aim:** each swing goes toward the mouse pointer, at any angle (not just 8
+      directions). The movement keys don't change it, so you can back away while you swing
+      at something.
+    - **Turning:** Vesper whips round into the swing.
+    - **Reticle:** an inked ring with turning ticks replaces the hidden cursor. It turns
+      ember-orange and the ticks close in when a swing would land, and it kicks out on each
+      swing. It hides in menus and when a gamepad takes over.
+    - **Devices:** touching a gamepad switches to stick aim; moving the mouse switches back.
+      Settings → Aim = Movement keeps the old movement aim on keyboard too.
+    - **Arc:** a swing now sweeps an arc in front of Vesper: 65° either side, 95° for the
+      third-hit finisher, out to 2.25 units (2.5 for the finisher). Before, it was a small
+      circle. Each monster is hit once per swing.
+    - **Lunge:** it stops short of a monster that's already close, instead of sliding
+      Vesper through it.
+
 ## Tuning knobs
 
 | What | Where |
 |---|---|
 | Facing snap, deadzone | `clearing_player.gd`: `snap_directions` (8; 0 = analog), `facing_deadzone` |
 | Aim assist | `clearing_player.gd`: `aim_assist_angle` (50°, either side), `aim_assist_range` (3.5); Settings → Aim Assist |
-| Hit size | `clearing_player.gd`: `attack_radius` (1.15) |
+| Mouse aim | Settings → Aim (mouse / movement); `clearing_player.gd`: `mouse_aim_height` (0.6), `mouse_assist_angle` (20°) |
+| Swing arc and reach | `clearing_player.gd`: `attack_arc` (65°), `finisher_arc` (95°), reach = `attack_reach` + `attack_radius` (1.1 + 1.15) |
+| Reticle look | `aim_reticle.gd`: `radius`, `spin`, colours |
 | Cursor | Settings → Cursor in game (off) |
 | 3D model on/off | `clearing_player.gd`: `use_3d_model`; model look in `vesper_3d.gd` exports (`model_scale`, `turn_speed`, scarf, colours) |
 | Ember pool | `clearing_player.gd` `_update_ember_light()` (range 3.4–6, energy 0.9–1.9) |
@@ -115,17 +135,25 @@ These ran with Godot 4.7-stable under Xvfb with software OpenGL.
 
 - **Headless runs:** the hub and the rooms load and run without script errors. The only
   messages are the leak warnings at exit, which `main` already has.
-- **`tests/gutter/test_phase1.gd`: 35/35 checks.**
+- **`tests/gutter/test_phase1.gd`: 58/58 checks.**
   - Cursor in every menu.
   - A swing hits a monster in each of the 8 directions, both by facing and by
     hold-and-swing.
   - Aim assist on, off, out of the cone and out of range.
-- **`tests/gutter/test_phase2.gd`: 33/33 checks.**
+  - The arc: hits at ±55°, misses beside and behind, misses beyond reach. The finisher
+    reaches 80° where a normal swing doesn't.
+  - The lunge stops short of a monster 1.3 units away.
+  - Mouse aim: with the pointer in each of the 8 directions while facing away, the swing
+    goes to the pointer and hits. A pointer at 30° swings at 30°. Holding the opposite
+    direction doesn't override the pointer.
+  - A gamepad takes the aim and hides the reticle; moving the mouse gives the aim back.
+    Settings → Aim = Movement turns mouse aim off.
+- **`tests/gutter/test_phase2.gd`: 32/32 checks.**
   - No grass, farm or cosy props, shop or round doors in any room.
   - No coin drops.
   - Patch talks.
   - The skill tree opens at the shrine and from pause.
-- **`tests/gutter/test_phase5.gd`: 32/32 checks.**
+- **`tests/gutter/test_phase5.gd`: 33/33 checks.**
   - Every room spawns the right lamps with its profile, never on the arrival point.
   - 90 s of the Wastes' lamps hunting: every strike came after its full telegraph.
   - Hiding behind a wall makes the lamp lose Vesper.
@@ -138,6 +166,7 @@ These ran with Godot 4.7-stable under Xvfb with software OpenGL.
   means nothing here.
 - **Audio:** the gate chime. It is synthesised in code, and this machine has no audio
   device.
-- **Gamepad:** stick feel. Only keyboard-style input was simulated.
+- **Gamepad:** stick feel. Only simulated input events were used, no real pad.
+- **Mouse feel:** the pointer was moved by the test (warped), not by a hand on a mouse.
 - **Full playthrough:** I didn't play the whole story start to finish. Each room was loaded
   and tested on its own.
