@@ -43,7 +43,9 @@ float live(vec2 w) {
 }
 
 void fragment() {
-	vec2 px = SCREEN_UV * base_size;
+	// the rect's own UV, not SCREEN_UV: when the page transition scales the
+	// whole level down into a panel, the mask scales with it
+	vec2 px = UV * base_size;
 	vec2 w = xf_x * px.x + xf_y * px.y + xf_o;
 	float k = live(w);
 	if (k >= 0.999) {

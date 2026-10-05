@@ -211,6 +211,7 @@ position = Vector2(12300, 600)
 script = ExtResource("44_door")
 target_scene = "res://scenes/levels/long_drop.tscn"
 next_title = "THE LONG DROP"
+tall_panel = true
 
 [node name="Wall3" type="StaticBody2D" parent="World"]
 position = Vector2(12580, 250)

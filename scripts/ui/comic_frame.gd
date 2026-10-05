@@ -24,6 +24,7 @@ var _sketch_mat: ShaderMaterial
 
 func _ready() -> void:
 	layer = 1
+	process_mode = Node.PROCESS_MODE_ALWAYS  # keeps the pencil mask right while paused (and in panel_turn.gd)
 	if not live_areas.is_empty():
 		var sketch := ColorRect.new()
 		sketch.set_anchors_preset(Control.PRESET_FULL_RECT)

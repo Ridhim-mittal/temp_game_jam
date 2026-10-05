@@ -174,9 +174,12 @@ GROUND = 600
 BOTTOM = 1100
 
 
-def door(x, target, title):
-    node("PanelDoor", "Area2D", "World", [("position", v(x, GROUND)), ("script", 'ExtResource("44_door")'),
-         ("target_scene", f'"{target}"'), ("next_title", f'"{title}"')])
+def door(x, target, title, tall=False):
+    props = [("position", v(x, GROUND)), ("script", 'ExtResource("44_door")'),
+             ("target_scene", f'"{target}"'), ("next_title", f'"{title}"')]
+    if tall:  # a vertical level: its panel on the page is tall
+        props.append(("tall_panel", "true"))
+    node("PanelDoor", "Area2D", "World", props)
 
 
 def reset():
@@ -311,7 +314,7 @@ for x in [8250, 10820, 11520]:
     checkpoint(x, GROUND)
 heart(10760, 560)
 # over the wall: the way on, down the Long Drop
-door(12300, "res://scenes/levels/long_drop.tscn", "THE LONG DROP")
+door(12300, "res://scenes/levels/long_drop.tscn", "THE LONG DROP", tall=True)
 block(12540, 12620, -600, BOTTOM, name="Wall")
 write("scenes/levels/sketchbook.tscn", "Sketchbook", (8100, 570), page=2, story=[
     ("PAST THE CITY, THE WORLD WAS STILL A SKETCH: PENCIL LINES THAT ONLY TURNED REAL IN THE LIGHT.", -1e9),
