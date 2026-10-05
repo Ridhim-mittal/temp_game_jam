@@ -7,7 +7,7 @@ extends CharacterBody2D
 ##  - dash with brief invincibility (vs enemies), resets on ground / pogo
 ##  - directional slashes (side / up / down-in-air)
 ##  - down-slash pogo off enemies and hazards, side-slash recoil
-##  - damage, knockback, i-frames, hazard respawn to last safe ground
+##  - damage, knockback, i-frames; spikes send you back to the last checkpoint
 ##  - the Ember (ember.gd): hold Q/E to raise a light that makes sketches real
 
 signal health_changed(current: float, maximum: float)
@@ -123,7 +123,7 @@ var _invuln_timer := 0.0
 var _hurt_timer := 0.0
 var _was_on_floor := false
 var _squash := Vector2.ONE
-var _last_safe_position := Vector2.ZERO
+var _level_start := Vector2.ZERO  # where the level put Vesper (before any checkpoint)
 var _charge := -1.0  # seconds attack has been held; -1 = not charging
 var _charge_ready := false
 var _slow_sources := {}  # source -> Vector2(speed_mult, jump_mult)
@@ -140,13 +140,13 @@ func _ready() -> void:
 	ember = Ember.new()
 	ember.name = "Ember"
 	add_child(ember)
+	_level_start = global_position
 	var state := get_node_or_null("/root/GameState")
 	if state:
 		var spawn = state.spawn_point(get_tree())
 		if spawn != null:
 			global_position = spawn  # respawn at the last checkpoint pen
 		coins = state.coins
-	_last_safe_position = global_position
 	health_changed.emit(health, max_health)
 	coins_changed.emit(coins)
 	# first run only; waits while the Writer's narration (narration.gd) is writing
@@ -364,8 +364,6 @@ func _post_move(delta: float) -> void:
 			is_jumping = false
 		if not _was_on_floor:
 			_squash = Vector2(1.25, 0.8)
-		if not _touching_hazard() and _on_stable_floor():
-			_last_safe_position = global_position
 	_was_on_floor = on_floor
 	_check_hurtbox()
 	_update_visuals(delta)
@@ -518,29 +516,6 @@ func _hurtbox_overlaps(grow := Vector2.ZERO) -> Array:
 	return out
 
 
-## False while standing on something light holds up (an un-inked sketch,
-## shadow ink): it may vanish, so it is no place to respawn after spikes.
-func _on_stable_floor() -> bool:
-	for i in get_slide_collision_count():
-		var c := get_slide_collision(i)
-		if c.get_normal().y > -0.7:
-			continue
-		var body := c.get_collider()
-		if body is CollisionObject2D and body.collision_layer & 16:
-			if not (body.has_method("is_stable_at") and body.is_stable_at(c.get_position())):
-				return false
-	return true
-
-
-## True if a hazard is within `margin` px - used so the respawn checkpoint
-## is never recorded right at the edge of spikes.
-func _touching_hazard(margin := 48.0) -> bool:
-	for body in _hurtbox_overlaps(Vector2(margin * 2.0, 8.0)):
-		if body.is_in_group("hazard"):
-			return true
-	return false
-
-
 func _check_hurtbox() -> void:
 	for body in _hurtbox_overlaps():
 		# Hazards always hurt, even during i-frames (Hollow Knight spikes).
@@ -583,13 +558,28 @@ func take_damage(amount: float, source_pos: Vector2, from_hazard := false) -> vo
 		return
 	if from_hazard:
 		velocity = Vector2.ZERO
-		global_position = _last_safe_position
+		global_position = _respawn_point()
 		_hurt_timer = 0.4  # brief freeze after respawn
+		var cam := get_node_or_null("Camera2D") as Camera2D
+		if cam:
+			cam.reset_smoothing()  # cut straight there, no long camera swoop
 	else:
 		var dir := signf(global_position.x - source_pos.x)
 		if dir == 0.0:
 			dir = -facing
 		velocity = Vector2(dir * hurt_knockback.x, hurt_knockback.y)
+
+
+## Where spikes send you: the last checkpoint pen in this level, else the
+## level's start. Never "the last ground you stood on": that could be right
+## next to the spikes and loop you into them.
+func _respawn_point() -> Vector2:
+	var state := get_node_or_null("/root/GameState")
+	if state:
+		var spawn = state.spawn_point(get_tree())
+		if spawn != null:
+			return spawn
+	return _level_start
 
 
 func _die() -> void:
