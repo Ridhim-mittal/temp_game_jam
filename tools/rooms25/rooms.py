@@ -31,6 +31,7 @@ EXT = [
     ("Script", "res://scripts/world25/searchlight.gd", "searchlight"),
     ("PackedScene", "res://scenes/clearing/monsters/scribble_diver.tscn", "scribble_diver"),
     ("PackedScene", "res://scenes/clearing/monsters/red_pen.tscn", "red_pen"),
+    ("PackedScene", "res://scenes/clearing/monsters/half_drawn.tscn", "half_drawn"),
     ("Resource", "res://data/biomes/darkwood.tres", "b_darkwood"),
     ("Resource", "res://data/biomes/shallows.tres", "b_shallows"),
     ("Resource", "res://data/biomes/wastes.tres", "b_wastes"),
@@ -75,8 +76,9 @@ class Room:
         # how many lamps hunt here (room.gd haunt_lamps); -1 = the profile's
         self.haunt_lamps = -1
 
-    def gate(self, side, target, target_gate, offset=0.0, always_open=False):
-        self.gates[side] = (target, target_gate, offset, always_open)
+    def gate(self, side, target, target_gate, offset=0.0, always_open=False, entry_only=False):
+        """entry_only: the way in, which never opens (the Gutter only goes forward)."""
+        self.gates[side] = (target, target_gate, offset, always_open, entry_only)
 
     def gate_pos(self, side):
         off = self.gates[side][2]
@@ -158,12 +160,14 @@ class Room:
             estr = ", ".join(f"{x:.2f}, {z:.2f}" for x, z in epts)
             lines.append(f'[node name="{ename}" type="Node3D" parent="."]\nscript = ExtResource("island")\npolygon = PackedVector2Array({estr})\nopen_edges = PackedInt32Array({", ".join(str(i) for i in eopen)})\n')
         # (no grass fields: the Gutter's ground is bare stone and ink)
-        for side, (target, tg, off, always) in self.gates.items():
+        for side, (target, tg, off, always, entry) in self.gates.items():
             gx, gz = self.gate_pos(side)
             g = [f'[node name="Gate{side.title()}" type="Node3D" parent="."]', f"transform = {T(gx, 0, gz, ROT[side])}", 'script = ExtResource("gate")',
                  f'gate_id = "{side}"', f'target_scene = "{target}"', f'target_gate = "{tg}"']
             if always:
                 g.append("always_open = true")
+            if entry:
+                g.append("entry_only = true")
             lines.append("\n".join(g) + "\n")
         groups = {}
         for parent, name, script, (x, y, z), rot, props in self.nodes:

@@ -1,9 +1,12 @@
 extends SceneTree
 ## The four-level Gutter: the gates chain hub -> Inkwood -> Red Pen ->
-## Torn Page -> Rubbing Room and back, with nothing leading to a retired
-## room; each level has its monsters and lamps; spawn protection holds for
-## two seconds; the sketched bridge only forms when Vesper holds Q, and he
-## can then walk across it; the Eraser gets furious at half health.
+## Torn Page -> Rubbing Room, with nothing leading to a retired room, and
+## every way in is one-way (entry_only: it never opens, even once the room
+## is cleared); each level has its monsters and lamps; the Half-Drawn swing
+## a blade that hurts, stagger when hit mid-windup and fall in three hits;
+## spawn protection holds for two seconds; the sketched bridge only forms
+## when Vesper holds Q, and he can then walk across it; the Eraser gets
+## furious at half health.
 ## Run like test_phase1.gd (prints PASS / FAIL; exit code = failures).
 
 const R := "res://scenes/world25/rooms/"
@@ -40,6 +43,9 @@ func seconds(t: float) -> void:
 func _run() -> void:
 	chain_test()
 	roster_test()
+	await one_way_test()
+	await half_drawn_test()
+	await hub_test()
 	await protection_test()
 	await bridge_test()
 	await eraser_test()
@@ -84,9 +90,10 @@ func enemy_kinds(path: String) -> Dictionary:
 
 
 func roster_test() -> void:
+	var hub := enemy_kinds(HUB)
+	check(hub.keys() == ["scribble"] and hub.scribble == 3, "level 1, the hub: three ink blobs (Scribbles) %s" % hub)
 	var l1 := enemy_kinds(LEVELS[0])
-	var all_there: bool = ["scribble", "crumple", "smudge", "inkwell", "crossed_out", "scribble_diver"].all(func(k): return l1.has(k))
-	check(all_there and l1.values().reduce(func(a, b): return a + b) <= 8, "level 1: every ordinary monster, a handful in all %s" % l1)
+	check(l1.keys() == ["half_drawn"] and l1.half_drawn >= 3 and l1.half_drawn <= 5, "level 1, second room: only a few Half-Drawn %s" % l1)
 	var l2 := enemy_kinds(LEVELS[1])
 	check(l2.keys() == ["red_pen"], "level 2: the Red Pen alone %s" % l2)
 	var l3 := enemy_kinds(LEVELS[2])
@@ -96,6 +103,97 @@ func roster_test() -> void:
 	var eraser: Node = arena.get_node("Enemies/Eraser1")
 	check(eraser.hp >= 24 and eraser.lunge_speed > 11.0, "level 4: a tougher Eraser (hp %d, lunge %.1f)" % [eraser.hp, eraser.lunge_speed])
 	arena.free()
+
+
+## Every way in is entry_only and stays shut, even once the room is cleared;
+## the way on opens.
+func one_way_test() -> void:
+	for path in LEVELS:
+		var state := (load(path) as PackedScene).get_state()
+		var entries := []
+		for i in state.get_node_count():
+			for k in state.get_node_property_count(i):
+				if state.get_node_property_name(i, k) == "entry_only" and state.get_node_property_value(i, k):
+					entries.append(str(state.get_node_name(i)))
+		check(entries == ["GateEast"], "%s: the way in (east) is one-way %s" % [path.get_file(), entries])
+	change_scene_to_file(LEVELS[0])
+	await frames(4)
+	var room := current_scene
+	for m in room.get_node("Enemies").get_children():
+		m.queue_free()
+	await frames(2)
+	room._on_cleared()
+	await seconds(1.5)
+	var east = room.get_node("GateEast")
+	var west = room.get_node("GateWest")
+	check(west.is_open and not east.is_open and not east._wall_shape.disabled,
+		"cleared: the way on opens, the way back stays shut (west %s, east %s)" % [west.is_open, east.is_open])
+	root.get_node("World25").cleared.clear()  # its monsters come back for the next test
+
+
+## The Half-Drawn: only the blade hurts, a swing lands on a Vesper standing
+## in front, a hit mid-windup staggers it, three hits finish it.
+func half_drawn_test() -> void:
+	change_scene_to_file(LEVELS[0])
+	await frames(4)
+	var room := current_scene
+	for l in get_nodes_in_group("haunt_lamp"):
+		l.queue_free()
+	var ghosts: Array = room.get_node("Enemies").get_children()
+	var g = ghosts[0]
+	for other in ghosts.slice(1):
+		other.queue_free()
+	var player = room.player
+	await seconds(2.1)  # past spawn protection
+	g.global_position = Vector3(0, 0.05, 0)
+	g.state = g.State.DRIFT  # a fresh start: not already mid-swing at its old spot
+	g._cd = 0.0
+	player.global_position = Vector3(1.5, 0.05, 0)
+	player.velocity = Vector3.ZERO
+	player._snap_visuals()
+	player._invuln = 0.0
+	var hp: int = player.health
+	check(not g.is_harmful(), "touching a Half-Drawn doesn't hurt (only its blade does)")
+	check(player._q_prompt != null and not g.revealed, "an unseen Half-Drawn near: \"HOLD Q TO SEE THEM\" over Vesper")
+	var swung := false
+	for i in 240:  # up to 4 s
+		await physics_frame
+		player.global_position = Vector3(1.5, 0.05, 0)
+		if g.state == g.State.WINDUP:
+			swung = true
+		if player.health < hp:
+			break
+	check(swung and player.health == hp - 1, "it winds up, swings and its blade takes an ink drop (%d -> %d)" % [hp, player.health])
+	player._invuln = 999.0
+	g.set_physics_process(false)
+	g.global_position = Vector3(0, 0.05, 0)
+	var landed: bool = g.take_hit(1, Vector3(-1, 0, 0))
+	check(not landed and g.health == g.hp, "out of the Ember's light the sword goes through it (landed %s)" % landed)
+	g.set_physics_process(true)
+	player.fuel = player.max_fuel
+	await seconds(0.3)  # out of the stagger from the blade
+	Input.action_press("flash")
+	await pframes(6)
+	check(g.revealed and player._q_prompt == null, "holding Q, it inks in (revealed %s) and the prompt goes" % g.revealed)
+	g.state = g.State.WINDUP
+	g._timer = g.windup_time
+	g.take_hit(1, Vector3(-1, 0, 0))
+	check(g.state == g.State.RECOVER, "in the light, a hit mid-windup staggers it out of the swing")
+	g.take_hit(1, Vector3(-1, 0, 0))
+	g.take_hit(1, Vector3(-1, 0, 0))
+	Input.action_release("flash")
+	check(g.dead and g.hp == 3, "three hits in the light and it's unwritten (hp %d)" % g.hp)
+
+
+## Six hearts, and the hub's shrine is Vesper's.
+func hub_test() -> void:
+	change_scene_to_file(HUB)
+	await frames(6)
+	var player = current_scene.player
+	var hud: Node = current_scene.find_children("*", "Control", true, false).filter(func(n): return n.has_method("_draw_heals"))[0]
+	check(player.max_health == 6 and hud.maximum == 6 and hud.has_method("_heart"), "six hearts (max %d, HUD %d)" % [player.max_health, hud.maximum])
+	var altar: Node = current_scene.get_node("Props/Altar")
+	check(altar.find_child("Statue", true, false) != null, "the hub's shrine holds a statue of Vesper")
 
 
 func protection_test() -> void:
@@ -142,17 +240,24 @@ func bridge_test() -> void:
 	await place(player, Vector3(gap + 0.9, 0.05, 0))
 	await seconds(2.0)
 	check(bridge.solid_count() == 0, "the sketch doesn't form on its own, even in the Ember's glow (%d planks)" % bridge.solid_count())
-	# hold Q at the edge: ink runs out along the bridge, for Ember, not a Flash
+	# hold Q at the edge: ink runs out along the bridge for a little Ember a
+	# plank (once it has inked all it can reach, the raised Ember drains as usual)
 	var fuel0: float = player.fuel
+	var spent := -1.0
+	var was_inking := false
 	await physics_frame
 	Input.action_press("flash")
-	await seconds(1.6)
+	for i in int(1.6 * Engine.physics_ticks_per_second):
+		await physics_frame
+		if player._inking != null:
+			was_inking = true
+		elif was_inking and spent < 0.0:
+			spent = fuel0 - player.fuel
 	Input.action_release("flash")
 	await pframes(2)
 	var n: int = bridge.solid_count()
-	var spent: float = fuel0 - player.fuel
 	check(n > 0 and n < bridge._planks.size(), "holding Q inks part of the bridge (%d of %d planks)" % [n, bridge._planks.size()])
-	check(absf(spent - n * bridge.ink_cost) < 0.01, "it costs %.0f Ember a plank, no Flash (spent %.0f)" % [bridge.ink_cost, spent])
+	check(absf(spent - n * bridge.ink_cost) < 0.5, "it costs %.0f Ember a plank (spent %.1f inking)" % [bridge.ink_cost, spent])
 	await seconds(1.0)
 	check(bridge.solid_count() == n, "inked planks stay after letting go (%d)" % bridge.solid_count())
 	# walk out to the end of the ink and hold Q again until it's done
@@ -195,15 +300,51 @@ func bridge_test() -> void:
 	Input.action_release("flash")
 	await pframes(2)
 	check(bridge.solid_count() == 0, "with no Ember left, Q inks nothing (%d planks)" % bridge.solid_count())
-	# away from the bridge, Q is still a Flash
+	# away from the bridge, Q raises the Ember: it drains, and comes back once lowered
+	for m in current_scene.get_node("Enemies").get_children():
+		m.queue_free()
+	for l in get_nodes_in_group("haunt_lamp"):
+		l.queue_free()
+	player._invuln = 999.0
 	await place(player, Vector3(gap + 6.0, 0.05, -3.0))
-	player.fuel = player.max_fuel
+	await ember_test(player)
+
+
+## Hold Q: the Ember rises (a bigger light, the Writer's kind), drains, and
+## comes back after letting go; run dry, it gutters out until it has
+## `relight_at` again. Right click dashes; Q is no longer a Flash.
+func ember_test(player: Node) -> void:
+	var rmb_dash := InputMap.action_get_events("dash").any(func(e): return e is InputEventMouseButton and e.button_index == MOUSE_BUTTON_RIGHT)
+	var rmb_q := InputMap.action_get_events("flash").any(func(e): return e is InputEventMouseButton)
+	check(rmb_dash and not rmb_q, "right click dashes now, and isn't the light (dash %s, light %s)" % [rmb_dash, rmb_q])
+	player.fuel = 80.0
+	var r0: float = player.glow_radius()
 	await physics_frame
 	Input.action_press("flash")
-	await pframes(3)
+	await seconds(1.0)
+	var raised: bool = player.ember_raised and player.monster_light
+	var r1: float = player.glow_radius()
+	var drained: float = 80.0 - player.fuel
 	Input.action_release("flash")
-	await pframes(2)
-	check(absf(player.max_fuel - player.fuel - player.flash_cost) < 0.01, "away from the bridge, Q still Flashes (spent %.0f)" % (player.max_fuel - player.fuel))
+	check(raised and r1 > r0 + 1.0, "holding Q raises the Ember: a bigger light, the Writer's kind (radius %.1f -> %.1f)" % [r0, r1])
+	check(drained > 12.0 and drained < 20.0, "it drains while raised (%.1f in 1 s), with no Flash" % drained)
+	var low: float = player.fuel
+	await seconds(1.6)
+	check(not player.ember_raised and player.fuel > low + 10.0, "let go, it comes back on its own (%.1f -> %.1f)" % [low, player.fuel])
+	player.fuel = 3.0
+	await physics_frame
+	Input.action_press("flash")
+	await seconds(0.5)
+	var guttered: bool = player._snuffed and not player.ember_raised
+	Input.action_release("flash")
+	await physics_frame
+	Input.action_press("flash")
+	await seconds(0.3)
+	var stays_down: bool = not player.ember_raised
+	Input.action_release("flash")
+	await seconds(2.5)
+	check(guttered and stays_down and not player._snuffed and player.fuel >= player.relight_at,
+		"run dry, it gutters out and won't rise until it has come back (fuel %.0f)" % player.fuel)
 
 
 func eraser_test() -> void:

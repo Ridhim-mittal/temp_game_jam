@@ -13,9 +13,9 @@ func _enter_tree() -> void:
 	_add_keys("dash", [KEY_C, KEY_SHIFT])  # keyboard fallbacks
 	_add_mouse_button("dash", MOUSE_BUTTON_RIGHT)
 	_add_keys("restart", [KEY_R])
-	# 2.5D Ember: right click flashes there (the platformer keeps it as dash)
+	# 2.5D Ember: hold Q to raise it (clearing_player.gd); right click dashes
+	# in both modes
 	_add_keys("flash", [KEY_Q])
-	_add_mouse_button("flash", MOUSE_BUTTON_RIGHT)
 	_add_keys("heal", [KEY_F])
 	_add_keys("interact", [KEY_E])
 	# platformer Ember: hold to raise it (light makes sketches real)

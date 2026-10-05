@@ -1,8 +1,9 @@
 extends CharacterBody3D
 ## Vesper's controller in the Gutter (the 2.5D Margins), seen side-on from a
 ## low tilted camera. Moves on the ground plane with WASD / stick, jumps on
-## Space, dashes on Shift, attacks on left click / X: a three-hit combo (the
-## third hit is a heavier overhead finisher). Q / right click Flash, F heals.
+## Space, dashes on right click / Shift, attacks on left click / X: a
+## three-hit combo (the third hit is a heavier overhead finisher). Hold Q to
+## raise the Ember (as in the 2D levels), F heals.
 ##
 ## Aiming: `facing_dir` (a unit vector on the XZ plane, snapped to
 ## `snap_directions`) is the source of truth. It follows the movement input
@@ -35,6 +36,8 @@ const FlashScript = preload("res://scripts/world25/flash.gd")
 const InkWave = preload("res://scripts/world25/ink_wave_3d.gd")
 const VesperModel = preload("res://scripts/clearing/vesper_3d.gd")
 const CHEVRON_SHADER = preload("res://shaders/clearing/facing_chevron.gdshader")
+const ScreenAnchor = preload("res://scripts/clearing/screen_anchor.gd")
+const PROMPT_FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
 const ART_RUN_SPEED := 300.0  # player_visual.gd's full-run speed, px/s
 const MASK_WORLD := 1
 const MASK_ENEMY := 4  # physics layer 3
@@ -86,7 +89,7 @@ enum AttackStyle { INK_SLASH, NIB_SWORD, BOTH }
 @export var pogo_velocity := 8.5
 
 @export_group("Health")
-@export var max_health := 5
+@export var max_health := 6
 @export var invuln_time := 1.0
 ## Spawn protection: nothing can hurt Vesper for this many seconds after he
 ## arrives in a room or comes back after dying (monsters, falls, the
@@ -103,7 +106,23 @@ enum AttackStyle { INK_SLASH, NIB_SWORD, BOTH }
 @export var fuel_per_hit := 8.0
 @export var glow_radius_full := 3.4
 @export var glow_radius_empty := 1.6
-## Flash: right click / Q.
+## Hold Q (the "flash" action) to raise the Ember, as in the 2D levels: its
+## light swells to `raised_radius` and becomes the Writer's kind of light
+## (it shows the unfinished Scribbles and lets you cut them, dries wet ink,
+## melts the Red Pen's letters). Raised, it drains `raise_drain` a second;
+## lowered, the fuel comes back at `regen` a second after `regen_delay`,
+## at `lantern_regen` in a lit lantern's light. Run dry and it gutters out
+## until `relight_at` is back. Held still next to a sketched bridge, it inks
+## the bridge instead (drawn_bridge.gd).
+@export var raised_radius := 5.0
+@export var raise_drain := 16.0
+@export var regen := 14.0
+@export var regen_delay := 0.6
+@export var lantern_regen := 40.0
+@export var relight_at := 20.0
+## The old Flash (a burst of light on Q / right click) is retired from the
+## controls: holding the Ember up does its job. Kept for scripts that call
+## _flash().
 @export var flash_cost := 25.0
 ## Heal: hold F, standing still.
 @export var heal_cost := 33.0
@@ -138,8 +157,11 @@ var smooth_position := Vector3.ZERO
 ## jumping doesn't bob the view).
 var ground_height := 0.0
 var fuel := 60.0
-## The Ember only makes drawn things real; it doesn't burn monsters.
+## Lowered, the Ember only makes drawn things real; raised (hold Q), it is
+## the Writer's kind of light too (world25/light.gd rule 2).
 var monster_light := false
+## True while Q holds the Ember up.
+var ember_raised := false
 ## 0..1: how close a searchlight is to erasing Vesper (searchlight.gd fills
 ## it; she whitens as it rises).
 var erase := 0.0
@@ -183,6 +205,11 @@ var _chevron_flash := 0.0
 var _chevron_yaw := 0.0
 ## The drawn bridge being inked while Q is held (drawn_bridge.gd), or null.
 var _inking: Node3D = null
+var _snuffed := false  # ran dry: the Ember won't rise until relight_at is back
+var _since_raised := 10.0
+var _raise_w := 0.0  # 0..1, eases towards ember_raised (radius and light)
+var _q_prompt: Node2D  # "HOLD Q TO SEE THEM" over Vesper's head
+var _q_label: Label
 
 @onready var visual_3d: Node3D = $Visual3D
 @onready var sprite: Sprite3D = $Visual3D/Sprite
@@ -282,14 +309,11 @@ func _physics_process(delta: float) -> void:
 			_attack_buffer = attack_buffer_time
 		if Input.is_action_just_pressed("jump"):
 			_jump_buffer = jump_buffer_time
-		if Input.is_action_just_pressed("flash"):
+		if Input.is_action_just_pressed("flash") or (ember_raised and input.length() < 0.1 and _inking == null):
 			var sketch := _sketch_near()
 			if sketch:
-				_inking = sketch  # by a drawn bridge, Q inks it instead of flashing
-			else:
-				_flash()
-		# right click is Flash here; Shift / C dash
-		var dash_pressed := Input.is_action_just_pressed("dash") and not Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT)
+				_inking = sketch  # held still by a drawn bridge, the Ember inks it
+		var dash_pressed := Input.is_action_just_pressed("dash")
 		if dash_pressed and _dash_cooldown_timer <= 0.0:
 			_dash_dir = dir.normalized() if dir.length() > facing_deadzone else facing_dir
 			_dash_timer = dash_time
@@ -299,6 +323,8 @@ func _physics_process(delta: float) -> void:
 		_update_heal(delta)
 		if _inking:
 			_update_inking(delta)
+	_update_ember(delta, in_control)
+	if in_control:
 		if _channel >= 0.0 or _inking:
 			dir = Vector3.ZERO  # rooted while healing or inking
 		elif _attack_buffer > 0.0 and _attack_timer <= 0.0 and _dash_timer <= 0.0:
@@ -400,6 +426,7 @@ func _process(delta: float) -> void:
 	shadow.position.y = -height + 0.03
 	shadow.scale = Vector3.ONE * clampf(1.0 - height * 0.25, 0.45, 1.0)
 	_update_chevron(height, delta)
+	_update_q_prompt()
 	if _model:
 		_update_model(delta)
 	else:
@@ -671,7 +698,7 @@ func add_fuel(amount: float) -> void:
 
 
 func glow_radius() -> float:
-	return lerpf(glow_radius_empty, glow_radius_full, fuel / max_fuel)
+	return lerpf(lerpf(glow_radius_empty, glow_radius_full, fuel / max_fuel), raised_radius, _raise_w)
 
 
 ## Light source for drawn things (world25/light.gd): the Ember's glow.
@@ -695,12 +722,85 @@ func _flash() -> void:
 	_squash = Vector2(1.2, 0.85)
 
 
+## Hold Q to raise the Ember: it drains while up and comes back once it is
+## lowered (faster in a lit lantern's light), and gutters out if it runs dry.
+func _update_ember(delta: float, in_control: bool) -> void:
+	var want := in_control and not dead and Input.is_action_pressed("flash") and not _snuffed and _channel < 0.0
+	ember_raised = want and _inking == null and fuel > 0.0
+	monster_light = ember_raised
+	if ember_raised or _inking:
+		_since_raised = 0.0
+	if ember_raised:
+		add_fuel(-raise_drain * delta)
+		if fuel <= 0.0:
+			_snuffed = true
+			ember_raised = false
+			monster_light = false
+			Fx.pop_text(get_tree(), global_position + Vector3(0, 1.8, 0), "fzzt...", Color(0.7, 0.6, 0.5), 24)
+	else:
+		_since_raised += delta
+		if _since_raised > regen_delay and fuel < max_fuel:
+			add_fuel((lantern_regen if _in_lantern_light() else regen) * delta)
+	if _snuffed and fuel >= relight_at:
+		_snuffed = false
+	_raise_w = move_toward(_raise_w, 1.0 if ember_raised else 0.0, delta * 6.0)
+
+
+## "HOLD Q TO SEE THEM" over Vesper while an unfinished Scribble
+## (half_drawn_3d.gd, group "needs_ember") is near and the Ember is down.
+func _update_q_prompt() -> void:
+	var near := false
+	if not dead and not ember_raised:
+		for m in get_tree().get_nodes_in_group("needs_ember"):
+			if m is Node3D and not m.dead and global_position.distance_to(m.global_position) < 8.0:
+				near = true
+				break
+	if near and _q_prompt == null:
+		var ui := get_tree().current_scene.get_node_or_null("UI")
+		if ui == null:
+			return
+		_q_prompt = ScreenAnchor.new()
+		_q_label = Label.new()
+		_q_label.text = "HOLD Q TO SEE THEM"
+		_q_label.add_theme_font_override("font", PROMPT_FONT)
+		_q_label.add_theme_font_size_override("font_size", 26)
+		_q_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
+		_q_label.add_theme_color_override("font_outline_color", Color(0.05, 0.03, 0.08))
+		_q_label.add_theme_constant_override("outline_size", 10)
+		_q_prompt.add_child(_q_label)
+		ui.add_child(_q_prompt)
+		_q_label.position = -_q_label.get_minimum_size() * Vector2(0.5, 1.0)
+	elif not near and _q_prompt != null:
+		_q_prompt.queue_free()
+		_q_prompt = null
+	if _q_prompt:
+		_q_prompt.world_position = smooth_position + Vector3(0, 2.7, 0)
+		_q_label.modulate.a = 0.75 + 0.25 * sin(Time.get_ticks_msec() * 0.006)
+
+
+func _in_lantern_light() -> bool:
+	for l in get_tree().get_nodes_in_group("lantern"):
+		if l is Node3D and l.get("lit") and "light_radius" in l \
+				and Vector2(l.global_position.x - global_position.x, l.global_position.z - global_position.z).length() < l.light_radius:
+			return true
+	return false
+
+
+## True when the raised Ember's light reaches `point` (the unfinished
+## Scribbles only show, and can only be cut, inside it).
+func ember_reveals(point: Vector3) -> bool:
+	if not ember_raised or dead:
+		return false
+	var d := point - global_position
+	return Vector2(d.x, d.z).length() < glow_radius() and absf(d.y) < 3.0
+
+
 ## The drawn bridge Vesper could ink from where he stands, or null.
 func _sketch_near() -> Node3D:
 	if not is_on_floor():
 		return null
 	for b in get_tree().get_nodes_in_group("drawn_bridge"):
-		if b.can_ink(global_position):
+		if b.can_ink(global_position) and fuel >= b.ink_cost:
 			return b
 	return null
 
@@ -899,7 +999,7 @@ func _update_model(delta: float) -> void:
 	_model.blink = not dead and blink_t > 0.0 and fmod(blink_t, 0.16) < 0.08
 	_model.dead = dead
 	_model.fuel = fuel / max_fuel
-	_model.inking = _inking != null
+	_model.inking = _inking != null or ember_raised
 	_update_ember_light()
 
 
@@ -919,8 +1019,8 @@ func _update_chevron(height: float, delta: float) -> void:
 func _update_ember_light() -> void:
 	var k := fuel / max_fuel
 	# the Gutter is dark: the Ember lights a real pool round Vesper
-	ember_light.omni_range = lerpf(3.4, 6.0, k)
-	ember_light.light_energy = lerpf(0.9, 1.9, k) * (1.5 if _inking else 1.0)  # brighter while inking
+	ember_light.omni_range = lerpf(3.4, 6.0, k) * (1.0 + 0.5 * _raise_w)
+	ember_light.light_energy = lerpf(0.9, 1.9, k) * (1.5 if _inking else 1.0 + 0.8 * _raise_w)  # brighter raised
 
 
 func _update_art(delta: float) -> void:

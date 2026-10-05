@@ -13,7 +13,17 @@ All art is drawn in code (`_draw()`, shaders, primitive meshes); no texture asse
   hat with a red band, white egg head, red scarf, open purple cloak, broadsword on his back that
   comes out on swings; dash = lunge + ghost afterimages; `use_3d_model = false` on the player
   brings back the 2D art on a billboard). Monsters reuse the 2D art drawn into a
-  SubViewport (`monster_puppet.gd`).
+  SubViewport (`monster_puppet.gd`), except the Half-Drawn (`half_drawn_3d.gd`), which has its own
+  3D model (set up with monster_3d.gd `setup_monster_model()`): `unfinished_model.gd`, the hooded
+  ghost as an unfinished ink drawing: a pale teal fill with comic hatching (`ink_fill.gdshader`)
+  under camera-facing ink strokes (`scribble_stroke.gdshader`, the lines "boil"); left half drawn in
+  (tattered robe, pointed hood round a skull face, nib-blade arm, a torn chest hole), right half only
+  dashed pencil guides and a stub arm. Out of the raised Ember's light only hints show (glowing eyes
+  that flare orange on a windup, ink motes, short flickering pieces of line: `glimpse`) and a sword
+  passes through ("NOT DRAWN YET"); hold Q and inside the light it inks in and can be cut
+  (`revealed`, player `ember_reveals()`; group "needs_ember" drives a "HOLD Q TO SEE THEM" prompt
+  over Vesper). Quick windup, arc slash, only the blade hurts, hp 3. (The earlier toon-shaded
+  model, `half_drawn_model.gd` + `half_drawn.gdshader`, is kept but unused.)
 
 ## 2D story start (main menu PLAY)
 `cs_opening` → THE CITY (`scenes/levels/test_level.tscn`, a ~1 min controls tutorial) → glowing
@@ -67,22 +77,31 @@ level, or the level start (`_respawn_point()` in player.gd); never to the last g
 - `Gate` nodes (`scripts/world25/gate.gd`) seal until every monster in the room is dead, then
   load the target room. Sealed = the path is a grey dashed pencil sketch (`drawn_ghost.gdshader`)
   with cold lanterns; `open()` draws a line of light outwards (`gate_light.gdshader`), fills the
-  path in, lights pale-gold lanterns and chimes. A room's `biome_b` + blend line morphs one biome
+  path in, lights pale-gold lanterns and chimes. The Gutter only goes forward: each room's way in
+  is `entry_only` (never opens; its sketch rubs itself out a moment after Vesper arrives). A room's `biome_b` + blend line morphs one biome
   into another inside it.
 - Look: biomes (`data/biomes/`) are dark versions of the original palettes. Ground modes
   (ground.gdshader): 0 stone tiles (Inkwood), 1 wet flagstones, 2 cracked, 3 DIRT (the hub);
-  `Biome.runes` / `rune_color` scatter glowing cryptic sigils on any floor. `island.gd` piles
+  `Biome.runes` / `rune_color` scatter glowing marks on any floor. Every symbol in the Gutter is
+  one of the Writer's marks (`shaders/world25/writers_marks.gdshaderinc`: the eye, an ink drop, a
+  nib, a quill, the Ember's flame, ¶, *, a speech bubble, a POW burst, ?), shared by ground.gdshader,
+  sigil_mark (rune stones, graves) and sigil_ring (ritual circles, a great pen nib in the middle). `island.gd` piles
   rubble along closed edges. Darkness round Vesper: `darkness.gd` (+ darkness.gdshader) on the
   room's UI layer, strength `Biome.darkness`; pools of light at the Ember, lit lanterns, open
   gates, the lamp and anything in group "glow" (`glow_radius` property or meta); bright pixels
-  shine through. room.gd `_build_backdrop()` fills the void (a huge turning sigil far below,
-  mist, rising embers, uplit skull heaps and ink statues). No grass, farms or shops; retired
+  shine through. room.gd fills the void per `backdrop_style`: SIGIL `_build_backdrop()` (a huge
+  turning sigil far below, mist, rising embers, uplit skull heaps and ink statues) or COMIC
+  `_build_comic_backdrop()` (level 1: a printed comic page of panels far below,
+  `comic_page.gdshader`; torn-out panels and sound-effect words drifting round the floor, giant
+  pencils, paper dust). No grass, farms or shops; retired
   `biome_props.gd` kinds (CANOPY, GARDEN_PLOT, BARN, SCARECROW, CORAL, TUBE_PLANT, NEST) stay
   in the enum but are placed nowhere. Newer kinds: SKULL_PILE, CANDLES, RUNE_STONE; TOMBSTONE
   graves carry skulls; RITUAL_CIRCLE uses sigil_ring.gdshader. Helpers `Toon.skull()`,
-  `Toon.bones()`, `Toon.candle()`. The hub's altar.gd is the original shrine in a ritual circle.
-- HUD (clearing_hud.gd): health bar (one notch per ink drop) and a healing counter (heals the
-  Ember's fuel covers, F), above the Ember bar.
+  `Toon.bones()`, `Toon.candle()`. The hub's altar.gd is Vesper's shrine: a frozen, plaster-pale
+  vesper_3d statue with sword raised and the Ember above it, a "VESPER" plaque, offerings (his red
+  scarf, ink pots, quills, comic pages, cream candles) in an Ember-gold ring of the Writer's marks.
+- HUD (clearing_hud.gd): hearts (one per ink drop, `max_health` 6), a healing counter (heals the
+  Ember's fuel covers, F) and the Ember bar with its Q key.
 - The Writer's Haunting Lamp (`scripts/world25/haunt_lamp.gd`, built on `searchlight.gd`):
   room.gd spawns it in every room from the biome's `haunt` profile (`data/haunt/*.tres`,
   `haunt_profile.gd`), scaled by Settings difficulty and the room's `haunt_scale`; a room's
@@ -91,8 +110,11 @@ level, or the level start (`_respawn_point()` in player.gd); never to the last g
   during transitions and boss intros. The hub's lamp only searches. The circle steers with
   inertia (`_steer`), is interpolated between ticks, keeps to the floor (`room.on_floor()`) and
   keeps apart from other lamps (`_separation`).
-- Controls (clearing_player.gd): `facing_dir` (8-way snap) is what swings, dashes and the facing
-  chevron follow; the mouse position is ignored (buttons only). Aim assist (`aim_assist_angle`,
+- Controls (clearing_player.gd): right click / Shift dash; hold Q (the "flash" action) to raise the
+  Ember as in the 2D levels (`raised_radius`; it is then the Writer's kind of light, `monster_light`;
+  drains `raise_drain`, comes back at `regen` after `regen_delay`, faster by lit lanterns, gutters
+  out at 0 until `relight_at`); the old Flash is retired from the controls. `facing_dir` (8-way snap)
+  is what swings, dashes and the facing chevron follow; the mouse position is ignored (buttons only). Aim assist (`aim_assist_angle`,
   `aim_assist_range`, Settings toggle). World25 owns `Input.mouse_mode`: hidden while a room is
   in play (room.gd `in_gameplay()`), visible in menus; Settings "Cursor in game" keeps it shown.
 - Spawn protection: `spawn_protection` (2 s) on clearing_player.gd, on arriving in a room and after
@@ -106,16 +128,17 @@ level, or the level start (`_respawn_point()` in player.gd); never to the last g
 Zones (display names; code names stay): hub = The Spine, darkwood_* = The Inkwood, shallows_* =
 The Drowned Margin, wastes_* = The Torn Wastes, arena = The Rubbing Room.
 Hub `scenes/clearing/clearing.tscn` (hand-made, not generated) → cave → four levels in
-`scenes/world25/rooms/`, a row running west: 1 darkwood_1 (one of every ordinary monster, easy) →
+`scenes/world25/rooms/`, a row running west: 1 the hub (3 Scribbles) + darkwood_1 (a few Half-Drawn;
+both with the COMIC backdrop) →
 2 shallows_pen (Red Pen boss, `scripts/clearing/red_pen_3d.gd`: wet-ink circles dry in light; two
 lamps) → 3 wastes_gap (a sketched bridge inked with Q; one slow lamp) → 4 arena (the Eraser, hard:
 `eraser_3d.gd` charges twice in a row below `double_charge_below` health) → `cs_reveal` cutscene.
 The other rooms there (darkwood_2/3/bridge, shallows_1/2/field, wastes_1/2) are retired: no gate
 leads to them and the generator only rebuilds them with `OLD_ROOMS = True`.
-Light: `scripts/world25/light.gd` (rules), Ember/Flash/Heal on `clearing_player.gd`, `flash.gd`,
-`searchlight.gd`; braziers with `lit = false` are lanterns. `drawn_bridge.gd` is a pencil sketch that
-never forms on its own: next to it Q (the flash action) inks instead of flashing, and while held, ink
-runs from Vesper's feet along the planks for good (`ink_reach`, `ink_speed`, `ink_cost` Ember fuel
+Light: `scripts/world25/light.gd` (rules), Ember/Heal on `clearing_player.gd`, `searchlight.gd`
+(`flash.gd` is unhooked); braziers with `lit = false` are lanterns. `drawn_bridge.gd` is a pencil
+sketch that never forms on its own: pressing Q by it, or holding the raised Ember still next to it,
+inks it, and while held, ink runs from Vesper's feet along the planks for good (`ink_reach`, `ink_speed`, `ink_cost` Ember fuel
 a plank); `ink_only = false` brings back the old rule (solid only where light reaches).
 Rooms are generated by `tools/rooms25/build_rooms.py` (deterministic; re-running overwrites hand
 edits). Monsters stay dead in story rooms (room.gd sets `respawn_time = 0`).
