@@ -7,10 +7,11 @@ All art is drawn in code (`_draw()`, shaders, primitive meshes); no texture asse
 ## Two modes
 - **2D platformer** (`scenes/levels/`, `scripts/player/`, `scripts/enemies/`): Hollow Knight-style
   movement/combat. Monsters extend `scripts/enemies/enemy_base.gd` and draw via `paint()`.
-- **2.5D top-down** (Cult of the Lamb style; `scenes/clearing/`, `scenes/world25/`,
-  `scripts/clearing/`, `scripts/world25/`, `shaders/clearing/`): 3D scenes, tilted camera,
-  billboard characters. The player and monsters reuse the 2D art by drawing it into a
-  SubViewport (`clearing_player.tscn`, `monster_puppet.gd`).
+- **2.5D top-down** ("the Gutter": dark, moody rooms; `scenes/clearing/`, `scenes/world25/`,
+  `scripts/clearing/`, `scripts/world25/`, `shaders/clearing/`): 3D scenes, tilted camera.
+  Vesper is a procedural 3D model (`scripts/clearing/vesper_3d.gd`; `use_3d_model = false` on the
+  player brings back the 2D art on a billboard). Monsters reuse the 2D art drawn into a
+  SubViewport (`monster_puppet.gd`).
 
 ## 2D light mechanic (test level section 9, "the Sketchbook")
 Rules in `scripts/world/lights.gd`: sources in group `drawn_light` (`reaches(point)`) make
@@ -38,14 +39,34 @@ The 2D player has a double jump (`air_jumps`, `air_jump_velocity` in player.gd; 
 - Rooms are scenes whose root uses `scripts/world25/room.gd`; it builds environment, light,
   player, camera, HUD, minimap, music from a `Biome` resource (`data/biomes/*.tres`).
 - `Gate` nodes (`scripts/world25/gate.gd`) seal until every monster in the room is dead, then
-  load the target room. A room's `biome_b` + blend line morphs one biome into another inside it.
+  load the target room. Sealed = the path is a grey dashed pencil sketch (`drawn_ghost.gdshader`)
+  with cold lanterns; `open()` draws a line of light outwards (`gate_light.gdshader`), fills the
+  path in, lights pale-gold lanterns and chimes. A room's `biome_b` + blend line morphs one biome
+  into another inside it.
+- Look: biomes (`data/biomes/`) are dark versions of the original palettes; `edge_darkness`
+  sinks the screen corners (comic_overlay.gdshader). Ground mode 0 is stone tiles, not grass.
+  `island.gd` piles rubble along closed edges. No grass fields, farms or shops in the Gutter;
+  retired `biome_props.gd` kinds (CANOPY, GARDEN_PLOT, BARN, SCARECROW, CORAL, TUBE_PLANT,
+  NEST) stay in the enum but are placed nowhere.
+- The Writer's Haunting Lamp (`scripts/world25/haunt_lamp.gd`, built on `searchlight.gd`):
+  room.gd spawns it in every room from the biome's `haunt` profile (`data/haunt/*.tres`,
+  `haunt_profile.gd`), scaled by Settings difficulty and the room's `haunt_scale` (set in the
+  generator). States DORMANT/SEEK/MARK/STRIKE/LINGER/LOST; standing in its light fills the erase
+  meter (a full meter = an ink drop); hide behind solid props. `room.haunt_hold()` stops strikes
+  during transitions and boss intros. The hub's lamp only searches.
+- Controls (clearing_player.gd): `facing_dir` (8-way snap) is what swings, dashes and the facing
+  chevron follow; the mouse position is ignored (buttons only). Aim assist (`aim_assist_angle`,
+  `aim_assist_range`, Settings toggle). World25 owns `Input.mouse_mode`: hidden while a room is
+  in play (room.gd `in_gameplay()`), visible in menus; Settings "Cursor in game" keeps it shown.
 - Autoload `World25` (`scripts/world25/world25.gd`): story state, cleared rooms, ink-wipe
   transitions, player health between rooms.
 - Props are `@tool` scripts that build meshes under a "Generated" child (never saved); edit
   their exports in the inspector. Shared helpers: `scripts/clearing/toon.gd`.
 
 ## 2.5D story (main menu → "Begin in the Margins")
-Hub `scenes/clearing/clearing.tscn` → cave → `scenes/world25/rooms/`: darkwood_1, darkwood_2,
+Zones (display names; code names stay): hub = The Spine, darkwood_* = The Inkwood, shallows_* =
+The Drowned Margin, wastes_* = The Torn Wastes, arena = The Rubbing Room.
+Hub `scenes/clearing/clearing.tscn` (hand-made, not generated) → cave → `scenes/world25/rooms/`: darkwood_1, darkwood_2,
 darkwood_bridge, darkwood_3 (blends forest into water) → shallows_1, shallows_2, shallows_field →
 shallows_pen (Red Pen boss, `scripts/clearing/red_pen_3d.gd`: wet-ink circles dry in light) →
 wastes_1, wastes_2, wastes_gap → arena (Eraser boss) → `cs_reveal` cutscene.
@@ -58,7 +79,10 @@ edits). Monsters stay dead in story rooms (room.gd sets `respawn_time = 0`).
 Autoloads `Profile` (Lumens, Ink Points, skills, owned/equipped items; user://profile.cfg) and
 `Settings` (options; user://settings.cfg). Catalog of skills and shop items:
 `scripts/core/catalog.gd`. clearing_player.gd `_apply_loadout()` turns them into stats from the
-exported base values; room.gd opens overlays (pause, skills, shop, settings) and pauses the tree.
+exported base values; room.gd opens overlays (pause, skills, settings) and pauses the tree.
+The Gutter has no shop or coins: Patch (`patch_npc.gd`) is a guide who talks on E; `shop.gd`,
+`lumen.gd` and the Lumen counter are unhooked. The skill tree opens at the hub shrine and from
+pause.
 First-run controls tutorial: `scripts/ui/tutorial.gd` (started by player.gd and room.gd; steps
 are remembered in Profile, Esc skips, Settings -> Tutorials replays them).
 
@@ -70,6 +94,8 @@ are remembered in Profile, Esc skips, Settings -> Tutorials replays them).
 
 ## Checking work
 - Script errors: `godot --headless --path . --quit-after 60 res://<scene>.tscn`
+- Gutter checks (need a display, e.g. `xvfb-run`): `godot --path . --rendering-driver opengl3 -s
+  res://tests/gutter/test_phase1.gd` (also test_phase2, test_phase5); exit code = failures.
 - Screenshots: from a script in a temporary scene, call `RenderingServer.force_draw(false)` then
   `get_viewport().get_texture().get_image().save_png(...)`. `--write-movie` stops drawing after a few
   frames when the screen is locked, and hit-stop freezes look far too long in it.

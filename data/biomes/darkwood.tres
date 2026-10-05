@@ -5,7 +5,7 @@
 
 [resource]
 script = ExtResource("1_biome")
-display_name = "Darkwood Margins"
+display_name = "The Inkwood"
 ground = 0
 base = Color(0.229, 0.335, 0.254, 1)
 light = Color(0.310, 0.397, 0.279, 1)

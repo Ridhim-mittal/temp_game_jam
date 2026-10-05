@@ -5,7 +5,7 @@
 
 [resource]
 script = ExtResource("1_biome")
-display_name = "Crumple Wastes"
+display_name = "The Torn Wastes"
 ground = 2
 base = Color(0.285, 0.124, 0.186, 1)
 light = Color(0.335, 0.161, 0.217, 1)

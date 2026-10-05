@@ -5,7 +5,7 @@
 
 [resource]
 script = ExtResource("1_biome")
-display_name = "Inkwell Shallows"
+display_name = "The Drowned Margin"
 ground = 1
 base = Color(0.149, 0.291, 0.310, 1)
 light = Color(0.205, 0.360, 0.360, 1)

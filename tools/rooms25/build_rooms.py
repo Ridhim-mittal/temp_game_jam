@@ -37,7 +37,7 @@ darkwood_dressing(r)
 r.prop("brazier", -9.5, -6, name="Lantern1", flame_color="Color(1, 0.25, 0.15, 1)")
 r.prop("brazier", 9.5, 6, name="Lantern2", flame_color="Color(1, 0.25, 0.15, 1)")
 forest_ring(r)
-r.write("Darkwood Margins", "1 / 3",
+r.write("The Inkwood", "1 / 3",
         "These woods weren't in any draft I kept.|The way on is always on the far side. Clear a path.",
         "See? Nothing in here you can't handle.")
 
@@ -57,7 +57,7 @@ r.prop("brazier", -3.5, -6.5, name="Lantern1", flame_color="Color(1, 0.25, 0.15,
 r.prop("brazier", 3.5, -6.5, name="Lantern2", flame_color="Color(1, 0.25, 0.15, 1)")
 forest_ring(r)
 r.haunt_scale = 1.06  # the Writer's lamp hunts a little harder here
-r.write("Darkwood Margins", "2 / 3",
+r.write("The Inkwood", "2 / 3",
         "Rolling pages. I crumpled those myself, one bad night after another.|They're armoured while they're balled up. Make them hit something, or lead them into the light.",
         "The wood is thinning out. Can you smell the ink?")
 
@@ -89,7 +89,7 @@ for i, (x, z) in enumerate([(-10, -12.5), (-18, -4), (-17.5, 5), (-4, -13)]):
     r.nodes.append(("Forest", f"DeepPillar{i + 1}", "bprops", (x, -6, z), 0, {"kind": KIND["PILLAR"], "size": 2.2, "seed": i + 20}))
 r.nodes.append(("Forest", "TrunkR", "trunk", (18.5, -8, 8.5), 0, {"height": 26.0, "radius": 1.6}))
 r.haunt_scale = 1.15  # the Writer's lamp hunts a little harder here
-r.write("Where the Ink Pools", "Darkwood, 3 / 3",
+r.write("Where the Ink Pools", "The Inkwood, 3 / 3",
         "The ink is pooling up ahead. The woods give way to water here.|Something swims in it. Watch for ripples.",
         "...You're getting good at this. Too good.")
 
@@ -130,8 +130,8 @@ shallows_dressing(r)
 r.prop("brazier", -3, -7.5, name="Spirit1", **SPIRIT)
 r.prop("brazier", 7, 6.5, name="Spirit2", **SPIRIT)
 shallows_ring(r)
-r.write("Inkwell Shallows", "1 / 2",
-        "The Inkwell Shallows. Where I used to rinse my nibs.|The bottles spit. Cut the blobs out of the air, and don't stand in the puddles.",
+r.write("The Drowned Margin", "1 / 2",
+        "The Drowned Margin. Where I used to rinse my nibs, before the ink spilled.|The bottles spit. Cut the blobs out of the air, and don't stand in the puddles.",
         "Still here? Fine. Keep going.")
 
 # ------------------------------------------------------------ Shallows 2: the circle
@@ -153,7 +153,7 @@ r.prop("brazier", -9.5, -7, name="Spirit1", **SPIRIT)
 r.prop("brazier", 9.5, 7, name="Spirit2", **SPIRIT)
 shallows_ring(r)
 r.haunt_scale = 1.08  # the Writer's lamp hunts a little harder here
-r.write("The Drowned Circle", "Inkwell Shallows, 2 / 2",
+r.write("The Drowned Circle", "The Drowned Margin, 2 / 2",
         "~This circle... I drew it the night I gave up on page three.|~Don't read it. Just keep walking.",
         "~You read it, didn't you.")
 
@@ -174,7 +174,7 @@ for i, (x, z) in enumerate([(-7, -4.5), (7, -4.5), (-7, 4.5), (7, 4.5)]):
 r.scatter("PAPER_MOUND", 3, count=4, radius=1.1, solid=True)
 r.scatter("INK_POOL", 2, radius=1.3)
 shallows_ring(r)
-r.write("The Red Pen", "Inkwell Shallows",
+r.write("The Red Pen", "The Drowned Margin",
         "~My editor marked every page in red. Every single page.|Wet ink dries in the light. Make the nib miss, then hit it while it's stuck.",
         "~...Stet. It means: let it stand.|~I never knew that until now.",
         extra_room_props='boss_path = NodePath("Enemies/RedPen1")\nboss_name = "THE RED PEN"')
@@ -217,8 +217,8 @@ wastes_dressing(r)
 r.prop("brazier", -9.5, -6.5, name="Ember1", **EMBER)
 r.prop("brazier", 8, 6.8, name="Ember2", **EMBER)
 wastes_ring(r)
-r.write("Crumple Wastes", "1 / 2",
-        "The Crumple Wastes. Every page I tore out ends up here.|That red X on their chests? Get behind it, or come down on them from above.",
+r.write("The Torn Wastes", "1 / 2",
+        "The Torn Wastes. Every page I tore out ends up here.|That red X on their chests? Get behind it, or come down on them from above.",
         "~Why won't you just STAY on the page?")
 
 # ------------------------------------------------------------ Wastes 2
@@ -236,7 +236,7 @@ r.prop("brazier", -5, -8, name="Ember1", **EMBER)
 r.prop("brazier", 5, 8, name="Ember2", **EMBER)
 wastes_ring(r)
 r.haunt_scale = 1.08  # the Writer's lamp hunts a little harder here
-r.write("The Pinboard", "Crumple Wastes, 2 / 2",
+r.write("The Pinboard", "The Torn Wastes, 2 / 2",
         "~I used to pin the bad drafts to the wall. Right here.|~Something is still rubbing them out, past that gate.",
         "~No. Not that door. Please.")
 
@@ -341,7 +341,7 @@ chasm_depths(r, [(("pine", {"height": 12.0, "radius": 2.4, "color": "Color(0.06,
                  (("pine", {"height": 11.0, "radius": 2.0, "color": "Color(0.06, 0.06, 0.11, 1)"}), 1.5, -6.5),
                  (("eyes", {}), 0, 2)], y=-9)
 r.haunt_scale = 1.1  # the Writer's lamp hunts a little harder here
-r.write("The Unlit Bridge", "Darkwood",
+r.write("The Unlit Bridge", "The Inkwood",
         "That bridge only exists where light touches it.|Your ember will carry you across. Keep it fed: every hit stokes the flame.|Strike the old lanterns to light them. Light stays where you leave it.",
         "...Clever little thing.")
 
@@ -363,7 +363,7 @@ r.scatter("PAPER_MOUND", 2, count=4, radius=1.1, solid=True)
 r.scatter("INK_POOL", 2, radius=1.5)
 shallows_ring(r)
 r.haunt_scale = 1.12  # the Writer's lamp hunts a little harder here
-r.write("The Lamplit Field", "Inkwell Shallows",
+r.write("The Lamplit Field", "The Drowned Margin",
         "~I can't see you down there. But I can look.|Shadows hide you from the lamp. And anything crossed out that it catches... burns.",
         "~Where did you GO?")
 
@@ -391,6 +391,6 @@ wastes_ring(r)
 chasm_depths(r, [(("bprops", {"kind": KIND["CRYSTAL"], "size": 3.0, "count": 5, "radius": 1.6, "seed": 7}), 0, 7),
                  (("bprops", {"kind": KIND["PENCIL_TOTEM"], "size": 3.0, "seed": 8}), 1, -7)], y=-8)
 r.haunt_scale = 1.12  # the Writer's lamp hunts a little harder here
-r.write("The Torn Page", "Crumple Wastes",
+r.write("The Torn Page", "The Torn Wastes",
         "~My lamp makes that bridge real too. Funny, isn't it?|~The only way across is my light... and my light hurts you.",
         "~Stop. Please. You don't want to see the last page.")

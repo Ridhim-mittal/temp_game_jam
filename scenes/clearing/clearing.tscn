@@ -24,8 +24,8 @@ room_id = "clearing"
 biome = ExtResource("27_spine")
 camera_bounds = Rect2(-28, -27, 40, 37)
 default_spawn = Vector3(2.5, 0.05, 3)
-title = "The Clearing"
-subtitle = "Somewhere between the panels"
+title = "The Spine"
+subtitle = "The fold between the pages"
 enter_captions = "Page one. A clean sheet, a warm lamp, and... wait. Where are you?|This isn't a panel. This is the margin. Nothing I drew is supposed to be down here.|Those scribbles are old mistakes. Swat them away and find the way out."
 clear_captions = "Good. The cave is open. Go on, I'm right behind you."
 
@@ -33,7 +33,7 @@ clear_captions = "Good. The cave is open. Go on, I'm right behind you."
 script = ExtResource("1_island")
 polygon = PackedVector2Array(-12, -11.2, -6, -11.5, -2.4, -11.5, 2.4, -11.5, 7, -11.5, 11, -10.5, 13.5, -7, 14, -2, 12.5, 3, 10, 6.5, 6, 8.5, 2.6, 9, -2.6, 9, -6, 8.5, -11, 8.5, -16, 9.5, -21, 10, -26, 9, -29.5, 6, -31, 1, -30.5, -4, -28, -8.5, -23, -10.5, -17, -11)
 open_edges = PackedInt32Array(2, 11)
-sand_zones = PackedVector3Array(8.5, -6.5, 5, 12, -2, 2.5, 0, 0, 0, 0, 0, 0)
+sand_zones = PackedVector3Array(8.5, -6.5, 2.8, 12, -2, 1.6, -9, 5.5, 1.4, 0, 0, 0)
 stain_zone = Vector3(-1, -2.5, 6)
 
 [node name="Stairs" type="Node3D" parent="."]
@@ -374,6 +374,102 @@ action = "skills"
 prompt = "SKILL TREE"
 radius = 3.5
 prompt_height = 1.6
+
+[node name="Hub" type="Node3D" parent="Props"]
+
+[node name="WalkPillarL" type="Node3D" parent="Props/Hub"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -4.6, 0, -7.8)
+script = ExtResource("28_bprops")
+kind = 6
+size = 1.15
+seed = 21
+solid = true
+
+[node name="WalkPillarR" type="Node3D" parent="Props/Hub"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 4.4, 0, -7.6)
+script = ExtResource("28_bprops")
+kind = 6
+size = 1.2
+seed = 24
+solid = true
+
+[node name="WalkPillarL2" type="Node3D" parent="Props/Hub"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -6.2, 0, -3.2)
+script = ExtResource("28_bprops")
+kind = 6
+size = 0.95
+seed = 27
+solid = true
+
+[node name="WalkPillarR2" type="Node3D" parent="Props/Hub"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 5.6, 0, -2.6)
+script = ExtResource("28_bprops")
+kind = 6
+size = 1.0
+seed = 29
+solid = true
+
+[node name="WalkBrazierL" type="Node3D" parent="Props/Hub"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -3.2, 0, -5.4)
+script = ExtResource("6_brazier")
+
+[node name="WalkBrazierR" type="Node3D" parent="Props/Hub"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 3.0, 0, -5.2)
+script = ExtResource("6_brazier")
+
+[node name="Grave1" type="Node3D" parent="Props/Hub"]
+transform = Transform3D(0.9848, 0, 0.1736, 0, 1, 0, -0.1736, 0, 0.9848, -24.0, 0, -7.6)
+script = ExtResource("28_bprops")
+kind = 1
+seed = 31
+solid = true
+
+[node name="Grave2" type="Node3D" parent="Props/Hub"]
+transform = Transform3D(0.9659, 0, -0.2588, 0, 1, 0, 0.2588, 0, 0.9659, -26.2, 0, -6.4)
+script = ExtResource("28_bprops")
+kind = 1
+seed = 32
+solid = true
+
+[node name="Grave3" type="Node3D" parent="Props/Hub"]
+transform = Transform3D(0.9397, 0, 0.3420, 0, 1, 0, -0.3420, 0, 0.9397, -28.0, 0, -4.2)
+script = ExtResource("28_bprops")
+kind = 1
+seed = 33
+solid = true
+
+[node name="Grave4" type="Node3D" parent="Props/Hub"]
+transform = Transform3D(0.9903, 0, -0.1392, 0, 1, 0, 0.1392, 0, 0.9903, -24.6, 0, -4.0)
+script = ExtResource("28_bprops")
+kind = 1
+seed = 34
+solid = true
+
+[node name="Grave5" type="Node3D" parent="Props/Hub"]
+transform = Transform3D(0.9962, 0, 0.0872, 0, 1, 0, -0.0872, 0, 0.9962, -27.4, 0, -1.0)
+script = ExtResource("28_bprops")
+kind = 1
+seed = 35
+solid = true
+
+[node name="GraveStump" type="Node3D" parent="Props/Hub"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -22.2, 0, -8.8)
+script = ExtResource("28_bprops")
+kind = 2
+size = 1.1
+seed = 36
+solid = true
+
+[node name="GravePool" type="Node3D" parent="Props/Hub"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -25.6, 0, -2.6)
+script = ExtResource("28_bprops")
+kind = 11
+radius = 1.4
+seed = 37
+
+[node name="GraveBrazier" type="Node3D" parent="Props/Hub"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -23.0, 0, -3.0)
+script = ExtResource("6_brazier")
 
 [node name="Enemies" type="Node3D" parent="."]
 
