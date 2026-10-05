@@ -1,10 +1,12 @@
 extends Control
 ## Gutter HUD (design doc section 10), top-left:
-##  - a health bar in an inked frame: one notch per ink drop, a pale trail
-##    that eases down after a hit, and a pulse when only one drop is left
+##  - hearts, one per ink drop (six to start), inked like a comic: a lost
+##    heart flashes white and empties, the last one pulses, a healed one
+##    glows green
 ##  - the healing counter: an ink flask with how many heals the Ember's fuel
 ##    covers right now (hold F), glowing when at least one is ready
-##  - the Ember's fuel as a flame and bar, notches marking a Flash's cost
+##  - the Ember's fuel as a flame and bar with its Q key (hold to raise it);
+##    it greys while the Ember is guttered out
 ## (There is no money in the Gutter: the Lumen counter is gone.)
 
 const TITLE_FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
@@ -15,17 +17,20 @@ const BLOOD_DARK := Color(0.42, 0.06, 0.1)
 const TRAIL := Color(1.0, 0.86, 0.78)
 const HEAL := Color(0.55, 0.95, 0.75)
 
-const BAR := Rect2(30, 24, 280, 24)
+## Centre of the first heart, and the step to the next.
+const HEARTS_AT := Vector2(46, 38)
+const HEART_STEP := 40.0
 
-var current := 5
-var maximum := 5
+var current := 6
+var maximum := 6
 var fuel := 60.0
 var max_fuel := 100.0
 var flash_cost := 25.0
 var heal_cost := 33.0
 
 var _fuel_shown := 60.0
-var _hp_shown := 5.0  # the pale trail behind the bar
+var _hp_shown := 6.0  # hearts above this are still flashing out after a hit
+var _relight := 20.0
 var _hit_flash := 0.0
 var _heal_flash := 0.0
 var _heals := 0
@@ -44,6 +49,8 @@ func _ready() -> void:
 		if player.has_signal("ember_changed"):
 			player.ember_changed.connect(_on_ember_changed)
 			flash_cost = player.flash_cost
+			if "relight_at" in player:
+				_relight = player.relight_at
 			if "heal_cost" in player:
 				heal_cost = player.heal_cost
 			_on_ember_changed(player.fuel, player.max_fuel)
@@ -91,34 +98,37 @@ func _draw() -> void:
 
 func _draw_health() -> void:
 	var shake := Vector2(randf_range(-1, 1), randf_range(-1, 1)) * 3.0 * _hit_flash
-	var bar := Rect2(BAR.position + shake, BAR.size)
-	# inked, slightly slanted frame with a drop shadow
-	var frame := _slant(bar.grow(5.0), 6.0)
-	draw_colored_polygon(_offset(frame, Vector2(4, 4)), Color(0, 0, 0, 0.45))
-	draw_colored_polygon(frame, INK)
-	draw_colored_polygon(_slant(bar, 4.0), BLOOD_DARK.darkened(0.55))
-	var k := clampf(float(current) / maxi(maximum, 1), 0.0, 1.0)
-	var trail := clampf(_hp_shown / maxi(maximum, 1), 0.0, 1.0)
-	if trail > k:
-		draw_colored_polygon(_slant(Rect2(bar.position, Vector2(bar.size.x * trail, bar.size.y)), 4.0), TRAIL)
 	var low := current <= 1 and current > 0
 	var pulse := 0.5 + 0.5 * sin(_time * 9.0) if low else 0.0
-	var fill := BLOOD.lerp(Color(1.0, 0.45, 0.4), pulse * 0.6).lerp(Color.WHITE, _hit_flash * 0.5).lerp(HEAL, _heal_flash * 0.5)
-	if k > 0.0:
-		var r := Rect2(bar.position, Vector2(bar.size.x * k, bar.size.y))
-		draw_colored_polygon(_slant(r, 4.0), fill)
-		# a lighter band along the top: wet ink catching the light
-		draw_colored_polygon(_slant(Rect2(r.position + Vector2(2, 3), Vector2(maxf(r.size.x - 6.0, 0.0), 4.0)), 2.0), Color(1, 1, 1, 0.22))
-	# a notch for every ink drop
-	for i in range(1, maximum):
-		var x := bar.position.x + bar.size.x * i / maximum
-		draw_line(Vector2(x + 3.0, bar.position.y + 1), Vector2(x - 1.0, bar.end.y - 1), INK, 3.0)
-	draw_polyline(_close(frame), PAPER.darkened(0.35), 1.5)
-	# "3 / 5" over the right end
-	var text := "%d / %d" % [current, maximum]
-	var tp := Vector2(bar.end.x - 8.0 - TITLE_FONT.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 22).x, bar.end.y - 4.0)
-	draw_string_outline(TITLE_FONT, tp, text, HORIZONTAL_ALIGNMENT_LEFT, -1, 22, 6, INK)
-	draw_string(TITLE_FONT, tp, text, HORIZONTAL_ALIGNMENT_LEFT, -1, 22, PAPER)
+	for i in maximum:
+		var c := HEARTS_AT + Vector2(HEART_STEP * i, 0) + shake
+		var tilt := sin(i * 2.3) * 0.08  # hand-inked: no two quite level
+		var full := i < current
+		var losing := not full and i < ceili(_hp_shown)  # just lost, still flashing
+		var s := 1.0 + (0.18 * pulse if full and i == current - 1 else 0.0)
+		var outline := _heart(c + Vector2(3, 3), 17.0 * s, tilt)
+		draw_colored_polygon(outline, Color(0, 0, 0, 0.45))
+		draw_colored_polygon(_heart(c, 17.0 * s, tilt), INK)
+		var fill := BLOOD_DARK.darkened(0.55)
+		if full:
+			fill = BLOOD.lerp(Color(1.0, 0.45, 0.4), pulse * 0.6).lerp(HEAL, _heal_flash * 0.5)
+		elif losing:
+			fill = TRAIL.lerp(Color.WHITE, _hit_flash)
+		draw_colored_polygon(_heart(c + Vector2(0, -0.5), 12.5 * s, tilt), fill)
+		if full:
+			# wet ink catching the light
+			draw_circle(c + Vector2(-5.5, -5.0).rotated(tilt) * s, 3.0 * s, Color(1, 1, 1, 0.45))
+
+
+## A heart polygon centred on `c`, about 2 * `r` wide, turned by `tilt`.
+func _heart(c: Vector2, r: float, tilt: float) -> PackedVector2Array:
+	var pts := PackedVector2Array()
+	for k in 28:
+		var t := TAU * k / 28.0
+		var x := 16.0 * pow(sin(t), 3.0)
+		var y := -(13.0 * cos(t) - 5.0 * cos(2.0 * t) - 2.0 * cos(3.0 * t) - cos(4.0 * t))
+		pts.append(c + (Vector2(x, y + 1.5) / 16.0 * r).rotated(tilt))
+	return pts
 
 
 ## The healing counter: an ink flask, "x2", and the F key to drink it.
@@ -174,11 +184,18 @@ func _draw_ember(at: Vector2) -> void:
 	var bar := Rect2(at + Vector2(18, -6), Vector2(200, 12))
 	draw_rect(bar.grow(3.0), INK)
 	var w := bar.size.x * clampf(_fuel_shown / max_fuel, 0.0, 1.0)
-	draw_rect(Rect2(bar.position, Vector2(w, bar.size.y)), ember if fuel >= flash_cost else ember.darkened(0.45))
-	var n := int(max_fuel / flash_cost)
-	for i in range(1, n):
-		var x := bar.position.x + bar.size.x * i * flash_cost / max_fuel
-		draw_line(Vector2(x, bar.position.y), Vector2(x, bar.end.y), INK, 2.0)
+	var player := get_tree().get_first_node_in_group("player")
+	var snuffed: bool = player != null and player.get("_snuffed") == true
+	var raised: bool = player != null and player.get("ember_raised") == true
+	draw_rect(Rect2(bar.position, Vector2(w, bar.size.y)), ember.darkened(0.5) if snuffed else ember.lightened(0.25 if raised else 0.0))
+	# where a guttered Ember lights again
+	var rx := bar.position.x + bar.size.x * _relight / max_fuel
+	draw_line(Vector2(rx, bar.position.y), Vector2(rx, bar.end.y), Color(INK, 0.6), 2.0)
+	# the key: hold Q to raise it
+	var key := Rect2(bar.end + Vector2(12, -16), Vector2(20, 20))
+	draw_rect(key, Color(PAPER, 0.85 if not snuffed else 0.35))
+	draw_rect(key, INK, false, 2.0)
+	draw_string(TITLE_FONT, key.position + Vector2(4, 17), "Q", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, INK)
 
 
 ## A rectangle as a polygon whose right side leans by `lean` pixels.

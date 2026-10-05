@@ -1,7 +1,7 @@
 extends Control
 ## First-run controls tutorial. One move at a time, its key flashes in the
 ## middle of the screen until the player does it, then it drops into a tray
-## of learned keys at the bottom. Moves that only matter later (Ember, Flash,
+## of learned keys at the bottom. Moves that only matter later (the Ember,
 ## Heal) pop up on their own the first time they're useful.
 ##
 ## Every step is remembered in Profile, so each one plays only once (a
@@ -32,7 +32,7 @@ const BASICS := {
 		{"id": "move", "word": "MOVE", "keys": [["W", "up"], ["A", "move_left"], ["S", "down"], ["D", "move_right"]]},
 		{"id": "jump", "word": "JUMP", "keys": [["SPACE", "jump"]]},
 		{"id": "attack", "word": "ATTACK", "keys": [["LMB", "attack"]]},
-		{"id": "dash", "word": "DASH", "keys": [["SHIFT", "dash"]]},
+		{"id": "dash", "word": "DASH", "keys": [["RMB", "dash"]]},
 	],
 }
 ## Taught once, the first time `when` holds (see _ready_for()).
@@ -42,7 +42,7 @@ const LATER := {
 		{"id": "wall", "word": "WALL JUMP", "keys": [["SPACE", "jump"]], "when": "on_wall"},
 	],
 	"25d": [
-		{"id": "flash", "word": "FLASH", "keys": [["Q", "flash"]], "when": "near_monster"},
+		{"id": "ember25", "word": "EMBER", "keys": [["Q", "flash"]], "hold": 0.8, "when": "near_monster"},
 		{"id": "heal", "word": "HEAL", "keys": [["F", "heal"]], "hold": 0.6, "when": "hurt"},
 	],
 }
@@ -261,9 +261,6 @@ func _check_input(delta: float) -> void:
 
 
 func _down(action: String) -> bool:
-	# right click is Flash in 2.5D, not dash (clearing_player.gd)
-	if action == "dash" and mode == "25d" and Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT):
-		return false
 	return Input.is_action_pressed(action)
 
 

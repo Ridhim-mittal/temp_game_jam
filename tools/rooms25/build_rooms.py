@@ -154,10 +154,12 @@ def chasm_depths(r, kind_list, y=-7):
 # ------------------------------------------------------------ Level 1: The Inkwood
 # Level 1 is the hub (scenes/clearing/clearing.tscn, a few Scribbles) and
 # this room: where Vesper lands after slipping out from under the eraser.
-# Its only monsters are the Half-Drawn (half_drawn_3d.gd): ghosts the Writer
-# began and never finished, who cut at you with a nib-blade. A few of them,
-# easy to read and quick to fall, with a slow lamp. The page round it is a
-# comic book (room.gd backdrop_style).
+# Its only monsters are the Half-Drawn (half_drawn_3d.gd): scribbles the
+# Writer never finished, barely on the page. Out of the Ember's light they
+# are faint ghosts a sword goes through; hold Q and inside its light they
+# ink in, solid enough to cut. A few of them, quick with a nib-blade, quick
+# to fall, with a slow lamp. The page round it is a comic book (room.gd
+# backdrop_style).
 r = Room("darkwood_1", "darkwood", CELLS[0], 14, 9.5, seed=11)
 r.gate("east", HUB, "cave", entry_only=True)  # the Gutter only goes forward
 r.gate("west", R + "shallows_pen.tscn", "east", offset=0)
@@ -171,7 +173,7 @@ r.prop("brazier", 9.5, 6, name="Lantern2", flame_color="Color(1, 0.25, 0.15, 1)"
 forest_ring(r)
 r.haunt_scale = 0.85  # the first level: the lamp is slow and patient
 r.write("The Inkwood", "1 / 4",
-        "~You slipped out from under my eraser. Into the gutter, of all places.|~These ones I never finished. I ran out of ink. I ran out of time.|They still remember how to swing. Watch the blade go up, step back, then cut them down.",
+        "~You slipped out from under my eraser. Into the gutter, of all places.|~These I never finished. Barely a scribble each. You'll hardly see them coming.|Hold Q and raise your Ember. Only in its light are they drawn enough to cut.|Watch their eyes. When the blade goes up, get out of the way.",
         "See? Nothing in here you can't handle. ...Yet.",
         extra_room_props="backdrop_style = 1")
 
