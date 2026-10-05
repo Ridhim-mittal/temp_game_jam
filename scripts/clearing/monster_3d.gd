@@ -21,7 +21,7 @@ const DANGER := Color(1.0, 0.86, 0.2)
 const PALE := Color(0.98, 0.96, 0.9)
 
 @export var hp := 3
-@export var contact_damage := 1
+@export var contact_damage := 2  # half ink bottles: one bottle
 @export var gravity := 30.0
 @export var knockback := 6.0
 @export var sight := 9.0

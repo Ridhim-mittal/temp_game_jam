@@ -14,7 +14,7 @@ enum State { PATROL, IDLE, ALERT, CHASE, WINDUP, LEAP, RECOVER, SPIT, STUNNED }
 
 @export_group("Stats")
 @export var max_health := 4
-@export var contact_damage := 15.0  # HP
+@export var contact_damage := 1.0  # half ink bottles
 @export var gravity := 2000.0
 
 @export_group("Movement")

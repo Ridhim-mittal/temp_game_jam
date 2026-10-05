@@ -3,7 +3,7 @@ extends "res://scripts/world25/searchlight.gd"
 ## the biome's HauntProfile), hunting Vesper. A pure white column of light
 ## comes down out of the dark onto a circle of the Writer's proofreading
 ## marks. Built on searchlight.gd, so it shares its erase meter (standing in
-## the light whitens Vesper; a full meter costs an ink drop), its shadow
+## the light whitens Vesper; a full meter costs an ink bottle), its shadow
 ## rays (solid props between the lamp and a point block it: hide behind
 ## them), the Flash investigation (`hear`), erasing monsters it catches and
 ## lighting drawn bridges. For shadows the light counts as coming from up
@@ -393,7 +393,7 @@ func _update_erase(player: Node3D, seen: bool, delta: float) -> void:
 		if profile.can_damage and player.has_method("take_damage") and not player.dead:
 			erase = 0.0
 			player._invuln = 0.0
-			player.take_damage(1, Vector3(spot.x, player.global_position.y, spot.z))
+			player.take_damage(2, Vector3(spot.x, player.global_position.y, spot.z))  # one ink bottle
 			_line("Out. OUT.")
 		else:
 			erase = 0.92

@@ -164,4 +164,4 @@ func paint(c: CanvasItem) -> void:
 
 
 func damage_default() -> float:
-	return 35.0  # mini-boss charge
+	return 3.0  # mini-boss charge

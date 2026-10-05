@@ -1,14 +1,14 @@
 @tool
 extends Area2D
 ## Health pickup: a cute little heart with a face and tiny flapping wings,
-## bobbing in the air. Touch it to heal `amount` HP. It stays put while
+## bobbing in the air. Touch it to heal `amount` half bottles (2 = one ink bottle). It stays put while
 ## you are at full health, so you can come back for it.
 
 const INK := Color(0.05, 0.03, 0.1)
 const ComicText = preload("res://scripts/effects/comic_text.gd")
 const OnScreen = preload("res://scripts/core/on_screen.gd")
 
-@export var amount := 30.0
+@export var amount := 2.0
 @export var heart_color := Color(1.0, 0.36, 0.42)
 
 var _time := 0.0
@@ -44,7 +44,7 @@ func _collect() -> void:
 	_taken = true
 	set_deferred("monitoring", false)
 	var pop := ComicText.new()
-	pop.text = "+%d" % int(amount)
+	pop.text = "+%s INK" % ("%d" % int(amount / 2.0) if int(amount) % 2 == 0 else str(amount / 2.0))
 	pop.color = Color(0.45, 1.0, 0.55)
 	pop.position = global_position + Vector2(0, -30)
 	get_tree().current_scene.add_child(pop)

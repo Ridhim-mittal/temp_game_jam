@@ -166,7 +166,7 @@ func half_drawn_test() -> void:
 			swung = true
 		if player.health < hp:
 			break
-	check(swung and player.health == hp - 1, "it winds up, swings and its blade takes an ink drop (%d -> %d)" % [hp, player.health])
+	check(swung and player.health == hp - 2, "it winds up, swings and its blade takes an ink bottle (%d -> %d half bottles)" % [hp, player.health])
 	player._invuln = 999.0
 	g.set_physics_process(false)
 	g.global_position = Vector3(0, 0.05, 0)
@@ -188,13 +188,13 @@ func half_drawn_test() -> void:
 	check(g.dead and g.hp == 5, "five hits in the light and it's unwritten (hp %d)" % g.hp)
 
 
-## Six hearts, and the hub's shrine is Vesper's.
+## Six ink bottles (12 half bottles, ink_bottles.gd), and the hub's shrine is Vesper's.
 func hub_test() -> void:
 	change_scene_to_file(HUB)
 	await frames(6)
 	var player = current_scene.player
 	var hud: Node = current_scene.find_children("*", "Control", true, false).filter(func(n): return n.has_method("_draw_heals"))[0]
-	check(player.max_health == 6 and hud.maximum == 6 and hud.has_method("_heart"), "six hearts (max %d, HUD %d)" % [player.max_health, hud.maximum])
+	check(player.max_health == 12 and hud.maximum == 12 and hud._bottles.count() == 6, "six ink bottles (max %d half bottles, HUD %d, %d bottles)" % [player.max_health, hud.maximum, hud._bottles.count()])
 	var altar: Node = current_scene.get_node("Props/Altar")
 	check(altar.find_child("Statue", true, false) != null, "the hub's shrine holds a statue of Vesper")
 
