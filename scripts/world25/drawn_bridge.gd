@@ -2,7 +2,7 @@
 extends Node3D
 ## A drawn bridge: a pencil sketch of a walkway (pale dashed ghost planks you
 ## fall through) that Vesper inks in, as in the 2D Sketchbook. Standing at
-## its end or on it, he holds the Ember up (Flash / Q, see
+## its end or on it, he holds the Ember up (Flash / right click, see
 ## clearing_player.gd) and ink runs out from his feet along the planks, up
 ## to `ink_reach` per hold, each plank costing `ink_cost` Ember fuel. Inked
 ## planks stay for good. Nothing forms on its own.
@@ -43,10 +43,10 @@ const INK := Color(0.07, 0.04, 0.11)
 	set(v):
 		preview_solid = v
 		_rebuild()
-## Planks are made only by inking (hold Q by the bridge). Off: the old
+## Planks are made only by inking (hold right click by the bridge). Off: the old
 ## light rule (solid wherever light reaches, gone when it leaves).
 @export var ink_only := true
-## How far along the bridge one hold of Q can ink, from Vesper's feet.
+## How far along the bridge one hold of right click can ink, from Vesper's feet.
 @export var ink_reach := 5.0
 ## How fast the ink runs out along the planks, units a second.
 @export var ink_speed := 6.0
@@ -59,7 +59,7 @@ var _planks: Array = []  # [{shape, solid, ghost, state, timer, center, half, t,
 var _player: Node3D
 var _front := 0.0  # how far the ink has run from Vesper during this hold
 var _hold := 0.0  # > 0 while Vesper keeps inking (ink() refreshes it)
-var _anchor: Node2D  # the "HOLD Q" prompt
+var _anchor: Node2D  # the "HOLD RIGHT CLICK" prompt
 
 
 func _ready() -> void:
@@ -230,7 +230,7 @@ func finished() -> bool:
 	return true
 
 
-## "HOLD Q  INK" over the next sketched plank while Vesper could ink it.
+## "HOLD RIGHT CLICK  INK" over the next sketched plank while Vesper could ink it.
 func _update_prompt() -> void:
 	var on := false
 	var at := Vector3.ZERO
@@ -246,7 +246,7 @@ func _update_prompt() -> void:
 			return
 		_anchor = ScreenAnchor.new()
 		var label := Label.new()
-		label.text = "HOLD Q  INK THE BRIDGE"
+		label.text = "HOLD RIGHT CLICK  INK THE BRIDGE"
 		label.add_theme_font_override("font", TITLE_FONT)
 		label.add_theme_font_size_override("font_size", 26)
 		label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))

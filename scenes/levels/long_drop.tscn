@@ -491,7 +491,7 @@ tilt = 0.03
 z_index = 5
 position = Vector2(3460, 3720)
 script = ExtResource("43_caption")
-text = "BLUE PENCIL NEVER TAKES INK.\nIT NEEDS LIGHT ALL THE WAY (HOLD Q)."
+text = "BLUE PENCIL NEVER TAKES INK.\nIT NEEDS LIGHT ALL THE WAY (HOLD RIGHT CLICK)."
 tilt = -0.03
 
 [node name="Heart2" type="Area2D" parent="World"]
@@ -853,7 +853,7 @@ one_way = true
 z_index = 5
 position = Vector2(3930, 6770)
 script = ExtResource("43_caption")
-text = "THE LIGHT SWINGS. SHADOWS HOLD NOTHING UP.\nYOUR EMBER DOES (HOLD Q).\nA LANTERN'S LIGHT REFILLS IT."
+text = "THE LIGHT SWINGS. SHADOWS HOLD NOTHING UP.\nYOUR EMBER DOES (HOLD RIGHT CLICK).\nA LANTERN'S LIGHT REFILLS IT."
 tilt = -0.03
 
 [node name="Ledge62" type="StaticBody2D" parent="World"]

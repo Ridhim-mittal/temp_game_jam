@@ -10,16 +10,15 @@ func _enter_tree() -> void:
 	_add_keys("jump", [KEY_SPACE, KEY_Z])
 	_add_keys("attack", [KEY_X])  # keyboard fallback (trackpads)
 	_add_mouse_button("attack", MOUSE_BUTTON_LEFT)
-	_add_keys("dash", [KEY_C, KEY_SHIFT])  # keyboard fallbacks
-	_add_mouse_button("dash", MOUSE_BUTTON_RIGHT)
+	_add_keys("dash", [KEY_SHIFT, KEY_C])  # C: keyboard fallback
 	_add_keys("restart", [KEY_R])
-	# 2.5D Ember: hold Q to raise it (clearing_player.gd); right click dashes
-	# in both modes
-	_add_keys("flash", [KEY_Q])
+	# The light is right click in both modes: hold it to raise the Ember.
+	# 2.5D ("flash", clearing_player.gd); Shift dashes in both modes.
+	_add_mouse_button("flash", MOUSE_BUTTON_RIGHT)
 	_add_keys("heal", [KEY_F])
 	_add_keys("interact", [KEY_E])
-	# platformer Ember: hold to raise it (light makes sketches real)
-	_add_keys("ember", [KEY_Q, KEY_E])
+	# platformer Ember: hold right click to raise it (light makes sketches real)
+	_add_mouse_button("ember", MOUSE_BUTTON_RIGHT)
 
 	_add_joy_button("jump", JOY_BUTTON_A)
 	_add_joy_button("attack", JOY_BUTTON_X)

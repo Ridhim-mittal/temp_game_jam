@@ -10,7 +10,7 @@ extends CharacterBody2D
 ##  - directional slashes (side / up / down-in-air)
 ##  - down-slash pogo off enemies and hazards, side-slash recoil
 ##  - damage, knockback, i-frames; spikes put you back on the last safe ground
-##  - the Ember (ember.gd): hold Q/E to raise a light that makes sketches real
+##  - the Ember (ember.gd): hold right click to raise a light that makes sketches real
 
 signal health_changed(current: float, maximum: float)
 signal died

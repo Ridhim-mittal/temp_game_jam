@@ -127,7 +127,8 @@ func _ready() -> void:
 		ui.set_boss(boss, boss_name)
 	if enter_captions != "" and (world == null or world.once(room_id + ":enter")):
 		_captions(enter_captions)
-	Tutorial.start(self, player, "25d", ui)  # first run only; waits for the captions
+	# no controls tutorial here: the keys are the same as in 2D, where it plays
+	# (Pause -> Controls still shows them on request, replay_tutorial())
 
 
 ## "|" separates captions; a leading "~" makes one shaky (the Writer

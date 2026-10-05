@@ -3,7 +3,7 @@
 The Gutter is four levels, west of the hub (The Spine, hand-made):
   1 The Inkwood       darkwood_1    a few Half-Drawn ghosts (after the hub's Scribbles)
   2 The Red Pen       shallows_pen  the boss, with two of the Writer's lamps
-  3 The Torn Page     wastes_gap    ink the sketched bridge across with Q
+  3 The Torn Page     wastes_gap    ink the sketched bridge across with right click
   4 The Rubbing Room  arena         the Eraser, hard
 Each block describes one room: size, gates (and where they lead), monsters,
 props, the Writer's captions and how hard the Writer's lamp hunts there
@@ -156,7 +156,7 @@ def chasm_depths(r, kind_list, y=-7):
 # this room: where Vesper lands after slipping out from under the eraser.
 # Its only monsters are the Half-Drawn (half_drawn_3d.gd): scribbles the
 # Writer never finished, barely on the page. Out of the Ember's light they
-# are faint ghosts a sword goes through; hold Q and inside its light they
+# are faint ghosts a sword goes through; hold right click and inside its light they
 # ink in, solid enough to cut. A few of them, quick with a nib-blade, quick
 # to fall, with a slow lamp. The page round it is a comic book (room.gd
 # backdrop_style).
@@ -173,7 +173,7 @@ r.prop("brazier", 9.5, 6, name="Lantern2", flame_color="Color(1, 0.25, 0.15, 1)"
 forest_ring(r)
 r.haunt_scale = 0.85  # the first level: the lamp is slow and patient
 r.write("The Inkwood", "1 / 4",
-        "~You slipped out from under my eraser. Into the gutter, of all places.|~These I never finished. Barely a scribble each. You'll hardly see them coming.|Hold Q and raise your Ember. Only in its light are they drawn enough to cut.|Watch their eyes. When the blade goes up, get out of the way.",
+        "~You slipped out from under my eraser. Into the gutter, of all places.|~These I never finished. Barely a scribble each. You'll hardly see them coming.|Hold right click and raise your Ember. Only in its light are they drawn enough to cut.|Watch their eyes. When the blade goes up, get out of the way.",
         "See? Nothing in here you can't handle. ...Yet.",
         extra_room_props="backdrop_style = 1")
 
@@ -202,7 +202,7 @@ r.write("The Red Pen", "The Drowned Margin, 2 / 4",
 
 # ------------------------------------------------------------ Level 3: The Torn Page
 # Two islands either side of a chasm and a bridge that is only a pencil
-# sketch: stand at its end and hold Q, and Vesper's Ember inks it in plank
+# sketch: stand at its end and hold right click, and Vesper's Ember inks it in plank
 # by plank for good (drawn_bridge.gd; each plank costs a little Ember, every
 # hit refills it). Gentler than before: a shorter bridge, one slow lamp, no
 # searchlight, no Inkwells or Crumples.
@@ -229,7 +229,7 @@ chasm_depths(r, [(("bprops", {"kind": KIND["CRYSTAL"], "size": 3.0, "count": 5, 
 r.haunt_lamps = 1
 r.haunt_scale = 0.85  # one slow lamp while you work on the bridge
 r.write("The Torn Page", "The Torn Wastes, 3 / 4",
-        "~This page tore right down the middle. I only ever sketched the bridge.|Stand at the edge and hold Q: your Ember inks the sketch in, plank by plank.|Inking costs Ember. Every hit feeds it, lanterns included.",
+        "~This page tore right down the middle. I only ever sketched the bridge.|Stand at the edge and hold right click: your Ember inks the sketch in, plank by plank.|Inking costs Ember. Every hit feeds it, lanterns included.",
         "~Stop. Please. You don't want to see the last page.")
 
 # ------------------------------------------------------------ Level 4: The Rubbing Room

@@ -26,25 +26,25 @@ const BASICS := {
 		{"id": "move", "word": "MOVE", "keys": [["A", "move_left"], ["D", "move_right"]]},
 		{"id": "jump", "word": "JUMP", "keys": [["SPACE", "jump"]], "hold": 0.3},
 		{"id": "attack", "word": "ATTACK", "keys": [["LMB", "attack"]]},
-		{"id": "dash", "word": "DASH", "keys": [["RMB", "dash"]]},
+		{"id": "dash", "word": "DASH", "keys": [["SHIFT", "dash"]]},
 	],
 	"25d": [
 		{"id": "move", "word": "MOVE", "keys": [["W", "up"], ["A", "move_left"], ["S", "down"], ["D", "move_right"]]},
 		{"id": "jump", "word": "JUMP", "keys": [["SPACE", "jump"]]},
 		{"id": "attack", "word": "ATTACK", "keys": [["LMB", "attack"]]},
-		{"id": "dash", "word": "DASH", "keys": [["RMB", "dash"]]},
+		{"id": "dash", "word": "DASH", "keys": [["SHIFT", "dash"]]},
 	],
 }
 ## Taught once, the first time `when` holds (see _ready_for()).
 const LATER := {
 	"2d": [
-		{"id": "ember", "word": "EMBER", "keys": [["Q", "ember"]], "hold": 0.8, "when": "near_lantern"},
+		{"id": "ember", "word": "EMBER", "keys": [["RMB", "ember"]], "hold": 0.8, "when": "near_lantern"},
 		{"id": "wall", "word": "WALL JUMP", "keys": [["SPACE", "jump"]], "when": "on_wall"},
 		# hold attack past player.gd's charge_time (0.6 s), let go: an ink wave flies out
 		{"id": "inkwave", "word": "LONG-RANGE INK WAVE", "keys": [["LMB", "attack"]], "hold": 0.7, "when": "near_flyer"},
 	],
 	"25d": [
-		{"id": "ember25", "word": "EMBER", "keys": [["Q", "flash"]], "hold": 0.8, "when": "near_monster"},
+		{"id": "ember25", "word": "EMBER", "keys": [["RMB", "flash"]], "hold": 0.8, "when": "near_monster"},
 		{"id": "heal", "word": "HEAL", "keys": [["F", "heal"]], "hold": 0.6, "when": "hurt"},
 	],
 }
