@@ -13,6 +13,7 @@ var checkpoint_id := ""
 var passed := {}      # pen ids already passed (they stay green)
 var coins := 0
 var collected := {}   # coin ids already picked up (they stay gone)
+var seen := {}        # one-off moments already played (narration captions)
 
 
 func reset() -> void:
@@ -21,6 +22,7 @@ func reset() -> void:
 	passed.clear()
 	coins = 0
 	collected.clear()
+	seen.clear()
 
 
 ## A stable id for a node in the current level ("scene::node/path").

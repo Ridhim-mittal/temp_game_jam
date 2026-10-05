@@ -10,7 +10,7 @@ const INK := Color(0.05, 0.03, 0.1)
 	set(value):
 		text = value
 		queue_redraw()
-@export var font_size := 22:
+@export var font_size := 30:
 	set(value):
 		font_size = value
 		queue_redraw()

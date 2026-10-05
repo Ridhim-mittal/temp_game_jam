@@ -172,7 +172,8 @@ func _ready() -> void:
 	add_child(_streaks)
 	health_changed.emit(health, max_health)
 	coins_changed.emit(coins)
-	Tutorial.start(self, self, "2d")  # first run only
+	# first run only; waits while the Writer's narration (narration.gd) is writing
+	Tutorial.start(self, self, "2d", get_tree().get_first_node_in_group("narration"))
 
 
 func _physics_process(delta: float) -> void:

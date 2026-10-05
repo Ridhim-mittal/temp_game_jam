@@ -18,7 +18,12 @@ All art is drawn in code (`_draw()`, shaders, primitive meshes); no texture asse
 ## 2D story start (main menu PLAY)
 `cs_opening` → THE CITY (`scenes/levels/test_level.tscn`, a ~1 min controls tutorial) → glowing
 `panel_door.gd` ("MOVE TO THE NEXT PANEL") → THE SKETCHBOOK (`sketchbook.tscn`, light tutorial) →
-door into the Margins hub. Both levels come from `tools/level2d/build_test_level.py`. The trapdoor
+door into THE LONG DROP. Doors play `scripts/effects/panel_turn.gd` (the frame shrinks into a panel on
+a comic page, pan across the gutter, the next panel inks in and zooms up). Both levels sit inside a
+comic page (`scripts/ui/comic_frame.gd`; outside its `live_areas` the world is redrawn as a pencil
+sketch by `shaders/pencil_outside.gdshader`, the HUD stays as is); the City opens with the Writer's typed caption
+(`scripts/ui/narration.gd`, once per run via GameState.seen; the controls tutorial waits for it).
+Both levels come from `tools/level2d/build_test_level.py`. The trapdoor
 (`trapdoor.gd` + `gutter_fall.gd`) is kept for a later level but no longer placed.
 
 ## 2D light mechanic (the Sketchbook level)
