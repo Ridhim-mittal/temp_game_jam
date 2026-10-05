@@ -112,6 +112,35 @@ Branch `gutter-rework`, made from `main`. Everything here is the 2.5D part (the 
       after dying, nothing can hurt Vesper: monsters, falls and the lamps' light all miss, and
       he blinks while it lasts.
 
+11. **Level 1, reworked** (your notes on the hub and the room after it):
+    - **Comic-book background:** the hub and its next room no longer float over a red
+      occult abyss. Below the floor lies a printed comic page in the 2D levels' style, drifting
+      slowly: panels with halftone sunbursts, a pop-art skyline, pencil cross-hatching, speed
+      lines round a POW burst, Ben-Day dot skies and a halftone moon. Torn-out panels and
+      sound-effect words ("KRAK!", "SKRITCH", "THE END?") float round the floor, two giant
+      pencils lean over the page, and paper dust drifts up. Other levels keep their old
+      background for now (`backdrop_style` in room.gd).
+    - **Symbols from the game:** every symbol (the ritual rings, the rune stones and graves,
+      the marks scratched in the floor) is now one of the Writer's marks, in every level. The
+      marks are the Writer's eye, an ink drop, a pen nib, a quill, the Ember's flame, ¶, *, a
+      speech bubble, a comic POW burst and a question mark. The pentagram in the rings is now
+      a great pen nib.
+    - **Fewer ink blobs in the hub:** 3 Scribbles instead of 7.
+    - **Forward only:** the gate you came in through never opens again. A moment after you
+      arrive, its sketched path rubs itself out, slab by slab. This applies to all four
+      levels.
+    - **The Half-Drawn** (new monster, from your sheet): the only monsters in the room after
+      the hub, four of them.
+      - **Look:** a tall hooded ghost. Its left half is inked (pale ghostly teal, a torn robe,
+        a skull face with glowing eyes and a nib-blade in its hand). Its right half is raw
+        pencil wireframe, ending in a stub arm. A torn patch of nothing shows through its
+        chest.
+      - **Fight:** it drifts after you and raises the blade high behind its head with its eyes
+        flaring (a slow, clear tell), then slashes across an arc in front for one ink drop.
+        Touching it doesn't hurt; only the blade does.
+      - **Counterplay:** hit it during the windup and it staggers out of the swing. Three hits
+        and it's gone ("UNWRITTEN").
+
 ## Tuning knobs
 
 | What | Where |
@@ -135,6 +164,9 @@ Branch `gutter-rework`, made from `main`. Everything here is the 2.5D part (the 
 | Inking the bridge | `drawn_bridge.gd`: `ink_reach` (5), `ink_speed` (6), `ink_cost` (3 Ember a plank); `ink_only` off = old light rule |
 | Eraser difficulty | `build_rooms.py` arena block (hp, walk_speed, lunge_speed, windup_time, tired_time, cooldown); `eraser_3d.gd` `double_charge_below` (0.5) |
 | Which monsters where | `build_rooms.py`, one block per level (`r.enemy(...)`) |
+| Half-Drawn | `half_drawn_3d.gd`: `drift_speed`, `strike_range`, `reach`, `arc`, `windup_time`, `strike_time`, `recover_time`, `cooldown`, `blade_damage`, `hp` (3); look in `half_drawn_model.gd` (`model_scale`, colours) |
+| Background style | room.gd `backdrop_style` (SIGIL / COMIC); the page in `comic_page.gdshader` (`brightness`, `panel_size`, `drift`), words in room.gd `SOUND_WORDS` |
+| Symbols | `shaders/world25/writers_marks.gdshaderinc` (add a mark, raise `WM_COUNT`) |
 | Lamp difficulty | room.gd `_spawn_haunt()`: Relaxed speed ×0.75 / telegraph ×1.3, Hard ×1.25 / ×0.8 |
 | Lamp light direction | `haunt_lamp.gd`: `SOURCE_DIR` (from up and towards the back: props throw shadows towards the camera) |
 
@@ -162,10 +194,14 @@ These ran with Godot 4.7-stable under Xvfb with software OpenGL.
   - Hiding behind a wall makes the lamp lose Vesper.
   - The Spine's lamp never damages or strikes.
   - The circles glide, with no jumps between physics ticks.
-- **`tests/gutter/test_levels.gd` (new): 24/24 checks.**
-  - The gates chain hub → 1 → 2 → 3 → 4 and back, and none leads to a retired room.
-  - Level 1 has every ordinary monster; level 3 has no Inkwells, Crumples or divers; the
-    Eraser is tougher and turns furious at half health.
+- **`tests/gutter/test_levels.gd`: 34/34 checks.**
+  - The gates chain hub → 1 → 2 → 3 → 4, and none leads to a retired room.
+  - Every level's way in is one-way. In a cleared room the way on opens and the way back
+    stays shut.
+  - The hub has 3 Scribbles and the next room has only Half-Drawn (4). Level 3 has no
+    Inkwells, Crumples or divers. The Eraser is tougher and turns furious at half health.
+  - The Half-Drawn: touching it is safe; it winds up, swings and its blade takes an ink
+    drop; a hit mid-windup staggers it; three hits finish it.
   - Spawn protection: a hit and a lamp's light do nothing for 2 s, then hits land again.
   - The bridge stays a sketch while Vesper stands by it.
   - Holding Q inks 6 of 8 planks for 3 Ember each, with no Flash, and they stay.

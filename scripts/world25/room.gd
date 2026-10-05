@@ -30,6 +30,11 @@ const DarknessScript = preload("res://scripts/world25/darkness.gd")
 const RING_SHADER = preload("res://shaders/world25/sigil_ring.gdshader")
 const MIST_SHADER = preload("res://shaders/world25/void_mist.gdshader")
 const BiomeProps = preload("res://scripts/world25/biome_props.gd")
+const PAGE_SHADER = preload("res://shaders/world25/comic_page.gdshader")
+const COMIC_FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
+## Sound-effect words floating in a COMIC backdrop.
+const SOUND_WORDS := ["KRAK!", "WHUMP", "SKRITCH", "?!", "BLAM!", "SHHH...", "SCRIBBLE", "FWOOSH", "THE END?", "...!"]
+const WORD_COLORS := [Color(1.0, 0.85, 0.25), Color(0.95, 0.3, 0.25), Color(0.98, 0.96, 0.9), Color(0.45, 0.85, 0.95)]
 
 @export var room_id := "room"
 @export var biome: Resource:
@@ -41,10 +46,14 @@ const BiomeProps = preload("res://scripts/world25/biome_props.gd")
 @export var camera_bounds := Rect2(-10, -8, 20, 16)
 ## Where the player starts when not arriving through a gate.
 @export var default_spawn := Vector3(0, 0.05, 0)
-## The living background round the floor (_build_backdrop): a great sigil
-## turning far below, mist, rising embers, skull heaps and ink statues in
-## the void.
+## The living background round the floor: a great sigil turning far
+## below, mist, rising embers, skull heaps and ink statues in the void
+## (SIGIL, _build_backdrop), or a comic book in the 2D levels' look (COMIC,
+## _build_comic_backdrop): a page of panels far below, torn-out panels and
+## sound-effect words floating round the floor, giant pencils, paper dust.
 @export var backdrop := true
+enum BackdropStyle { SIGIL, COMIC }
+@export var backdrop_style := BackdropStyle.SIGIL
 
 @export_group("Story")
 ## Big title shown on entering (defaults to the biome's name).
@@ -216,7 +225,10 @@ func _build_environment() -> void:
 	add_child(_motes)
 	_apply_air(b, b, 0.0)
 	if backdrop:
-		_build_backdrop(b)
+		if backdrop_style == BackdropStyle.COMIC:
+			_build_comic_backdrop()
+		else:
+			_build_backdrop(b)
 
 
 ## The void round the room, so the floor floats in something: a huge
@@ -332,6 +344,152 @@ func _build_backdrop(b: Resource) -> void:
 		placed += 1
 		if placed >= 7:
 			break
+
+
+## The COMIC backdrop: the Gutter seen as what it is, the margin of a comic
+## book. A printed page of panels far below (comic_page.gdshader), torn-out
+## panels and sound-effect words drifting round the floor, two giant pencils
+## leaning over the page as if still drawing it, and paper dust rising.
+func _build_comic_backdrop() -> void:
+	var c := camera_bounds.get_center()
+	var span := maxf(camera_bounds.size.x, camera_bounds.size.y) + 40.0
+	var holder := Node3D.new()
+	holder.name = "Backdrop"
+	add_child(holder)
+	var page_q := QuadMesh.new()
+	page_q.orientation = PlaneMesh.FACE_Y
+	page_q.size = Vector2(span * 1.8, span * 1.8)
+	var pm := ShaderMaterial.new()
+	pm.shader = PAGE_SHADER
+	var page := MeshInstance3D.new()
+	page.name = "Page"
+	page.mesh = page_q
+	page.material_override = pm
+	page.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	page.position = Vector3(c.x, -22.0, c.y - 6.0)
+	holder.add_child(page)
+	# torn-out panels, sound words and pencils in the void round the floor
+	var rng := RandomNumberGenerator.new()
+	rng.seed = room_id.hash()
+	var half := camera_bounds.size * 0.5 + Vector2(8.0, 6.5)
+	var spots := 16
+	var placed := 0
+	for i in spots:
+		var a := TAU * (i + rng.randf_range(-0.3, 0.3)) / spots
+		var p := Vector3(c.x + cos(a) * half.x * rng.randf_range(0.95, 1.25), 0.0, c.y + sin(a) * half.y * rng.randf_range(0.95, 1.2))
+		if on_floor(p) or _near_gate(p, 7.0):
+			continue
+		var node: Node3D
+		match placed % 3:
+			0:
+				node = _comic_scrap(rng)
+				p.y = rng.randf_range(-7.0, -3.0)
+			1:
+				node = _sound_word(rng)
+				p.y = rng.randf_range(-4.0, -1.0)
+			_:
+				node = _comic_scrap(rng)
+				p.y = rng.randf_range(-11.0, -6.0)
+		node.position = p
+		holder.add_child(node)
+		_drift(node, rng)
+		placed += 1
+		if placed >= 9:
+			break
+	for k in 2:
+		var pencil := Node3D.new()
+		pencil.set_script(BiomeProps)
+		var side := -1.0 if k == 0 else 1.0
+		pencil.position = Vector3(c.x + side * (half.x + 4.0), -14.0, c.y - half.y * 0.6 + k * 6.0)
+		pencil.rotation_degrees = Vector3(0, rng.randf_range(-30, 30), side * -32.0)
+		holder.add_child(pencil)
+		pencil.size = 4.0
+		pencil.seed = 70 + k
+		pencil.kind = BiomeProps.Kind.PENCIL_TOTEM
+	# paper dust and flecks of ink rising out of the page
+	var dust := CPUParticles3D.new()
+	var dq := QuadMesh.new()
+	dq.size = Vector2(0.12, 0.12)
+	var dm := StandardMaterial3D.new()
+	dm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	dm.vertex_color_use_as_albedo = true
+	dm.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	dm.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
+	dq.material = dm
+	dust.mesh = dq
+	dust.amount = 70
+	dust.lifetime = 12.0
+	dust.preprocess = 12.0
+	dust.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
+	dust.emission_box_extents = Vector3(span * 0.45, 1.0, span * 0.4)
+	dust.position = Vector3(c.x, -12.0, c.y - 4.0)
+	dust.direction = Vector3(0.1, 1, 0)
+	dust.spread = 30.0
+	dust.gravity = Vector3(0.1, 0.2, 0)
+	dust.initial_velocity_min = 0.4
+	dust.initial_velocity_max = 1.2
+	dust.scale_amount_min = 0.5
+	dust.scale_amount_max = 1.5
+	var dg := Gradient.new()
+	dg.offsets = PackedFloat32Array([0, 0.2, 0.75, 1])
+	var paper := Color(0.95, 0.92, 0.82)
+	dg.colors = PackedColorArray([Color(paper, 0), Color(paper, 0.7), Color(paper, 0.35), Color(paper, 0)])
+	dust.color_ramp = dg
+	holder.add_child(dust)
+
+
+## One torn-out comic panel (comic_page.gdshader, `single`), tilted up
+## towards the camera.
+func _comic_scrap(rng: RandomNumberGenerator) -> Node3D:
+	var q := QuadMesh.new()
+	q.orientation = PlaneMesh.FACE_Y
+	q.size = Vector2(rng.randf_range(3.6, 5.6), rng.randf_range(2.8, 4.2))
+	var m := ShaderMaterial.new()
+	m.shader = PAGE_SHADER
+	m.set_shader_parameter("single", true)
+	m.set_shader_parameter("seed", float(rng.randi_range(0, 59)))
+	m.set_shader_parameter("brightness", 0.75)
+	var mi := MeshInstance3D.new()
+	mi.mesh = q
+	mi.material_override = m
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	mi.rotation_degrees = Vector3(rng.randf_range(15, 40), rng.randf_range(-40, 40), rng.randf_range(-15, 15))
+	# it carves its own pool in the darkness (darkness.gd), so it reads
+	mi.set_meta("glow_radius", q.size.x * 0.55)
+	mi.add_to_group("glow")
+	return mi
+
+
+## A sound-effect word in the comic's lettering, hanging in the void.
+func _sound_word(rng: RandomNumberGenerator) -> Node3D:
+	var l := Label3D.new()
+	l.text = SOUND_WORDS[rng.randi() % SOUND_WORDS.size()]
+	l.font = COMIC_FONT
+	l.font_size = 150
+	l.pixel_size = 0.012
+	l.outline_size = 36
+	l.outline_modulate = Color(0.06, 0.04, 0.09)
+	l.modulate = WORD_COLORS[rng.randi() % WORD_COLORS.size()]
+	l.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	l.shaded = false
+	l.rotation_degrees.z = rng.randf_range(-12, 12)
+	l.set_meta("glow_radius", 2.2)
+	l.add_to_group("glow")
+	return l
+
+
+## A slow bob and turn, so the scraps and words drift.
+func _drift(node: Node3D, rng: RandomNumberGenerator) -> void:
+	var bob := create_tween().set_loops()
+	var up := rng.randf_range(0.4, 0.9)
+	var t := rng.randf_range(2.8, 4.6)
+	bob.tween_property(node, "position:y", node.position.y + up, t).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	bob.tween_property(node, "position:y", node.position.y, t).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	if node is MeshInstance3D:
+		var spin := create_tween().set_loops()
+		var y0 := node.rotation_degrees.y
+		spin.tween_property(node, "rotation_degrees:y", y0 + rng.randf_range(8, 18), t * 1.7).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		spin.tween_property(node, "rotation_degrees:y", y0, t * 1.7).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 
 func _near_gate(p: Vector3, dist: float) -> bool:
