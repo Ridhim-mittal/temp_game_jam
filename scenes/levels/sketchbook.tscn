@@ -278,6 +278,7 @@ script = ExtResource("30_mood")
 [node name="ComicFrame" type="CanvasLayer" parent="."]
 script = ExtResource("45_frame")
 page_number = 2
+live_areas = Array[Rect2]([Rect2(7820, -1200, 5060, 1832), Rect2(8420, 590, 520, 222), Rect2(9260, 590, 1700, 222), Rect2(11200, 590, 540, 222)])
 
 [node name="Narration1" type="CanvasLayer" parent="."]
 script = ExtResource("46_narration")

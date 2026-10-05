@@ -185,7 +185,11 @@ def reset():
     counts.clear()
 
 
-def write(path, root, player_pos, page=1, story=()):
+def rects(rs):
+    return "Array[Rect2]([" + ", ".join(f"Rect2({x0:g}, {y0:g}, {x1 - x0:g}, {y1 - y0:g})" for x0, y0, x1, y1 in rs) + "])"
+
+
+def write(path, root, player_pos, page=1, story=(), live=()):
     """story: the Writer's captions, [(text, trigger_x)] in order (-1e9 = on arrival)."""
     out = ["[gd_scene format=3]", ""] + ext + ["", f'[node name="{root}" type="Node2D"]', "",
            '[node name="ComicBackground" parent="." instance=ExtResource("6_background")]', "",
@@ -204,7 +208,8 @@ def write(path, root, player_pos, page=1, story=()):
             "mouse_filter = 2", 'script = ExtResource("5_hud")', "",
             '[node name="LevelMusic" type="Node" parent="."]', 'script = ExtResource("8_music")', "",
             '[node name="LevelMood" type="Node" parent="."]', 'script = ExtResource("30_mood")', "",
-            '[node name="ComicFrame" type="CanvasLayer" parent="."]', 'script = ExtResource("45_frame")', f"page_number = {page}", ""]
+            '[node name="ComicFrame" type="CanvasLayer" parent="."]', 'script = ExtResource("45_frame")', f"page_number = {page}",
+            f"live_areas = {rects(live)}", ""]
     for k, (text, x) in enumerate(story):
         out += [f'[node name="Narration{k + 1}" type="CanvasLayer" parent="."]', 'script = ExtResource("46_narration")',
                 f'text = "{text}"', f"trigger_x = {x:g}", ""]
@@ -252,10 +257,10 @@ door(3600, "res://scenes/levels/sketchbook.tscn", "THE SKETCHBOOK")
 block(3700, 3780, -600, BOTTOM, name="Wall")
 write("scenes/levels/test_level.tscn", "TestLevel", (100, 570), page=1, story=[
     ("VESPER STARTS OUT IN A CITY INFECTED BY EVIL MONSTERS. HE FIGHTS THEM OFF WITH THE LIGHT AND HIS SWORD.", -1e9),
-    ("THE MONSTERS WERE ONLY BAD INK, SPILT FROM THE GUTTERS. ONE SWING OF THE NIB SENT THEM BACK.", 1350),
+    ("THESE MONSTERS HAD INFESTED EVERY STREET OF THE CITY. ONE SWING OF THE SWORD SENT THEM SCATTERING.", 1350),
     ("THE CITY WAS COMING APART, ONE PANEL AT A TIME. WHERE THE STREET BROKE, VESPER LEAPT.", 2250),
     ("AND AT THE EDGE OF THE PAGE, A DOOR OF LIGHT WAS WAITING.", 3150),
-])
+], live=[(-240, -1200, 3780, 632), (2380, 590, 2680, 812)])
 
 # ======================================================== THE SKETCHBOOK (light tutorial)
 # Pencil sketches are only solid in light (scripts/world/lights.gd). Each beat
@@ -309,4 +314,4 @@ write("scenes/levels/sketchbook.tscn", "Sketchbook", (8100, 570), page=2, story=
     ("SOME BRIDGES WERE TOO LONG FOR ONE BREATH OF LIGHT. SO VESPER STOPPED, AND LET THE INK SET.", 9150),
     ("THE OLD LANTERNS STILL REMEMBERED HOW TO SHINE. BUT LIGHT CASTS SHADOWS.", 11100),
     ("AND BELOW THE LAST PAGE OF THE SKETCHBOOK, THE WORLD DROPPED AWAY INTO THE DARK...", 12200),
-])
+], live=[(7820, -1200, 12880, 632), (8420, 590, 8940, 812), (9260, 590, 10960, 812), (11200, 590, 11740, 812)])

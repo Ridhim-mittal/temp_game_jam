@@ -1,7 +1,6 @@
 extends CanvasLayer
 ## The Writer narrating: a yellow caption box in the top-left corner of the
-## panel whose text is written in letter by letter by a fountain-pen nib,
-## then it holds and fades. Plays once per run (GameState remembers), and
+## panel whose text types in letter by letter, then holds and fades. Plays once per run (GameState remembers), and
 ## the controls tutorial waits until it's done (busy()).
 ## Drop several into a level, each with its `text` and the `trigger_x` the
 ## player must pass; they queue up, so two never write at once.
@@ -118,29 +117,12 @@ func _draw_caption() -> void:
 	c.draw_rect(Rect2(box.position + Vector2(6, 6), box.size), Color(INK, 0.35 * a))
 	c.draw_rect(box.grow(3.0), Color(INK, a))
 	c.draw_rect(box, Color(CAPTION, a))
-	# letters appear one by one; the nib sits at the newest one
+	# letters appear one by one
 	var left := shown
-	var nib := Vector2.ZERO
 	for i in _lines.size():
 		var line: String = _lines[i]
 		var part := line.substr(0, clampi(left, 0, line.length()))
 		var base := box.position + Vector2(14, 12 + lh * (i + 0.8))
 		c.draw_string(FONT, base, part, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color(INK, a))
-		if left > 0 and left <= line.length():
-			nib = base + Vector2(FONT.get_string_size(part, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x, -font_size * 0.3)
 		left -= line.length() + 1
-	if shown < text.length() and nib != Vector2.ZERO:
-		_draw_nib(c, nib + Vector2(sin(_t * 30.0) * 1.5, cos(_t * 26.0) * 2.0), a)
 	c.draw_set_transform(Vector2.ZERO)
-
-
-## A gold fountain-pen nib writing, tip at `p`.
-func _draw_nib(c: Control, p: Vector2, a: float) -> void:
-	var tip := p
-	var nib := PackedVector2Array([tip, tip + Vector2(10, -16), tip + Vector2(20, -12), tip + Vector2(6, 2)])
-	var body := PackedVector2Array([tip + Vector2(10, -16), tip + Vector2(40, -58), tip + Vector2(52, -50), tip + Vector2(20, -12)])
-	c.draw_colored_polygon(body, Color(0.86, 0.13, 0.15, a))
-	c.draw_polyline(body + PackedVector2Array([body[0]]), Color(INK, a), 2.0)
-	c.draw_colored_polygon(nib, Color(0.98, 0.76, 0.28, a))
-	c.draw_polyline(nib + PackedVector2Array([nib[0]]), Color(INK, a), 2.0)
-	c.draw_circle(tip, 2.5, Color(INK, a))

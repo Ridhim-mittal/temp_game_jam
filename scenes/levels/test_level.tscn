@@ -230,6 +230,7 @@ script = ExtResource("30_mood")
 [node name="ComicFrame" type="CanvasLayer" parent="."]
 script = ExtResource("45_frame")
 page_number = 1
+live_areas = Array[Rect2]([Rect2(-240, -1200, 4020, 1832), Rect2(2380, 590, 300, 222)])
 
 [node name="Narration1" type="CanvasLayer" parent="."]
 script = ExtResource("46_narration")
@@ -238,7 +239,7 @@ trigger_x = -1e+09
 
 [node name="Narration2" type="CanvasLayer" parent="."]
 script = ExtResource("46_narration")
-text = "THE MONSTERS WERE ONLY BAD INK, SPILT FROM THE GUTTERS. ONE SWING OF THE NIB SENT THEM BACK."
+text = "THESE MONSTERS HAD INFESTED EVERY STREET OF THE CITY. ONE SWING OF THE SWORD SENT THEM SCATTERING."
 trigger_x = 1350
 
 [node name="Narration3" type="CanvasLayer" parent="."]
