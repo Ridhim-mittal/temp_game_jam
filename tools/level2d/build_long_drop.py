@@ -19,20 +19,30 @@ import os
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 U = 5          # px per map unit
 G = 50         # grid cell, px
-W, H = 1050, 1440   # level bounds in map units (rock fills what is not a room)
+W, H = 1050, 1780   # level bounds in map units (rock fills what is not a room)
 Y0 = 40             # first map row that matters
 
 # zone borders (map y) and their themes: 1 archive, 2 works, 0 cavern
-ZONES = [(500, 1), (950, 2), (10 ** 6, 0)]
+ZONES = [(500, 1), (1230, 2), (10 ** 6, 0)]
 
 # open air, map units: x, y, w, h
 ROOMS = {
     "hall1": (60, 90, 580, 130), "shaft1": (540, 220, 90, 120), "hall2": (200, 340, 660, 120),
     "nook": (60, 340, 160, 120), "shaft2": (770, 460, 90, 110),
-    "tower": (430, 570, 460, 320), "side_a": (120, 610, 260, 110), "door_a": (380, 670, 50, 50),
-    "side_b": (120, 780, 260, 110), "door_b": (380, 840, 50, 50), "shaft3": (480, 890, 90, 100),
-    "cavern": (80, 990, 780, 150), "pit": (670, 1140, 110, 90), "bottom": (300, 1230, 640, 150),
-    "lift": (920, 340, 70, 1040), "lift_door": (860, 390, 60, 70),
+    "gallery": (300, 570, 600, 220),                      # light puzzle 1: the Shadow Gallery
+    "tower": (430, 850, 460, 320), "side_a": (120, 890, 260, 110), "door_a": (380, 950, 50, 50),
+    "side_b": (120, 1060, 260, 110), "door_b": (380, 1120, 50, 50), "shaft3": (760, 1170, 90, 100),
+    "cavern": (80, 1270, 780, 150),                       # light puzzle 2: the Pendulum, over the sump
+    "sump": (420, 1420, 300, 90), "pit": (100, 1420, 110, 150), "bottom": (100, 1570, 840, 150),
+    "lift": (920, 340, 70, 1380), "lift_door": (860, 390, 60, 70),
+}
+# solid rock put back inside rooms (applied after ROOMS), then air cut through it again
+SOLIDS = {
+    "shelf": (300, 630, 240, 160),      # the gallery's high exit ledge
+    "slab": (550, 1390, 40, 10),        # hangs under the pendulum lantern and shadows the bridge
+}
+CUTS = {
+    "shaft2b": (440, 630, 90, 220),     # down through the shelf into the tower
 }
 
 
@@ -67,6 +77,8 @@ res("PackedScene", "res://scenes/enemies/smudge.tscn", "23_smudge")
 res("PackedScene", "res://scenes/enemies/inkwell.tscn", "24_inkwell")
 res("Script", "res://scripts/world/level_mood.gd", "30_mood")
 res("Script", "res://scripts/world/lantern.gd", "40_lantern")
+res("Script", "res://scripts/world/sketch_platform.gd", "41_sketch")
+res("Script", "res://scripts/world/shadow_caster.gd", "42_caster")
 res("Script", "res://scripts/world/caption.gd", "43_caption")
 res("Script", "res://scripts/depth/depth_backdrop.gd", "50_backdrop")
 res("Script", "res://scripts/depth/rock_block.gd", "51_rock")
@@ -102,10 +114,11 @@ def uniq(prefix):
 # ------------------------------------------------------------ rock + trims
 cols, rows = W * U // G, H * U // G
 open_cell = [[False] * cols for _ in range(rows)]
-for x, y, w, h in ROOMS.values():
-    for cy in range(y * U // G, (y + h) * U // G):
-        for cx in range(x * U // G, (x + w) * U // G):
-            open_cell[cy][cx] = True
+for rects, value in ((ROOMS, True), (SOLIDS, False), (CUTS, True)):
+    for x, y, w, h in rects.values():
+        for cy in range(y * U // G, (y + h) * U // G):
+            for cx in range(x * U // G, (x + w) * U // G):
+                open_cell[cy][cx] = value
 
 
 def solid(cx, cy):
@@ -178,7 +191,7 @@ for cx in range(cols):       # walls: mode 2 faces right, mode 3 faces left
 
 # ----------------------------------------------------------------- helpers
 def px(name):
-    x, y, w, h = ROOMS[name]
+    x, y, w, h = {**ROOMS, **SOLIDS, **CUTS}[name]
     return x * U, y * U, (x + w) * U, (y + h) * U   # left, top, right, floor
 
 
@@ -198,14 +211,35 @@ def steps(x0, x1, y_from, y_to, w=170):
 
 
 def lamp(x, y, r=260, chain=70):
+    """Scenery lantern hung from (x, y): lit, casts no shadows."""
     node(uniq("Lantern"), "Node2D", "World",
          [("position", v(x, y)), ("script", 'ExtResource("40_lantern")'), ("radius", f"{r:g}"), ("chain", f"{chain:g}"),
           ("casts_shadows", "false")])
 
 
+def lantern(x, y, r, chain=60, post=0, lit=True, swing=0, period=3.0, name="PuzzleLantern"):
+    """Puzzle lantern hung by `chain` from the pivot (x, y), or on a `post`: casts shadows, hit to toggle."""
+    props = [("position", v(x, y)), ("script", 'ExtResource("40_lantern")'), ("radius", f"{r:g}"),
+             ("chain", f"{chain:g}"), ("post", f"{post:g}"), ("lit", "true" if lit else "false"), ("casts_shadows", "true")]
+    if swing:
+        props += [("swing", f"{swing:g}"), ("swing_period", f"{period:g}")]
+    node(name, "Node2D", "World", props)
+
+
+def sketch(x0, x1, top, h=20, inkable=True, name=None):
+    node(name or uniq("Sketch"), "StaticBody2D", "World",
+         [("position", v((x0 + x1) / 2, top + h / 2)), ("script", 'ExtResource("41_sketch")'), ("size", v(x1 - x0, h)),
+          ("inkable", "true" if inkable else "false")])
+
+
+def caster(x, y, stick=0, length=420, name=None):
+    node(name or uniq("Cutout"), "StaticBody2D", "World",
+         [("position", v(x, y)), ("script", 'ExtResource("42_caster")'), ("stick", f"{stick:g}"), ("shadow_length", f"{length:g}")])
+
+
 def caption(x, y, text, tilt=-0.03):
-    node(uniq("Caption"), "Node2D", "World",
-         [("position", v(x, y)), ("script", 'ExtResource("43_caption")'), ("text", f'"{text}"'), ("tilt", f"{tilt:g}")])
+    node(uniq("Caption"), "Node2D", "World", [("z_index", "5"), ("position", v(x, y)), ("script", 'ExtResource("43_caption")'),
+         ("text", '"' + text.replace("\n", "\\n") + '"'), ("tilt", f"{tilt:g}")])
 
 
 def enemy(kind, x, y, extra=()):
@@ -259,29 +293,51 @@ enemy("crawler", l2 + 2000, f2 - 20)
 lamp(l2 + 1200, t2, 320, 110)
 lamp(l2 + 2500, t2, 300, 150)
 
-# 2. THE PENCIL WORKS: shaft into the scaffold tower, two side rooms
+# 2. THE PENCIL WORKS: the Shadow Gallery (light puzzle), the scaffold tower, two side rooms
 sl, st, sr, sf = px("shaft2")
+gl, gt, gr, F = px("gallery")
+steps(sl, sr, st, gt + 60)
+ledge((sl + sr) / 2, st, 150)                    # stepping stone across the shaft mouth, towards the lift
+# The Shadow Gallery. You land on the right; the way on is a ledge 800 px up on the left.
+#   1. Hit lantern B (on a post). The cut-out star beside it throws a ramp of shadow ink up and left.
+#   2. From the top of that ramp lantern A hangs dead ahead, out of sword reach: an ink wave
+#      (hold attack) lights it. (Or raise the Ember, cross the blue sketch and slash it.)
+#   3. A's light holds the blue sketch solid and its star throws a second ramp up to the ledge.
+wall = px("shelf")[2]                            # x of the ledge's face
+checkpoint(gr - 150, F)
+lantern(wall + 1496, F - 70, 220, chain=0, post=70, lit=False, name="LanternB")
+caster(wall + 1376, F - 150, stick=150, length=600, name="StarB")
+lantern(wall + 460, gt, 260, chain=F - 500 - gt, lit=False, name="LanternA")
+caster(wall + 330, F - 585, length=520, name="StarA")
+sketch(wall + 310, wall + 710, F - 470, inkable=False, name="GallerySketch")
+caption(wall + 1640, F - 330, "HIT THE LANTERN.\nA SHADOW IS INK TOO.")
+caption(wall + 1130, F - 640, "OUT OF REACH?\nHOLD ATTACK, THEN LET GO:\nINK FLIES FURTHER THAN A SWORD.", tilt=0.03)
+caption(wall + 760, F - 230, "BLUE PENCIL NEVER TAKES INK.\nIT NEEDS LIGHT ALL THE WAY (HOLD Q).")
+hl, ht, hr, hf = px("shelf")
+heart(hl + 250, ht - 60)
+coin_row(hl + 120, hl + 520, ht - 40, 5)
+sl, st, sr, sf = px("shaft2b")
 tl, tt, tr, tf = px("tower")
 steps(sl, sr, st, tt + 60)
-ledge((sl + sr) / 2, st, 150)                    # stepping stone across the shaft mouth, towards the lift
 # the tower: a zigzag of planks from the shaft mouth down to the floor
 y, i = tt + 170, 0
 span = (tr - 260) - (tl + 260)
 while y <= tf - 100:
     k = (i * 290) % (2 * span)
-    cx = (tr - 260) - (k if k <= span else 2 * span - k)
+    cx = (tl + 260) + (k if k <= span else 2 * span - k)
     ledge(cx, y, 300)
     if i % 3 == 1:
         coin_row(cx - 60, cx + 60, y - 40, 3)
     y += 110
     i += 1
-for sx, sy in [(tl + 700, tt + 420), (tl + 1500, tt + 760), (tl + 900, tt + 1150)]:
+for sx, sy in [(tl + 1500, tt + 420), (tl + 800, tt + 760), (tl + 1400, tt + 1150)]:
     enemy("scribble", sx, sy)
-lamp(tl + 600, tt, 320, 220)
-lamp(tl + 1700, tt, 320, 520)
-lamp(tl + 1100, tt, 320, 900)
+lamp(tl + 1700, tt, 320, 220)
+lamp(tl + 700, tt, 320, 560)
+lamp(tl + 1300, tt, 320, 900)
 al, at, ar, af = px("side_a")
 ledge(tl + 150, af, 300, one_way=False)        # landing outside the upper side room
+steps(tl, tl + 420, tt + 170, af, 150)         # and a ladder of ledges back up from it
 checkpoint(al + 500, af)
 coin_row(al + 200, al + 380, af - 40, 4)
 lamp(al + 700, at, 280, 130)
@@ -293,34 +349,43 @@ coin_row(bl + 150, bl + 450, bf - 200, 6)
 ledge(bl + 300, bf - 110, 220)
 lamp(bl + 650, bt, 280, 130)
 
-# 3. THE DRIPPING MARGINS: shaft, wide cavern, the pit, the bottom
+# 3. THE DRIPPING MARGINS: shaft, the Pendulum (light puzzle), the pit, the bottom
 sl, st, sr, sf = px("shaft3")
 cl, ct, cr, cf = px("cavern")
 steps(sl, sr, st, cf)
-checkpoint(sl - 250, cf)
-ledge(cl + 600, cf - 110, 220)
-ledge(cl + 1000, cf - 220, 220)
-ledge(cl + 3000, cf - 110, 240)
-ledge(cl + 3300, cf - 220, 220)
-coin_row(cl + 920, cl + 1080, cf - 260, 3)
-coin_row(cl + 3220, cl + 3380, cf - 260, 3)
-enemy("smudge", cl + 1400, cf - 12)
-enemy("inkwell", cl + 400, cf - 26)
-enemy("crawler", cl + 3500, cf - 20)
-lamp(cl + 1700, ct, 320, 200)
-lamp(cl + 3100, ct, 300, 160)
+# The Pendulum. A blue sketch bridge over the sump, 1500 px: too far for one Ember (about
+# 1200 px), far too far to jump. The lantern swings across the middle of it and refills the
+# Ember in its light, but its reach stops short of both ends and the slab under it shadows the
+# centre. Cross with the swing; spend the Ember only where the lantern's light is not.
+# Falling in is not deadly: ledges on the near side climb back out.
+ul, ut, ur, uf = px("sump")
+mid = (ul + ur) / 2
+checkpoint(ur + 250, cf)
+sketch(ul, ur, cf, inkable=False, name="PendulumBridge")
+lantern(mid, cf - 640, 420, chain=380, swing=40, period=5.0, name="Pendulum")
+steps(ur - 300, ur, cf, uf, 150)
+enemy("scribble", mid + 200, cf - 430)
+caption(ur + 330, cf - 330, "THE LIGHT SWINGS. SHADOWS HOLD NOTHING UP.\nYOUR EMBER DOES (HOLD Q).\nA LANTERN'S LIGHT REFILLS IT.")
+# the far bank
+ledge(cl + 1500, cf - 110, 220)
+ledge(cl + 1150, cf - 220, 220)
+coin_row(cl + 1070, cl + 1230, cf - 260, 3)
+enemy("smudge", cl + 1300, cf - 12)
+enemy("inkwell", cl + 800, cf - 26)
+lamp(cl + 1000, ct, 300, 200)
 pl, pt, pr, pf = px("pit")
 ol, ot, orr, of = px("bottom")
 steps(pl, pr, pt, of, 190)
 heart(pl + 275, pt + 250)
-checkpoint(ol + 700, of)
-enemy("crossed", ol + 1300, of - 30)
-enemy("scribble", ol + 1700, of - 330)
-enemy("scribble", ol + 1900, of - 380)
-lamp(ol + 1000, ot, 320, 260)
-lamp(ol + 2500, ot, 320, 220)
-coin_row(ol + 2300, ol + 2600, of - 40, 5)
-node("Exit", "Area2D", "World", [("position", v(ol + 2750, of)), ("script", 'ExtResource("17_exit")'),
+checkpoint(ol + 900, of)
+enemy("crossed", ol + 1700, of - 30)
+enemy("crawler", ol + 2600, of - 20)
+enemy("scribble", ol + 2100, of - 330)
+enemy("scribble", ol + 2300, of - 380)
+lamp(ol + 1400, ot, 320, 260)
+lamp(ol + 3000, ot, 320, 220)
+coin_row(ol + 3300, ol + 3600, of - 40, 5)
+node("Exit", "Area2D", "World", [("position", v(ol + 3750, of)), ("script", 'ExtResource("17_exit")'),
      ("target_scene", '"res://scenes/ui/main_menu.tscn"'), ("label", '"THE END OF THE DROP"')])
 
 # 4. the lift: a girder that rides the shaft between the bottom room and the Archive
@@ -328,12 +393,12 @@ ll, lt, lr, lf = px("lift")
 dl, dt, dr, df = px("lift_door")
 node("Lift", "AnimatableBody2D", "World",
      [("position", v((ll + lr) / 2, lf - 10)), ("script", 'ExtResource("12_moving")'), ("size", v(lr - ll - 60, 20)),
-      ("travel", v(0, -(lf - df) - 10)), ("period", "44")])
+      ("travel", v(0, -(lf - df) - 10)), ("period", "56")])
 ledge((ll + lr) / 2, df, lr - ll)   # one-way cap: ride up through it, but no dropping down the shaft from the top
 
 caption(START[0] + 260, START[1] - 190, "The way on is down.")
 caption(px("tower")[0] + 1150, px("tower")[1] + 120, "Mind the drop.")
-caption(ol + 2300, of - 220, "The lift goes back to the top.")
+caption(ol + 3300, of - 220, "The lift goes back to the top.")
 
 # ------------------------------------------------------------------ write
 zone_bottoms = ", ".join(f"{b * U:g}" for b, _ in ZONES[:-1])
