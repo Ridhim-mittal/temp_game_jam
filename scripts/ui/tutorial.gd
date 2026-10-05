@@ -2,7 +2,7 @@ extends Control
 ## First-run controls tutorial. One move at a time, its key flashes in the
 ## middle of the screen until the player does it, then it drops into a tray
 ## of learned keys at the bottom. Moves that only matter later (the Ember,
-## Heal) pop up on their own the first time they're useful.
+## Heal, the 2D ink wave) pop up on their own the first time they're useful.
 ##
 ## Every step is remembered in Profile, so each one plays only once (a
 ## restart picks up where it left off); Esc skips the rest of the mode and
@@ -39,6 +39,8 @@ const BASICS := {
 const LATER := {
 	"2d": [
 		{"id": "ember", "word": "EMBER", "keys": [["Q", "ember"]], "hold": 0.8, "when": "near_lantern"},
+		# hold attack past player.gd's charge_time (0.6 s), let go: an ink wave flies out
+		{"id": "inkwave", "word": "LONG-RANGE INK WAVE", "keys": [["LMB", "attack"]], "hold": 0.7, "when": "near_flyer"},
 	],
 	"25d": [
 		{"id": "ember25", "word": "EMBER", "keys": [["Q", "flash"]], "hold": 0.8, "when": "near_monster"},
@@ -226,6 +228,11 @@ func _ready_for(when: String) -> bool:
 					return true
 		"near_monster":
 			return _nearest_monster() < 6.0
+		"near_flyer":  # a Scribble circling out of sword reach
+			for m in get_tree().get_nodes_in_group("enemy"):
+				if m is Node2D and m.scene_file_path.ends_with("scribble.tscn") and not ("dead" in m and m.dead) \
+						and m.global_position.distance_to(player.global_position) < 500.0:
+					return true
 		"hurt":
 			return player.health < player.max_health and player.fuel >= player.heal_cost \
 				and player.is_on_floor() and _nearest_monster() > 7.0

@@ -108,6 +108,13 @@ position = Vector2(3460, 498)
 script = ExtResource("11_oneway")
 size = Vector2(160, 16)
 
+[node name="Caption1" type="Node2D" parent="World"]
+z_index = 5
+position = Vector2(2560, 360)
+script = ExtResource("43_caption")
+text = "OUT OF REACH?\nHOLD ATTACK, THEN LET GO:\nINK FLIES FURTHER THAN A SWORD."
+tilt = -0.03
+
 [node name="Heart1" type="Area2D" parent="World"]
 position = Vector2(3220, 350)
 script = ExtResource("19_heart")

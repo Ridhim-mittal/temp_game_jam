@@ -153,7 +153,8 @@ exported base values; room.gd opens overlays (pause, skills, settings) and pause
 The Gutter has no shop or coins: Patch (`patch_npc.gd`) is a guide who talks on E; `shop.gd`,
 `lumen.gd` and the Lumen counter are unhooked. The skill tree opens at the hub shrine and from
 pause.
-First-run controls tutorial: `scripts/ui/tutorial.gd` (started by player.gd and room.gd; steps
+First-run controls tutorial: `scripts/ui/tutorial.gd` (started by player.gd and room.gd; the 2D
+ink wave (hold attack) is taught the first time a Scribble is near, in the City's plank section; steps
 are remembered in Profile; Esc / controller Back skips; shows controller buttons when one is used;
 Settings -> Tutorials or Pause -> Controls replays them).
 
