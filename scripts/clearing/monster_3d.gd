@@ -195,6 +195,12 @@ func pop(text: String, color := DANGER, height := 1.6, size := 30) -> void:
 
 # ------------------------------------------------------------------ damage
 
+## Stunned for at least `seconds` (the weapons' specials: clearing_player.gd).
+func stun_for(seconds: float) -> void:
+	if not dead:
+		stun = maxf(stun, seconds)
+
+
 ## Called by the player's attack. Returns false when the hit was blocked.
 func take_hit(damage: int, dir: Vector3, aerial := false) -> bool:
 	if dead:

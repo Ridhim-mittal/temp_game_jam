@@ -165,6 +165,12 @@ func pop(text: String, color := DANGER, offset := Vector2(0, -50), size := 26) -
 
 # ------------------------------------------------------------------ damage
 
+## Stunned for at least `seconds` (the weapons' specials: player.gd).
+func stun_for(seconds: float) -> void:
+	if not dead:
+		stun = maxf(stun, seconds)
+
+
 func take_hit(damage: int, hit_dir: Vector2, from_pos: Vector2) -> void:
 	if dead:
 		return

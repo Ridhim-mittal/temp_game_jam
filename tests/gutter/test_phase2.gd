@@ -1,7 +1,8 @@
 extends SceneTree
-## Gutter rework, phase 2 checks: no grass, farm or cosy props, shops, coins
-## or round doors in the hub and the story rooms; Patch talks; the skill
-## tree still opens. Run like test_phase1.gd (prints PASS / FAIL).
+## Gutter rework, phase 2 checks: no grass, farm or cosy props, coin drops
+## or round doors in the hub and the story rooms; Quire's shop opens at his
+## stall, from the pause menu and on B; the skill tree is gone. Run like
+## test_phase1.gd (prints PASS / FAIL).
 
 const ROOMS := ["res://scenes/clearing/clearing.tscn", "res://scenes/world25/rooms/darkwood_1.tscn",
 	"res://scenes/world25/rooms/shallows_pen.tscn", "res://scenes/world25/rooms/wastes_gap.tscn",
@@ -26,6 +27,10 @@ func frames(n: int) -> void:
 		await process_frame
 
 
+func get_tree_paused() -> bool:
+	return paused
+
+
 func script_name(n: Node) -> String:
 	var s: Script = n.get_script()
 	return s.resource_path.get_file() if s else ""
@@ -44,9 +49,9 @@ func _run() -> void:
 				bad.append("%s (%s)" % [n.name, RETIRED[int(n.kind)]])
 			elif sn == "archway.gd" and n.door != 0:
 				bad.append("%s (round door)" % n.name)
-			elif sn == "interactable.gd" and n.action == "shop":
-				bad.append("%s (shop)" % n.name)
-		check(bad.is_empty(), "%s: no grass / farm / cosy props / shop / round doors %s" % [path.get_file(), bad])
+			elif sn == "interactable.gd" and n.action == "shop" and not path.ends_with("clearing.tscn"):
+				bad.append("%s (shop)" % n.name)  # the only stall is Quire's, in the hub
+		check(bad.is_empty(), "%s: no grass / farm / cosy props / stray shops / round doors %s" % [path.get_file(), bad])
 		# coins: beat every monster and look for Lumen pickups
 		var enemies := current_scene.get_node_or_null("Enemies")
 		if enemies:
@@ -59,7 +64,8 @@ func _run() -> void:
 			if script_name(n) == "lumen.gd":
 				coins += 1
 		check(coins == 0, "%s: beaten monsters drop no coins (%d)" % [path.get_file(), coins])
-	# the hub: Patch talks, the skill tree opens, no Lumen counter, no shop overlay
+	# the hub: Quire's stall opens the shop; so do B and the pause menu; no
+	# skill tree any more
 	change_scene_to_file("res://scenes/clearing/clearing.tscn")
 	await frames(30)
 	var room := current_scene
@@ -67,25 +73,9 @@ func _run() -> void:
 	player._invuln = 999.0
 	for m in room.get_node("Enemies").get_children():
 		m.queue_free()
-	var patch := room.get_node("Props/Patch")
-	player.global_position = patch.global_position + Vector3(0.0, 0.05, 1.6)
-	player._snap_visuals()
-	await frames(5)
-	room.ui._queue.clear()
-	room.ui._text = ""
-	room.ui._title_t = -1.0
-	await physics_frame
-	Input.action_press("interact")
-	await frames(3)
-	Input.action_release("interact")
-	await frames(3)
-	var said: String = room.ui._text
-	check(room.ui._who == "patch" and said != "", "Patch talks on E: \"%s\"" % said)
-	check(room._overlay == null, "talking to Patch opens no shop")
-	room.open_overlay("shop")
-	check(room._overlay == null, "room.open_overlay(\"shop\") is gone")
-	var shrine := room.get_node("Props/Shrine/SkillShrine")
-	player.global_position = Vector3(shrine.global_position.x, shrine.global_position.y + 0.05, shrine.global_position.z + 1.5)
+	check(room.get_node_or_null("Props/Patch") == null, "Patch the dog is gone from the hub")
+	var stall := room.get_node("Props/QuireShop")
+	player.global_position = stall.global_position + Vector3(0.0, 0.05, 1.8)
 	player._snap_visuals()
 	await frames(5)
 	await physics_frame
@@ -93,16 +83,37 @@ func _run() -> void:
 	await frames(3)
 	Input.action_release("interact")
 	await frames(3)
-	check(room._overlay != null and script_name(room._overlay) == "skill_tree.gd", "skill tree opens at the shrine (%s)" % (script_name(room._overlay) if room._overlay else "none"))
+	check(room._overlay != null and script_name(room._overlay) == "shop.gd", "E at Quire's stall opens the shop (%s)" % (script_name(room._overlay) if room._overlay else "none"))
+	check(get_tree_paused(), "the game is paused while shopping")
 	if room._overlay:
-		room._overlay.queue_free()
-		room._on_overlay_closed()
+		room._overlay._close()
+	await frames(3)
+	check(room._overlay == null and not get_tree_paused(), "Esc / B in the shop closes it and unpauses")
+	var b := InputEventKey.new()
+	b.physical_keycode = KEY_B
+	b.keycode = KEY_B
+	b.pressed = true
+	Input.parse_input_event(b)
+	await frames(3)
+	var b_up := b.duplicate()
+	b_up.pressed = false
+	Input.parse_input_event(b_up)
+	await frames(2)
+	check(room._overlay != null and script_name(room._overlay) == "shop.gd", "B opens the shop anywhere in a room")
+	if room._overlay:
+		room._overlay._close()
 	await frames(3)
 	room.open_overlay("pause")
 	await frames(2)
-	room._on_pause_choice("skills")
+	room._on_pause_choice("shop")
 	await frames(2)
-	check(room._overlay != null and script_name(room._overlay) == "skill_tree.gd", "skill tree opens from the pause menu")
+	check(room._overlay != null and script_name(room._overlay) == "shop.gd", "the pause menu has the shop")
+	if room._overlay:
+		room._overlay._close()
+	await frames(2)
+	room.open_overlay("skills")
+	check(room._overlay == null, "the skill tree is gone (open_overlay(\"skills\") opens nothing)")
+	check(room.get_node_or_null("Props/Shrine/SkillShrine") == null, "the shrine no longer opens a skill tree")
 	var hud_lumens := false
 	for n in room.find_children("*", "Control", true, false):
 		if script_name(n) == "clearing_hud.gd" and "_lumens" in n:

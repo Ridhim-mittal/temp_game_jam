@@ -176,6 +176,22 @@ func _pick_wander_target() -> void:
 	_timer = randf_range(1.5, 3.5)
 
 
+## Stunned for at least `seconds` (the weapons' specials: clearing_player.gd).
+func stun_for(seconds: float) -> void:
+	if dead:
+		return
+	if state == State.STUNNED:
+		_timer = maxf(_timer, seconds)
+	else:
+		state = State.STUNNED
+		_timer = seconds
+
+
+## How long it stays stunned (0 = not), like monster_3d.gd's `stun`.
+func stunned_for() -> float:
+	return maxf(_timer, 0.0) if state == State.STUNNED else 0.0
+
+
 func take_hit(damage: int, dir: Vector3, _aerial := false) -> void:
 	if dead:
 		return

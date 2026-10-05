@@ -22,7 +22,7 @@ const OVERLAY_SHADER = preload("res://shaders/comic_overlay.gdshader")
 const RectScript = preload("res://scripts/background/screen_shader_rect.gd")
 const DEFAULT_BIOME = preload("res://data/biomes/darkwood.tres")
 const PauseMenu = preload("res://scripts/ui/pause_menu.gd")
-const SkillTree = preload("res://scripts/ui/skill_tree.gd")
+const Shop = preload("res://scripts/ui/shop.gd")
 const SettingsMenu = preload("res://scripts/ui/settings_menu.gd")
 const Tutorial = preload("res://scripts/ui/tutorial.gd")
 const HauntLamp = preload("res://scripts/world25/haunt_lamp.gd")
@@ -707,11 +707,14 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("pause"):
 		get_viewport().set_input_as_handled()  # pause here instead of leaving
 		open_overlay("pause")
+	elif event.is_action_pressed("shop") and not event.is_echo():
+		get_viewport().set_input_as_handled()
+		open_overlay.call_deferred("shop")  # B: Quire's shop, anywhere
 
 
 ## Opens a full-screen menu over the room and pauses the game:
-## "pause", "skills" or "settings". (The Gutter has no shop: shop.gd and
-## catalog.gd stay in the project, unused.)
+## "pause", "shop" (Quire's Curios: B, the pause menu, Quire's stall) or
+## "settings". (The skill tree is retired; skill_tree.gd is unhooked.)
 func open_overlay(action: String) -> void:
 	if _overlay != null or player == null or player.dead:
 		return
@@ -721,9 +724,9 @@ func open_overlay(action: String) -> void:
 			_overlay = Control.new()
 			_overlay.set_script(PauseMenu)
 			_overlay.chosen.connect(_on_pause_choice)
-		"skills":
+		"shop":
 			_overlay = Control.new()
-			_overlay.set_script(SkillTree)
+			_overlay.set_script(Shop)
 			_overlay.closed.connect(_on_overlay_closed)
 		"settings":
 			_overlay = Control.new()
@@ -765,7 +768,7 @@ func _on_pause_choice(action: String) -> void:
 			get_tree().paused = false
 			Engine.time_scale = 1.0
 			get_tree().reload_current_scene()
-		"skills", "settings":
+		"shop", "settings":
 			get_tree().paused = false
 			open_overlay(action)
 		"menu":
@@ -820,9 +823,7 @@ func _on_cleared() -> void:
 		world.mark_cleared(room_id)
 	var profile := get_node_or_null("/root/Profile")
 	if profile:
-		var pts: int = profile.record_clear(room_id)
-		if pts > 0:
-			ui.toast("+%d INK POINT%s   ESC: SKILL TREE" % [pts, "" if pts == 1 else "S"])
+		profile.record_clear(room_id)
 	var i := 0
 	for g in _gates():
 		get_tree().create_timer(0.25 * i).timeout.connect(g.open)

@@ -2,22 +2,25 @@ extends Control
 ## The pause screen, the same in 2D levels and 2.5D rooms (Esc / Start):
 ## a veil of ink over the frozen game, ink-navy and Ember-gold halftone
 ## rays swirling in, a hand-drawn comic burst (the Writer's red-pen ring)
-## that pops in, "PAUSED" in gold lettering, and four slanted comic-tag
-## buttons, each in a colour of the book (Ember gold, paper, pencil blue,
-## red pen). Nothing else is drawn over it.
+## that pops in, "PAUSED" in gold lettering, and five slanted comic-tag
+## buttons, each in a colour of the book (Ember gold, paper, Cavern teal,
+## pencil blue, red pen). Nothing else is drawn over it.
 ## Keyboard (WASD / arrows, Enter / Space, Esc), controller, mouse.
 ##
 ##   PauseMenu.open_2d(player)   # player.gd, on the "pause" action
 ##   room.gd builds one for 2.5D and handles `chosen`
 ##
-## Settings opens on top of it and comes back to it; for the rest it emits
-## `chosen` (2.5D: room.gd acts) or, opened by open_2d(), acts itself:
-## resume, retry (reload: back to the last checkpoint), main menu.
+## Settings and Quire's shop (shop.gd; B opens it too) open on top of it
+## and come back to it (the shop refreshes Vesper's loadout as it closes);
+## for the rest it emits `chosen` (2.5D: room.gd acts) or, opened by
+## open_2d(), acts itself: resume, retry (reload: back to the last
+## checkpoint), main menu.
 
 signal chosen(action: String)
 
 const FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
 const SettingsMenu = preload("res://scripts/ui/settings_menu.gd")
+const Shop = preload("res://scripts/ui/shop.gd")
 const MENU := "res://scenes/ui/main_menu.tscn"
 const INK := Color(0.05, 0.03, 0.1)
 const PAPER := Color(0.98, 0.95, 0.87)
@@ -27,15 +30,16 @@ const DULL := Color(0.5, 0.48, 0.58)
 const BUTTON := Vector2(250, 58)
 const SKEW := 11.0
 
-## [label, action, colour, icon], two to a row
+## [label, action, colour, icon], three to a row (the last row centred)
 const ITEMS := [
 	["RESUME", "resume", Color(1.0, 0.76, 0.26), "play"],
 	["RETRY", "retry", Color(0.98, 0.95, 0.87), "retry"],
+	["SHOP", "shop", Color(0.42, 0.86, 0.8), "coin"],
 	["SETTINGS", "settings", Color(0.52, 0.8, 1.0), "gear"],
 	["MAIN MENU", "menu", Color(0.97, 0.45, 0.38), "door"],
 ]
-const COLS := 2
-const TILTS := [-0.03, 0.025, 0.02, -0.025]
+const COLS := 3
+const TILTS := [-0.03, 0.025, -0.02, 0.02, -0.025]
 
 const RAYS_SHADER := """
 shader_type canvas_item;
@@ -181,7 +185,7 @@ func _gui_input(event: InputEvent) -> void:
 				_choose(i)
 
 
-## Move the focus round the 2 x 2 grid (wrapping).
+## Move the focus round the grid (wrapping).
 func _step(move: Vector2i) -> void:
 	var n := _items.size()
 	if move.x != 0:
@@ -199,8 +203,8 @@ func _choose(i: int) -> void:
 	match action:
 		"resume":
 			_closing = 0.0
-		"settings":
-			_open_sub()
+		"settings", "shop":
+			_open_sub(action)
 		"retry", "menu":
 			_leaving = action
 			_leave_t = 0.0
@@ -208,18 +212,28 @@ func _choose(i: int) -> void:
 			_act(action)
 
 
-## Settings on top; the pause screen comes back when it closes.
-func _open_sub() -> void:
+## Settings / the shop on top; the pause screen comes back when it closes.
+func _open_sub(action: String) -> void:
 	_sub = Control.new()
-	_sub.set_script(SettingsMenu)
-	_sub.set("overlay", true)
+	_sub.set_script(SettingsMenu if action == "settings" else Shop)
+	if action == "settings":
+		_sub.set("overlay", true)
 	_sub.connect("closed", func():
 		if is_instance_valid(_sub) and not _sub.is_queued_for_deletion():
 			_sub.queue_free()
 		_sub = null
-		visible = true)
+		visible = true
+		if action == "shop":
+			_refresh_loadout())
 	visible = false
 	get_parent().add_child(_sub)
+
+
+## What was bought or equipped takes effect at once (2D and 2.5D players).
+func _refresh_loadout() -> void:
+	var p: Node = player if is_instance_valid(player) else get_tree().get_first_node_in_group("player")
+	if p and p.has_method("refresh_loadout"):
+		p.refresh_loadout()
 
 
 func _act(action: String) -> void:
@@ -386,6 +400,11 @@ func _icon(kind: String, c: Vector2, col: Color) -> void:
 		"retry":
 			draw_arc(c, 10.0, 0.7, TAU - 0.3, 16, col, 4.0)
 			draw_colored_polygon(PackedVector2Array([c + Vector2(12, -11), c + Vector2(13, 2), c + Vector2(3, -4)]), col)
+		"coin":  # a little stack of coins
+			for k in 3:
+				var o := c + Vector2(-3 + k * 2, 8 - k * 7)
+				draw_colored_polygon(PackedVector2Array([o + Vector2(-10, -3), o + Vector2(10, -3), o + Vector2(10, 3), o + Vector2(-10, 3)]), col)
+				draw_arc(o + Vector2(0, -3), 10.0, PI, TAU, 10, PAPER, 1.5)
 		"gear":
 			for k in 8:
 				var d := Vector2.from_angle(TAU * k / 8.0 + _t * 0.6)

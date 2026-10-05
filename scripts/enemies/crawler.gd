@@ -271,6 +271,21 @@ func _fire_spit() -> void:
 
 # ------------------------------------------------------------------ damage
 
+## Stunned for at least `seconds` (the weapons' specials: player.gd).
+func stun_for(seconds: float) -> void:
+	if dead:
+		return
+	if state == State.STUNNED:
+		_state_timer = maxf(_state_timer, seconds)
+	else:
+		_enter(State.STUNNED, seconds)
+
+
+## How long it stays stunned (0 = not), as enemy_base.gd's `stun` reads.
+func stunned_for() -> float:
+	return maxf(_state_timer, 0.0) if state == State.STUNNED else 0.0
+
+
 func take_hit(damage: int, hit_dir: Vector2, from_pos: Vector2) -> void:
 	if dead:
 		return

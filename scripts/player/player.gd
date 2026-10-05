@@ -11,6 +11,11 @@ extends CharacterBody2D
 ##  - down-slash pogo off enemies and hazards, side-slash recoil
 ##  - damage, knockback, i-frames; spikes put you back on the last safe ground
 ##  - the Ember (ember.gd): hold right click to raise a light that makes sketches real
+##  - weapons from Quire's shop (B opens it; catalog.gd): each changes the
+##    slash and what holding attack does (its special): the Nib-Sword's ink
+##    wave, the Quill Rapier's volley, the Brush Maul's slam, the Corkscrew
+##    Nib's drill, the Prism Saber's blinding sweep, the Lantern Flail's whirl
+##  - coins go to Profile.lumens (the shop's money, kept between runs)
 
 signal health_changed(current: float, maximum: float)
 signal died
@@ -27,6 +32,8 @@ const DeathScreen = preload("res://scripts/ui/death_screen.gd")
 const Tutorial = preload("res://scripts/ui/tutorial.gd")
 const PauseMenu = preload("res://scripts/ui/pause_menu.gd")
 const Ember = preload("res://scripts/player/ember.gd")
+const WeaponFx = preload("res://scripts/effects/weapon_fx.gd")
+const Shop = preload("res://scripts/ui/shop.gd")
 
 const MASK_ENEMY := 4   # physics layer 3
 const MASK_HAZARD := 8  # physics layer 4
@@ -130,6 +137,35 @@ const HAZARD_DAMAGE := 20.0
 @export var wave_range := 520.0
 @export var wave_recoil := 160.0
 
+@export_group("Weapon Specials")
+## PEN-DRILL (Corkscrew Nib): drag radius, pull speed, grinding reach and
+## tick, longest spin, burst damage.
+@export var drill_radius := 170.0
+@export var drill_pull := 420.0
+@export var drill_grind := 80.0
+@export var drill_tick := 0.3
+@export var drill_max := 2.5
+@export var drill_burst := 2
+## BLINDING SWEEP (Prism Saber): radius, damage, stun; a normal hit's stun.
+@export var sweep_radius := 200.0
+@export var sweep_damage := 2
+@export var sweep_stun := 1.6
+@export var prism_stun := 0.7
+## LANTERN WHIRL (Lantern Flail): chain length, Ember burnt a second,
+## damage a pass, light radius.
+@export var whirl_reach := 75.0
+@export var whirl_drain := 30.0
+@export var whirl_damage := 1
+@export var whirl_light := 160.0
+## QUILL VOLLEY (Quill Rapier).
+@export var dart_count := 3
+@export var dart_speed := 950.0
+@export var dart_range := 620.0
+@export var dart_damage := 1
+## INK SLAM (Brush Maul).
+@export var slam_radius := 170.0
+@export var slam_damage := 2
+
 @export_group("Health")
 ## Continuous health in HP. Monsters deal different amounts (see their
 ## damage_default()); spikes deal HAZARD_DAMAGE.
@@ -182,6 +218,17 @@ var _since_hazard := 10.0      # seconds since the last spike hit
 var _charge := -1.0  # seconds attack has been held; -1 = not charging
 var _charge_ready := false
 var _slow_sources := {}  # source -> Vector2(speed_mult, jump_mult)
+var _weapon := "nib"  # equipped weapon (catalog.gd id)
+var _special := "wave"  # what holding attack does
+var _tier := 0  # upgrades bought for it (0..3)
+var _seal_ready := false  # Wax-Seal Mantle: the first hit in the level only cracks it
+var _drill := -1.0  # seconds spent drilling; -1 = not
+var _drill_t := 0.0
+var _tornado: Node2D
+var _whirl := -1.0  # seconds spent whirling; -1 = not
+var _whirl_hits := {}  # target -> seconds before it can be hit again
+var _lantern_light: Node2D
+var _base_stats := {}
 
 @onready var visual: Node2D = $Visual
 @onready var art = $Visual/Art
@@ -191,6 +238,7 @@ var ember: Node2D
 
 
 func _ready() -> void:
+	_apply_loadout()
 	health = max_health
 	ember = Ember.new()
 	ember.name = "Ember"
@@ -201,7 +249,10 @@ func _ready() -> void:
 		var spawn = state.spawn_point(get_tree())
 		if spawn != null:
 			global_position = spawn  # respawn at the last checkpoint pen
-		coins = state.coins
+	var profile := get_node_or_null("/root/Profile")
+	if profile:
+		coins = profile.lumens
+		profile.changed.connect(_on_profile_changed)
 	_last_safe_position = global_position
 	_fall_top = global_position.y
 	_streaks = FallStreaks.new()
@@ -228,6 +279,10 @@ func _physics_process(delta: float) -> void:
 		return
 	if Input.is_action_just_pressed("restart"):
 		_reload()
+		return
+
+	if Input.is_action_just_pressed("shop"):
+		_open_shop()
 		return
 
 	_tick_timers(delta)
@@ -306,6 +361,8 @@ func _update_horizontal(input_x: float, delta: float) -> void:
 	if input_x != 0.0 and _attack_timer <= 0.0:
 		facing = 1 if input_x > 0.0 else -1
 	var target := input_x * max_speed * _slow_mult().x
+	if _drill >= 0.0 or _whirl >= 0.0:
+		target *= 0.35  # rooted-ish while the drill spins or the lantern whirls
 	var accelerating := absf(target) > 0.01
 	var rate: float
 	if is_on_floor():
@@ -392,12 +449,101 @@ func _handle_jump() -> void:
 		is_jumping = false
 
 
+## Coins go into the shop's purse (Profile.lumens, kept for good); the run
+## keeps its own count in GameState too.
 func add_coins(amount: int) -> void:
-	coins += amount
 	var state := get_node_or_null("/root/GameState")
 	if state:
-		state.coins = coins  # banked: kept when you die
+		state.coins += amount  # banked: kept when you die
+	var profile := get_node_or_null("/root/Profile")
+	if profile:
+		profile.add_lumens(amount)  # emits changed -> _on_profile_changed
+	else:
+		coins += amount
+		coins_changed.emit(coins)
+
+
+func _on_profile_changed() -> void:
+	var profile := get_node_or_null("/root/Profile")
+	coins = profile.lumens
 	coins_changed.emit(coins)
+
+
+# ----------------------------------------------------------------- loadout
+
+## Quire's shop (B): pauses the level; what you bought or equipped takes
+## effect when it closes.
+func _open_shop() -> void:
+	_cancel_charge()
+	_crouch = -1.0
+	Shop.open(get_tree(), refresh_loadout)
+
+
+const LOADOUT_STATS := ["attack_damage", "attack_cooldown", "attack_reach", "attack_width", "charge_time",
+	"max_health", "invuln_time", "wave_damage", "wave_range"]
+
+
+## The equipped weapon, its upgrades, armor and outfit, on top of the
+## exported base values (re-applying never stacks).
+func _apply_loadout() -> void:
+	if _base_stats.is_empty():
+		for k in LOADOUT_STATS:
+			_base_stats[k] = get(k)
+	else:
+		for k in LOADOUT_STATS:
+			set(k, _base_stats[k])
+	var profile := get_node_or_null("/root/Profile")
+	if profile == null:
+		return
+	_weapon = profile.weapon()
+	_special = profile.weapon_item().get("special", "wave")
+	_tier = profile.upgrade_level(_weapon)
+	attack_damage += int(profile.effect("damage_bonus", 0)) + _sharp()
+	attack_cooldown *= profile.effect("swing_mult", 1.0)
+	attack_reach *= profile.effect("reach_mult", 1.0)
+	attack_width *= profile.effect("radius_mult", 1.0)
+	if _tier >= 2:
+		charge_time *= 0.6  # QUICK HAND
+	wave_damage += _sharp() + (2 if _master() else 0)
+	if _master():
+		wave_range *= 1.4
+	max_health += 20.0 * float(profile.effect("health_bonus", 0))
+	invuln_time *= profile.effect("invuln_mult", 1.0)
+	_seal_ready = profile.effect("seal", false)
+	_apply_look(profile.look())
+
+
+## After the shop: re-apply, keeping health (topped up by a bigger maximum).
+func refresh_loadout() -> void:
+	var old_max := max_health
+	_apply_loadout()
+	health = minf(health + maxf(max_health - old_max, 0.0), max_health)
+	health_changed.emit(health, max_health)
+
+
+func _apply_look(look: Dictionary) -> void:
+	for k in [["scarf", "scarf_color"], ["mask", "mask_color"], ["cloak", "cloak_color"], ["cloak_rim", "cloak_rim"],
+			["hat", "hat_color"], ["band", "band_color"]]:
+		if look.has(k[0]):
+			art.set(k[1], look[k[0]])
+	if look.has("cloak"):
+		sword.cloak_color = look.cloak
+	if look.has("blade_length"):
+		sword.blade_length = look.blade_length
+	if look.has("grip"):
+		sword.grip_color = look.grip
+	sword.style = look.get("weapon", "nib")
+	sword.whirl_reach = whirl_reach * (1.3 if _master() else 1.0)
+
+
+## SHARPENED (first upgrade): +1 damage on every hit, specials included.
+func _sharp() -> int:
+	return 1 if _tier >= 1 else 0
+
+
+## MASTERWORK (third upgrade): the special is stronger.
+func _master() -> bool:
+	return _tier >= 3
 
 
 ## Restores HP (health pickups). Returns false when already at full health.
@@ -566,7 +712,9 @@ func _handle_attack_input() -> void:
 
 
 ## Hold-to-charge, Hollow Knight "nail art" style: the press already did a
-## normal slash, keep holding to charge, release when charged to fire.
+## normal slash, keep holding to charge, release when charged to fire the
+## weapon's special. The drill and the whirl run while still held, once
+## charged, and end (the drill in a burst) when you let go.
 func _update_charge(delta: float) -> void:
 	if _charge < 0.0:
 		return
@@ -575,15 +723,222 @@ func _update_charge(delta: float) -> void:
 		if not _charge_ready and _charge >= charge_time:
 			_charge_ready = true
 			_squash = Vector2(1.1, 0.92)
+			if _special == "drill":
+				_start_drill()
+			elif _special == "whirl":
+				_start_whirl()
+		if _drill >= 0.0:
+			_update_drill(delta)
+		elif _whirl >= 0.0:
+			_update_whirl(delta)
 		return
 	if _charge_ready:
-		_release_wave()
+		_release_special()
 	_cancel_charge()
 
 
 func _cancel_charge() -> void:
 	_charge = -1.0
 	_charge_ready = false
+	_stop_drill()
+	_stop_whirl()
+
+
+## Letting go of a charged attack: the equipped weapon's special.
+func _release_special() -> void:
+	match _special:
+		"drill":
+			if _drill >= 0.0:
+				_drill_burst()
+		"whirl":
+			pass  # it whirled while held
+		"sweep":
+			_blinding_sweep()
+		"darts":
+			_quill_volley()
+		"slam":
+			_ink_slam()
+		_:
+			_release_wave()
+
+
+## Living monsters within `radius` of `at` (2D enemies, group "enemy";
+## not their projectiles).
+func _enemies_near(at: Vector2, radius: float) -> Array:
+	var out := []
+	for e in get_tree().get_nodes_in_group("enemy"):
+		if e is Node2D and e.has_method("take_hit") and not ("dead" in e and e.dead) and e.global_position.distance_to(at) <= radius:
+			out.append(e)
+	return out
+
+
+## Stuns a monster for at least `seconds` (enemy_base.gd and crawler.gd
+## both answer stun_for()).
+func _stun(e: Node, seconds: float) -> void:
+	if e.has_method("stun_for"):
+		e.stun_for(seconds)
+
+
+# PEN-DRILL: spin, drag monsters in, grind them; burst on release
+func _start_drill() -> void:
+	_drill = 0.0
+	_drill_t = 0.0
+	sword.spin(true)
+	_tornado = WeaponFx.Tornado.new()
+	_tornado.radius = _drill_radius()
+	add_child(_tornado)
+	_pop_text(global_position + Vector2(0, -60), "VRRRRR!", Color(0.85, 0.9, 1.0))
+
+
+func _drill_radius() -> float:
+	return drill_radius * (1.4 if _master() else 1.0)
+
+
+func _update_drill(delta: float) -> void:
+	_drill += delta
+	_drill_t -= delta
+	var tick := _drill_t <= 0.0
+	if tick:
+		_drill_t = drill_tick
+	for e in _enemies_near(global_position, _drill_radius()):
+		var d: Vector2 = global_position - e.global_position
+		_stun(e, 0.15)
+		if "velocity" in e:
+			e.velocity.x = clampf(d.x * 5.0, -drill_pull, drill_pull)
+		if tick and absf(d.x) < drill_grind and absf(d.y) < drill_grind:
+			e.take_hit(1 + _sharp(), Vector2(signf(-d.x), 0.0), e.global_position + Vector2(signf(d.x), 0.0))
+			_shake(0.12)
+	if _drill >= drill_max:
+		_drill_burst()
+		_cancel_charge()
+
+
+func _drill_burst() -> void:
+	var dmg := drill_burst + _sharp() + (2 if _master() else 0)
+	for e in _enemies_near(global_position, _drill_radius() * 0.75):
+		e.take_hit(dmg, Vector2(signf(e.global_position.x - global_position.x), 0.0), global_position)
+		if "velocity" in e:
+			e.velocity.x *= 2.2
+			e.velocity.y = -300.0
+	_pop_text(global_position + Vector2(0, -70), "KA-BLOOEY!", Color(0.85, 0.9, 1.0))
+	_shake(0.5)
+	_squash = Vector2(1.3, 0.75)
+	_stop_drill()
+
+
+func _stop_drill() -> void:
+	if _drill < 0.0:
+		return
+	_drill = -1.0
+	sword.spin(false)
+	if is_instance_valid(_tornado):
+		_tornado.active = false
+	_tornado = null
+
+
+# LANTERN WHIRL: the lantern orbits, hitting what it passes; it is light
+func _start_whirl() -> void:
+	if ember.snuffed or ember.meter <= 0.0:
+		_pop_text(global_position + Vector2(0, -60), "NO EMBER", Color(0.7, 0.7, 0.75))
+		return
+	_whirl = 0.0
+	_whirl_hits.clear()
+	sword.whirl(true)
+	_lantern_light = WeaponFx.LanternLight.new()
+	_lantern_light.follow = self
+	_lantern_light.radius = whirl_light * (1.3 if _master() else 1.0)
+	get_tree().current_scene.add_child(_lantern_light)
+	_pop_text(global_position + Vector2(0, -60), "WHOOM!", Color(1.0, 0.8, 0.4))
+
+
+func _update_whirl(delta: float) -> void:
+	_whirl += delta
+	ember.meter = maxf(ember.meter - whirl_drain * delta, 0.0)
+	ember._since_raised = 0.0  # no regen while it burns
+	for t in _whirl_hits.keys():
+		_whirl_hits[t] -= delta
+	var at: Vector2 = sword.lantern_global()
+	var dmg := whirl_damage + _sharp() + (1 if _master() else 0)
+	for e in _enemies_near(at, 34.0):
+		if _whirl_hits.get(e, 0.0) > 0.0:
+			continue
+		_whirl_hits[e] = 0.35
+		e.take_hit(dmg, Vector2(signf(e.global_position.x - global_position.x), 0.0), global_position)
+		_pop_text(e.global_position + Vector2(0, -40), "CLONK!")
+		_shake(0.15)
+	if ember.meter <= 0.0:
+		ember.snuffed = true
+		_cancel_charge()
+
+
+func _stop_whirl() -> void:
+	if _whirl < 0.0:
+		return
+	_whirl = -1.0
+	sword.whirl(false)
+	if is_instance_valid(_lantern_light):
+		_lantern_light.remove_from_group("drawn_light")  # dark at once, not next frame
+		_lantern_light.remove_from_group("light")
+		_lantern_light.queue_free()
+	_lantern_light = null
+
+
+# BLINDING SWEEP: a rainbow arc in front that blinds
+func _blinding_sweep() -> void:
+	var radius := sweep_radius * (1.3 if _master() else 1.0)
+	var arc := WeaponFx.PrismArc.new()
+	arc.radius = radius
+	arc.direction = facing
+	arc.position = global_position + Vector2(0, -10)
+	get_tree().current_scene.add_child(arc)
+	for e in _enemies_near(global_position, radius):
+		var d: Vector2 = e.global_position - global_position
+		if d.x * facing < -24.0:
+			continue  # behind
+		e.take_hit(sweep_damage + _sharp(), Vector2(facing, 0.0), global_position)
+		_stun(e, sweep_stun * (2.0 if _master() else 1.0))
+		_pop_text(e.global_position + Vector2(0, -50), "BLINDED!", Color(0.6, 1.0, 0.95))
+	_pop_text(global_position + Vector2(facing * 40.0, -70), "FWASSH!", Color(0.85, 1.0, 1.0))
+	_shake(0.3)
+	sword.swing(Vector2(facing, 0))
+
+
+# QUILL VOLLEY: a fan of quills that pierce
+func _quill_volley() -> void:
+	var n := dart_count + (2 if _master() else 0)
+	for i in n:
+		# fanned forward and up, so none of them goes straight into the floor
+		var a := deg_to_rad(lerpf(-18.0, 4.0, float(i) / maxf(n - 1, 1)))
+		var dart := WeaponFx.QuillDart.new()
+		dart.velocity = Vector2(facing, 0.0).rotated(a * facing) * dart_speed
+		dart.max_range = dart_range
+		dart.damage = dart_damage + _sharp()
+		dart.color = sword.grip_color
+		dart.position = global_position + Vector2(facing * 26.0, -14.0)
+		get_tree().current_scene.add_child(dart)
+	_pop_text(global_position + Vector2(facing * 30.0, -60), "FWIP-FWIP!", Color(0.6, 0.9, 1.0))
+	_shake(0.2)
+	sword.thrust()
+
+
+# INK SLAM: a ring of ink thrown out along the ground
+func _ink_slam() -> void:
+	var radius := slam_radius * (1.4 if _master() else 1.0)
+	var ring := WeaponFx.SlamRing.new()
+	ring.radius = radius
+	ring.position = global_position + Vector2(0, BODY_HALF_HEIGHT - 6.0)
+	get_tree().current_scene.add_child(ring)
+	var dmg := slam_damage + _sharp() + (1 if _master() else 0)
+	for e in _enemies_near(global_position, radius):
+		if absf(e.global_position.y - global_position.y) > 110.0:
+			continue
+		e.take_hit(dmg, Vector2(signf(e.global_position.x - global_position.x), 0.0), global_position)
+		if "velocity" in e:
+			e.velocity.y = -420.0
+	_pop_text(global_position + Vector2(0, -60), "KA-BLAM!", Color(1.0, 0.4, 0.35))
+	_squash = Vector2(1.35, 0.7)
+	_shake(0.55)
+	sword.swing(Vector2.DOWN if not is_on_floor() else Vector2(facing, 0))
 
 
 func _release_wave() -> void:
@@ -635,6 +990,8 @@ func _on_attack_connect(target: Object) -> void:
 		if "dead" in target and target.dead:
 			return
 		target.take_hit(attack_damage, _attack_dir, global_position)
+		if _weapon == "prism":
+			_stun(target, prism_stun)  # its light dazzles
 		landed = true
 		Sfx.play("sword_hit")
 		_pop_text(target.global_position + Vector2(0, -40), HIT_WORDS.pick_random())
@@ -741,6 +1098,13 @@ func _check_hurtbox() -> void:
 
 func take_damage(amount: float, source_pos: Vector2, from_hazard := false) -> void:
 	if dead or (_invuln_timer > 0.0 and not from_hazard):
+		return
+	if _seal_ready and not from_hazard:
+		# Wax-Seal Mantle: the seal cracks instead of you, once a level
+		_seal_ready = false
+		_invuln_timer = invuln_time
+		_pop_text(global_position + Vector2(0, -50), "SEAL CRACKED!", Color(1.0, 0.45, 0.4))
+		_shake(0.3)
 		return
 	health = maxf(health - amount, 0.0)
 	_cancel_charge()

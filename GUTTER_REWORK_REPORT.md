@@ -1,7 +1,9 @@
 # Gutter rework report
 
-Branch `gutter-rework`, made from `main`. Everything here is the 2.5D part (the hub and
-`scenes/world25/rooms/`). The 2D levels are untouched.
+Branch `gutter-rework`, made from `main`. Almost everything here is the 2.5D part (the hub
+and `scenes/world25/rooms/`). Section 14 (the shop, weapons and outfits) also changes the 2D
+player, its sword and HUD, and gives the 2D monsters a `stun_for()`; the 2D levels themselves
+are untouched.
 
 ## What changed
 
@@ -186,6 +188,59 @@ Branch `gutter-rework`, made from `main`. Everything here is the 2.5D part (the 
       - now and then a short piece of one of its lines, flickering in and out
     - **Seen:** hold Q and the ones in the light ink in, as before.
 
+14. **A shop, weapons and outfits; a broken shrine** (your next notes):
+    - **Half-Drawn:** 5 hits instead of 3.
+    - **The shrine:** now a forgotten, worn shrine in grey stone. Only the lower half of
+      Vesper's statue still stands, broken off at the chest. His head, his hat, an arm and the
+      snapped blade lie in the rubble around the steps. The plaque is worn, the offerings are
+      old (a faded scarf, tipped ink pots, yellowed pages, a few candles), and the ring of
+      marks is dim.
+    - **The skill tree is gone,** from the shrine and from the pause menu. Clearing rooms no
+      longer gives Ink Points.
+    - **Quire's Curios,** where Patch the dog used to sit: a little shop counter like your
+      screenshot. It's dark navy wood with pale curls carved round an arch, a domed lamp at
+      one end, and Quire (a pale, long-tailed paper creature with a quill behind his ear)
+      sitting on the other. Wares are on show and a hanging sign reads QUIRE'S CURIOS.
+    - **Opening the shop:** press E at the stall, pick SHOP on the pause screen (Esc, now
+      the same in 2D and the Gutter; SHOP is its fifth button), or press **B anywhere**. The
+      game pauses while it's open.
+    - **Money:** the Lumen coins you pick up in the 2D levels. They are kept between runs.
+    - **The 2D prompt:** once you have enough coins for something, a caption says "ENOUGH
+      COINS! PRESS B TO OPEN THE SHOP" (once a run), and a "B SHOP" tag stays under the coin
+      counter while you can afford something.
+    - **Shop tabs:** weapons, upgrades, hats, scarves, cloaks and armor. A preview of Vesper
+      shows what you're looking at.
+    - **Weapons, in both modes.** Each one changes the normal swing, and holding attack
+      then letting go does its special:
+      - **Nib-Sword** (you start with it): the ink wave.
+      - **Quill Rapier** (30): faster swings. QUILL VOLLEY throws a fan of 3 quills that
+        pierce.
+      - **Brush Maul** (40): +1 damage and a wider, slower swing. INK SLAM throws a ring of
+        ink out all round you.
+      - **Corkscrew Nib** (55, from your sheet): quick, short thrusts. PEN-DRILL spins
+        Vesper like a drill while held, dragging monsters in and grinding them; letting go
+        bursts them outward.
+      - **Prism Saber** (65, from your sheet): its hits stun longer and it can cut a
+        Half-Drawn without raising the Ember. BLINDING SWEEP is a rainbow arc that blinds everything in
+        front and turns a Haunting Lamp's light away from you (the lamp loses you).
+      - **Lantern Flail** (50, a "light and twist" weapon of my own): long reach. LANTERN
+        WHIRL swings the lantern round you while held, hitting everything it passes. Its
+        light makes 2D sketches solid and shows Half-Drawn without raising the Ember. It
+        burns Ember.
+    - **Upgrades** (per weapon, bought in order):
+      - SHARPENED (15): +1 damage
+      - QUICK HAND (30): the special charges 40% faster
+      - MASTERWORK (50): a stronger special (bigger drill pull and burst, 5 quills, a wider
+        slam or sweep, a brighter whirl, a longer wave)
+    - **Outfits:**
+      - 7 hats (each with its own band colour)
+      - 6 scarves
+      - 6 cloaks
+
+      They show on both the 2D and the 3D Vesper.
+    - **Armor** still works and now counts in the 2D levels too (+20 health a drop, longer
+      safety, the wax seal).
+
 ## Tuning knobs
 
 | What | Where |
@@ -209,10 +264,13 @@ Branch `gutter-rework`, made from `main`. Everything here is the 2.5D part (the 
 | Inking the bridge | `drawn_bridge.gd`: `ink_reach` (5), `ink_speed` (6), `ink_cost` (3 Ember a plank); `ink_only` off = old light rule |
 | Eraser difficulty | `build_rooms.py` arena block (hp, walk_speed, lunge_speed, windup_time, tired_time, cooldown); `eraser_3d.gd` `double_charge_below` (0.5) |
 | Which monsters where | `build_rooms.py`, one block per level (`r.enemy(...)`) |
-| Half-Drawn | `half_drawn_3d.gd`: `drift_speed` (3.2), `strike_range`, `reach`, `arc`, `windup_time` (0.38), `strike_time` (0.14), `recover_time`, `cooldown`, `blade_damage`, `hp` (3); look in `unfinished_model.gd` (`model_scale`, `hover`, eye glow, motes), `scribble_stroke.gdshader` (`width`, `boil`, `ghost_alpha`, `glimpse`, `glimpse_size`) and `ink_fill.gdshader` (`fill`, `fill_alpha`, `hatch_px`) |
+| Half-Drawn | `half_drawn_3d.gd`: `drift_speed` (3.2), `strike_range`, `reach`, `arc`, `windup_time` (0.38), `strike_time` (0.14), `recover_time`, `cooldown`, `blade_damage`; `hp` (5) in `half_drawn.tscn`; look in `unfinished_model.gd` (`model_scale`, `hover`, eye glow, motes), `scribble_stroke.gdshader` (`width`, `boil`, `ghost_alpha`, `glimpse`, `glimpse_size`) and `ink_fill.gdshader` (`fill`, `fill_alpha`, `hatch_px`) |
 | Raised Ember (Q) | `clearing_player.gd`: `raised_radius` (5), `raise_drain` (16/s), `regen` (14/s), `regen_delay` (0.6 s), `lantern_regen` (40/s), `relight_at` (20) |
 | Hearts | `clearing_player.gd` `max_health` (6); look in `clearing_hud.gd` (`HEARTS_AT`, `HEART_STEP`) |
-| Vesper's shrine | `altar.gd`: `statue_scale`, `ring_color`, offerings in `_rebuild()` |
+| Vesper's shrine | `altar.gd`: `stone`, `statue_scale`, `ring_color`; the broken statue in `_build_statue()`, the fallen pieces in `_fallen_head()` / `_fallen_hat()` |
+| Shop prices, items | `scripts/core/catalog.gd` `ITEMS` (price, effect, look, special) and `UPGRADES` |
+| Weapon specials | "Weapon Specials" exports on `scripts/player/player.gd` (2D, px) and `clearing_player.gd` (2.5D, units): drill radius / pull / tick / burst, sweep radius / stun, whirl reach / drain, dart count / speed, slam radius / damage, `charge_time` (2.5D) |
+| Quire's stall | `scripts/world25/shop_stall.gd`; the carving in `shop_carving.gdshader` |
 | Background style | room.gd `backdrop_style` (SIGIL / COMIC); the page in `comic_page.gdshader` (`brightness`, `panel_size`, `drift`), words in room.gd `SOUND_WORDS` |
 | Symbols | `shaders/world25/writers_marks.gdshaderinc` (add a mark, raise `WM_COUNT`) |
 | Lamp difficulty | room.gd `_spawn_haunt()`: Relaxed speed ×0.75 / telegraph ×1.3, Hard ×1.25 / ×0.8 |
@@ -222,18 +280,21 @@ Branch `gutter-rework`, made from `main`. Everything here is the 2.5D part (the 
 
 These ran with Godot 4.7-stable under Xvfb with software OpenGL.
 
-- **Headless runs:** the hub and the rooms load and run without script errors. The only
-  messages are the leak warnings at exit, which `main` already has.
+- **Headless runs:** the hub, the rooms, the 2D levels (City, Sketchbook, Long Drop, Ink
+  Cavern) and the main menu load and run without script errors. The only messages are the
+  leak warnings at exit, which `main` already has.
 - **`tests/gutter/test_phase1.gd`: 35/35 checks.**
   - Cursor in every menu.
   - A swing hits a monster in each of the 8 directions, both by facing and by
     hold-and-swing.
   - Aim assist on, off, out of the cone and out of range.
-- **`tests/gutter/test_phase2.gd`: 16/16 checks** over the hub and the four levels.
-  - No grass, farm or cosy props, shop or round doors in any room.
+- **`tests/gutter/test_phase2.gd`: 19/19 checks** over the hub and the four levels.
+  - No grass, farm or cosy props or round doors in any room, and no shop but Quire's in
+    the hub.
   - No coin drops.
-  - Patch talks.
-  - The skill tree opens at the shrine and from pause.
+  - Patch is gone. The shop opens with E at Quire's stall, with B in a room, and from the
+    pause menu; it pauses the game and closes again.
+  - The skill tree is gone (from the shrine and from pause).
 - **`tests/gutter/test_phase5.gd`: 17/17 checks.**
   - Each room has the right number of lamps (1, 2, 1 and 2 in the four levels), never on
     the arrival point.
@@ -254,7 +315,7 @@ These ran with Godot 4.7-stable under Xvfb with software OpenGL.
     - Its blade takes a heart.
     - Out of the light a hit passes through it.
     - Holding Q reveals it and the prompt goes; in the light a hit mid-windup staggers it,
-      and three hits finish it.
+      and five hits finish it.
   - Six hearts, and the hub's shrine holds a statue of Vesper.
   - Spawn protection: a hit and a lamp's light do nothing for 2 s, then hits land again.
   - The bridge:
@@ -269,6 +330,38 @@ These ran with Godot 4.7-stable under Xvfb with software OpenGL.
     - Let go and it comes back.
     - Run dry, it gutters out and won't rise until it has refilled.
 
+- **`tests/gutter/test_shop.gd` (new): 47/47 checks.** It puts your saved progress back
+  afterwards.
+  - The purse:
+    - Buying, equipping and the three upgrades in order, with their prices.
+    - The retired Compass Edge isn't sold.
+    - No upgrades for a weapon you don't own.
+  - 2D, the shop:
+    - A coin goes into the purse.
+    - The pause screen lists SHOP (no skill tree). Picking it opens the shop on top, and
+      closing it comes back to the pause screen.
+    - At 10 coins "PRESS B" and the B SHOP tag show.
+    - B opens the shop and pauses the level. Buying a hat in it puts the hat on Vesper at
+      once.
+    - Esc closes the shop and play goes on.
+  - 2D, each special against a real monster:
+    - The quill volley, end to end (hold attack, let go): three quills fly and hit.
+    - The slam hits.
+    - The drill drags a monster from 150 px to 57 px, then bursts.
+    - The sweep stuns for 1.6 s.
+    - The whirl's light reaches round Vesper, burns Ember and goes when it stops.
+    - The Nib-Sword fires the ink wave.
+    - SHARPENED adds 1 damage.
+  - The Gutter:
+    - The Prism Saber cuts an unseen Half-Drawn.
+    - The sweep stuns, and sends a hunting lamp to LOST with its meter emptied.
+    - The drill drags a monster from 2.6 to 1.3 units and spins Vesper.
+    - The whirl shows a Half-Drawn without Q and burns Ember.
+    - The slam, end to end, hits all round.
+    - The quills hit.
+  - Outfits: the hat, band and cloak reach the 3D model and the billboard art; the 3D model
+    carries the equipped weapon.
+
 ## Not verified
 
 - **Frame rate:** 60 fps on real hardware. This machine renders on the CPU, so frame rate
@@ -278,3 +371,9 @@ These ran with Godot 4.7-stable under Xvfb with software OpenGL.
 - **Gamepad:** stick feel. Only keyboard-style input was simulated.
 - **Full playthrough:** I didn't play the whole story start to finish. Each room was loaded
   and tested on its own.
+- **Feel of the weapons:** each special was checked to work, not tuned by playing. The
+  numbers are in the tuning table.
+- **Controls on `main`:** while this round was in progress, `main` moved the light to
+  right click (Q is no longer used) and dash to Shift, and added one pause screen for 2D and
+  2.5D (since cut to four buttons). I merged that in and kept it, adding SHOP as a fifth
+  button. Earlier sections of this report still say Q.

@@ -5,15 +5,17 @@ extends "res://scripts/clearing/monster_3d.gd"
 ## of one show (its eyes, a few motes, a flicker of line), and a sword goes
 ## straight through it ("NOT DRAWN YET"). Hold right click: inside the
 ## raised Ember's light it inks in, solid enough to cut
-## (clearing_player.gd ember_reveals()). Vesper shows a "HOLD RIGHT CLICK" prompt when
-## one is near and unseen (group "needs_ember").
+## (clearing_player.gd ember_reveals(); the Lantern Flail's whirl counts
+## too). The Prism Saber's blade is light itself: it cuts one unseen, and
+## the cut shows it for a moment. Vesper shows a "HOLD RIGHT CLICK" prompt
+## when one is near and unseen (group "needs_ember").
 ## They drift after Vesper and cut at him:
 ##  - WINDUP: the blade snaps up behind the head, the eyes flare; it tracks
 ##    him, then locks for the last moment
 ##  - STRIKE: a quick lunge and a slash across an arc in front (`reach`,
 ##    `arc`); only the blade hurts, touching it doesn't
 ##  - RECOVER: a short pause, the time to hit back
-## Hitting one mid-windup staggers it out of the swing. `hp` 3.
+## Hitting one mid-windup staggers it out of the swing. `hp` 5 (half_drawn.tscn).
 
 const Model = preload("res://scripts/clearing/unfinished_model.gd")
 const GHOST_RIM := Color(0.6, 1.0, 0.95)
@@ -42,6 +44,7 @@ var _timer := 0.0
 var _cd := 0.0
 var _dir := Vector3(0, 0, 1)
 var _struck := false
+var _lit := 0.0  # seconds a Prism Saber cut keeps it drawn in
 
 
 func _ready() -> void:
@@ -59,6 +62,7 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	var p := get_tree().get_first_node_in_group("player")
 	revealed = not dead and p != null and p.has_method("ember_reveals") and p.ember_reveals(global_position + Vector3(0, 1.0, 0))
+	_lit = maxf(_lit - delta, 0.0)
 	super(delta)
 
 
@@ -138,9 +142,13 @@ func is_harmful() -> bool:
 	return false
 
 
-## Out of the Ember's light there is nothing there to cut.
+## Out of the Ember's light there is nothing there to cut (but the Prism
+## Saber's light cuts it anyway).
 func _blocks(_dir: Vector3, _aerial: bool) -> bool:
 	if revealed:
+		return false
+	if _player and _player.has_method("light_blade") and _player.light_blade():
+		_lit = 0.8
 		return false
 	pop("NOT DRAWN YET", Color(0.78, 0.9, 1.0), 2.2, 22)
 	return true
@@ -172,4 +180,4 @@ func _sync_puppet() -> void:
 	model.windup = 1.0 - _timer / windup_time if state == State.WINDUP else -1.0
 	model.strike = 1.0 - _timer / strike_time if state == State.STRIKE else -1.0
 	model.dead = dead
-	model.reveal = 1.0 if revealed else 0.0
+	model.reveal = 1.0 if revealed or _lit > 0.0 else 0.0
