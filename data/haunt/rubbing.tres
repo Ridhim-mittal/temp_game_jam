@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="HauntProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/world25/haunt_profile.gd" id="1_haunt"]
+
+[resource]
+script = ExtResource("1_haunt")
+lamps = 2
+grace = 1.5
+seek_speed = 4.0
+circle_radius = 3.0
+strike_every = 4
+telegraph = 0.8
+erase_fill = 0.7
+lose_after = 3.0
+can_damage = true
+say_on_spot = "There you are."
+say_on_lost = "I know you're here."
+say_on_strike = "Hold still. This won't hurt."

@@ -29,6 +29,9 @@
 [ext_resource type="Script" path="res://scripts/world/sketch_platform.gd" id="41_sketch"]
 [ext_resource type="Script" path="res://scripts/world/shadow_caster.gd" id="42_caster"]
 [ext_resource type="Script" path="res://scripts/world/caption.gd" id="43_caption"]
+[ext_resource type="Script" path="res://scripts/world/panel_door.gd" id="44_door"]
+[ext_resource type="Script" path="res://scripts/ui/comic_frame.gd" id="45_frame"]
+[ext_resource type="Script" path="res://scripts/ui/narration.gd" id="46_narration"]
 
 [node name="TestLevel" type="Node2D"]
 
@@ -37,812 +40,170 @@
 [node name="World" type="Node2D" parent="."]
 
 [node name="Ground1" type="StaticBody2D" parent="World"]
-position = Vector2(1730, 850)
+position = Vector2(290, 850)
 script = ExtResource("3_block")
-size = Vector2(3940, 500)
-
-[node name="ValleyFloor1" type="StaticBody2D" parent="World"]
-position = Vector2(4100, 930)
-script = ExtResource("3_block")
-size = Vector2(800, 340)
-
-[node name="Ground2" type="StaticBody2D" parent="World"]
-position = Vector2(6460, 850)
-script = ExtResource("3_block")
-size = Vector2(3920, 500)
-
-[node name="Ground3" type="StaticBody2D" parent="World"]
-position = Vector2(12045, 850)
-script = ExtResource("3_block")
-size = Vector2(1210, 500)
-
-[node name="Ground4" type="StaticBody2D" parent="World"]
-position = Vector2(12915, 850)
-script = ExtResource("3_block")
-size = Vector2(250, 500)
+size = Vector2(1060, 500)
 
 [node name="Wall1" type="StaticBody2D" parent="World"]
-position = Vector2(-200, -150)
+position = Vector2(-200, 250)
 script = ExtResource("3_block")
-size = Vector2(80, 2500)
+size = Vector2(80, 1700)
 
-[node name="Wall2" type="StaticBody2D" parent="World"]
-position = Vector2(13000, -150)
+[node name="Step1" type="StaticBody2D" parent="World"]
+position = Vector2(660, 550)
 script = ExtResource("3_block")
-size = Vector2(80, 2500)
+size = Vector2(200, 100)
 
 [node name="Platform1" type="StaticBody2D" parent="World"]
-position = Vector2(500, 470)
+position = Vector2(960, 412)
 script = ExtResource("3_block")
 size = Vector2(200, 24)
 
 [node name="Platform2" type="StaticBody2D" parent="World"]
-position = Vector2(780, 360)
+position = Vector2(1260, 482)
 script = ExtResource("3_block")
 size = Vector2(200, 24)
 
-[node name="Platform3" type="StaticBody2D" parent="World"]
-position = Vector2(1100, 250)
+[node name="Ground2" type="StaticBody2D" parent="World"]
+position = Vector2(1600, 850)
 script = ExtResource("3_block")
-size = Vector2(260, 24)
-
-[node name="Step1" type="StaticBody2D" parent="World"]
-position = Vector2(2200, 540)
-script = ExtResource("3_block")
-size = Vector2(160, 120)
+size = Vector2(1560, 500)
 
 [node name="Spikes1" type="StaticBody2D" parent="World"]
-position = Vector2(1650, 588)
+position = Vector2(2050, 588)
 script = ExtResource("4_spikes")
-size = Vector2(260, 24)
+size = Vector2(160, 24)
 
-[node name="GooPool1" type="Area2D" parent="World"]
-z_index = 1
-position = Vector2(1330, 590)
-script = ExtResource("7_goo")
-size = Vector2(220, 20)
+[node name="Checkpoint1" type="Area2D" parent="World"]
+position = Vector2(2300, 600)
+script = ExtResource("18_pen")
+
+[node name="PitFloor1" type="StaticBody2D" parent="World"]
+position = Vector2(2530, 950)
+script = ExtResource("3_block")
+size = Vector2(300, 300)
+
+[node name="PitSpikes1" type="StaticBody2D" parent="World"]
+position = Vector2(2530, 788)
+script = ExtResource("4_spikes")
+size = Vector2(300, 24)
+
+[node name="Ground3" type="StaticBody2D" parent="World"]
+position = Vector2(3190, 850)
+script = ExtResource("3_block")
+size = Vector2(1020, 500)
 
 [node name="Plank1" type="StaticBody2D" parent="World"]
-position = Vector2(2600, 498)
+position = Vector2(2980, 498)
 script = ExtResource("11_oneway")
 size = Vector2(180, 16)
 
 [node name="Plank2" type="StaticBody2D" parent="World"]
-position = Vector2(2850, 388)
+position = Vector2(3220, 398)
 script = ExtResource("11_oneway")
 size = Vector2(180, 16)
 
 [node name="Plank3" type="StaticBody2D" parent="World"]
-position = Vector2(3100, 278)
-script = ExtResource("11_oneway")
-size = Vector2(200, 16)
-
-[node name="Plank4" type="StaticBody2D" parent="World"]
-position = Vector2(3360, 388)
-script = ExtResource("11_oneway")
-size = Vector2(180, 16)
-
-[node name="Plank5" type="StaticBody2D" parent="World"]
-position = Vector2(3560, 498)
+position = Vector2(3460, 498)
 script = ExtResource("11_oneway")
 size = Vector2(160, 16)
-
-[node name="Lantern1" type="Node2D" parent="World"]
-position = Vector2(3100, 200)
-script = ExtResource("40_lantern")
-radius = 120
-chain = 0
-casts_shadows = false
-post = 70
-
-[node name="Lantern2" type="Node2D" parent="World"]
-position = Vector2(3820, 735)
-script = ExtResource("40_lantern")
-radius = 95
-chain = 0
-casts_shadows = false
-post = 25
-
-[node name="Spring1" type="Area2D" parent="World"]
-position = Vector2(4440, 760)
-script = ExtResource("14_spring")
-
-[node name="Plank6" type="StaticBody2D" parent="World"]
-position = Vector2(4800, 498)
-script = ExtResource("11_oneway")
-size = Vector2(160, 16)
-
-[node name="Plank7" type="StaticBody2D" parent="World"]
-position = Vector2(5030, 388)
-script = ExtResource("11_oneway")
-size = Vector2(160, 16)
-
-[node name="Ledge1" type="StaticBody2D" parent="World"]
-position = Vector2(5300, 292)
-script = ExtResource("3_block")
-size = Vector2(200, 24)
-
-[node name="Girder1" type="AnimatableBody2D" parent="World"]
-position = Vector2(5040, 180)
-script = ExtResource("12_moving")
-size = Vector2(130, 20)
-travel = Vector2(0, -320)
-period = 5
-phase = 0
-
-[node name="Crumble1" type="StaticBody2D" parent="World"]
-position = Vector2(4790, -239)
-script = ExtResource("13_crumble")
-size = Vector2(150, 22)
-
-[node name="Plank8" type="StaticBody2D" parent="World"]
-position = Vector2(5020, -342)
-script = ExtResource("11_oneway")
-size = Vector2(160, 16)
-
-[node name="Ledge2" type="StaticBody2D" parent="World"]
-position = Vector2(5300, -428)
-script = ExtResource("3_block")
-size = Vector2(220, 24)
-
-[node name="Skyscraper1" type="StaticBody2D" parent="World"]
-position = Vector2(6200, 270)
-script = ExtResource("15_building")
-size = Vector2(1400, 1660)
-
-[node name="ACUnit1" type="StaticBody2D" parent="World"]
-position = Vector2(5940, -585)
-script = ExtResource("3_block")
-size = Vector2(80, 50)
-
-[node name="ACUnit2" type="StaticBody2D" parent="World"]
-position = Vector2(6470, -590)
-script = ExtResource("3_block")
-size = Vector2(100, 60)
-
-[node name="Lantern3" type="Node2D" parent="World"]
-position = Vector2(6250, -600)
-script = ExtResource("40_lantern")
-radius = 85
-chain = 0
-casts_shadows = false
-post = 40
-
-[node name="Plank9" type="StaticBody2D" parent="World"]
-position = Vector2(7020, -412)
-script = ExtResource("11_oneway")
-size = Vector2(150, 16)
-
-[node name="Crumble2" type="StaticBody2D" parent="World"]
-position = Vector2(7200, -269)
-script = ExtResource("13_crumble")
-size = Vector2(140, 22)
-
-[node name="Plank10" type="StaticBody2D" parent="World"]
-position = Vector2(7040, -132)
-script = ExtResource("11_oneway")
-size = Vector2(150, 16)
-
-[node name="Crumble3" type="StaticBody2D" parent="World"]
-position = Vector2(7230, 11)
-script = ExtResource("13_crumble")
-size = Vector2(140, 22)
-
-[node name="Plank11" type="StaticBody2D" parent="World"]
-position = Vector2(7060, 158)
-script = ExtResource("11_oneway")
-size = Vector2(150, 16)
-
-[node name="Plank12" type="StaticBody2D" parent="World"]
-position = Vector2(7240, 308)
-script = ExtResource("11_oneway")
-size = Vector2(150, 16)
-
-[node name="Plank13" type="StaticBody2D" parent="World"]
-position = Vector2(7080, 458)
-script = ExtResource("11_oneway")
-size = Vector2(150, 16)
-
-[node name="Lantern4" type="Node2D" parent="World"]
-position = Vector2(7620, 570)
-script = ExtResource("40_lantern")
-radius = 95
-chain = 0
-casts_shadows = false
-post = 30
-
-[node name="Spikes2" type="StaticBody2D" parent="World"]
-position = Vector2(8000, 588)
-script = ExtResource("4_spikes")
-size = Vector2(400, 24)
-
-[node name="PitEdge1" type="StaticBody2D" parent="World"]
-position = Vector2(7780, 570)
-script = ExtResource("3_block")
-size = Vector2(40, 60)
-
-[node name="PitEdge2" type="StaticBody2D" parent="World"]
-position = Vector2(8220, 570)
-script = ExtResource("3_block")
-size = Vector2(40, 60)
-
-[node name="Girder2" type="AnimatableBody2D" parent="World"]
-position = Vector2(7850, 490)
-script = ExtResource("12_moving")
-size = Vector2(140, 20)
-travel = Vector2(300, 0)
-period = 4.5
-phase = 0
-
-[node name="Gate1" type="StaticBody2D" parent="World"]
-position = Vector2(8320, 540)
-script = ExtResource("3_block")
-size = Vector2(40, 120)
-
-[node name="Caption1" type="Node2D" parent="World"]
-z_index = 5
-position = Vector2(8680, 420)
-script = ExtResource("43_caption")
-text = "HOLD Q - RAISE YOUR EMBER\nLIGHT MAKES THE SKETCH REAL"
-tilt = -0.03
-
-[node name="PitFloor1" type="StaticBody2D" parent="World"]
-position = Vector2(8680, 950)
-script = ExtResource("3_block")
-size = Vector2(520, 300)
-
-[node name="PitSpikes1" type="StaticBody2D" parent="World"]
-position = Vector2(8680, 788)
-script = ExtResource("4_spikes")
-size = Vector2(520, 24)
-
-[node name="Sketch1" type="StaticBody2D" parent="World"]
-position = Vector2(8680, 610)
-script = ExtResource("41_sketch")
-size = Vector2(520, 20)
-inkable = true
-
-[node name="Ground5" type="StaticBody2D" parent="World"]
-position = Vector2(9100, 850)
-script = ExtResource("3_block")
-size = Vector2(320, 500)
-
-[node name="Caption2" type="Node2D" parent="World"]
-z_index = 5
-position = Vector2(9560, 400)
-script = ExtResource("43_caption")
-text = "TOO FAR FOR ONE EMBER?\nSTAND STILL WITH IT RAISED: THE SKETCH INKS IN.\nINK STAYS. REST ON IT."
-tilt = -0.03
-
-[node name="PitFloor2" type="StaticBody2D" parent="World"]
-position = Vector2(9960, 950)
-script = ExtResource("3_block")
-size = Vector2(1400, 300)
-
-[node name="PitSpikes2" type="StaticBody2D" parent="World"]
-position = Vector2(9960, 788)
-script = ExtResource("4_spikes")
-size = Vector2(1400, 24)
-
-[node name="Sketch2" type="StaticBody2D" parent="World"]
-position = Vector2(9960, 610)
-script = ExtResource("41_sketch")
-size = Vector2(1400, 20)
-inkable = true
-
-[node name="Ground6" type="StaticBody2D" parent="World"]
-position = Vector2(10780, 850)
-script = ExtResource("3_block")
-size = Vector2(240, 500)
-
-[node name="Caption3" type="Node2D" parent="World"]
-z_index = 5
-position = Vector2(10990, 440)
-script = ExtResource("43_caption")
-text = "LANTERNS ARE FREE LIGHT.\nSHADOWS ARE NOT."
-tilt = 0.03
-
-[node name="PitFloor3" type="StaticBody2D" parent="World"]
-position = Vector2(11170, 950)
-script = ExtResource("3_block")
-size = Vector2(540, 300)
-
-[node name="PitSpikes3" type="StaticBody2D" parent="World"]
-position = Vector2(11170, 788)
-script = ExtResource("4_spikes")
-size = Vector2(540, 24)
-
-[node name="Sketch3" type="StaticBody2D" parent="World"]
-position = Vector2(11170, 610)
-script = ExtResource("41_sketch")
-size = Vector2(540, 20)
-inkable = true
-
-[node name="Lantern5" type="Node2D" parent="World"]
-position = Vector2(11160, 220)
-script = ExtResource("40_lantern")
-radius = 400
-chain = 120
-post = 0
-lit = true
-casts_shadows = true
-
-[node name="Sign1" type="StaticBody2D" parent="World"]
-position = Vector2(11246.5, 451)
-script = ExtResource("3_block")
-size = Vector2(63, 22)
-
-[node name="Caption4" type="Node2D" parent="World"]
-z_index = 5
-position = Vector2(11470, 360)
-script = ExtResource("43_caption")
-text = "HIT THE LANTERN.\nA SHADOW IS INK TOO."
-tilt = -0.03
-
-[node name="Lantern6" type="Node2D" parent="World"]
-position = Vector2(11550, 520)
-script = ExtResource("40_lantern")
-radius = 220
-chain = 0
-post = 80
-lit = false
-casts_shadows = true
-
-[node name="Cutout1" type="StaticBody2D" parent="World"]
-position = Vector2(11640, 470)
-script = ExtResource("42_caster")
-stick = 130
-
-[node name="Wall3" type="StaticBody2D" parent="World"]
-position = Vector2(11830, 435)
-script = ExtResource("3_block")
-size = Vector2(60, 330)
-
-[node name="Erasable1" type="StaticBody2D" parent="World" groups=["erasable"]]
-position = Vector2(12200, 470)
-script = ExtResource("3_block")
-size = Vector2(200, 24)
-
-[node name="Erasable2" type="StaticBody2D" parent="World" groups=["erasable"]]
-position = Vector2(12460, 400)
-script = ExtResource("3_block")
-size = Vector2(200, 24)
-
-[node name="Erasable3" type="StaticBody2D" parent="World" groups=["erasable"]]
-position = Vector2(12720, 470)
-script = ExtResource("3_block")
-size = Vector2(200, 24)
-
-[node name="Trapdoor" type="StaticBody2D" parent="World"]
-position = Vector2(12720, 609)
-script = ExtResource("20_trapdoor")
-guardian = NodePath("../../Enemies/Eraser1")
-
-[node name="Checkpoint1" type="Area2D" parent="World"]
-position = Vector2(2420, 600)
-script = ExtResource("18_pen")
-
-[node name="Checkpoint2" type="Area2D" parent="World"]
-position = Vector2(4600, 600)
-script = ExtResource("18_pen")
-
-[node name="Checkpoint3" type="Area2D" parent="World"]
-position = Vector2(5560, -560)
-script = ExtResource("18_pen")
-
-[node name="Checkpoint4" type="Area2D" parent="World"]
-position = Vector2(7250, 600)
-script = ExtResource("18_pen")
-
-[node name="Checkpoint5" type="Area2D" parent="World"]
-position = Vector2(8250, 600)
-script = ExtResource("18_pen")
-
-[node name="Checkpoint6" type="Area2D" parent="World"]
-position = Vector2(10780, 600)
-script = ExtResource("18_pen")
-
-[node name="Checkpoint7" type="Area2D" parent="World"]
-position = Vector2(11480, 600)
-script = ExtResource("18_pen")
-
-[node name="Checkpoint8" type="Area2D" parent="World"]
-position = Vector2(11950, 600)
-script = ExtResource("18_pen")
 
 [node name="Heart1" type="Area2D" parent="World"]
-position = Vector2(3360, 340)
+position = Vector2(3220, 350)
 script = ExtResource("19_heart")
 
-[node name="Heart2" type="Area2D" parent="World"]
-position = Vector2(4300, 715)
-script = ExtResource("19_heart")
+[node name="PanelDoor" type="Area2D" parent="World"]
+position = Vector2(3600, 600)
+script = ExtResource("44_door")
+target_scene = "res://scenes/levels/sketchbook.tscn"
+next_title = "THE SKETCHBOOK"
 
-[node name="Heart3" type="Area2D" parent="World"]
-position = Vector2(5370, 245)
-script = ExtResource("19_heart")
-
-[node name="Heart4" type="Area2D" parent="World"]
-position = Vector2(6080, -600)
-script = ExtResource("19_heart")
-
-[node name="Heart5" type="Area2D" parent="World"]
-position = Vector2(7080, 410)
-script = ExtResource("19_heart")
-
-[node name="Heart6" type="Area2D" parent="World"]
-position = Vector2(10720, 560)
-script = ExtResource("19_heart")
-
-[node name="Heart7" type="Area2D" parent="World"]
-position = Vector2(11980, 560)
-script = ExtResource("19_heart")
+[node name="Wall2" type="StaticBody2D" parent="World"]
+position = Vector2(3740, 250)
+script = ExtResource("3_block")
+size = Vector2(80, 1700)
 
 [node name="Coins" type="Node2D" parent="."]
 
 [node name="Coin1" type="Area2D" parent="Coins"]
-position = Vector2(250, 562)
+position = Vector2(610, 462)
 script = ExtResource("9_coin")
 
 [node name="Coin2" type="Area2D" parent="Coins"]
-position = Vector2(300, 562)
+position = Vector2(710, 462)
 script = ExtResource("9_coin")
 
 [node name="Coin3" type="Area2D" parent="Coins"]
-position = Vector2(350, 562)
+position = Vector2(910, 362)
 script = ExtResource("9_coin")
 
 [node name="Coin4" type="Area2D" parent="Coins"]
-position = Vector2(400, 562)
+position = Vector2(960, 362)
 script = ExtResource("9_coin")
 
 [node name="Coin5" type="Area2D" parent="Coins"]
-position = Vector2(470, 430)
+position = Vector2(1010, 362)
 script = ExtResource("9_coin")
 
 [node name="Coin6" type="Area2D" parent="Coins"]
-position = Vector2(530, 430)
+position = Vector2(1500, 560)
 script = ExtResource("9_coin")
 
 [node name="Coin7" type="Area2D" parent="Coins"]
-position = Vector2(750, 320)
+position = Vector2(1600, 560)
 script = ExtResource("9_coin")
 
 [node name="Coin8" type="Area2D" parent="Coins"]
-position = Vector2(810, 320)
+position = Vector2(1980, 480)
 script = ExtResource("9_coin")
 
 [node name="Coin9" type="Area2D" parent="Coins"]
-position = Vector2(1040, 210)
+position = Vector2(2050, 450)
 script = ExtResource("9_coin")
 
 [node name="Coin10" type="Area2D" parent="Coins"]
-position = Vector2(1100, 195)
+position = Vector2(2120, 480)
 script = ExtResource("9_coin")
 
 [node name="Coin11" type="Area2D" parent="Coins"]
-position = Vector2(1160, 210)
+position = Vector2(2440, 520)
 script = ExtResource("9_coin")
 
 [node name="Coin12" type="Area2D" parent="Coins"]
-position = Vector2(1250, 552)
+position = Vector2(2530, 520)
 script = ExtResource("9_coin")
 
 [node name="Coin13" type="Area2D" parent="Coins"]
-position = Vector2(1305, 552)
+position = Vector2(2620, 520)
 script = ExtResource("9_coin")
 
 [node name="Coin14" type="Area2D" parent="Coins"]
-position = Vector2(1360, 552)
+position = Vector2(2940, 452)
 script = ExtResource("9_coin")
 
 [node name="Coin15" type="Area2D" parent="Coins"]
-position = Vector2(1560, 520)
+position = Vector2(3020, 452)
 script = ExtResource("9_coin")
 
 [node name="Coin16" type="Area2D" parent="Coins"]
-position = Vector2(1605, 442)
+position = Vector2(3180, 352)
 script = ExtResource("9_coin")
 
 [node name="Coin17" type="Area2D" parent="Coins"]
-position = Vector2(1650, 410)
+position = Vector2(3220, 352)
 script = ExtResource("9_coin")
 
 [node name="Coin18" type="Area2D" parent="Coins"]
-position = Vector2(1695, 442)
-script = ExtResource("9_coin")
-
-[node name="Coin19" type="Area2D" parent="Coins"]
-position = Vector2(1740, 520)
-script = ExtResource("9_coin")
-
-[node name="Coin20" type="Area2D" parent="Coins"]
-position = Vector2(2170, 450)
-script = ExtResource("9_coin")
-
-[node name="Coin21" type="Area2D" parent="Coins"]
-position = Vector2(2230, 450)
-script = ExtResource("9_coin")
-
-[node name="Coin22" type="Area2D" parent="Coins"]
-position = Vector2(2560, 452)
-script = ExtResource("9_coin")
-
-[node name="Coin23" type="Area2D" parent="Coins"]
-position = Vector2(2640, 452)
-script = ExtResource("9_coin")
-
-[node name="Coin24" type="Area2D" parent="Coins"]
-position = Vector2(2810, 342)
-script = ExtResource("9_coin")
-
-[node name="Coin25" type="Area2D" parent="Coins"]
-position = Vector2(2890, 342)
-script = ExtResource("9_coin")
-
-[node name="Coin26" type="Area2D" parent="Coins"]
-position = Vector2(3060, 232)
-script = ExtResource("9_coin")
-
-[node name="Coin27" type="Area2D" parent="Coins"]
-position = Vector2(3100, 232)
-script = ExtResource("9_coin")
-
-[node name="Coin28" type="Area2D" parent="Coins"]
-position = Vector2(3140, 232)
-script = ExtResource("9_coin")
-
-[node name="Coin29" type="Area2D" parent="Coins"]
-position = Vector2(3320, 342)
-script = ExtResource("9_coin")
-
-[node name="Coin30" type="Area2D" parent="Coins"]
-position = Vector2(3400, 342)
-script = ExtResource("9_coin")
-
-[node name="Coin31" type="Area2D" parent="Coins"]
-position = Vector2(3900, 722)
-script = ExtResource("9_coin")
-
-[node name="Coin32" type="Area2D" parent="Coins"]
-position = Vector2(4000, 722)
-script = ExtResource("9_coin")
-
-[node name="Coin33" type="Area2D" parent="Coins"]
-position = Vector2(4100, 722)
-script = ExtResource("9_coin")
-
-[node name="Coin34" type="Area2D" parent="Coins"]
-position = Vector2(4200, 722)
-script = ExtResource("9_coin")
-
-[node name="Coin35" type="Area2D" parent="Coins"]
-position = Vector2(4300, 722)
-script = ExtResource("9_coin")
-
-[node name="Coin36" type="Area2D" parent="Coins"]
-position = Vector2(4760, 452)
-script = ExtResource("9_coin")
-
-[node name="Coin37" type="Area2D" parent="Coins"]
-position = Vector2(4840, 452)
-script = ExtResource("9_coin")
-
-[node name="Coin38" type="Area2D" parent="Coins"]
-position = Vector2(5260, 242)
-script = ExtResource("9_coin")
-
-[node name="Coin39" type="Area2D" parent="Coins"]
-position = Vector2(5340, 242)
-script = ExtResource("9_coin")
-
-[node name="Coin40" type="Area2D" parent="Coins"]
-position = Vector2(5040, 60)
-script = ExtResource("9_coin")
-
-[node name="Coin41" type="Area2D" parent="Coins"]
-position = Vector2(5040, -40)
-script = ExtResource("9_coin")
-
-[node name="Coin42" type="Area2D" parent="Coins"]
-position = Vector2(4790, -290)
-script = ExtResource("9_coin")
-
-[node name="Coin43" type="Area2D" parent="Coins"]
-position = Vector2(5020, -390)
-script = ExtResource("9_coin")
-
-[node name="Coin44" type="Area2D" parent="Coins"]
-position = Vector2(5560, -600)
-script = ExtResource("9_coin")
-
-[node name="Coin45" type="Area2D" parent="Coins"]
-position = Vector2(5653, -600)
-script = ExtResource("9_coin")
-
-[node name="Coin46" type="Area2D" parent="Coins"]
-position = Vector2(5747, -600)
-script = ExtResource("9_coin")
-
-[node name="Coin47" type="Area2D" parent="Coins"]
-position = Vector2(5840, -600)
-script = ExtResource("9_coin")
-
-[node name="Coin48" type="Area2D" parent="Coins"]
-position = Vector2(5940, -650)
-script = ExtResource("9_coin")
-
-[node name="Coin49" type="Area2D" parent="Coins"]
-position = Vector2(6470, -660)
-script = ExtResource("9_coin")
-
-[node name="Coin50" type="Area2D" parent="Coins"]
-position = Vector2(6560, -600)
-script = ExtResource("9_coin")
-
-[node name="Coin51" type="Area2D" parent="Coins"]
-position = Vector2(6653, -600)
-script = ExtResource("9_coin")
-
-[node name="Coin52" type="Area2D" parent="Coins"]
-position = Vector2(6747, -600)
-script = ExtResource("9_coin")
-
-[node name="Coin53" type="Area2D" parent="Coins"]
-position = Vector2(6840, -600)
-script = ExtResource("9_coin")
-
-[node name="Coin54" type="Area2D" parent="Coins"]
-position = Vector2(7020, -460)
-script = ExtResource("9_coin")
-
-[node name="Coin55" type="Area2D" parent="Coins"]
-position = Vector2(7200, -320)
-script = ExtResource("9_coin")
-
-[node name="Coin56" type="Area2D" parent="Coins"]
-position = Vector2(7040, -180)
-script = ExtResource("9_coin")
-
-[node name="Coin57" type="Area2D" parent="Coins"]
-position = Vector2(7230, -40)
-script = ExtResource("9_coin")
-
-[node name="Coin58" type="Area2D" parent="Coins"]
-position = Vector2(7060, 110)
-script = ExtResource("9_coin")
-
-[node name="Coin59" type="Area2D" parent="Coins"]
-position = Vector2(7240, 260)
-script = ExtResource("9_coin")
-
-[node name="Coin60" type="Area2D" parent="Coins"]
-position = Vector2(7880, 440)
-script = ExtResource("9_coin")
-
-[node name="Coin61" type="Area2D" parent="Coins"]
-position = Vector2(7960, 440)
-script = ExtResource("9_coin")
-
-[node name="Coin62" type="Area2D" parent="Coins"]
-position = Vector2(8040, 440)
-script = ExtResource("9_coin")
-
-[node name="Coin63" type="Area2D" parent="Coins"]
-position = Vector2(8120, 440)
-script = ExtResource("9_coin")
-
-[node name="Coin64" type="Area2D" parent="Coins"]
-position = Vector2(8500, 560)
-script = ExtResource("9_coin")
-
-[node name="Coin65" type="Area2D" parent="Coins"]
-position = Vector2(8590, 560)
-script = ExtResource("9_coin")
-
-[node name="Coin66" type="Area2D" parent="Coins"]
-position = Vector2(8680, 560)
-script = ExtResource("9_coin")
-
-[node name="Coin67" type="Area2D" parent="Coins"]
-position = Vector2(8770, 560)
-script = ExtResource("9_coin")
-
-[node name="Coin68" type="Area2D" parent="Coins"]
-position = Vector2(8860, 560)
-script = ExtResource("9_coin")
-
-[node name="Coin69" type="Area2D" parent="Coins"]
-position = Vector2(9900, 560)
-script = ExtResource("9_coin")
-
-[node name="Coin70" type="Area2D" parent="Coins"]
-position = Vector2(9960, 560)
-script = ExtResource("9_coin")
-
-[node name="Coin71" type="Area2D" parent="Coins"]
-position = Vector2(10020, 560)
-script = ExtResource("9_coin")
-
-[node name="Coin72" type="Area2D" parent="Coins"]
-position = Vector2(11720, 380)
-script = ExtResource("9_coin")
-
-[node name="Coin73" type="Area2D" parent="Coins"]
-position = Vector2(11760, 350)
-script = ExtResource("9_coin")
-
-[node name="Coin74" type="Area2D" parent="Coins"]
-position = Vector2(12160, 420)
-script = ExtResource("9_coin")
-
-[node name="Coin75" type="Area2D" parent="Coins"]
-position = Vector2(12240, 420)
-script = ExtResource("9_coin")
-
-[node name="Coin76" type="Area2D" parent="Coins"]
-position = Vector2(12420, 350)
-script = ExtResource("9_coin")
-
-[node name="Coin77" type="Area2D" parent="Coins"]
-position = Vector2(12500, 350)
-script = ExtResource("9_coin")
-
-[node name="Coin78" type="Area2D" parent="Coins"]
-position = Vector2(12680, 420)
-script = ExtResource("9_coin")
-
-[node name="Coin79" type="Area2D" parent="Coins"]
-position = Vector2(12760, 420)
+position = Vector2(3260, 352)
 script = ExtResource("9_coin")
 
 [node name="Enemies" type="Node2D" parent="."]
 
 [node name="Crawler1" parent="Enemies" instance=ExtResource("2_crawler")]
-position = Vector2(1000, 580)
-
-[node name="Crawler2" parent="Enemies" instance=ExtResource("2_crawler")]
-position = Vector2(1100, 222)
-start_direction = 1
-
-[node name="Crawler3" parent="Enemies" instance=ExtResource("2_crawler")]
-position = Vector2(1950, 580)
+position = Vector2(1700, 580)
 
 [node name="Scribble1" parent="Enemies" instance=ExtResource("20_scribble")]
-position = Vector2(2800, 260)
-
-[node name="Scribble2" parent="Enemies" instance=ExtResource("20_scribble")]
-position = Vector2(2950, 200)
-
-[node name="Scribble3" parent="Enemies" instance=ExtResource("20_scribble")]
-position = Vector2(3300, 240)
-
-[node name="Crumple1" parent="Enemies" instance=ExtResource("21_crumple")]
-position = Vector2(4150, 735)
-
-[node name="Inkwell1" parent="Enemies" instance=ExtResource("24_inkwell")]
-position = Vector2(5330, -466)
-
-[node name="Crossed1" parent="Enemies" instance=ExtResource("22_crossed")]
-position = Vector2(6150, -590)
-
-[node name="Crawler4" parent="Enemies" instance=ExtResource("2_crawler")]
-position = Vector2(6700, -580)
-
-[node name="Smudge1" parent="Enemies" instance=ExtResource("23_smudge")]
-position = Vector2(7500, 588)
-
-[node name="Scribble4" parent="Enemies" instance=ExtResource("20_scribble")]
-position = Vector2(9800, 380)
-
-[node name="Scribble5" parent="Enemies" instance=ExtResource("20_scribble")]
-position = Vector2(10150, 340)
-
-[node name="Crossed2" parent="Enemies" instance=ExtResource("22_crossed")]
-position = Vector2(10820, 570)
-
-[node name="Eraser1" parent="Enemies" instance=ExtResource("25_eraser")]
-position = Vector2(12500, 564)
+position = Vector2(3220, 300)
 
 [node name="Player" parent="." instance=ExtResource("1_player")]
 position = Vector2(100, 570)
@@ -865,3 +226,11 @@ script = ExtResource("8_music")
 
 [node name="LevelMood" type="Node" parent="."]
 script = ExtResource("30_mood")
+
+[node name="ComicFrame" type="CanvasLayer" parent="."]
+script = ExtResource("45_frame")
+page_number = 1
+
+[node name="Narration" type="CanvasLayer" parent="."]
+script = ExtResource("46_narration")
+text = "VESPER STARTS OUT IN A CITY INFECTED BY EVIL MONSTERS. HE FIGHTS THEM OFF WITH THE LIGHT AND HIS SWORD."

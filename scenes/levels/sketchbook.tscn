@@ -1,8 +1,280 @@
 [gd_scene format=3]
 
-[ext_resource type="PackedScene" path="res://scenes/levels/test_level.tscn" id="1_level"]
+[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="1_player"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/crawler.tscn" id="2_crawler"]
+[ext_resource type="Script" path="res://scripts/world/solid_block.gd" id="3_block"]
+[ext_resource type="Script" path="res://scripts/world/spikes.gd" id="4_spikes"]
+[ext_resource type="Script" path="res://scripts/ui/hud.gd" id="5_hud"]
+[ext_resource type="PackedScene" path="res://scenes/background/comic_background.tscn" id="6_background"]
+[ext_resource type="Script" path="res://scripts/world/goo_pool.gd" id="7_goo"]
+[ext_resource type="Script" path="res://scripts/audio/level_music.gd" id="8_music"]
+[ext_resource type="Script" path="res://scripts/world/coin.gd" id="9_coin"]
+[ext_resource type="Script" path="res://scripts/world/one_way_platform.gd" id="11_oneway"]
+[ext_resource type="Script" path="res://scripts/world/moving_platform.gd" id="12_moving"]
+[ext_resource type="Script" path="res://scripts/world/crumbling_platform.gd" id="13_crumble"]
+[ext_resource type="Script" path="res://scripts/world/spring_pad.gd" id="14_spring"]
+[ext_resource type="Script" path="res://scripts/world/building_block.gd" id="15_building"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/scribble.tscn" id="20_scribble"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/crumple.tscn" id="21_crumple"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/crossed_out.tscn" id="22_crossed"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/smudge.tscn" id="23_smudge"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/inkwell.tscn" id="24_inkwell"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/eraser.tscn" id="25_eraser"]
+[ext_resource type="Script" path="res://scripts/world/level_mood.gd" id="30_mood"]
+[ext_resource type="Script" path="res://scripts/world/checkpoint_pen.gd" id="18_pen"]
+[ext_resource type="Script" path="res://scripts/world/health_heart.gd" id="19_heart"]
+[ext_resource type="Script" path="res://scripts/world/level_exit.gd" id="17_exit"]
+[ext_resource type="Script" path="res://scripts/world/trapdoor.gd" id="20_trapdoor"]
+[ext_resource type="Script" path="res://scripts/world/lantern.gd" id="40_lantern"]
+[ext_resource type="Script" path="res://scripts/world/sketch_platform.gd" id="41_sketch"]
+[ext_resource type="Script" path="res://scripts/world/shadow_caster.gd" id="42_caster"]
+[ext_resource type="Script" path="res://scripts/world/caption.gd" id="43_caption"]
+[ext_resource type="Script" path="res://scripts/world/panel_door.gd" id="44_door"]
+[ext_resource type="Script" path="res://scripts/ui/comic_frame.gd" id="45_frame"]
+[ext_resource type="Script" path="res://scripts/ui/narration.gd" id="46_narration"]
 
-[node name="Sketchbook" instance=ExtResource("1_level")]
+[node name="Sketchbook" type="Node2D"]
 
-[node name="Player" parent="."]
-position = Vector2(8180, 570)
+[node name="ComicBackground" parent="." instance=ExtResource("6_background")]
+
+[node name="World" type="Node2D" parent="."]
+
+[node name="Ground1" type="StaticBody2D" parent="World"]
+position = Vector2(8160, 850)
+script = ExtResource("3_block")
+size = Vector2(520, 500)
+
+[node name="Wall1" type="StaticBody2D" parent="World"]
+position = Vector2(7860, 250)
+script = ExtResource("3_block")
+size = Vector2(80, 1700)
+
+[node name="Caption1" type="Node2D" parent="World"]
+z_index = 5
+position = Vector2(8680, 420)
+script = ExtResource("43_caption")
+text = "HOLD Q - RAISE YOUR EMBER\nLIGHT MAKES THE SKETCH REAL"
+tilt = -0.03
+
+[node name="PitFloor1" type="StaticBody2D" parent="World"]
+position = Vector2(8680, 950)
+script = ExtResource("3_block")
+size = Vector2(520, 300)
+
+[node name="PitSpikes1" type="StaticBody2D" parent="World"]
+position = Vector2(8680, 788)
+script = ExtResource("4_spikes")
+size = Vector2(520, 24)
+
+[node name="Sketch1" type="StaticBody2D" parent="World"]
+position = Vector2(8680, 610)
+script = ExtResource("41_sketch")
+size = Vector2(520, 20)
+inkable = true
+
+[node name="Ground2" type="StaticBody2D" parent="World"]
+position = Vector2(9100, 850)
+script = ExtResource("3_block")
+size = Vector2(320, 500)
+
+[node name="Caption2" type="Node2D" parent="World"]
+z_index = 5
+position = Vector2(9560, 400)
+script = ExtResource("43_caption")
+text = "TOO FAR FOR ONE EMBER?\nSTAND STILL WITH IT RAISED: THE SKETCH INKS IN.\nINK STAYS. REST ON IT."
+tilt = -0.03
+
+[node name="PitFloor2" type="StaticBody2D" parent="World"]
+position = Vector2(9960, 950)
+script = ExtResource("3_block")
+size = Vector2(1400, 300)
+
+[node name="PitSpikes2" type="StaticBody2D" parent="World"]
+position = Vector2(9960, 788)
+script = ExtResource("4_spikes")
+size = Vector2(1400, 24)
+
+[node name="Sketch2" type="StaticBody2D" parent="World"]
+position = Vector2(9960, 610)
+script = ExtResource("41_sketch")
+size = Vector2(1400, 20)
+inkable = true
+
+[node name="Ground3" type="StaticBody2D" parent="World"]
+position = Vector2(10780, 850)
+script = ExtResource("3_block")
+size = Vector2(240, 500)
+
+[node name="Caption3" type="Node2D" parent="World"]
+z_index = 5
+position = Vector2(10990, 440)
+script = ExtResource("43_caption")
+text = "LANTERNS ARE FREE LIGHT.\nSHADOWS ARE NOT."
+tilt = 0.03
+
+[node name="PitFloor3" type="StaticBody2D" parent="World"]
+position = Vector2(11170, 950)
+script = ExtResource("3_block")
+size = Vector2(540, 300)
+
+[node name="PitSpikes3" type="StaticBody2D" parent="World"]
+position = Vector2(11170, 788)
+script = ExtResource("4_spikes")
+size = Vector2(540, 24)
+
+[node name="Sketch3" type="StaticBody2D" parent="World"]
+position = Vector2(11170, 610)
+script = ExtResource("41_sketch")
+size = Vector2(540, 20)
+inkable = true
+
+[node name="Lantern1" type="Node2D" parent="World"]
+position = Vector2(11160, 220)
+script = ExtResource("40_lantern")
+radius = 400
+chain = 120
+post = 0
+lit = true
+casts_shadows = true
+
+[node name="Sign1" type="StaticBody2D" parent="World"]
+position = Vector2(11246.5, 451)
+script = ExtResource("3_block")
+size = Vector2(63, 22)
+
+[node name="Caption4" type="Node2D" parent="World"]
+z_index = 5
+position = Vector2(11470, 360)
+script = ExtResource("43_caption")
+text = "HIT THE LANTERN.\nA SHADOW IS INK TOO."
+tilt = -0.03
+
+[node name="Ground4" type="StaticBody2D" parent="World"]
+position = Vector2(11970, 850)
+script = ExtResource("3_block")
+size = Vector2(1060, 500)
+
+[node name="Lantern2" type="Node2D" parent="World"]
+position = Vector2(11550, 520)
+script = ExtResource("40_lantern")
+radius = 220
+chain = 0
+post = 80
+lit = false
+casts_shadows = true
+
+[node name="Cutout1" type="StaticBody2D" parent="World"]
+position = Vector2(11640, 470)
+script = ExtResource("42_caster")
+stick = 130
+
+[node name="Wall2" type="StaticBody2D" parent="World"]
+position = Vector2(11830, 435)
+script = ExtResource("3_block")
+size = Vector2(60, 330)
+
+[node name="Checkpoint1" type="Area2D" parent="World"]
+position = Vector2(8250, 600)
+script = ExtResource("18_pen")
+
+[node name="Checkpoint2" type="Area2D" parent="World"]
+position = Vector2(10780, 600)
+script = ExtResource("18_pen")
+
+[node name="Checkpoint3" type="Area2D" parent="World"]
+position = Vector2(11480, 600)
+script = ExtResource("18_pen")
+
+[node name="Heart1" type="Area2D" parent="World"]
+position = Vector2(10720, 560)
+script = ExtResource("19_heart")
+
+[node name="PanelDoor" type="Area2D" parent="World"]
+position = Vector2(12260, 600)
+script = ExtResource("44_door")
+target_scene = "res://scenes/levels/long_drop.tscn"
+next_title = "THE LONG DROP"
+
+[node name="Wall3" type="StaticBody2D" parent="World"]
+position = Vector2(12540, 250)
+script = ExtResource("3_block")
+size = Vector2(80, 1700)
+
+[node name="Coins" type="Node2D" parent="."]
+
+[node name="Coin1" type="Area2D" parent="Coins"]
+position = Vector2(8500, 560)
+script = ExtResource("9_coin")
+
+[node name="Coin2" type="Area2D" parent="Coins"]
+position = Vector2(8590, 560)
+script = ExtResource("9_coin")
+
+[node name="Coin3" type="Area2D" parent="Coins"]
+position = Vector2(8680, 560)
+script = ExtResource("9_coin")
+
+[node name="Coin4" type="Area2D" parent="Coins"]
+position = Vector2(8770, 560)
+script = ExtResource("9_coin")
+
+[node name="Coin5" type="Area2D" parent="Coins"]
+position = Vector2(8860, 560)
+script = ExtResource("9_coin")
+
+[node name="Coin6" type="Area2D" parent="Coins"]
+position = Vector2(9900, 560)
+script = ExtResource("9_coin")
+
+[node name="Coin7" type="Area2D" parent="Coins"]
+position = Vector2(9960, 560)
+script = ExtResource("9_coin")
+
+[node name="Coin8" type="Area2D" parent="Coins"]
+position = Vector2(10020, 560)
+script = ExtResource("9_coin")
+
+[node name="Coin9" type="Area2D" parent="Coins"]
+position = Vector2(11720, 380)
+script = ExtResource("9_coin")
+
+[node name="Coin10" type="Area2D" parent="Coins"]
+position = Vector2(11760, 350)
+script = ExtResource("9_coin")
+
+[node name="Enemies" type="Node2D" parent="."]
+
+[node name="Scribble1" parent="Enemies" instance=ExtResource("20_scribble")]
+position = Vector2(9800, 380)
+
+[node name="Scribble2" parent="Enemies" instance=ExtResource("20_scribble")]
+position = Vector2(10150, 340)
+
+[node name="Crossed1" parent="Enemies" instance=ExtResource("22_crossed")]
+position = Vector2(10820, 570)
+
+[node name="Player" parent="." instance=ExtResource("1_player")]
+position = Vector2(8100, 570)
+
+[node name="UI" type="CanvasLayer" parent="."]
+layer = 2
+
+[node name="HUD" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("5_hud")
+
+[node name="LevelMusic" type="Node" parent="."]
+script = ExtResource("8_music")
+
+[node name="LevelMood" type="Node" parent="."]
+script = ExtResource("30_mood")
+
+[node name="ComicFrame" type="CanvasLayer" parent="."]
+script = ExtResource("45_frame")
+page_number = 2

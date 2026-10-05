@@ -8,9 +8,9 @@ extends Node3D
 ## Gates stay sealed until every monster under "Enemies" is beaten; then
 ## they open and the room is remembered as cleared (World25).
 ##
-## Two biomes: set `biome_b` and the blend line; the islands and grass
-## take B's look past the wavy seam, and the light and air shift as the
-## player walks across.
+## Two biomes: set `biome_b` and the blend line; the islands take B's look
+## past the wavy seam, and the light and air shift as the player walks
+## across.
 
 const PLAYER_SCENE = preload("res://scenes/clearing/clearing_player.tscn")
 const CameraScript = preload("res://scripts/clearing/clearing_camera.gd")
@@ -23,9 +23,13 @@ const RectScript = preload("res://scripts/background/screen_shader_rect.gd")
 const DEFAULT_BIOME = preload("res://data/biomes/darkwood.tres")
 const PauseMenu = preload("res://scripts/ui/pause_menu.gd")
 const SkillTree = preload("res://scripts/ui/skill_tree.gd")
-const Shop = preload("res://scripts/ui/shop.gd")
 const SettingsMenu = preload("res://scripts/ui/settings_menu.gd")
 const Tutorial = preload("res://scripts/ui/tutorial.gd")
+const HauntLamp = preload("res://scripts/world25/haunt_lamp.gd")
+const DarknessScript = preload("res://scripts/world25/darkness.gd")
+const RING_SHADER = preload("res://shaders/world25/sigil_ring.gdshader")
+const MIST_SHADER = preload("res://shaders/world25/void_mist.gdshader")
+const BiomeProps = preload("res://scripts/world25/biome_props.gd")
 
 @export var room_id := "room"
 @export var biome: Resource:
@@ -37,6 +41,10 @@ const Tutorial = preload("res://scripts/ui/tutorial.gd")
 @export var camera_bounds := Rect2(-10, -8, 20, 16)
 ## Where the player starts when not arriving through a gate.
 @export var default_spawn := Vector3(0, 0.05, 0)
+## The living background round the floor (_build_backdrop): a great sigil
+## turning far below, mist, rising embers, skull heaps and ink statues in
+## the void.
+@export var backdrop := true
 
 @export_group("Story")
 ## Big title shown on entering (defaults to the biome's name).
@@ -52,6 +60,13 @@ const Tutorial = preload("res://scripts/ui/tutorial.gd")
 ## A monster under "Enemies" shown with a big health bar (boss fights).
 @export var boss_path: NodePath
 @export var boss_name := ""
+
+@export_group("The Writer's lamp")
+## Spawn the Haunting Lamp(s) from the biome's HauntProfile.
+@export var haunt_enabled := true
+## This room's lamp is a bit harder (> 1) or easier: scales how fast it
+## moves and how often it strikes. Set per room by the generator.
+@export var haunt_scale := 1.0
 
 @export_group("Blend into another biome")
 @export var biome_b: Resource:
@@ -91,6 +106,7 @@ func _ready() -> void:
 	_build_ui()
 	_spawn_player(world)
 	_build_camera()
+	_spawn_haunt()
 	_play_music(b.music)
 	_prepare_enemies(world)
 	ui.title_card((title if title != "" else b.display_name).to_upper(), subtitle)
@@ -196,6 +212,130 @@ func _build_environment() -> void:
 	_motes.color_ramp = g
 	add_child(_motes)
 	_apply_air(b, b, 0.0)
+	if backdrop:
+		_build_backdrop(b)
+
+
+## The void round the room, so the floor floats in something: a huge
+## ritual circle turning slowly far below (the zone's sigil colour), two
+## sheets of mist drifting over it, embers rising out of the dark, and
+## heaps of skulls and black ink statues standing in the fog round the
+## edges, kept clear of the gates. Deterministic per room.
+func _build_backdrop(b: Resource) -> void:
+	var c := camera_bounds.get_center()
+	var span := maxf(camera_bounds.size.x, camera_bounds.size.y) + 40.0
+	var glow: Color = b.rune_color if "rune_color" in b else Color(1.0, 0.26, 0.16)
+	var holder := Node3D.new()
+	holder.name = "Backdrop"
+	add_child(holder)
+	# the sigil in the abyss
+	var q := QuadMesh.new()
+	q.orientation = PlaneMesh.FACE_Y
+	q.size = Vector2(span, span)
+	var rm := ShaderMaterial.new()
+	rm.shader = RING_SHADER
+	rm.set_shader_parameter("color", glow)
+	rm.set_shader_parameter("glow", 1.5)
+	rm.set_shader_parameter("alpha", 0.6)
+	rm.set_shader_parameter("spin", 0.015)
+	var ring := MeshInstance3D.new()
+	ring.mesh = q
+	ring.material_override = rm
+	ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	ring.position = Vector3(c.x, -16.0, c.y - 4.0)
+	holder.add_child(ring)
+	# mist over it
+	for layer in [[-6.0, 0.4, 12.0], [-11.0, 0.3, 18.0]]:
+		var mq := QuadMesh.new()
+		mq.orientation = PlaneMesh.FACE_Y
+		mq.size = Vector2(span * 1.2, span * 1.2)
+		var mm := ShaderMaterial.new()
+		mm.shader = MIST_SHADER
+		mm.set_shader_parameter("color", b.background.lerp(glow, 0.12).lightened(0.05))
+		mm.set_shader_parameter("alpha", layer[1])
+		mm.set_shader_parameter("scale", layer[2])
+		var mist := MeshInstance3D.new()
+		mist.mesh = mq
+		mist.material_override = mm
+		mist.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mist.position = Vector3(c.x, layer[0], c.y - 4.0)
+		holder.add_child(mist)
+	# embers rising out of the abyss
+	var embers := CPUParticles3D.new()
+	var eq := QuadMesh.new()
+	eq.size = Vector2(0.09, 0.09)
+	var em := StandardMaterial3D.new()
+	em.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	em.vertex_color_use_as_albedo = true
+	em.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	em.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	em.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
+	eq.material = em
+	embers.mesh = eq
+	embers.amount = 90
+	embers.lifetime = 11.0
+	embers.preprocess = 11.0
+	embers.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
+	embers.emission_box_extents = Vector3(span * 0.45, 1.0, span * 0.4)
+	embers.position = Vector3(c.x, -9.0, c.y - 4.0)
+	embers.direction = Vector3(0.1, 1, 0)
+	embers.spread = 25.0
+	embers.gravity = Vector3(0.15, 0.25, 0)
+	embers.initial_velocity_min = 0.6
+	embers.initial_velocity_max = 1.6
+	embers.scale_amount_min = 0.6
+	embers.scale_amount_max = 1.6
+	var eg := Gradient.new()
+	eg.offsets = PackedFloat32Array([0, 0.15, 0.7, 1])
+	eg.colors = PackedColorArray([Color(glow, 0), Color(glow.lightened(0.3), 0.9), Color(glow, 0.5), Color(glow, 0)])
+	embers.color_ramp = eg
+	holder.add_child(embers)
+	# skull heaps and ink statues in the fog round the floor
+	var rng := RandomNumberGenerator.new()
+	rng.seed = room_id.hash()
+	var half := camera_bounds.size * 0.5 + Vector2(9.0, 7.0)
+	var placed := 0
+	var spots := 14
+	for i in spots:
+		var a := TAU * (i + rng.randf_range(-0.25, 0.25)) / spots
+		var p := Vector3(c.x + cos(a) * half.x * rng.randf_range(1.0, 1.25), 0.0, c.y + sin(a) * half.y * rng.randf_range(1.0, 1.2))
+		if on_floor(p) or _near_gate(p, 9.0):
+			continue
+		var prop := Node3D.new()
+		prop.set_script(BiomeProps)
+		prop.position = p
+		prop.rotation_degrees.y = rng.randf_range(-40, 40) + (180.0 if sin(a) > 0.0 else 0.0)
+		holder.add_child(prop)
+		prop.seed = rng.randi_range(1, 999)
+		if placed % 3 == 1:
+			prop.size = rng.randf_range(2.2, 2.8)
+			prop.position.y = rng.randf_range(-6.0, -4.0)
+			prop.kind = BiomeProps.Kind.SHADE_STATUE
+		else:
+			prop.size = rng.randf_range(2.0, 2.8)
+			prop.count = 8
+			prop.radius = 1.6
+			prop.position.y = rng.randf_range(-3.5, -1.5)
+			prop.kind = BiomeProps.Kind.SKULL_PILE
+		# lit red from the abyss, and visible through the darkness
+		var up := OmniLight3D.new()
+		up.light_color = glow
+		up.light_energy = 2.2
+		up.omni_range = 7.0
+		up.position = Vector3(0, -1.0, 1.5)
+		prop.add_child(up)
+		prop.set_meta("glow_radius", 3.2 * prop.size)
+		prop.add_to_group("glow")
+		placed += 1
+		if placed >= 7:
+			break
+
+
+func _near_gate(p: Vector3, dist: float) -> bool:
+	for g in find_children("*", "Node3D", true, false):
+		if g.get_script() == preload("res://scripts/world25/gate.gd") and Vector2(g.global_position.x - p.x, g.global_position.z - p.z).length() < dist:
+			return true
+	return false
 
 
 ## Light, air and motes, mixed between two biomes (t = 0 -> a, 1 -> b).
@@ -213,6 +353,13 @@ func _build_ui() -> void:
 	var layer := CanvasLayer.new()
 	layer.name = "UI"
 	add_child(layer)
+	if _biome().get("darkness") and _biome().darkness > 0.0:
+		var dark := ColorRect.new()
+		dark.name = "Darkness"
+		dark.set_script(DarknessScript)
+		dark.darkness = _biome().darkness
+		dark.tint = _biome().background.darkened(0.3)
+		layer.add_child(dark)
 	var overlay := ColorRect.new()
 	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
 	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -220,6 +367,7 @@ func _build_ui() -> void:
 	mat.shader = OVERLAY_SHADER
 	mat.set_shader_parameter("vignette_start", 0.78)
 	mat.set_shader_parameter("vignette_strength", _biome().vignette)
+	mat.set_shader_parameter("edge_darkness", _biome().edge_darkness)
 	overlay.material = mat
 	overlay.set_script(RectScript)
 	layer.add_child(overlay)
@@ -236,13 +384,18 @@ func _build_ui() -> void:
 
 func _spawn_player(world: Node) -> void:
 	var at := default_spawn
+	var face := Vector3(0, 0, 1)  # towards the camera
 	if world and world.entry_gate != "":
 		for g in get_tree().get_nodes_in_group("gate"):
 			if is_ancestor_of(g) and g.gate_id == world.entry_gate:
 				at = g.arrival_point()
+				face = g.global_basis.z  # walked in through it: face into the room
 				break
 	player = PLAYER_SCENE.instantiate()
 	player.position = at
+	face.y = 0.0
+	if face.length() > 0.01:
+		player.facing_dir = face.normalized()
 	add_child(player)
 	if world and world.player_health > 0:
 		player.health = world.player_health
@@ -257,6 +410,69 @@ func _spawn_player(world: Node) -> void:
 		player._invuln = 2.5
 		world.arrive_from_sky = 0.0
 		_land_from_sky()
+
+
+## The Writer's Haunting Lamp(s) (haunt_lamp.gd), scaled by the difficulty
+## setting and this room's haunt_scale, starting far from the player.
+func _spawn_haunt() -> void:
+	var prof: Resource = _biome().haunt
+	if not haunt_enabled or prof == null or prof.lamps <= 0:
+		return
+	var settings := get_node_or_null("/root/Settings")
+	var diff: String = settings.get_value("difficulty") if settings else "normal"
+	var speed: float = {"relaxed": 0.75, "normal": 1.0, "hard": 1.25}.get(diff, 1.0)
+	var tele: float = {"relaxed": 1.3, "normal": 1.0, "hard": 0.8}.get(diff, 1.0)
+	var roam := camera_bounds.grow_individual(3.5, 2.5, 3.5, 2.5)
+	var taken: Array[Vector3] = [player.global_position]
+	for i in prof.lamps:
+		var lamp := HauntLamp.new()
+		lamp.name = "HauntLamp%d" % (i + 1)
+		lamp.profile = prof
+		lamp.index = i
+		lamp.roam = roam
+		lamp.speed_scale = speed * haunt_scale
+		lamp.strike_scale = haunt_scale
+		lamp.telegraph_scale = tele
+		lamp.spot = _far_point(roam, taken)
+		taken.append(lamp.spot)
+		add_child(lamp)
+
+
+## The point of `r` (corners and edge middles) farthest from all of `from`:
+## a lamp never starts on the player's arrival point.
+func _far_point(r: Rect2, from: Array[Vector3]) -> Vector3:
+	var best := Vector3(r.get_center().x, 0.0, r.get_center().y)
+	var best_d := -1.0
+	for fx in [0.0, 0.5, 1.0]:
+		for fz in [0.0, 0.5, 1.0]:
+			var p := Vector3(r.position.x + r.size.x * fx, 0.0, r.position.y + r.size.y * fz)
+			var d := INF
+			for f in from:
+				d = minf(d, Vector2(p.x - f.x, p.z - f.z).length())
+			if d > best_d:
+				best_d = d
+				best = p
+	return best
+
+
+## True if (x, z) of `p` is on one of the room's islands (the floor, not
+## the void round it). The Haunting Lamp only wanders over the floor.
+func on_floor(p: Vector3) -> bool:
+	for n in find_children("*", "Node3D", true, false):
+		if n.has_method("contains") and n.contains(Vector2(p.x, p.z)):
+			return true
+	return false
+
+
+## True while the lamps must hold their strikes: an ink-wipe transition, a
+## paused game, a dead Vesper, or a boss room's intro captions.
+func haunt_hold() -> bool:
+	var world := get_node_or_null("/root/World25")
+	if world and world.transitioning:
+		return true
+	if get_tree().paused or player == null or player.dead:
+		return true
+	return not boss_path.is_empty() and not _cleared and ui != null and ui.busy()
 
 
 func _land_from_sky() -> void:
@@ -314,6 +530,12 @@ func _gates() -> Array:
 
 # --------------------------------------------------------------- overlays
 
+## True while the room is being played: no menu open over it. World25
+## hides the mouse cursor while this holds (and the tree isn't paused).
+func in_gameplay() -> bool:
+	return not Engine.is_editor_hint() and _overlay == null and is_inside_tree()
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if Engine.is_editor_hint() or _overlay != null:
 		return
@@ -323,7 +545,8 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 ## Opens a full-screen menu over the room and pauses the game:
-## "pause", "skills", "shop" or "settings".
+## "pause", "skills" or "settings". (The Gutter has no shop: shop.gd and
+## catalog.gd stay in the project, unused.)
 func open_overlay(action: String) -> void:
 	if _overlay != null or player == null or player.dead:
 		return
@@ -336,10 +559,6 @@ func open_overlay(action: String) -> void:
 		"skills":
 			_overlay = Control.new()
 			_overlay.set_script(SkillTree)
-			_overlay.closed.connect(_on_overlay_closed)
-		"shop":
-			_overlay = Control.new()
-			_overlay.set_script(Shop)
 			_overlay.closed.connect(_on_overlay_closed)
 		"settings":
 			_overlay = Control.new()

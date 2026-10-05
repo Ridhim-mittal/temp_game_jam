@@ -1,6 +1,7 @@
 extends Camera3D
-## Tilted top-down follow camera (Cult of the Lamb framing): looks down at
-## `pitch_deg`, trails the target smoothly and leans a little ahead of it.
+## The Gutter's follow camera: a low, side-on 2.5D view (rooms read wider
+## than deep, like a stage set), looking down at `pitch_deg`, trailing the
+## target smoothly and leaning a little ahead of it.
 ## Follows the target's interpolated `smooth_position` when it has one, and
 ## eases height changes (stairs) more gently than ground movement.
 

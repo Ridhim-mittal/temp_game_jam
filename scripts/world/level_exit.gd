@@ -36,6 +36,8 @@ func _on_body_entered(body: Node2D) -> void:
 
 
 func _process(delta: float) -> void:
+	if not is_inside_tree():
+		return  # the scene is already changing
 	_time += delta
 	if _leaving >= 0.0:
 		_leaving += delta

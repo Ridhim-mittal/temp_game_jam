@@ -4,7 +4,6 @@
 [ext_resource type="Script" path="res://scripts/clearing/island.gd" id="island"]
 [ext_resource type="Script" path="res://scripts/world25/gate.gd" id="gate"]
 [ext_resource type="Script" path="res://scripts/world25/biome_props.gd" id="bprops"]
-[ext_resource type="Script" path="res://scripts/clearing/grass_field.gd" id="grass"]
 [ext_resource type="Script" path="res://scripts/clearing/pine.gd" id="pine"]
 [ext_resource type="Script" path="res://scripts/clearing/trunk.gd" id="trunk"]
 [ext_resource type="Script" path="res://scripts/clearing/brazier.gd" id="brazier"]
@@ -45,15 +44,6 @@ boss_name = "THE ERASER"
 script = ExtResource("island")
 polygon = PackedVector2Array(0.00, -9.68, 3.46, -9.86, 6.61, -8.60, 9.00, -6.49, 10.64, -4.03, 12.00, -1.80, 12.00, 1.80, 10.88, 4.14, 9.16, 6.63, 6.61, 8.60, 3.33, 9.42, 0.00, 9.86, -3.33, 9.43, -6.45, 8.36, -8.90, 6.41, -11.15, 4.26, -11.69, 1.40, -11.91, -1.43, -10.64, -4.03, -9.20, -6.66, -6.34, -8.18, -3.29, -9.30)
 open_edges = PackedInt32Array(5)
-
-[node name="Grass" type="Node3D" parent="."]
-script = ExtResource("grass")
-island_path = NodePath("../Island")
-area = Rect2(-12, -10, 24, 20)
-count = 192
-size_range = Vector2(0.55, 0.95)
-seed = 69
-keep_clear = PackedVector3Array(0.0, 0.0, 2.1, -3.0, 0.0, 0.8)
 
 [node name="GateEast" type="Node3D" parent="."]
 transform = Transform3D(0.0000, 0, -1.0000, 0, 1, 0, 1.0000, 0, 0.0000, 12.00, 0.00, 0.00)
@@ -112,6 +102,47 @@ script = ExtResource("bprops")
 kind = 7
 radius = 4.5
 color = Color(1, 0.35, 0.2, 1)
+
+[node name="Candles1" type="Node3D" parent="Props"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -5.60, 0.00, -3.40)
+script = ExtResource("bprops")
+kind = 19
+count = 4
+radius = 0.5
+seed = 95
+
+[node name="Candles2" type="Node3D" parent="Props"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 3.60, 0.00, -3.40)
+script = ExtResource("bprops")
+kind = 19
+count = 4
+radius = 0.5
+seed = 96
+
+[node name="Candles3" type="Node3D" parent="Props"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -5.60, 0.00, 3.40)
+script = ExtResource("bprops")
+kind = 19
+count = 4
+radius = 0.5
+seed = 97
+
+[node name="Candles4" type="Node3D" parent="Props"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 3.60, 0.00, 3.40)
+script = ExtResource("bprops")
+kind = 19
+count = 4
+radius = 0.5
+seed = 98
+
+[node name="Skulls1" type="Node3D" parent="Props"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -9.40, 0.00, 1.20)
+script = ExtResource("bprops")
+kind = 18
+count = 9
+radius = 0.9
+seed = 99
+solid = true
 
 [node name="Pins1" type="Node3D" parent="Props"]
 transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -6.00, 0.00, -5.00)

@@ -14,6 +14,11 @@ uniform float tile_size = 0.0;
 uniform float bark = 0.0;
 uniform vec4 line_color : source_color = vec4(0.1, 0.08, 0.12, 1.0);
 uniform float emission_strength = 0.0;
+// Characters only (vesper_3d.gd): whiten towards paper as the Writer's
+// light erases them (with a glow, so it reads in the dark), and a tint
+// multiplier for the hurt blink. Neutral by default.
+uniform float whiten : hint_range(0.0, 1.0) = 0.0;
+uniform vec4 tint : source_color = vec4(1.0);
 
 varying vec3 world_pos;
 varying vec3 world_normal;
@@ -47,8 +52,9 @@ void fragment() {
 		float m = max(up * step(1.0 - moss_amount, top), (1.0 - up) * step(1.0 - moss_amount * 0.55, side));
 		col = mix(col, moss_color.rgb * (0.9 + 0.2 * noise(world_pos.xz * 4.0)), m);
 	}
+	col = mix(col, vec3(1.0, 0.99, 0.96), whiten) * tint.rgb;
 	ALBEDO = col;
-	EMISSION = col * emission_strength;
+	EMISSION = col * emission_strength + vec3(0.9, 0.92, 1.0) * whiten * whiten * 0.8;
 	ROUGHNESS = 1.0;
 }
 
