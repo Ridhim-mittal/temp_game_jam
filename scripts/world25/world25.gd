@@ -10,6 +10,11 @@ extends Node
 ## Rooms (scripts/world25/room.gd) read `entry_gate` to place the player
 ## and `player_health` to carry health across. The minimap reads `visited`
 ## and `links`.
+##
+## It also owns the mouse cursor (the one place that sets Input.mouse_mode):
+## hidden while a Gutter room is being played, shown everywhere else (the
+## main menu, pause, skill tree, settings, cutscenes, the 2D levels) and
+## whenever the game is paused. Settings "show_cursor" keeps it visible.
 
 const START_SCENE := "res://scenes/clearing/clearing.tscn"
 const MENU_SCENE := "res://scenes/ui/main_menu.tscn"
@@ -92,6 +97,19 @@ func _process(_delta: float) -> void:
 	var scene := get_tree().current_scene
 	if scene and scene.scene_file_path == MENU_SCENE and current_room != "":
 		reset()
+	_update_cursor(scene)
+
+
+## Hidden only while a room says it is in play (room.gd in_gameplay(): no
+## overlay open) and nothing has paused the tree; checked every frame, so
+## menus, cutscenes and scene changes can never leave it out of sync.
+func _update_cursor(scene: Node) -> void:
+	var settings := get_node_or_null("/root/Settings")
+	var hidden: bool = scene != null and scene.has_method("in_gameplay") and scene.in_gameplay() \
+		and not get_tree().paused and not (settings and settings.get_value("show_cursor") == "on")
+	var want := Input.MOUSE_MODE_HIDDEN if hidden else Input.MOUSE_MODE_VISIBLE
+	if Input.mouse_mode != want:
+		Input.mouse_mode = want
 
 
 func is_cleared(room_id: String) -> bool:

@@ -10,6 +10,10 @@ uniform float vignette_strength : hint_range(0.0, 1.0) = 0.45;
 uniform float dot_spacing = 9.0;
 uniform float grain : hint_range(0.0, 0.2) = 0.03;
 uniform float border_width = 6.0;
+// Smooth darkness closing in from the edges (the Gutter's rooms; 0 = off):
+// the middle of the screen stays lit, the corners sink to near black.
+uniform float edge_darkness : hint_range(0.0, 1.0) = 0.0;
+uniform float edge_start : hint_range(0.0, 1.2) = 0.3;
 
 void fragment() {
 	vec2 px = UV * rect_size;
@@ -22,6 +26,7 @@ void fragment() {
 	float aa = 0.75 / dot_spacing;
 	float dots = 1.0 - smoothstep(radius - aa, radius + aa, d);
 	float a = max(dots * vignette_strength, v * v * 0.3);
+	a = max(a, smoothstep(edge_start, 0.98, length(c)) * edge_darkness);
 
 	float n = fract(sin(dot(floor(px), vec2(12.9898, 78.233))) * 43758.5453);
 	a = max(a, n * grain);

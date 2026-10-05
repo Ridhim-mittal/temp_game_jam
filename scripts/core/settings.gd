@@ -6,7 +6,8 @@ extends Node
 ##   Settings.cycle("volume", 1)           # next allowed value
 ##   Settings.shake_mult()                 # 0, 0.5 or 1 for camera shake
 ## Read by: cameras (shake), clearing_fx.gd (hit words), room.gd (controls
-## hint), clearing_player.gd and monster_3d.gd (difficulty), scribble.gd.
+## hint), clearing_player.gd and monster_3d.gd (difficulty), scribble.gd,
+## clearing_player.gd (aim assist) and World25 (cursor in the Gutter).
 
 signal changed(key: String)
 
@@ -19,6 +20,8 @@ const OPTIONS := {
 	"hit_text": ["on", ["on", "off"]],
 	"difficulty": ["normal", ["relaxed", "normal", "hard"]],
 	"scribble_style": ["hopper", ["hopper", "diver"]],
+	"show_cursor": ["off", ["off", "on"]],
+	"aim_assist": ["on", ["on", "off"]],
 }
 
 var _values := {}

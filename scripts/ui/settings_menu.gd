@@ -24,6 +24,10 @@ const ROWS := [
 		"normal": ["NORMAL", "As designed."], "hard": ["HARD", "Monsters hit harder and take more beating."]}],
 	["SCRIBBLES", "scribble_style", {"hopper": ["HOPPER", "Hops along the ground and pounces (2.5D design)."],
 		"diver": ["DIVE-BOMBER", "Flies, shakes, then dive-bombs you; flees light (platformer design)."]}],
+	["AIM ASSIST", "aim_assist", {"on": ["ON", "In the Gutter, swings turn toward a monster just off your aim."],
+		"off": ["OFF", "Swings go exactly where Vesper faces."]}],
+	["CURSOR IN GAME", "show_cursor", {"off": ["OFF", "Hide the mouse pointer while playing the Gutter (menus still show it)."],
+		"on": ["ON", "Keep the mouse pointer visible while playing."]}],
 	["TUTORIALS", "!tutorials", {}],
 	["RESET PROGRESS", "!reset", {}],
 	["BACK", "", {}],
@@ -126,13 +130,13 @@ func _draw() -> void:
 	for i in ROWS.size():
 		var row: Array = ROWS[i]
 		var focused := i == _row
-		var rect := Rect2(70, 140.0 + i * 50.0, 700, 42)
+		var rect := Rect2(70, 136.0 + i * 44.0, 700, 38)
 		_rects.append(rect)
 		var bar := PackedVector2Array([rect.position, rect.position + Vector2(rect.size.x, 0),
 			rect.end - Vector2(18, 0), rect.position + Vector2(0, rect.size.y)])
 		draw_colored_polygon(bar, Color(RED, 0.85) if focused else Color(0.12, 0.1, 0.14))
 		draw_polyline(bar + PackedVector2Array([bar[0]]), RED, 2.0)
-		draw_string(TITLE_FONT, rect.position + Vector2(18, 32), row[0], HORIZONTAL_ALIGNMENT_LEFT, -1, 28,
+		draw_string(TITLE_FONT, rect.position + Vector2(18, 29), row[0], HORIZONTAL_ALIGNMENT_LEFT, -1, 26,
 			PAPER if focused else DIM)
 		var key: String = row[1]
 		var shown := ""
@@ -156,7 +160,7 @@ func _draw() -> void:
 			if focused:
 				desc = info[1]
 		if shown != "":
-			draw_string(TITLE_FONT, rect.position + Vector2(300, 32), shown, HORIZONTAL_ALIGNMENT_LEFT, -1, 28,
+			draw_string(TITLE_FONT, rect.position + Vector2(300, 29), shown, HORIZONTAL_ALIGNMENT_LEFT, -1, 26,
 				RED.lightened(0.4) if key == "!reset" else GOLD)
 	if desc != "":
 		draw_string(ThemeDB.fallback_font, Vector2(80, size.y - 64), desc, HORIZONTAL_ALIGNMENT_LEFT, -1, 19, Color(PAPER, 0.85))

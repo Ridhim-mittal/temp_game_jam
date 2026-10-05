@@ -1,7 +1,7 @@
 @tool
 extends Node3D
-## Giant tree trunk rising out of the dark, with roots, framing the scene
-## like the huge trunks at the edges of Cult of the Lamb's clearings.
+## Giant dead tree trunk rising out of the dark, with roots, framing the
+## scene at the edges of a room.
 
 const Toon = preload("res://scripts/clearing/toon.gd")
 

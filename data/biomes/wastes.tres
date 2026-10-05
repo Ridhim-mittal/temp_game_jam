@@ -1,28 +1,34 @@
-[gd_resource type="Resource" load_steps=2 format=3]
+[gd_resource type="Resource" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/world25/biome.gd" id="1_biome"]
+[ext_resource type="Resource" path="res://data/haunt/wastes.tres" id="2_haunt"]
 
 [resource]
 script = ExtResource("1_biome")
-display_name = "Crumple Wastes"
+display_name = "The Torn Wastes"
 ground = 2
-base = Color(0.46, 0.2, 0.3, 1)
-light = Color(0.54, 0.26, 0.35, 1)
-dark = Color(0.32, 0.13, 0.23, 1)
-accent = Color(0.82, 0.62, 0.72, 1)
-accent_dark = Color(0.3, 0.1, 0.2, 1)
-stain = Color(0.2, 0.06, 0.16, 1)
-cliff = Color(0.1, 0.04, 0.09, 1)
-cliff_line = Color(0.22, 0.08, 0.18, 1)
-lip = Color(0.32, 0.12, 0.2, 1)
+base = Color(0.285, 0.124, 0.186, 1)
+light = Color(0.335, 0.161, 0.217, 1)
+dark = Color(0.192, 0.078, 0.138, 1)
+accent = Color(0.492, 0.372, 0.432, 1)
+accent_dark = Color(0.180, 0.060, 0.120, 1)
+stain = Color(0.140, 0.042, 0.112, 1)
+cliff = Color(0.055, 0.022, 0.050, 1)
+cliff_line = Color(0.121, 0.044, 0.099, 1)
+lip = Color(0.192, 0.072, 0.120, 1)
 tuft_base = Color(0.3, 0.1, 0.18, 1)
 tuft_tip = Color(0.62, 0.3, 0.4, 1)
-background = Color(0.05, 0.015, 0.04, 1)
-ambient = Color(0.62, 0.32, 0.5, 1)
-ambient_energy = 0.5
-sun = Color(1.0, 0.62, 0.6, 1)
-sun_energy = 0.85
-fog = Color(0.07, 0.02, 0.05, 1)
+background = Color(0.028, 0.008, 0.022, 1)
+ambient = Color(0.5, 0.28, 0.5, 1)
+ambient_energy = 0.4
+sun = Color(1, 0.6, 0.72, 1)
+sun_energy = 0.56
+fog = Color(0.042, 0.012, 0.030, 1)
 motes = Color(1.0, 0.6, 0.7, 1)
 music = "margins"
-vignette = 0.45
+vignette = 0.5
+edge_darkness = 0.35
+darkness = 0.68
+runes = 0.1
+rune_color = Color(1, 0.35, 0.5, 1)
+haunt = ExtResource("2_haunt")
