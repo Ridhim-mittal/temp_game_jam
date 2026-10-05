@@ -34,7 +34,6 @@ ROOMS = {
     "side_b": (120, 1060, 260, 110), "door_b": (380, 1120, 50, 50), "shaft3": (760, 1170, 90, 100),
     "cavern": (80, 1270, 780, 150),                       # light puzzle 2: the Pendulum, over the sump
     "sump": (420, 1420, 300, 90), "pit": (100, 1420, 110, 150), "bottom": (100, 1570, 840, 150),
-    "lift": (920, 340, 70, 1380), "lift_door": (860, 390, 60, 70),
 }
 # solid rock put back inside rooms (applied after ROOMS), then air cut through it again
 SOLIDS = {
@@ -71,7 +70,6 @@ res("Script", "res://scripts/ui/hud.gd", "5_hud")
 res("Script", "res://scripts/audio/level_music.gd", "8_music")
 res("Script", "res://scripts/world/spikes.gd", "4_spikes")
 res("Script", "res://scripts/world/coin.gd", "9_coin")
-res("Script", "res://scripts/world/moving_platform.gd", "12_moving")
 res("Script", "res://scripts/world/level_exit.gd", "17_exit")
 res("Script", "res://scripts/world/checkpoint_pen.gd", "18_pen")
 res("Script", "res://scripts/world/health_heart.gd", "19_heart")
@@ -325,7 +323,6 @@ lamp(l2 + 2500, t2, 300, 150)
 sl, st, sr, sf = px("shaft2")
 gl, gt, gr, F = px("gallery")
 steps(sl, sr, st, gt + 60)
-ledge((sl + sr) / 2, st, 150)                    # stepping stone across the shaft mouth, towards the lift
 # The Shadow Gallery. You land on the right; the way on is a ledge 800 px up on the left.
 #   1. Hit lantern B (on a post). The cut-out star beside it throws a ramp of shadow ink up and left.
 #   2. From the top of that ramp lantern A hangs dead ahead, out of sword reach: an ink wave
@@ -435,17 +432,8 @@ coin_row(lr0 + 200, lr0 + 400, of - 40, 4)
 node("Exit", "Area2D", "World", [("position", v(ol + 3750, of)), ("script", 'ExtResource("17_exit")'),
      ("target_scene", '"res://scenes/ui/main_menu.tscn"'), ("label", '"THE END OF THE DROP"')])
 
-# 4. the lift: a girder that rides the shaft between the bottom room and the Archive
-ll, lt, lr, lf = px("lift")
-dl, dt, dr, df = px("lift_door")
-node("Lift", "AnimatableBody2D", "World",
-     [("position", v((ll + lr) / 2, lf - 10)), ("script", 'ExtResource("12_moving")'), ("size", v(lr - ll - 60, 20)),
-      ("travel", v(0, -(lf - df) - 10)), ("period", "56")])
-ledge((ll + lr) / 2, df, lr - ll)   # one-way cap: ride up through it, but no dropping down the shaft from the top
-
 caption(START[0] + 260, START[1] - 190, "The way on is down.")
 caption(px("tower")[0] + 1150, px("tower")[1] + 120, "Mind the drop.")
-caption(lr0 + 300, of - 220, "The lift goes back to the top.")
 
 # ------------------------------------------------------------------ write
 zone_bottoms = ", ".join(f"{b * U:g}" for b, _ in ZONES[:-1])
