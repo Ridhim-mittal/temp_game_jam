@@ -34,7 +34,7 @@ func _ready() -> void:
 	hp = maxi(hp, 10)  # a scene can make it tougher (the arena does)
 	sight = 11.0
 	knockback = 2.0
-	contact_damage = 2
+	contact_damage = 4  # two ink bottles
 	respawn_time = 15.0
 	setup_monster("res://scenes/enemies/eraser.tscn", 288, 40)
 

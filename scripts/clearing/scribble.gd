@@ -19,7 +19,7 @@ enum State { WANDER, CHASE, STUNNED, DEAD, WINDUP, POUNCE }
 @export var keep_distance := 1.6
 @export var pounce_speed := 7.0
 @export var pounce_cooldown := 1.2
-@export var contact_damage := 1
+@export var contact_damage := 1  # half ink bottles: small, half a bottle
 ## Coins it drops when beaten (lumen.gd).
 @export var lumens := 1
 @export var knockback := 9.0

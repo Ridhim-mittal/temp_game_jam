@@ -33,7 +33,7 @@ const SKILLS := {
 		"desc": "Heal in half the time for 8 less fuel.", "effect": {"heal_time_mult": 0.5, "heal_cost_delta": -8.0}},
 	# Ink (body)
 	"thick_ink": {"name": "Thick Ink", "branch": "ink", "tier": 0, "cost": 1,
-		"desc": "+1 ink drop of health.", "effect": {"health_bonus": 1}},
+		"desc": "+1 ink bottle of health.", "effect": {"health_bonus": 1}},
 	"quick_feet": {"name": "Quick Feet", "branch": "ink", "tier": 1, "cost": 1,
 		"desc": "Run 12% faster.", "effect": {"speed_mult": 1.12}},
 	"long_dash": {"name": "Long Dash", "branch": "ink", "tier": 2, "cost": 2,
@@ -103,11 +103,11 @@ const ITEMS := {
 		"special_desc": "Hold attack, let go: a wave of ink cuts through everything in a line.",
 		"master": "The wave hits for +2 and flies further.",
 		"look": {"weapon": "nib", "blade_length": 38.0, "grip": Color(1.0, 0.85, 0.3), "slash_rim": Color(1.0, 0.85, 0.3)}},
-	# Armor (2.5D: ink drops; 2D: +20 health a drop)
+	# Armor (health_bonus is in ink bottles, both modes)
 	"paper": {"name": "Paper Cloak", "slot": "armor", "price": 0,
 		"desc": "No protection to speak of.", "effect": {}, "look": {}},
 	"cardboard": {"name": "Cardboard Vest", "slot": "armor", "price": 28,
-		"desc": "+1 ink drop of health.", "effect": {"health_bonus": 1}, "look": {}},
+		"desc": "+1 ink bottle of health.", "effect": {"health_bonus": 1}, "look": {}},
 	"blotter": {"name": "Blotter Coat", "slot": "armor", "price": 32,
 		"desc": "Soaks up hits: 60% longer safety after being hurt.", "effect": {"invuln_mult": 1.6}, "look": {}},
 	"wax": {"name": "Wax-Seal Mantle", "slot": "armor", "price": 48,

@@ -11,7 +11,7 @@ enum State { ROOST, WAKE, ORBIT, WINDUP, SWOOP, CLIMB, SCATTER }
 @export var wake_range := 360.0
 @export var fly_speed := 230.0
 @export var swoop_speed := 560.0
-@export var swoop_damage := 8.0
+@export var swoop_damage := 1.0
 @export var orbit_radius := 150.0
 @export var art_scale := 0.75
 

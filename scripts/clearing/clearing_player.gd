@@ -122,7 +122,9 @@ enum AttackStyle { INK_SLASH, NIB_SWORD, BOTH }
 @export var slam_damage := 2
 
 @export_group("Health")
-@export var max_health := 6
+## In half ink bottles (12 = six bottles, ink_bottles.gd; the same as in 2D):
+## small monsters take 1 (half a bottle), most hits 2.
+@export var max_health := 12
 @export var invuln_time := 1.0
 ## Spawn protection: nothing can hurt Vesper for this many seconds after he
 ## arrives in a room or comes back after dying (monsters, falls, the
@@ -990,11 +992,11 @@ func _apply_loadout() -> void:
 	var settings := get_node_or_null("/root/Settings")
 	var diff: String = settings.get_value("difficulty") if settings else "normal"
 	if diff == "relaxed":
-		max_health += 2
+		max_health += 4
 		invuln_time *= 1.5
 	if profile == null:
 		return
-	max_health += int(profile.effect("health_bonus", 0))
+	max_health += 2 * int(profile.effect("health_bonus", 0))  # bonus is in bottles
 	max_speed *= profile.effect("speed_mult", 1.0)
 	dash_speed *= profile.effect("dash_mult", 1.0)
 	dash_cooldown *= profile.effect("dash_cd_mult", 1.0)
@@ -1202,7 +1204,7 @@ func _update_inking(delta: float) -> void:
 		_inking = null
 
 
-## Hold heal, standing on the ground, to turn fuel into one ink drop.
+## Hold heal, standing on the ground, to turn fuel into one ink bottle.
 func _update_heal(delta: float) -> void:
 	var can := Input.is_action_pressed("heal") and is_on_floor() and health < max_health \
 		and fuel >= heal_cost and _attack_timer <= 0.0 and _dash_timer <= 0.0
@@ -1213,7 +1215,7 @@ func _update_heal(delta: float) -> void:
 	if _channel >= heal_time:
 		_channel = -1.0
 		add_fuel(-heal_cost)
-		health = mini(health + 1, max_health)
+		health = mini(health + 2, max_health)  # one ink bottle
 		health_changed.emit(health, max_health)
 		Fx.pop_text(get_tree(), global_position + Vector3(0, 1.8, 0), "+1", Color(0.6, 1.0, 0.7), 32)
 		Fx.burst(get_tree(), global_position + Vector3(0, 0.8, 0), Color(1.0, 0.75, 0.35), 14, 2.5)
@@ -1296,14 +1298,14 @@ func _track_safe_ground(delta: float) -> void:
 
 
 ## Fell through a vanished bridge (or off the world): back to safe ground,
-## one ink drop poorer.
+## one ink bottle poorer.
 func _fell() -> void:
 	velocity = Vector3.ZERO
 	global_position = _safe_pos
 	_snap_visuals()
 	if not dead:
 		_invuln = 0.0
-		take_damage(1, global_position + Vector3(facing, 0, 0))
+		take_damage(2, global_position + Vector3(facing, 0, 0))
 		velocity = Vector3.ZERO
 
 

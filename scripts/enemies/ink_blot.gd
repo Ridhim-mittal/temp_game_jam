@@ -23,16 +23,16 @@ const FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
 @export var hp := 15
 @export var walk_speed := 140.0
 @export var wake_range := 420.0
-@export var swipe_damage := 15.0
-@export var slam_damage := 22.0
-@export var touch_damage := 9.0
+@export var swipe_damage := 2.0
+@export var slam_damage := 3.0
+@export var touch_damage := 1.0
 @export var art_scale := 0.78
 ## Starts asleep (a gatekeeper); false = awake and hunting at once.
 @export var asleep := true
 ## Shown over its health bar (boss_bar.gd).
 @export var display_name := "THE INK BLOT"
-## HP in the heart it always drops when it melts (it flies to Vesper).
-@export var drop_heal := 50.0
+## Half ink bottles in the heart it always drops (6 = half of full health) when it melts (it flies to Vesper).
+@export var drop_heal := 6.0
 
 var state := State.SLEEP
 var _timer := 0.0

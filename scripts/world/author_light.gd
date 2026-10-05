@@ -2,7 +2,7 @@ extends Node2D
 ## The author's light in 2D (Shade's City): a beam from the moon in the
 ## painting sweeps the street around Vesper while he is between `zone_from`
 ## and `zone_to`. Standing in it fills an erase meter over his head; a full
-## meter costs `damage` HP ("ERASED!"). Anything in the "light_cover" group
+## meter costs `damage` half ink bottles ("ERASED!"). Anything in the "light_cover" group
 ## (light_cover.gd: awnings, scaffolds, the billboard) blocks it and throws a
 ## visible shadow inside the beam: that's where to hide.
 ## Place at the world origin; `street_y` is the street top in world space.
@@ -23,7 +23,7 @@ const ERASER := Color(1.0, 0.55, 0.62)
 @export var roam := 420.0
 @export var max_speed := 300.0
 @export var fill_time := 1.3
-@export var damage := 25.0
+@export var damage := 3.0
 
 var meter := 0.0
 var _x := 0.0

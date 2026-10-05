@@ -7,7 +7,7 @@ const INK := Color(0.06, 0.04, 0.09)
 const SHEEN := Color(0.44, 0.38, 0.62)
 
 var direction := 1.0
-var damage := 30.0
+var damage := 3.0
 var speed := 430.0
 var range_px := 700.0
 var dead := false

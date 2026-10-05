@@ -1,15 +1,15 @@
 @tool
 extends Area2D
 ## Health pickup: a cute little heart with a face and tiny flapping wings,
-## bobbing in the air. Touch it to heal `amount` HP. It stays put while
+## bobbing in the air. Touch it to heal `amount` half bottles (2 = one ink bottle). It stays put while
 ## you are at full health, so you can come back for it. `seek` makes it fly
-## to Vesper (the Ink Blot's +50 drop), so it can't be left behind.
+## to Vesper (the Ink Blot's big drop), so it can't be left behind.
 
 const INK := Color(0.05, 0.03, 0.1)
 const ComicText = preload("res://scripts/effects/comic_text.gd")
 const OnScreen = preload("res://scripts/core/on_screen.gd")
 
-@export var amount := 30.0
+@export var amount := 2.0
 @export var heart_color := Color(1.0, 0.36, 0.42)
 ## Fly to the player after `seek_delay` seconds instead of waiting in place.
 @export var seek := false
@@ -56,7 +56,7 @@ func _collect() -> void:
 		get_node("/root/Sfx").play("checkpoint", -4.0, 1.25)
 	set_deferred("monitoring", false)
 	var pop := ComicText.new()
-	pop.text = "+%d" % int(amount)
+	pop.text = "+%s INK" % ("%d" % int(amount / 2.0) if int(amount) % 2 == 0 else str(amount / 2.0))
 	pop.color = Color(0.45, 1.0, 0.55)
 	pop.position = global_position + Vector2(0, -30)
 	get_tree().current_scene.add_child(pop)
@@ -86,7 +86,7 @@ func _heart(c: Vector2, s: float) -> PackedVector2Array:
 func _draw() -> void:
 	var bob := Vector2(0, sin(_time * 2.4) * 4.0)
 	var beat := 1.0 + 0.08 * maxf(sin(_time * 6.0), 0.0)
-	if amount >= 50.0:
+	if amount >= 6.0:
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE * 1.35)  # a big heart for a big heal
 	# soft glow
 	draw_circle(bob, 30.0, Color(heart_color, 0.12))

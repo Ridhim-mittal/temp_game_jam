@@ -99,4 +99,4 @@ func paint(c: CanvasItem) -> void:
 
 
 func damage_default() -> float:
-	return 20.0  # shove
+	return 2.0  # shove

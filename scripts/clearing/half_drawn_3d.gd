@@ -33,7 +33,7 @@ enum State { DRIFT, WINDUP, STRIKE, RECOVER }
 @export var recover_time := 0.5
 ## Seconds between swings.
 @export var cooldown := 0.45
-@export var blade_damage := 1
+@export var blade_damage := 2  # half ink bottles
 
 var state := State.DRIFT
 var model: Node3D

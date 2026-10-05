@@ -1,8 +1,7 @@
 extends Control
 ## Gutter HUD (design doc section 10), top-left:
-##  - hearts, one per ink drop (six to start), inked like a comic: a lost
-##    heart flashes white and empties, the last one pulses, a healed one
-##    glows green
+##  - ink bottles (ink_bottles.gd, the same as in 2D): six to start, counted
+##    in half bottles; they shake and splash on hits, sparkle on heals
 ##  - the healing counter: an ink flask with how many heals the Ember's fuel
 ##    covers right now (hold F), glowing when at least one is ready
 ##  - the Ember's fuel as a flame and bar with its button, a mouse with the right button lit (hold to raise it);
@@ -12,29 +11,26 @@ extends Control
 ## spinning dark-silver coin and the count, which pops when coins come in.
 
 const TITLE_FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
+const InkBottles = preload("res://scripts/ui/ink_bottles.gd")
 const INK := Color(0.06, 0.04, 0.09)
 const PAPER := Color(0.97, 0.95, 0.9)
-const BLOOD := Color(0.86, 0.17, 0.2)
-const BLOOD_DARK := Color(0.42, 0.06, 0.1)
-const TRAIL := Color(1.0, 0.86, 0.78)
 const HEAL := Color(0.55, 0.95, 0.75)
 const SILVER := Color(0.6, 0.63, 0.7)
 const SILVER_DARK := Color(0.3, 0.32, 0.38)
 const SILVER_TEXT := Color(0.84, 0.87, 0.93)
 
 ## Centre of the first heart, and the step to the next.
-const HEARTS_AT := Vector2(46, 38)
-const HEART_STEP := 40.0
+const HEARTS_AT := Vector2(46, 40)  # centre of the first ink bottle
 
-var current := 6
-var maximum := 6
+var current := 12  # half ink bottles
+var maximum := 12
 var fuel := 60.0
 var max_fuel := 100.0
 var flash_cost := 25.0
 var heal_cost := 33.0
 
 var _fuel_shown := 60.0
-var _hp_shown := 6.0  # hearts above this are still flashing out after a hit
+var _bottles := InkBottles.new()
 var _relight := 20.0
 var _hit_flash := 0.0
 var _heal_flash := 0.0
@@ -56,7 +52,6 @@ func _ready() -> void:
 	if player and player.has_signal("health_changed"):
 		player.health_changed.connect(_on_health_changed)
 		_on_health_changed(player.health, player.max_health)
-		_hp_shown = current
 		if player.has_signal("ember_changed"):
 			player.ember_changed.connect(_on_ember_changed)
 			flash_cost = player.flash_cost
@@ -73,9 +68,9 @@ func _on_health_changed(cur: int, max_hp: int) -> void:
 		_hit_flash = 1.0
 	elif cur > current:
 		_heal_flash = 1.0
-		_hp_shown = cur
 	current = cur
 	maximum = max_hp
+	_bottles.set_health(cur, max_hp)
 
 
 func _on_profile_changed() -> void:
@@ -101,10 +96,8 @@ func _on_ember_changed(f: float, max_f: float) -> void:
 
 func _process(delta: float) -> void:
 	_time += delta
+	_bottles.update(delta)
 	_fuel_shown = move_toward(_fuel_shown, fuel, delta * 80.0)
-	# the trail waits a beat, then drains down to the real value
-	if _hit_flash < 0.6:
-		_hp_shown = move_toward(_hp_shown, current, delta * 2.5)
 	_hit_flash = maxf(_hit_flash - delta * 2.0, 0.0)
 	_heal_flash = maxf(_heal_flash - delta * 1.5, 0.0)
 	_coin_bump = maxf(_coin_bump - delta * 4.0, 0.0)
@@ -154,38 +147,7 @@ func _dark_coin(c: Vector2, r: float, spin: float) -> void:
 
 
 func _draw_health() -> void:
-	var shake := Vector2(randf_range(-1, 1), randf_range(-1, 1)) * 3.0 * _hit_flash
-	var low := current <= 1 and current > 0
-	var pulse := 0.5 + 0.5 * sin(_time * 9.0) if low else 0.0
-	for i in maximum:
-		var c := HEARTS_AT + Vector2(HEART_STEP * i, 0) + shake
-		var tilt := sin(i * 2.3) * 0.08  # hand-inked: no two quite level
-		var full := i < current
-		var losing := not full and i < ceili(_hp_shown)  # just lost, still flashing
-		var s := 1.0 + (0.18 * pulse if full and i == current - 1 else 0.0)
-		var outline := _heart(c + Vector2(3, 3), 17.0 * s, tilt)
-		draw_colored_polygon(outline, Color(0, 0, 0, 0.45))
-		draw_colored_polygon(_heart(c, 17.0 * s, tilt), INK)
-		var fill := BLOOD_DARK.darkened(0.55)
-		if full:
-			fill = BLOOD.lerp(Color(1.0, 0.45, 0.4), pulse * 0.6).lerp(HEAL, _heal_flash * 0.5)
-		elif losing:
-			fill = TRAIL.lerp(Color.WHITE, _hit_flash)
-		draw_colored_polygon(_heart(c + Vector2(0, -0.5), 12.5 * s, tilt), fill)
-		if full:
-			# wet ink catching the light
-			draw_circle(c + Vector2(-5.5, -5.0).rotated(tilt) * s, 3.0 * s, Color(1, 1, 1, 0.45))
-
-
-## A heart polygon centred on `c`, about 2 * `r` wide, turned by `tilt`.
-func _heart(c: Vector2, r: float, tilt: float) -> PackedVector2Array:
-	var pts := PackedVector2Array()
-	for k in 28:
-		var t := TAU * k / 28.0
-		var x := 16.0 * pow(sin(t), 3.0)
-		var y := -(13.0 * cos(t) - 5.0 * cos(2.0 * t) - 2.0 * cos(3.0 * t) - cos(4.0 * t))
-		pts.append(c + (Vector2(x, y + 1.5) / 16.0 * r).rotated(tilt))
-	return pts
+	_bottles.draw(self, HEARTS_AT)  # ink bottles, the same as in 2D (ink_bottles.gd)
 
 
 ## The healing counter: an ink flask, "x2", and the F key to drink it.

@@ -10,7 +10,7 @@ const INK := Color(0.1, 0.08, 0.18)
 
 var velocity := Vector3.ZERO
 var gravity := 18.0
-var damage := 1
+var damage := 1  # half ink bottles: a blob is half a bottle
 
 var _life := 4.0
 

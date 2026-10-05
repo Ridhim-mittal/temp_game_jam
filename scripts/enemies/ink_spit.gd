@@ -5,7 +5,7 @@ extends CharacterBody2D
 const INK := Color(0.05, 0.04, 0.06)
 
 var dead := false
-var contact_damage := 12.0  # HP
+var contact_damage := 1.0  # half ink bottles
 var lifetime := 3.0
 var _time := 0.0
 
