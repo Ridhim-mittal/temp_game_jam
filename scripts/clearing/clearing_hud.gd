@@ -207,9 +207,13 @@ func _draw_ember(at: Vector2) -> void:
 	var snuffed: bool = player != null and player.get("_snuffed") == true
 	var raised: bool = player != null and player.get("ember_raised") == true
 	draw_rect(Rect2(bar.position, Vector2(w, bar.size.y)), ember.darkened(0.5) if snuffed else ember.lightened(0.25 if raised else 0.0))
-	# where a guttered Ember lights again
-	var rx := bar.position.x + bar.size.x * _relight / max_fuel
-	draw_line(Vector2(rx, bar.position.y), Vector2(rx, bar.end.y), Color(INK, 0.6), 2.0)
+	# where a guttered Ember lights again: shown only while it is out (as in 2D)
+	if snuffed:
+		var rx := bar.position.x + bar.size.x * _relight / max_fuel
+		var a := 0.6 + 0.4 * sin(_time * 8.0)
+		for k in 3:
+			var y0 := bar.position.y - 4.0 + k * 8.0
+			draw_line(Vector2(rx, y0), Vector2(rx, y0 + 4.0), Color(1.0, 1.0, 1.0, a), 2.0)
 	# the button: hold right click to raise it (a mouse, its right button lit)
 	var mc := bar.end + Vector2(22, -9)  # centre of the mouse
 	draw_colored_polygon(_capsule(mc, 10.0, 13.0), INK)

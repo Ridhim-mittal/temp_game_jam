@@ -126,9 +126,14 @@ func _draw_ember() -> void:
 			draw_string(FONT, kc.position + Vector2(6, 18), "F", HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color(INK, pulse))
 			draw_string_outline(FONT, kc.position + Vector2(30, 18), "HEAL", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, 5, Color(INK, pulse))
 			draw_string(FONT, kc.position + Vector2(30, 18), "HEAL", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color(1.0, 0.85, 0.45, pulse))
-	# relight mark: below it a snuffed Ember stays out
-	var rx: float = r.position.x + r.size.x * _ember.relight_at / _ember.max_meter
-	draw_line(Vector2(rx + 2, r.position.y), Vector2(rx - 2, r.end.y), Color(INK, 0.6), 2.0)
+	# relight mark, only while snuffed (the Ember stays out until it refills past it):
+	# a dashed white tick, so it never reads as one of the heal thirds
+	if snuffed:
+		var rx: float = r.position.x + r.size.x * _ember.relight_at / _ember.max_meter
+		var a := 0.6 + 0.4 * sin(_time * 8.0)
+		for k in 3:
+			var y0 := r.position.y - 4.0 + k * 8.0
+			draw_line(Vector2(rx, y0), Vector2(rx, y0 + 4.0), Color(1.0, 1.0, 1.0, a), 2.0)
 	# flame icon
 	var c := Vector2(r.position.x - 14, r.position.y + 6)
 	var s := 1.0 + (0.25 if raised else 0.0) + 0.08 * sin(_time * 10.0)
