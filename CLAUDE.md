@@ -48,6 +48,15 @@ room rectangles (everything else is rock); re-running overwrites hand edits to l
 It has two light-puzzle rooms: the Shadow Gallery (hit lantern B, ride the shadow-ink ramp, light the
 far lantern A with an ink wave, cross the blue sketch, second ramp to the ledge) and the Pendulum (a
 blue sketch bridge under a swinging lantern; no spikes, since spikes can be pogoed across).
+It also replays every tutorial challenge on the main path (spike pits are CUTS 200 px into the
+rock, so the level's size is unchanged): a spike strip in hall 1, a 450 px dash pit in hall 2
+(needs a double jump plus a dash), and in the bottom room the Sketchbook's Blue Gap and its
+lantern bridge with a sign shadowing the far end. Checkpoints sit only on the path (hall 2 landing,
+gallery, tower floor, cavern, bottom x2); the nook and the side rooms have none.
+Drawing cost: in gl_compatibility every draw_colored_polygon / polyline / arc / circle is its own
+draw call, so the depth scenery, trims, ledges, overlay and lanterns draw through
+`scripts/depth/ink_batch.gd` (same draw_* method names, `flush(self)` at the end of `_draw()` =
+one triangle-array draw call). Use it for any new procedural art that draws many shapes.
 The 2D player has a double jump (`air_jumps`, `air_jump_velocity` in player.gd; set 0 to turn off).
 Spikes (group `hazard`) cost health and send the 2D player back to the last checkpoint pen in the
 level, or the level start (`_respawn_point()` in player.gd); never to the last ground stood on.

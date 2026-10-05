@@ -2,7 +2,7 @@
 extends StaticBody2D
 const OnScreen = preload("res://scripts/core/on_screen.gd")
 ## Spike hazard. Player passes through it (hazard layer), takes damage and is
-## returned to the last safe ground. Can be pogo'd with a down-slash.
+## sent back to the last checkpoint (player.gd). Can be pogo'd with a down-slash.
 
 @export var size := Vector2(128, 24):
 	set(value):
