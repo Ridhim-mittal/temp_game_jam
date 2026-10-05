@@ -1,0 +1,1419 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="1_player"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/crawler.tscn" id="2_crawler"]
+[ext_resource type="Script" path="res://scripts/ui/hud.gd" id="5_hud"]
+[ext_resource type="Script" path="res://scripts/audio/level_music.gd" id="8_music"]
+[ext_resource type="Script" path="res://scripts/world/coin.gd" id="9_coin"]
+[ext_resource type="Script" path="res://scripts/world/moving_platform.gd" id="12_moving"]
+[ext_resource type="Script" path="res://scripts/world/level_exit.gd" id="17_exit"]
+[ext_resource type="Script" path="res://scripts/world/checkpoint_pen.gd" id="18_pen"]
+[ext_resource type="Script" path="res://scripts/world/health_heart.gd" id="19_heart"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/scribble.tscn" id="20_scribble"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/crumple.tscn" id="21_crumple"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/crossed_out.tscn" id="22_crossed"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/smudge.tscn" id="23_smudge"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/inkwell.tscn" id="24_inkwell"]
+[ext_resource type="Script" path="res://scripts/world/level_mood.gd" id="30_mood"]
+[ext_resource type="Script" path="res://scripts/world/lantern.gd" id="40_lantern"]
+[ext_resource type="Script" path="res://scripts/world/caption.gd" id="43_caption"]
+[ext_resource type="Script" path="res://scripts/depth/depth_backdrop.gd" id="50_backdrop"]
+[ext_resource type="Script" path="res://scripts/depth/rock_block.gd" id="51_rock"]
+[ext_resource type="Script" path="res://scripts/depth/depth_trim.gd" id="52_trim"]
+[ext_resource type="Script" path="res://scripts/depth/depth_ledge.gd" id="53_ledge"]
+
+[node name="LongDrop" type="Node2D"]
+
+[node name="Backdrop" type="Node2D" parent="."]
+script = ExtResource("50_backdrop")
+themes = PackedInt32Array(1, 2, 0)
+zone_bottoms = PackedFloat32Array(2500, 4750)
+
+[node name="World" type="Node2D" parent="."]
+
+[node name="Rock1" type="StaticBody2D" parent="World"]
+position = Vector2(2625, 325)
+script = ExtResource("51_rock")
+size = Vector2(5250, 250)
+
+[node name="Rock2" type="StaticBody2D" parent="World"]
+position = Vector2(2625, 7050)
+script = ExtResource("51_rock")
+size = Vector2(5250, 300)
+
+[node name="Rock3" type="StaticBody2D" parent="World"]
+position = Vector2(150, 775)
+script = ExtResource("51_rock")
+size = Vector2(300, 650)
+
+[node name="Rock4" type="StaticBody2D" parent="World"]
+position = Vector2(150, 2000)
+script = ExtResource("51_rock")
+size = Vector2(300, 600)
+
+[node name="Rock5" type="StaticBody2D" parent="World"]
+position = Vector2(4225, 775)
+script = ExtResource("51_rock")
+size = Vector2(2050, 650)
+
+[node name="Rock6" type="StaticBody2D" parent="World"]
+position = Vector2(1350, 1400)
+script = ExtResource("51_rock")
+size = Vector2(2700, 600)
+
+[node name="Rock7" type="StaticBody2D" parent="World"]
+position = Vector2(4200, 1400)
+script = ExtResource("51_rock")
+size = Vector2(2100, 600)
+
+[node name="Rock8" type="StaticBody2D" parent="World"]
+position = Vector2(4450, 1825)
+script = ExtResource("51_rock")
+size = Vector2(300, 250)
+
+[node name="Rock9" type="StaticBody2D" parent="World"]
+position = Vector2(4450, 2575)
+script = ExtResource("51_rock")
+size = Vector2(300, 550)
+
+[node name="Rock10" type="StaticBody2D" parent="World"]
+position = Vector2(4450, 5325)
+script = ExtResource("51_rock")
+size = Vector2(300, 750)
+
+[node name="Rock11" type="StaticBody2D" parent="World"]
+position = Vector2(5100, 4300)
+script = ExtResource("51_rock")
+size = Vector2(300, 5200)
+
+[node name="Rock12" type="StaticBody2D" parent="World"]
+position = Vector2(1925, 2575)
+script = ExtResource("51_rock")
+size = Vector2(3850, 550)
+
+[node name="Rock13" type="StaticBody2D" parent="World"]
+position = Vector2(1075, 2950)
+script = ExtResource("51_rock")
+size = Vector2(2150, 200)
+
+[node name="Rock14" type="StaticBody2D" parent="World"]
+position = Vector2(1075, 3750)
+script = ExtResource("51_rock")
+size = Vector2(2150, 300)
+
+[node name="Rock15" type="StaticBody2D" parent="World"]
+position = Vector2(4525, 3650)
+script = ExtResource("51_rock")
+size = Vector2(150, 1600)
+
+[node name="Rock16" type="StaticBody2D" parent="World"]
+position = Vector2(300, 3325)
+script = ExtResource("51_rock")
+size = Vector2(600, 550)
+
+[node name="Rock17" type="StaticBody2D" parent="World"]
+position = Vector2(300, 4175)
+script = ExtResource("51_rock")
+size = Vector2(600, 550)
+
+[node name="Rock18" type="StaticBody2D" parent="World"]
+position = Vector2(2025, 3200)
+script = ExtResource("51_rock")
+size = Vector2(250, 300)
+
+[node name="Rock19" type="StaticBody2D" parent="World"]
+position = Vector2(2025, 4050)
+script = ExtResource("51_rock")
+size = Vector2(250, 300)
+
+[node name="Rock20" type="StaticBody2D" parent="World"]
+position = Vector2(1200, 4700)
+script = ExtResource("51_rock")
+size = Vector2(2400, 500)
+
+[node name="Rock21" type="StaticBody2D" parent="World"]
+position = Vector2(3725, 4700)
+script = ExtResource("51_rock")
+size = Vector2(1750, 500)
+
+[node name="Rock22" type="StaticBody2D" parent="World"]
+position = Vector2(200, 5325)
+script = ExtResource("51_rock")
+size = Vector2(400, 750)
+
+[node name="Rock23" type="StaticBody2D" parent="World"]
+position = Vector2(1675, 5925)
+script = ExtResource("51_rock")
+size = Vector2(3350, 450)
+
+[node name="Rock24" type="StaticBody2D" parent="World"]
+position = Vector2(4250, 5925)
+script = ExtResource("51_rock")
+size = Vector2(700, 450)
+
+[node name="Rock25" type="StaticBody2D" parent="World"]
+position = Vector2(750, 6525)
+script = ExtResource("51_rock")
+size = Vector2(1500, 750)
+
+[node name="EdgeLeft" type="StaticBody2D" parent="World"]
+position = Vector2(-450, 3700)
+script = ExtResource("51_rock")
+size = Vector2(900, 8800)
+
+[node name="EdgeRight" type="StaticBody2D" parent="World"]
+position = Vector2(5700, 3700)
+script = ExtResource("51_rock")
+size = Vector2(900, 8800)
+
+[node name="EdgeTop" type="StaticBody2D" parent="World"]
+position = Vector2(2625, -250)
+script = ExtResource("51_rock")
+size = Vector2(5250, 900)
+
+[node name="EdgeBottom" type="StaticBody2D" parent="World"]
+position = Vector2(2625, 7650)
+script = ExtResource("51_rock")
+size = Vector2(5250, 900)
+
+[node name="Ledge1" type="StaticBody2D" parent="World"]
+position = Vector2(1200, 999)
+script = ExtResource("53_ledge")
+size = Vector2(220, 18)
+theme = 1
+one_way = true
+
+[node name="Ledge2" type="StaticBody2D" parent="World"]
+position = Vector2(1550, 889)
+script = ExtResource("53_ledge")
+size = Vector2(220, 18)
+theme = 1
+one_way = true
+
+[node name="Ledge3" type="StaticBody2D" parent="World"]
+position = Vector2(1950, 999)
+script = ExtResource("53_ledge")
+size = Vector2(220, 18)
+theme = 1
+one_way = true
+
+[node name="Lantern1" type="Node2D" parent="World"]
+position = Vector2(820, 450)
+script = ExtResource("40_lantern")
+radius = 300
+chain = 150
+casts_shadows = false
+
+[node name="Lantern2" type="Node2D" parent="World"]
+position = Vector2(2200, 450)
+script = ExtResource("40_lantern")
+radius = 300
+chain = 190
+casts_shadows = false
+
+[node name="Ledge4" type="StaticBody2D" parent="World"]
+position = Vector2(2795, 1219)
+script = ExtResource("53_ledge")
+size = Vector2(170, 18)
+theme = 1
+one_way = true
+
+[node name="Ledge5" type="StaticBody2D" parent="World"]
+position = Vector2(3055, 1329)
+script = ExtResource("53_ledge")
+size = Vector2(170, 18)
+theme = 1
+one_way = true
+
+[node name="Ledge6" type="StaticBody2D" parent="World"]
+position = Vector2(2795, 1439)
+script = ExtResource("53_ledge")
+size = Vector2(170, 18)
+theme = 1
+one_way = true
+
+[node name="Ledge7" type="StaticBody2D" parent="World"]
+position = Vector2(3055, 1549)
+script = ExtResource("53_ledge")
+size = Vector2(170, 18)
+theme = 1
+one_way = true
+
+[node name="Ledge8" type="StaticBody2D" parent="World"]
+position = Vector2(2795, 1659)
+script = ExtResource("53_ledge")
+size = Vector2(170, 18)
+theme = 1
+one_way = true
+
+[node name="Ledge9" type="StaticBody2D" parent="World"]
+position = Vector2(3055, 1769)
+script = ExtResource("53_ledge")
+size = Vector2(170, 18)
+theme = 1
+one_way = true
+
+[node name="Ledge10" type="StaticBody2D" parent="World"]
+position = Vector2(2795, 1879)
+script = ExtResource("53_ledge")
+size = Vector2(170, 18)
+theme = 1
+one_way = true
+
+[node name="Ledge11" type="StaticBody2D" parent="World"]
+position = Vector2(3055, 1989)
+script = ExtResource("53_ledge")
+size = Vector2(170, 18)
+theme = 1
+one_way = true
+
+[node name="Ledge12" type="StaticBody2D" parent="World"]
+position = Vector2(2795, 2099)
+script = ExtResource("53_ledge")
+size = Vector2(170, 18)
+theme = 1
+one_way = true
+
+[node name="Ledge13" type="StaticBody2D" parent="World"]
+position = Vector2(3055, 2209)
+script = ExtResource("53_ledge")
+size = Vector2(170, 18)
+theme = 1
+one_way = true
+
+[node name="Checkpoint1" type="Area2D" parent="World"]
+position = Vector2(630, 2300)
+script = ExtResource("18_pen")
+
+[node name="Lantern3" type="Node2D" parent="World"]
+position = Vector2(520, 1700)
+script = ExtResource("40_lantern")
+radius = 260
+chain = 120
+casts_shadows = false
+
+[node name="Heart1" type="Area2D" parent="World"]
+position = Vector2(820, 2240)
+script = ExtResource("19_heart")
+
+[node name="Ledge14" type="StaticBody2D" parent="World"]
+position = Vector2(1900, 2199)
+script = ExtResource("53_ledge")
+size = Vector2(240, 18)
+theme = 1
+one_way = true
+
+[node name="Ledge15" type="StaticBody2D" parent="World"]
+position = Vector2(2500, 2199)
+script = ExtResource("53_ledge")
+size = Vector2(240, 18)
+theme = 1
+one_way = true
+
+[node name="Ledge16" type="StaticBody2D" parent="World"]
+position = Vector2(2200, 2089)
+script = ExtResource("53_ledge")
+size = Vector2(240, 18)
+theme = 1
+one_way = true
+
+[node name="Lantern4" type="Node2D" parent="World"]
+position = Vector2(2200, 1700)
+script = ExtResource("40_lantern")
+radius = 320
+chain = 110
+casts_shadows = false
+
+[node name="Lantern5" type="Node2D" parent="World"]
+position = Vector2(3500, 1700)
+script = ExtResource("40_lantern")
+radius = 300
+chain = 150
+casts_shadows = false
+
+[node name="Ledge17" type="StaticBody2D" parent="World"]
+position = Vector2(3945, 2419)
+script = ExtResource("53_ledge")
+size = Vector2(170, 18)
+theme = 1
+one_way = true
+
+[node name="Ledge18" type="StaticBody2D" parent="World"]
+position = Vector2(4205, 2529)
+script = ExtResource("53_ledge")
+size = Vector2(170, 18)
+theme = 2
+one_way = true
+
+[node name="Ledge19" type="StaticBody2D" parent="World"]
+position = Vector2(3945, 2639)
+script = ExtResource("53_ledge")
+size = Vector2(170, 18)
+theme = 2
+one_way = true
+
+[node name="Ledge20" type="StaticBody2D" parent="World"]
+position = Vector2(4205, 2749)
+script = ExtResource("53_ledge")
+size = Vector2(170, 18)
+theme = 2
+one_way = true
+
+[node name="Ledge21" type="StaticBody2D" parent="World"]
+position = Vector2(4075, 2309)
+script = ExtResource("53_ledge")
+size = Vector2(150, 18)
+theme = 1
+one_way = true
+
+[node name="Ledge22" type="StaticBody2D" parent="World"]
+position = Vector2(4190, 3029)
+script = ExtResource("53_ledge")
+size = Vector2(300, 18)
+theme = 2
+one_way = true
+
+[node name="Ledge23" type="StaticBody2D" parent="World"]
+position = Vector2(3900, 3139)
+script = ExtResource("53_ledge")
+size = Vector2(300, 18)
+theme = 2
+one_way = true
+
+[node name="Ledge24" type="StaticBody2D" parent="World"]
+position = Vector2(3610, 3249)
+script = ExtResource("53_ledge")
+size = Vector2(300, 18)
+theme = 2
+one_way = true
+
+[node name="Ledge25" type="StaticBody2D" parent="World"]
+position = Vector2(3320, 3359)
+script = ExtResource("53_ledge")
+size = Vector2(300, 18)
+theme = 2
+one_way = true
+
+[node name="Ledge26" type="StaticBody2D" parent="World"]
+position = Vector2(3030, 3469)
+script = ExtResource("53_ledge")
+size = Vector2(300, 18)
+theme = 2
+one_way = true
+
+[node name="Ledge27" type="StaticBody2D" parent="World"]
+position = Vector2(2740, 3579)
+script = ExtResource("53_ledge")
+size = Vector2(300, 18)
+theme = 2
+one_way = true
+
+[node name="Ledge28" type="StaticBody2D" parent="World"]
+position = Vector2(2450, 3689)
+script = ExtResource("53_ledge")
+size = Vector2(300, 18)
+theme = 2
+one_way = true
+
+[node name="Ledge29" type="StaticBody2D" parent="World"]
+position = Vector2(2660, 3799)
+script = ExtResource("53_ledge")
+size = Vector2(300, 18)
+theme = 2
+one_way = true
+
+[node name="Ledge30" type="StaticBody2D" parent="World"]
+position = Vector2(2950, 3909)
+script = ExtResource("53_ledge")
+size = Vector2(300, 18)
+theme = 2
+one_way = true
+
+[node name="Ledge31" type="StaticBody2D" parent="World"]
+position = Vector2(3240, 4019)
+script = ExtResource("53_ledge")
+size = Vector2(300, 18)
+theme = 2
+one_way = true
+
+[node name="Ledge32" type="StaticBody2D" parent="World"]
+position = Vector2(3530, 4129)
+script = ExtResource("53_ledge")
+size = Vector2(300, 18)
+theme = 2
+one_way = true
+
+[node name="Ledge33" type="StaticBody2D" parent="World"]
+position = Vector2(3820, 4239)
+script = ExtResource("53_ledge")
+size = Vector2(300, 18)
+theme = 2
+one_way = true
+
+[node name="Ledge34" type="StaticBody2D" parent="World"]
+position = Vector2(4110, 4349)
+script = ExtResource("53_ledge")
+size = Vector2(300, 18)
+theme = 2
+one_way = true
+
+[node name="Lantern6" type="Node2D" parent="World"]
+position = Vector2(2750, 2850)
+script = ExtResource("40_lantern")
+radius = 320
+chain = 220
+casts_shadows = false
+
+[node name="Lantern7" type="Node2D" parent="World"]
+position = Vector2(3850, 2850)
+script = ExtResource("40_lantern")
+radius = 320
+chain = 520
+casts_shadows = false
+
+[node name="Lantern8" type="Node2D" parent="World"]
+position = Vector2(3250, 2850)
+script = ExtResource("40_lantern")
+radius = 320
+chain = 900
+casts_shadows = false
+
+[node name="Ledge35" type="StaticBody2D" parent="World"]
+position = Vector2(2300, 3609)
+script = ExtResource("53_ledge")
+size = Vector2(300, 18)
+theme = 2
+one_way = false
+
+[node name="Checkpoint2" type="Area2D" parent="World"]
+position = Vector2(1100, 3600)
+script = ExtResource("18_pen")
+
+[node name="Lantern9" type="Node2D" parent="World"]
+position = Vector2(1300, 3050)
+script = ExtResource("40_lantern")
+radius = 280
+chain = 130
+casts_shadows = false
+
+[node name="Heart2" type="Area2D" parent="World"]
+position = Vector2(1550, 3540)
+script = ExtResource("19_heart")
+
+[node name="Ledge36" type="StaticBody2D" parent="World"]
+position = Vector2(900, 4349)
+script = ExtResource("53_ledge")
+size = Vector2(220, 18)
+theme = 2
+one_way = true
+
+[node name="Lantern10" type="Node2D" parent="World"]
+position = Vector2(1250, 3900)
+script = ExtResource("40_lantern")
+radius = 280
+chain = 130
+casts_shadows = false
+
+[node name="Ledge37" type="StaticBody2D" parent="World"]
+position = Vector2(2495, 4569)
+script = ExtResource("53_ledge")
+size = Vector2(170, 18)
+theme = 2
+one_way = true
+
+[node name="Ledge38" type="StaticBody2D" parent="World"]
+position = Vector2(2755, 4679)
+script = ExtResource("53_ledge")
+size = Vector2(170, 18)
+theme = 2
+one_way = true
+
+[node name="Ledge39" type="StaticBody2D" parent="World"]
+position = Vector2(2495, 4789)
+script = ExtResource("53_ledge")
+size = Vector2(170, 18)
+theme = 0
+one_way = true
+
+[node name="Ledge40" type="StaticBody2D" parent="World"]
+position = Vector2(2755, 4899)
+script = ExtResource("53_ledge")
+size = Vector2(170, 18)
+theme = 0
+one_way = true
+
+[node name="Ledge41" type="StaticBody2D" parent="World"]
+position = Vector2(2495, 5009)
+script = ExtResource("53_ledge")
+size = Vector2(170, 18)
+theme = 0
+one_way = true
+
+[node name="Ledge42" type="StaticBody2D" parent="World"]
+position = Vector2(2755, 5119)
+script = ExtResource("53_ledge")
+size = Vector2(170, 18)
+theme = 0
+one_way = true
+
+[node name="Ledge43" type="StaticBody2D" parent="World"]
+position = Vector2(2495, 5229)
+script = ExtResource("53_ledge")
+size = Vector2(170, 18)
+theme = 0
+one_way = true
+
+[node name="Ledge44" type="StaticBody2D" parent="World"]
+position = Vector2(2755, 5339)
+script = ExtResource("53_ledge")
+size = Vector2(170, 18)
+theme = 0
+one_way = true
+
+[node name="Ledge45" type="StaticBody2D" parent="World"]
+position = Vector2(2495, 5449)
+script = ExtResource("53_ledge")
+size = Vector2(170, 18)
+theme = 0
+one_way = true
+
+[node name="Ledge46" type="StaticBody2D" parent="World"]
+position = Vector2(2755, 5559)
+script = ExtResource("53_ledge")
+size = Vector2(170, 18)
+theme = 0
+one_way = true
+
+[node name="Checkpoint3" type="Area2D" parent="World"]
+position = Vector2(2150, 5700)
+script = ExtResource("18_pen")
+
+[node name="Ledge47" type="StaticBody2D" parent="World"]
+position = Vector2(1000, 5599)
+script = ExtResource("53_ledge")
+size = Vector2(220, 18)
+theme = 0
+one_way = true
+
+[node name="Ledge48" type="StaticBody2D" parent="World"]
+position = Vector2(1400, 5489)
+script = ExtResource("53_ledge")
+size = Vector2(220, 18)
+theme = 0
+one_way = true
+
+[node name="Ledge49" type="StaticBody2D" parent="World"]
+position = Vector2(3400, 5599)
+script = ExtResource("53_ledge")
+size = Vector2(240, 18)
+theme = 0
+one_way = true
+
+[node name="Ledge50" type="StaticBody2D" parent="World"]
+position = Vector2(3700, 5489)
+script = ExtResource("53_ledge")
+size = Vector2(220, 18)
+theme = 0
+one_way = true
+
+[node name="Lantern11" type="Node2D" parent="World"]
+position = Vector2(2100, 4950)
+script = ExtResource("40_lantern")
+radius = 320
+chain = 200
+casts_shadows = false
+
+[node name="Lantern12" type="Node2D" parent="World"]
+position = Vector2(3500, 4950)
+script = ExtResource("40_lantern")
+radius = 300
+chain = 160
+casts_shadows = false
+
+[node name="Ledge51" type="StaticBody2D" parent="World"]
+position = Vector2(3455, 5819)
+script = ExtResource("53_ledge")
+size = Vector2(190, 18)
+theme = 0
+one_way = true
+
+[node name="Ledge52" type="StaticBody2D" parent="World"]
+position = Vector2(3795, 5929)
+script = ExtResource("53_ledge")
+size = Vector2(190, 18)
+theme = 0
+one_way = true
+
+[node name="Ledge53" type="StaticBody2D" parent="World"]
+position = Vector2(3455, 6039)
+script = ExtResource("53_ledge")
+size = Vector2(190, 18)
+theme = 0
+one_way = true
+
+[node name="Ledge54" type="StaticBody2D" parent="World"]
+position = Vector2(3795, 6149)
+script = ExtResource("53_ledge")
+size = Vector2(190, 18)
+theme = 0
+one_way = true
+
+[node name="Ledge55" type="StaticBody2D" parent="World"]
+position = Vector2(3455, 6259)
+script = ExtResource("53_ledge")
+size = Vector2(190, 18)
+theme = 0
+one_way = true
+
+[node name="Ledge56" type="StaticBody2D" parent="World"]
+position = Vector2(3795, 6369)
+script = ExtResource("53_ledge")
+size = Vector2(190, 18)
+theme = 0
+one_way = true
+
+[node name="Ledge57" type="StaticBody2D" parent="World"]
+position = Vector2(3455, 6479)
+script = ExtResource("53_ledge")
+size = Vector2(190, 18)
+theme = 0
+one_way = true
+
+[node name="Ledge58" type="StaticBody2D" parent="World"]
+position = Vector2(3795, 6589)
+script = ExtResource("53_ledge")
+size = Vector2(190, 18)
+theme = 0
+one_way = true
+
+[node name="Ledge59" type="StaticBody2D" parent="World"]
+position = Vector2(3455, 6699)
+script = ExtResource("53_ledge")
+size = Vector2(190, 18)
+theme = 0
+one_way = true
+
+[node name="Ledge60" type="StaticBody2D" parent="World"]
+position = Vector2(3795, 6809)
+script = ExtResource("53_ledge")
+size = Vector2(190, 18)
+theme = 0
+one_way = true
+
+[node name="Heart3" type="Area2D" parent="World"]
+position = Vector2(3625, 5950)
+script = ExtResource("19_heart")
+
+[node name="Checkpoint4" type="Area2D" parent="World"]
+position = Vector2(2200, 6900)
+script = ExtResource("18_pen")
+
+[node name="Lantern13" type="Node2D" parent="World"]
+position = Vector2(2500, 6150)
+script = ExtResource("40_lantern")
+radius = 320
+chain = 260
+casts_shadows = false
+
+[node name="Lantern14" type="Node2D" parent="World"]
+position = Vector2(4000, 6150)
+script = ExtResource("40_lantern")
+radius = 320
+chain = 220
+casts_shadows = false
+
+[node name="Exit" type="Area2D" parent="World"]
+position = Vector2(4250, 6900)
+script = ExtResource("17_exit")
+target_scene = "res://scenes/ui/main_menu.tscn"
+label = "THE END OF THE DROP"
+
+[node name="Lift" type="AnimatableBody2D" parent="World"]
+position = Vector2(4775, 6890)
+script = ExtResource("12_moving")
+size = Vector2(290, 20)
+travel = Vector2(0, -4610)
+period = 44
+
+[node name="Ledge61" type="StaticBody2D" parent="World"]
+position = Vector2(4775, 2309)
+script = ExtResource("53_ledge")
+size = Vector2(350, 18)
+theme = 1
+one_way = true
+
+[node name="Caption1" type="Node2D" parent="World"]
+position = Vector2(760, 884)
+script = ExtResource("43_caption")
+text = "The way on is down."
+tilt = -0.03
+
+[node name="Caption2" type="Node2D" parent="World"]
+position = Vector2(3300, 2970)
+script = ExtResource("43_caption")
+text = "Mind the drop."
+tilt = -0.03
+
+[node name="Caption3" type="Node2D" parent="World"]
+position = Vector2(3800, 6680)
+script = ExtResource("43_caption")
+text = "The lift goes back to the top."
+tilt = -0.03
+
+[node name="Trims" type="Node2D" parent="."]
+
+[node name="Trim1" type="Node2D" parent="Trims"]
+position = Vector2(300, 450)
+script = ExtResource("52_trim")
+length = 2900
+mode = 1
+theme = 1
+
+[node name="Trim2" type="Node2D" parent="Trims"]
+position = Vector2(300, 1100)
+script = ExtResource("52_trim")
+length = 2400
+mode = 0
+theme = 1
+
+[node name="Trim3" type="Node2D" parent="Trims"]
+position = Vector2(3150, 1100)
+script = ExtResource("52_trim")
+length = 50
+mode = 0
+theme = 1
+
+[node name="Trim4" type="Node2D" parent="Trims"]
+position = Vector2(300, 1700)
+script = ExtResource("52_trim")
+length = 2400
+mode = 1
+theme = 1
+
+[node name="Trim5" type="Node2D" parent="Trims"]
+position = Vector2(3150, 1700)
+script = ExtResource("52_trim")
+length = 1150
+mode = 1
+theme = 1
+
+[node name="Trim6" type="Node2D" parent="Trims"]
+position = Vector2(4600, 1700)
+script = ExtResource("52_trim")
+length = 350
+mode = 1
+theme = 1
+
+[node name="Trim7" type="Node2D" parent="Trims"]
+position = Vector2(4300, 1950)
+script = ExtResource("52_trim")
+length = 300
+mode = 1
+theme = 1
+
+[node name="Trim8" type="Node2D" parent="Trims"]
+position = Vector2(300, 2300)
+script = ExtResource("52_trim")
+length = 3550
+mode = 0
+theme = 1
+
+[node name="Trim9" type="Node2D" parent="Trims"]
+position = Vector2(4300, 2300)
+script = ExtResource("52_trim")
+length = 300
+mode = 0
+theme = 1
+
+[node name="Trim10" type="Node2D" parent="Trims"]
+position = Vector2(2150, 2850)
+script = ExtResource("52_trim")
+length = 1700
+mode = 1
+theme = 2
+
+[node name="Trim11" type="Node2D" parent="Trims"]
+position = Vector2(4300, 2850)
+script = ExtResource("52_trim")
+length = 150
+mode = 1
+theme = 2
+
+[node name="Trim12" type="Node2D" parent="Trims"]
+position = Vector2(600, 3050)
+script = ExtResource("52_trim")
+length = 1300
+mode = 1
+theme = 2
+
+[node name="Trim13" type="Node2D" parent="Trims"]
+position = Vector2(1900, 3350)
+script = ExtResource("52_trim")
+length = 250
+mode = 1
+theme = 2
+
+[node name="Trim14" type="Node2D" parent="Trims"]
+position = Vector2(600, 3600)
+script = ExtResource("52_trim")
+length = 1550
+mode = 0
+theme = 2
+
+[node name="Trim15" type="Node2D" parent="Trims"]
+position = Vector2(600, 3900)
+script = ExtResource("52_trim")
+length = 1300
+mode = 1
+theme = 2
+
+[node name="Trim16" type="Node2D" parent="Trims"]
+position = Vector2(1900, 4200)
+script = ExtResource("52_trim")
+length = 250
+mode = 1
+theme = 2
+
+[node name="Trim17" type="Node2D" parent="Trims"]
+position = Vector2(600, 4450)
+script = ExtResource("52_trim")
+length = 1800
+mode = 0
+theme = 2
+
+[node name="Trim18" type="Node2D" parent="Trims"]
+position = Vector2(2850, 4450)
+script = ExtResource("52_trim")
+length = 1600
+mode = 0
+theme = 2
+
+[node name="Trim19" type="Node2D" parent="Trims"]
+position = Vector2(400, 4950)
+script = ExtResource("52_trim")
+length = 2000
+mode = 1
+theme = 0
+
+[node name="Trim20" type="Node2D" parent="Trims"]
+position = Vector2(2850, 4950)
+script = ExtResource("52_trim")
+length = 1450
+mode = 1
+theme = 0
+
+[node name="Trim21" type="Node2D" parent="Trims"]
+position = Vector2(400, 5700)
+script = ExtResource("52_trim")
+length = 2950
+mode = 0
+theme = 0
+
+[node name="Trim22" type="Node2D" parent="Trims"]
+position = Vector2(3900, 5700)
+script = ExtResource("52_trim")
+length = 400
+mode = 0
+theme = 0
+
+[node name="Trim23" type="Node2D" parent="Trims"]
+position = Vector2(1500, 6150)
+script = ExtResource("52_trim")
+length = 1850
+mode = 1
+theme = 0
+
+[node name="Trim24" type="Node2D" parent="Trims"]
+position = Vector2(3900, 6150)
+script = ExtResource("52_trim")
+length = 700
+mode = 1
+theme = 0
+
+[node name="Trim25" type="Node2D" parent="Trims"]
+position = Vector2(1500, 6900)
+script = ExtResource("52_trim")
+length = 3450
+mode = 0
+theme = 0
+
+[node name="Trim26" type="Node2D" parent="Trims"]
+position = Vector2(300, 450)
+script = ExtResource("52_trim")
+length = 650
+mode = 2
+theme = 1
+
+[node name="Trim27" type="Node2D" parent="Trims"]
+position = Vector2(300, 1700)
+script = ExtResource("52_trim")
+length = 600
+mode = 2
+theme = 1
+
+[node name="Trim28" type="Node2D" parent="Trims"]
+position = Vector2(400, 4950)
+script = ExtResource("52_trim")
+length = 750
+mode = 2
+theme = 0
+
+[node name="Trim29" type="Node2D" parent="Trims"]
+position = Vector2(600, 3050)
+script = ExtResource("52_trim")
+length = 550
+mode = 2
+theme = 2
+
+[node name="Trim30" type="Node2D" parent="Trims"]
+position = Vector2(600, 3900)
+script = ExtResource("52_trim")
+length = 550
+mode = 2
+theme = 2
+
+[node name="Trim31" type="Node2D" parent="Trims"]
+position = Vector2(1500, 6150)
+script = ExtResource("52_trim")
+length = 750
+mode = 2
+theme = 0
+
+[node name="Trim32" type="Node2D" parent="Trims"]
+position = Vector2(1900, 3050)
+script = ExtResource("52_trim")
+length = 300
+mode = 3
+theme = 2
+
+[node name="Trim33" type="Node2D" parent="Trims"]
+position = Vector2(1900, 3900)
+script = ExtResource("52_trim")
+length = 300
+mode = 3
+theme = 2
+
+[node name="Trim34" type="Node2D" parent="Trims"]
+position = Vector2(2150, 2850)
+script = ExtResource("52_trim")
+length = 500
+mode = 2
+theme = 2
+
+[node name="Trim35" type="Node2D" parent="Trims"]
+position = Vector2(2150, 3600)
+script = ExtResource("52_trim")
+length = 600
+mode = 2
+theme = 2
+
+[node name="Trim36" type="Node2D" parent="Trims"]
+position = Vector2(2400, 4450)
+script = ExtResource("52_trim")
+length = 300
+mode = 2
+theme = 2
+
+[node name="Trim37" type="Node2D" parent="Trims"]
+position = Vector2(2400, 4750)
+script = ExtResource("52_trim")
+length = 200
+mode = 2
+theme = 0
+
+[node name="Trim38" type="Node2D" parent="Trims"]
+position = Vector2(2700, 1100)
+script = ExtResource("52_trim")
+length = 600
+mode = 2
+theme = 1
+
+[node name="Trim39" type="Node2D" parent="Trims"]
+position = Vector2(2850, 4450)
+script = ExtResource("52_trim")
+length = 300
+mode = 3
+theme = 2
+
+[node name="Trim40" type="Node2D" parent="Trims"]
+position = Vector2(2850, 4750)
+script = ExtResource("52_trim")
+length = 200
+mode = 3
+theme = 0
+
+[node name="Trim41" type="Node2D" parent="Trims"]
+position = Vector2(3150, 1100)
+script = ExtResource("52_trim")
+length = 600
+mode = 3
+theme = 1
+
+[node name="Trim42" type="Node2D" parent="Trims"]
+position = Vector2(3200, 450)
+script = ExtResource("52_trim")
+length = 650
+mode = 3
+theme = 1
+
+[node name="Trim43" type="Node2D" parent="Trims"]
+position = Vector2(3350, 5700)
+script = ExtResource("52_trim")
+length = 450
+mode = 2
+theme = 0
+
+[node name="Trim44" type="Node2D" parent="Trims"]
+position = Vector2(3850, 2300)
+script = ExtResource("52_trim")
+length = 200
+mode = 2
+theme = 1
+
+[node name="Trim45" type="Node2D" parent="Trims"]
+position = Vector2(3850, 2500)
+script = ExtResource("52_trim")
+length = 350
+mode = 2
+theme = 2
+
+[node name="Trim46" type="Node2D" parent="Trims"]
+position = Vector2(3900, 5700)
+script = ExtResource("52_trim")
+length = 450
+mode = 3
+theme = 0
+
+[node name="Trim47" type="Node2D" parent="Trims"]
+position = Vector2(4300, 1700)
+script = ExtResource("52_trim")
+length = 250
+mode = 3
+theme = 1
+
+[node name="Trim48" type="Node2D" parent="Trims"]
+position = Vector2(4300, 2300)
+script = ExtResource("52_trim")
+length = 200
+mode = 3
+theme = 1
+
+[node name="Trim49" type="Node2D" parent="Trims"]
+position = Vector2(4300, 2500)
+script = ExtResource("52_trim")
+length = 350
+mode = 3
+theme = 2
+
+[node name="Trim50" type="Node2D" parent="Trims"]
+position = Vector2(4300, 4950)
+script = ExtResource("52_trim")
+length = 750
+mode = 3
+theme = 0
+
+[node name="Trim51" type="Node2D" parent="Trims"]
+position = Vector2(4450, 2850)
+script = ExtResource("52_trim")
+length = 1600
+mode = 3
+theme = 2
+
+[node name="Trim52" type="Node2D" parent="Trims"]
+position = Vector2(4600, 1700)
+script = ExtResource("52_trim")
+length = 250
+mode = 2
+theme = 1
+
+[node name="Trim53" type="Node2D" parent="Trims"]
+position = Vector2(4600, 2300)
+script = ExtResource("52_trim")
+length = 200
+mode = 2
+theme = 1
+
+[node name="Trim54" type="Node2D" parent="Trims"]
+position = Vector2(4600, 2500)
+script = ExtResource("52_trim")
+length = 2250
+mode = 2
+theme = 2
+
+[node name="Trim55" type="Node2D" parent="Trims"]
+position = Vector2(4600, 4750)
+script = ExtResource("52_trim")
+length = 1400
+mode = 2
+theme = 0
+
+[node name="Trim56" type="Node2D" parent="Trims"]
+position = Vector2(4950, 1700)
+script = ExtResource("52_trim")
+length = 800
+mode = 3
+theme = 1
+
+[node name="Trim57" type="Node2D" parent="Trims"]
+position = Vector2(4950, 2500)
+script = ExtResource("52_trim")
+length = 2250
+mode = 3
+theme = 2
+
+[node name="Trim58" type="Node2D" parent="Trims"]
+position = Vector2(4950, 4750)
+script = ExtResource("52_trim")
+length = 2150
+mode = 3
+theme = 0
+
+[node name="Coins" type="Node2D" parent="."]
+
+[node name="Coin1" type="Area2D" parent="Coins"]
+position = Vector2(1120, 950)
+script = ExtResource("9_coin")
+
+[node name="Coin2" type="Area2D" parent="Coins"]
+position = Vector2(1200, 950)
+script = ExtResource("9_coin")
+
+[node name="Coin3" type="Area2D" parent="Coins"]
+position = Vector2(1280, 950)
+script = ExtResource("9_coin")
+
+[node name="Coin4" type="Area2D" parent="Coins"]
+position = Vector2(1470, 840)
+script = ExtResource("9_coin")
+
+[node name="Coin5" type="Area2D" parent="Coins"]
+position = Vector2(1550, 840)
+script = ExtResource("9_coin")
+
+[node name="Coin6" type="Area2D" parent="Coins"]
+position = Vector2(1630, 840)
+script = ExtResource("9_coin")
+
+[node name="Coin7" type="Area2D" parent="Coins"]
+position = Vector2(1870, 950)
+script = ExtResource("9_coin")
+
+[node name="Coin8" type="Area2D" parent="Coins"]
+position = Vector2(1950, 950)
+script = ExtResource("9_coin")
+
+[node name="Coin9" type="Area2D" parent="Coins"]
+position = Vector2(2030, 950)
+script = ExtResource("9_coin")
+
+[node name="Coin10" type="Area2D" parent="Coins"]
+position = Vector2(2925, 1300)
+script = ExtResource("9_coin")
+
+[node name="Coin11" type="Area2D" parent="Coins"]
+position = Vector2(2120, 2040)
+script = ExtResource("9_coin")
+
+[node name="Coin12" type="Area2D" parent="Coins"]
+position = Vector2(2200, 2040)
+script = ExtResource("9_coin")
+
+[node name="Coin13" type="Area2D" parent="Coins"]
+position = Vector2(2280, 2040)
+script = ExtResource("9_coin")
+
+[node name="Coin14" type="Area2D" parent="Coins"]
+position = Vector2(3840, 3090)
+script = ExtResource("9_coin")
+
+[node name="Coin15" type="Area2D" parent="Coins"]
+position = Vector2(3900, 3090)
+script = ExtResource("9_coin")
+
+[node name="Coin16" type="Area2D" parent="Coins"]
+position = Vector2(3960, 3090)
+script = ExtResource("9_coin")
+
+[node name="Coin17" type="Area2D" parent="Coins"]
+position = Vector2(2970, 3420)
+script = ExtResource("9_coin")
+
+[node name="Coin18" type="Area2D" parent="Coins"]
+position = Vector2(3030, 3420)
+script = ExtResource("9_coin")
+
+[node name="Coin19" type="Area2D" parent="Coins"]
+position = Vector2(3090, 3420)
+script = ExtResource("9_coin")
+
+[node name="Coin20" type="Area2D" parent="Coins"]
+position = Vector2(2600, 3750)
+script = ExtResource("9_coin")
+
+[node name="Coin21" type="Area2D" parent="Coins"]
+position = Vector2(2660, 3750)
+script = ExtResource("9_coin")
+
+[node name="Coin22" type="Area2D" parent="Coins"]
+position = Vector2(2720, 3750)
+script = ExtResource("9_coin")
+
+[node name="Coin23" type="Area2D" parent="Coins"]
+position = Vector2(3470, 4080)
+script = ExtResource("9_coin")
+
+[node name="Coin24" type="Area2D" parent="Coins"]
+position = Vector2(3530, 4080)
+script = ExtResource("9_coin")
+
+[node name="Coin25" type="Area2D" parent="Coins"]
+position = Vector2(3590, 4080)
+script = ExtResource("9_coin")
+
+[node name="Coin26" type="Area2D" parent="Coins"]
+position = Vector2(800, 3560)
+script = ExtResource("9_coin")
+
+[node name="Coin27" type="Area2D" parent="Coins"]
+position = Vector2(860, 3560)
+script = ExtResource("9_coin")
+
+[node name="Coin28" type="Area2D" parent="Coins"]
+position = Vector2(920, 3560)
+script = ExtResource("9_coin")
+
+[node name="Coin29" type="Area2D" parent="Coins"]
+position = Vector2(980, 3560)
+script = ExtResource("9_coin")
+
+[node name="Coin30" type="Area2D" parent="Coins"]
+position = Vector2(750, 4250)
+script = ExtResource("9_coin")
+
+[node name="Coin31" type="Area2D" parent="Coins"]
+position = Vector2(810, 4250)
+script = ExtResource("9_coin")
+
+[node name="Coin32" type="Area2D" parent="Coins"]
+position = Vector2(870, 4250)
+script = ExtResource("9_coin")
+
+[node name="Coin33" type="Area2D" parent="Coins"]
+position = Vector2(930, 4250)
+script = ExtResource("9_coin")
+
+[node name="Coin34" type="Area2D" parent="Coins"]
+position = Vector2(990, 4250)
+script = ExtResource("9_coin")
+
+[node name="Coin35" type="Area2D" parent="Coins"]
+position = Vector2(1050, 4250)
+script = ExtResource("9_coin")
+
+[node name="Coin36" type="Area2D" parent="Coins"]
+position = Vector2(1320, 5440)
+script = ExtResource("9_coin")
+
+[node name="Coin37" type="Area2D" parent="Coins"]
+position = Vector2(1400, 5440)
+script = ExtResource("9_coin")
+
+[node name="Coin38" type="Area2D" parent="Coins"]
+position = Vector2(1480, 5440)
+script = ExtResource("9_coin")
+
+[node name="Coin39" type="Area2D" parent="Coins"]
+position = Vector2(3620, 5440)
+script = ExtResource("9_coin")
+
+[node name="Coin40" type="Area2D" parent="Coins"]
+position = Vector2(3700, 5440)
+script = ExtResource("9_coin")
+
+[node name="Coin41" type="Area2D" parent="Coins"]
+position = Vector2(3780, 5440)
+script = ExtResource("9_coin")
+
+[node name="Coin42" type="Area2D" parent="Coins"]
+position = Vector2(3800, 6860)
+script = ExtResource("9_coin")
+
+[node name="Coin43" type="Area2D" parent="Coins"]
+position = Vector2(3875, 6860)
+script = ExtResource("9_coin")
+
+[node name="Coin44" type="Area2D" parent="Coins"]
+position = Vector2(3950, 6860)
+script = ExtResource("9_coin")
+
+[node name="Coin45" type="Area2D" parent="Coins"]
+position = Vector2(4025, 6860)
+script = ExtResource("9_coin")
+
+[node name="Coin46" type="Area2D" parent="Coins"]
+position = Vector2(4100, 6860)
+script = ExtResource("9_coin")
+
+[node name="Enemies" type="Node2D" parent="."]
+
+[node name="Crawler1" parent="Enemies" instance=ExtResource("2_crawler")]
+position = Vector2(1700, 2280)
+
+[node name="Crawler2" parent="Enemies" instance=ExtResource("2_crawler")]
+position = Vector2(3000, 2280)
+
+[node name="Scribble1" parent="Enemies" instance=ExtResource("20_scribble")]
+position = Vector2(2850, 3270)
+
+[node name="Scribble2" parent="Enemies" instance=ExtResource("20_scribble")]
+position = Vector2(3650, 3610)
+
+[node name="Scribble3" parent="Enemies" instance=ExtResource("20_scribble")]
+position = Vector2(3050, 4000)
+
+[node name="Crumple1" parent="Enemies" instance=ExtResource("21_crumple")]
+position = Vector2(950, 4425)
+
+[node name="Crossed1" parent="Enemies" instance=ExtResource("22_crossed")]
+position = Vector2(1500, 4420)
+
+[node name="Smudge1" parent="Enemies" instance=ExtResource("23_smudge")]
+position = Vector2(1800, 5688)
+
+[node name="Inkwell1" parent="Enemies" instance=ExtResource("24_inkwell")]
+position = Vector2(800, 5674)
+
+[node name="Crawler3" parent="Enemies" instance=ExtResource("2_crawler")]
+position = Vector2(3900, 5680)
+
+[node name="Crossed2" parent="Enemies" instance=ExtResource("22_crossed")]
+position = Vector2(2800, 6870)
+
+[node name="Scribble4" parent="Enemies" instance=ExtResource("20_scribble")]
+position = Vector2(3200, 6570)
+
+[node name="Scribble5" parent="Enemies" instance=ExtResource("20_scribble")]
+position = Vector2(3400, 6520)
+
+[node name="Player" parent="." instance=ExtResource("1_player")]
+position = Vector2(500, 1074)
+
+[node name="UI" type="CanvasLayer" parent="."]
+layer = 2
+
+[node name="HUD" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("5_hud")
+
+[node name="LevelMusic" type="Node" parent="."]
+script = ExtResource("8_music")
+track = "margins"
+
+[node name="LevelMood" type="Node" parent="."]
+script = ExtResource("30_mood")
