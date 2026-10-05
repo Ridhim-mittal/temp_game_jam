@@ -329,7 +329,11 @@ func specials_25d_test() -> void:
 		lamp.spot = Vector3(player.global_position.x, lamp.spot.y, player.global_position.z)
 		g.global_position = Vector3(1.5, 0.05, 0)
 		g.stun = 0.0
+		player.fuel = player.max_fuel
+		Input.action_press("flash")  # a Half-Drawn only takes hits in the raised Ember
+		await pframes(2)
 		player._blinding_sweep()
+		Input.action_release("flash")
 		check(g.stun > 1.0, "BLINDING SWEEP: the monster in front is blinded (stun %.1f s)" % g.stun)
 		check(lamp.hunt == lamp.Hunt.LOST and lamp.erase == 0.0, "and the Haunting Lamp's light is turned away (LOST)")
 	for l in get_nodes_in_group("haunt_lamp"):
@@ -365,6 +369,7 @@ func specials_25d_test() -> void:
 		player._update_whirl(1.0 / Engine.physics_ticks_per_second)
 	check(player.fuel < f0, "the whirl burns the Ember (%.0f -> %.0f)" % [f0, player.fuel])
 	player._cancel_charge()
+	await pframes(2)
 	check(not player.monster_light, "and stops being light once it stops")
 	# the slam, end to end: hold attack, let go
 	_equip("brush")
@@ -375,11 +380,12 @@ func specials_25d_test() -> void:
 	dummy.global_position = Vector3(-1.4, 0.05, 0.8)
 	dummy.set_physics_process(false)
 	dummy.health = 99
-	dummy.revealed = true  # as if in the Ember's light, so the brush can cut it
 	var hp: int = dummy.health
+	# hold right click: a Half-Drawn only takes hits in the raised Ember
+	player.fuel = player.max_fuel
+	Input.action_press("flash")
 	Input.action_press("attack")
 	await seconds(player.charge_time + 0.12)
-	dummy.revealed = true
 	Input.action_release("attack")
 	await pframes(2)
 	check(dummy.health < hp - 1, "INK SLAM: hold attack, let go - the ring hits all round (%d -> %d)" % [hp, dummy.health])
@@ -388,12 +394,11 @@ func specials_25d_test() -> void:
 	player.refresh_loadout()
 	player.facing_dir = Vector3(1, 0, 0)
 	dummy.global_position = Vector3(4.0, 0.05, 0)
-	dummy.revealed = true
+	player.fuel = player.max_fuel
 	hp = dummy.health
 	player._quill_volley()
-	for i in 40:
-		await physics_frame
-		dummy.revealed = true
+	await pframes(40)
+	Input.action_release("flash")
 	check(dummy.health < hp, "QUILL VOLLEY: the quills fly and hit (%d -> %d)" % [hp, dummy.health])
 	_equip("nib")
 
