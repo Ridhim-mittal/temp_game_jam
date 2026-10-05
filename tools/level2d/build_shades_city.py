@@ -157,7 +157,6 @@ heart(5530, 560)
 
 # 4. the gate and its keeper
 node("InkBlot", None, "Enemies", [("position", v(6450, STREET - 75))], instance=BLOT)
-stack(6150, 100, 60)
 node("GateArena", "Node2D", "World", [("script", f'ExtResource("{ARENA}")'), ("blot_path", 'NodePath("../../Enemies/InkBlot")'),
      ("trigger_x", "5960.0"), ("left_x", "5800.0"), ("right_x", "7000.0"), ("gate_x", "6830.0"),
      ("street_y", f"{STREET}.0")])

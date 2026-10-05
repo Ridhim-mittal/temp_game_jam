@@ -89,12 +89,14 @@ edits). Backdrop: the team's concept painting (`assets/backgrounds/shades_city.w
 (`street_ground.gd`) in the bottom ~15%. Platforms: `paper_stack.gd` (CMYK bales) and
 `light_cover.gd` (redaction-bar awnings / bars, a scaffold, the collapsed billboard; one-way tops).
 Flow: Vesper falls in (hard landing) -> paper spiders (`paper_spider.gd`: hang on a thread and drop,
-chase, rear up then nib-stab; light makes them flinch) -> the author's light (`author_light.gd`: a beam
+chase, rear up (0.28 s tell, hits don't stop it) then nib-stab 22, sometimes twice; 8 hp; wander their patch
+until Vesper is near; light makes them flinch) -> the author's light (`author_light.gd`: a beam
 from the painting's moon roams round Vesper between `zone_from`/`zone_to`; in it an erase meter fills,
 full = 25 HP; nodes in group `light_cover` block it and cast a visible shadow) -> hideout + checkpoint
 -> the gate (`gate_arena.gd`: ink walls rise, the sleeping Ink Blot `ink_blot.gd` wakes: claw swipe
 `ink_claw.gd`, slam + floor shockwaves `ink_shockwave.gd`, ink globs `ink_glob.gd` that leave slowing
-puddles `ink_puddle.gd`; light doubles damage to it; on death it melts, Vesper gets +50 HP and a heart,
+puddles `ink_puddle.gd`; 24 hp, never staggered by hits, swipe 25 / slam 35; below half health it
+enrages (red eye, 1.4x speed, double slams, 5 globs); light doubles damage to it; on death it melts, Vesper gets +50 HP and a heart,
 the tape burns off) -> through the gate Shade's trap (`scripts/effects/shade_trap.gd`: glitch, ink
 flood, "DID YOU REALLY THINK I'D LET YOU LEAVE?", TO BE CONTINUED; `next_scene` = the cave later).
 

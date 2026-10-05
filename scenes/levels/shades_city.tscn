@@ -184,11 +184,6 @@ script = ExtResource("11_health_heart")
 [node name="InkBlot" parent="Enemies" instance=ExtResource("3_ink_blot")]
 position = Vector2(6450, 525)
 
-[node name="Stack6" type="StaticBody2D" parent="World"]
-position = Vector2(6150, 600)
-script = ExtResource("7_paper_stack")
-size = Vector2(100, 60)
-
 [node name="GateArena" type="Node2D" parent="World"]
 script = ExtResource("9_gate_arena")
 blot_path = NodePath("../../Enemies/InkBlot")

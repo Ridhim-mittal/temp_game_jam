@@ -7,16 +7,20 @@ extends "res://scripts/enemies/enemy_base.gd"
 
 enum State { HANG, DROP, CHASE, WINDUP, STAB, RECOVER, FLINCH }
 
-@export var hp := 5
+@export var hp := 8
 ## Start hanging this far above the floor on a thread (0 = on the ground).
 @export var hang_height := 0.0
 ## Drop when the player is this close sideways.
 @export var drop_range := 260.0
-@export var speed := 170.0
-@export var stab_range := 120.0
-@export var stab_speed := 420.0
-@export var stab_damage := 18.0
-@export var touch_damage := 12.0
+@export var speed := 220.0
+@export var stab_range := 150.0
+@export var stab_speed := 600.0
+@export var stab_damage := 22.0
+## How long it rears up before the stab (the tell). Hits don't stop it.
+@export var windup_time := 0.28
+## Chance the stab is followed at once by a second one.
+@export var double_stab_chance := 0.45
+@export var touch_damage := 15.0
 @export var art_scale := 0.62
 ## Further than this from Vesper it wanders its patch of street instead.
 @export var notice_range := 650.0
@@ -36,6 +40,7 @@ var _rear := 0.0  # 0..1 rearing back before a stab
 var _home := 0.0
 var _wander_dir := 1
 var _pause := 0.0
+var _second := false  # this stab is the follow-up
 
 
 func _ready() -> void:
@@ -86,31 +91,41 @@ func _tick(delta: float) -> void:
 				velocity.x = move_toward(velocity.x, want, 1100.0 * delta)
 				if absf(d.x) < stab_range and absf(d.y) < 90.0 and is_on_floor():
 					state = State.WINDUP
-					_timer = 0.45
+					_timer = windup_time
 			else:
 				velocity.x = move_toward(velocity.x, 0.0, 900.0 * delta)
 		State.WINDUP:
 			_fall(delta)
 			face_player()
 			velocity.x = move_toward(velocity.x, -facing * 40.0, 900.0 * delta)
-			_rear = minf(_rear + delta / 0.45, 1.0)
+			_rear = minf(_rear + delta / windup_time, 1.0)
 			if is_lit():
 				_flinch()
 			elif _timer <= 0.0:
 				state = State.STAB
-				_timer = 0.2
+				_timer = 0.25
 				velocity.x = facing * stab_speed
 				_rear = 0.0
 		State.STAB:
 			_fall(delta)
-			if _timer <= 0.0:
+			if _timer <= 0.0 and not _second and randf() < double_stab_chance and _player and absf(d.x) < stab_range * 1.3:
+				_second = true  # snap straight into a second lunge
+				face_player()
+				velocity.x = facing * stab_speed
+				_timer = 0.22
+				pop("SHNK!", Color(0.95, 0.95, 1.0), Vector2(0, -60), 22)
+			elif _timer <= 0.0:
+				_second = false
 				state = State.RECOVER
-				_timer = 0.6
+				_timer = 0.45
 		State.RECOVER:
 			_fall(delta)
 			velocity.x = move_toward(velocity.x, 0.0, 1300.0 * delta)
 			if _timer <= 0.0:
 				state = State.CHASE
+				if _player and absf(d.x) < stab_range and absf(d.y) < 90.0 and is_on_floor() and not is_lit():
+					state = State.WINDUP  # still in reach: straight into the next stab
+					_timer = windup_time
 		State.FLINCH:
 			_fall(delta)
 			velocity.x = move_toward(velocity.x, -facing * speed * 1.3, 1400.0 * delta)
@@ -145,11 +160,17 @@ func _flinch() -> void:
 	_rear = 0.0
 
 
+func take_hit(damage: int, hit_dir: Vector2, from_pos: Vector2) -> void:
+	super(damage, hit_dir, from_pos)
+	# committed once it rears up: hits don't stun it out of the stab
+	stun = 0.0 if state == State.WINDUP or state == State.STAB else 0.12
+
+
 func _on_hurt() -> void:
-	if state == State.WINDUP or state == State.STAB:
-		state = State.RECOVER
-		_timer = 0.35
-	_rear = 0.0
+	knockback_speed = 140.0  # a nudge, not a shove: it stays in the fight
+	if state == State.HANG:
+		state = State.DROP
+		set_harmful(true)
 
 
 # ------------------------------------------------------------------ art

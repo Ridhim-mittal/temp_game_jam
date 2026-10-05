@@ -17,13 +17,14 @@ const SHEEN := Color(0.44, 0.38, 0.62)
 const BODY := Color(0.06, 0.04, 0.09)
 const SCRAP := Color(0.9, 0.84, 0.74)
 const EYE := Color(1.0, 0.86, 0.32)
+const RAGE_EYE := Color(1.0, 0.25, 0.2)
 const FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
 
-@export var hp := 14
-@export var walk_speed := 105.0
+@export var hp := 24
+@export var walk_speed := 140.0
 @export var wake_range := 420.0
-@export var swipe_damage := 20.0
-@export var slam_damage := 30.0
+@export var swipe_damage := 25.0
+@export var slam_damage := 35.0
 @export var touch_damage := 15.0
 @export var art_scale := 0.78
 ## Starts asleep (a gatekeeper); false = awake and hunting at once.
@@ -37,6 +38,8 @@ var _arms := 0.0  # 0 rest .. 1 raised for a slam
 var _swing := 0.0  # claw swipe
 var _melt := 0.0
 var _eye_open := 0.0
+var _enraged := false
+var _slams_left := 0
 
 
 func _ready() -> void:
@@ -83,9 +86,16 @@ func take_hit(damage: int, hit_dir: Vector2, from_pos: Vector2) -> void:
 	if state == State.SLEEP:
 		wake()
 	super(damage * (2 if is_lit() else 1), hit_dir, from_pos)
+	stun = 0.0  # a heavyweight: hits don't stagger it
 
 
 func _tick(delta: float) -> void:
+	if not _enraged and health <= hp / 2 and state != State.SLEEP:
+		_enraged = true
+		pop("RAAARGH!!", Color(1.0, 0.3, 0.25), Vector2(0, -190), 44)
+		Sfx.play("boss_intro", 0.0, 1.2)
+	var rage := 1.4 if _enraged else 1.0
+	delta *= rage  # everything it does speeds up
 	_timer -= delta
 	_cooldown -= delta
 	_fall(delta)
@@ -104,19 +114,24 @@ func _tick(delta: float) -> void:
 				set_harmful(true)
 		State.WALK:
 			face_player()
-			var want := facing * walk_speed if absf(d.x) > 90.0 else 0.0
+			var dist := absf(d.x)
+			var want := facing * walk_speed if dist > 110.0 else 0.0
 			velocity.x = move_toward(velocity.x, want, 500.0 * delta)
 			if _player and _cooldown <= 0.0 and is_on_floor():
-				if absf(d.x) < 150.0:
+				if dist < 160.0:
 					state = State.SWIPE_UP
 					_timer = 0.5
-				elif absf(d.x) < 380.0 or randf() < 0.5:
+				elif dist < 330.0:
 					state = State.SLAM_UP
 					_timer = 0.75
-				else:
+					_slams_left = 1 if _enraged else 0
+				elif randf() < 0.2:
 					state = State.SPIT
 					_timer = 0.9
-				velocity.x = 0.0
+				else:
+					_cooldown = 0.8  # keep closing in, think again soon
+				if state != State.WALK:
+					velocity.x = 0.0
 		State.SWIPE_UP:
 			_swing = minf(_swing + delta / 0.5, 1.0) * 0.6
 			if _timer <= 0.0:
@@ -139,7 +154,12 @@ func _tick(delta: float) -> void:
 		State.SLAM:
 			_arms = move_toward(_arms, 0.0, delta * 8.0)
 			if _timer <= 0.0:
-				_rest(0.9)
+				if _slams_left > 0:
+					_slams_left -= 1  # enraged: up again for a second slam
+					state = State.SLAM_UP
+					_timer = 0.45
+				else:
+					_rest(0.6)
 		State.SPIT:
 			velocity.x = 0.0
 			_arms = sin(clampf(1.0 - _timer / 0.9, 0.0, 1.0) * PI) * 0.5
@@ -162,7 +182,7 @@ func _tick(delta: float) -> void:
 func _rest(t: float) -> void:
 	state = State.REST
 	_timer = t
-	_cooldown = randf_range(0.6, 1.2)
+	_cooldown = randf_range(0.3, 0.7) if _enraged else randf_range(0.45, 0.9)
 
 
 func _claw_active(on: bool) -> void:
@@ -191,10 +211,10 @@ func _slam() -> void:
 
 
 func _spit() -> void:
-	for k in 3:
+	for k in (5 if _enraged else 3):
 		var g := Glob.new()
 		g.position = global_position + Vector2(facing * 30.0, -110.0)
-		var reach := 220.0 + k * 130.0
+		var reach := 180.0 + k * (100.0 if _enraged else 130.0)
 		g.velocity = Vector2(facing * reach * 0.95, -520.0 + k * 40.0)
 		get_tree().current_scene.add_child(g)
 
@@ -256,14 +276,15 @@ func paint(c: CanvasItem) -> void:
 	_blob(c, head, Vector2(40, 38))
 	for k in 3:
 		c.draw_arc(head + Vector2(2, 0), 14.0 + k * 9.0, time * 0.8 + k * 1.9, time * 0.8 + k * 1.9 + 3.6, 20, SWIRL, 4.0)
+	var eye_col := RAGE_EYE if _enraged else EYE
 	if _eye_open > 0.05:
 		var eye := head + Vector2(4, 0)
-		c.draw_circle(eye, 26.0 * _eye_open, Color(EYE, 0.16))
-		c.draw_circle(eye, 19.0 * _eye_open, Color(EYE, 0.3))
+		c.draw_circle(eye, 26.0 * _eye_open, Color(eye_col, 0.16))
+		c.draw_circle(eye, 19.0 * _eye_open, Color(eye_col, 0.3))
 		c.draw_set_transform(eye, 0.0, Vector2(1.0, _eye_open))
 		c.draw_circle(Vector2.ZERO, 14.0, BODY)
-		c.draw_circle(Vector2.ZERO, 12.0, EYE)
-		c.draw_circle(Vector2.ZERO, 7.0, EYE.lightened(0.4))
+		c.draw_circle(Vector2.ZERO, 12.0, eye_col)
+		c.draw_circle(Vector2.ZERO, 7.0, eye_col.lightened(0.4))
 		c.draw_set_transform(eye + Vector2(1, 0), 0.0, Vector2(0.32, _eye_open))
 		c.draw_circle(Vector2.ZERO, 10.0, BODY)
 		c.draw_set_transform(Vector2.ZERO)
