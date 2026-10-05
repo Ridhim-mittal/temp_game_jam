@@ -153,7 +153,9 @@ exported base values; room.gd opens overlays (pause, skills, settings) and pause
 The Gutter has no shop or coins: Patch (`patch_npc.gd`) is a guide who talks on E; `shop.gd`,
 `lumen.gd` and the Lumen counter are unhooked. The skill tree opens at the hub shrine and from
 pause.
-First-run controls tutorial: `scripts/ui/tutorial.gd` (started by player.gd and room.gd; the 2D
+Controls tutorial: `scripts/ui/tutorial.gd`, 2D only (player.gd starts it; main menu PLAY forgets the
+"2d." steps so every new run teaches the controls again; 2.5D rooms start none, the keys are the
+same, but Pause -> Controls still replays the 2.5D one on request). The 2D
 ink wave (hold attack) is taught the first time a Scribble is near, in the City's plank section; steps
 are remembered in Profile; Esc / controller Back skips; shows controller buttons when one is used;
 Settings -> Tutorials or Pause -> Controls replays them).

@@ -377,6 +377,10 @@ func _leave(it: Dictionary) -> void:
 		if it.target == "":
 			get_tree().quit()
 		else:
+			if it.label == "PLAY":  # a new run always teaches the controls again
+				var profile := get_node_or_null("/root/Profile")
+				if profile:
+					profile.reset_tutorials("2d.")
 			get_tree().change_scene_to_file(it.target))
 
 
