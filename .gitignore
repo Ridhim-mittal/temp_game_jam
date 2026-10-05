@@ -1,0 +1,6 @@
+# Godot 4 cache and editor state: rebuilt when the project is opened
+.godot/
+
+# Python caches from the level / room generators in tools/
+__pycache__/
+*.pyc

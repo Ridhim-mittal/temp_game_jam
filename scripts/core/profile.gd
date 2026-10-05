@@ -58,9 +58,12 @@ func mark_tutorial(id: String) -> void:
 		_changed()
 
 
-## Settings -> Tutorials: play every tutorial again.
-func reset_tutorials() -> void:
-	tutorials.clear()
+## Play tutorials again: all of them (Settings -> Tutorials), or those
+## whose ids start with `prefix` ("25d." from the pause menu).
+func reset_tutorials(prefix := "") -> void:
+	for id in tutorials.keys():
+		if id.begins_with(prefix):
+			tutorials.erase(id)
 	_changed()
 
 
