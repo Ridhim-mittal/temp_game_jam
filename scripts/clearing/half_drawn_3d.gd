@@ -51,6 +51,7 @@ func _ready() -> void:
 	sight = 8.5
 	knockback = 5.5
 	contact_damage = 0
+	lumens = 4  # hard to see, quick to swing
 	model = Model.new()
 	model.name = "Model"
 	add_child(model)

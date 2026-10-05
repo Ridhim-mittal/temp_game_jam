@@ -1,8 +1,9 @@
 extends SceneTree
-## Gutter rework, phase 2 checks: no grass, farm or cosy props, coin drops
-## or round doors in the hub and the story rooms; Quire's shop opens at his
-## stall, from the pause menu and on B; the skill tree is gone. Run like
-## test_phase1.gd (prints PASS / FAIL).
+## Gutter rework, phase 2 checks: no grass, farm or cosy props or round
+## doors in the hub and the story rooms, and beaten monsters drop coins;
+## Quire's shop opens at his stall, from the pause menu and on B; the skill
+## tree is gone; the HUD shows the purse and no map. Run like test_phase1.gd
+## (prints PASS / FAIL). It puts the player's coins back afterwards.
 
 const ROOMS := ["res://scenes/clearing/clearing.tscn", "res://scenes/world25/rooms/darkwood_1.tscn",
 	"res://scenes/world25/rooms/shallows_pen.tscn", "res://scenes/world25/rooms/wastes_gap.tscn",
@@ -37,6 +38,7 @@ func script_name(n: Node) -> String:
 
 
 func _run() -> void:
+	var saved_purse: int = root.get_node("Profile").lumens
 	for path in ROOMS:
 		change_scene_to_file(path)
 		await frames(8)
@@ -52,18 +54,20 @@ func _run() -> void:
 			elif sn == "interactable.gd" and n.action == "shop" and not path.ends_with("clearing.tscn"):
 				bad.append("%s (shop)" % n.name)  # the only stall is Quire's, in the hub
 		check(bad.is_empty(), "%s: no grass / farm / cosy props / stray shops / round doors %s" % [path.get_file(), bad])
-		# coins: beat every monster and look for Lumen pickups
+		# coins: beat every monster; each spills its dark-silver coins
 		var enemies := current_scene.get_node_or_null("Enemies")
+		var worth := 0
+		var purse_before: int = root.get_node("Profile").lumens
 		if enemies:
 			for m in enemies.get_children():
 				if m.has_method("_die") and not m.dead:
+					worth += int(m.lumens) if "lumens" in m else 0
 					m._die()
 		await frames(10)
-		var coins := 0
-		for n in current_scene.find_children("*", "", true, false):
-			if script_name(n) == "lumen.gd":
-				coins += 1
-		check(coins == 0, "%s: beaten monsters drop no coins (%d)" % [path.get_file(), coins])
+		var value: int = root.get_node("Profile").lumens - purse_before  # any already picked up
+		for n in get_nodes_in_group("margin_coin"):
+			value += n.value
+		check(worth > 0 and value == worth, "%s: beaten monsters drop their coins (%d of %d)" % [path.get_file(), value, worth])
 	# the hub: Quire's stall opens the shop; so do B and the pause menu; no
 	# skill tree any more
 	change_scene_to_file("res://scenes/clearing/clearing.tscn")
@@ -114,10 +118,17 @@ func _run() -> void:
 	room.open_overlay("skills")
 	check(room._overlay == null, "the skill tree is gone (open_overlay(\"skills\") opens nothing)")
 	check(room.get_node_or_null("Props/Shrine/SkillShrine") == null, "the shrine no longer opens a skill tree")
-	var hud_lumens := false
+	var hud: Node = null
+	var minimap := false
 	for n in room.find_children("*", "Control", true, false):
-		if script_name(n) == "clearing_hud.gd" and "_lumens" in n:
-			hud_lumens = true
-	check(not hud_lumens, "HUD has no Lumen counter")
+		if script_name(n) == "clearing_hud.gd":
+			hud = n
+		elif script_name(n) == "minimap.gd":
+			minimap = true
+	check(hud != null and "coins" in hud and hud.coins == root.get_node("Profile").lumens, "the HUD shows the coin purse")
+	check(not minimap, "no map placeholder in the corner any more")
+	var profile := root.get_node("Profile")
+	profile.lumens = saved_purse
+	profile._changed()
 	print("DONE fails=%d" % fails)
 	quit(fails)

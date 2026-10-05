@@ -16,6 +16,7 @@ extends CharacterBody3D
 const Fx = preload("res://scripts/clearing/clearing_fx.gd")
 const Puppet = preload("res://scripts/clearing/monster_puppet.gd")
 const Light = preload("res://scripts/world25/light.gd")
+const Lumen = preload("res://scripts/world25/lumen.gd")
 const DANGER := Color(1.0, 0.86, 0.2)
 const PALE := Color(0.98, 0.96, 0.9)
 
@@ -26,8 +27,10 @@ const PALE := Color(0.98, 0.96, 0.9)
 @export var sight := 9.0
 ## Seconds before a defeated monster scribbles itself back (0 = never).
 @export var respawn_time := 8.0
-## Unused: the Gutter has no coins any more (lumen.gd is unhooked). Kept so
-## scenes and scripts that set it still load.
+## Coins it drops when beaten (lumen.gd: small, dark silver, into the shop's
+## purse), by how hard it is to beat: Scribbles and divers 1, Smudges 2,
+## Crumples / Inkwells / Crossed-Outs 3, Half-Drawn 4, the Red Pen 30, the
+## Eraser 45.
 @export var lumens := 2
 
 var health := 0
@@ -226,6 +229,8 @@ func _die() -> void:
 	collision_layer = 0
 	Fx.splat(get_tree(), global_position)
 	Fx.burst(get_tree(), global_position + Vector3(0, 0.6, 0), Color(0.08, 0.05, 0.12), 18, 4.5)
+	if global_position.y > _home.y - 4.0:
+		Lumen.spill(get_tree(), global_position, lumens)  # not when it fell into the void
 	var t := create_tween()
 	t.tween_property(puppet, "scale", Vector3(1.5, 0.1, 1.5), 0.1)
 	t.tween_callback(func(): puppet.visible = false)

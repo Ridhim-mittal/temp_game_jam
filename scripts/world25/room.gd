@@ -2,8 +2,9 @@
 extends Node3D
 ## Root of a 2.5D room. Put islands, props, gates (gate.gd) and an
 ## "Enemies" node with monsters under it; this script supplies the rest at
-## runtime: environment, sun, drifting motes, player, camera, HUD, minimap,
-## story text and music, all from `biome`.
+## runtime: environment, sun, drifting motes, player, camera, HUD (with the
+## coin purse; the old minimap.gd is unhooked), story text and music, all
+## from `biome`.
 ##
 ## Gates stay sealed until every monster under "Enemies" is beaten; then
 ## they open and the room is remembered as cleared (World25).
@@ -15,7 +16,6 @@ extends Node3D
 const PLAYER_SCENE = preload("res://scenes/clearing/clearing_player.tscn")
 const CameraScript = preload("res://scripts/clearing/clearing_camera.gd")
 const HudScript = preload("res://scripts/clearing/clearing_hud.gd")
-const MinimapScript = preload("res://scripts/world25/minimap.gd")
 const StoryUI = preload("res://scripts/world25/story_ui.gd")
 const ClearingFX = preload("res://scripts/clearing/clearing_fx.gd")
 const OVERLAY_SHADER = preload("res://shaders/comic_overlay.gdshader")
@@ -536,9 +536,6 @@ func _build_ui() -> void:
 	var hud := Control.new()
 	hud.set_script(HudScript)
 	layer.add_child(hud)
-	var minimap := Control.new()
-	minimap.set_script(MinimapScript)
-	layer.add_child(minimap)
 	ui = Control.new()
 	ui.set_script(StoryUI)
 	layer.add_child(ui)

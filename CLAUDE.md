@@ -28,7 +28,10 @@ paintings of Shade's City and the Ink Cave (`assets/backgrounds/shades_city.webp
   model, `half_drawn_model.gd` + `half_drawn.gdshader`, is kept but unused.)
 
 ## 2D story start (main menu PLAY)
-`cs_opening` → THE CITY (`scenes/levels/test_level.tscn`, a ~1 min controls tutorial) → glowing
+`cs_book` (scripts/cutscenes/cs_book.gd: ~20 s animated opening, a comic book on a desk opens,
+page one says "I JUST HAD THE CRAZIEST ADVENTURE...", the page turns and the camera dives into the
+first panel, which becomes the live City; all drawn in code, sounds synthesised; Esc/Enter skips;
+the old click-through cs_opening is unused) → THE CITY (`scenes/levels/test_level.tscn`, a ~1 min controls tutorial) → glowing
 `panel_door.gd` ("MOVE TO THE NEXT PANEL") → THE SKETCHBOOK (`sketchbook.tscn`, light tutorial) →
 door into THE LONG DROP. Doors play `scripts/effects/panel_turn.gd` (the frame shrinks into a panel on
 a comic page, pan across the gutter while the next level loads in the background, the next panel inks in
@@ -116,7 +119,8 @@ Shade fight later, for now SHADE AWAITS / TO BE CONTINUED and the main menu.
 
 ## 2.5D framework
 - Rooms are scenes whose root uses `scripts/world25/room.gd`; it builds environment, light,
-  player, camera, HUD, minimap, music from a `Biome` resource (`data/biomes/*.tres`).
+  player, camera, HUD, music from a `Biome` resource (`data/biomes/*.tres`); `minimap.gd` is
+  unhooked (the top-right corner holds the coin purse).
 - `Gate` nodes (`scripts/world25/gate.gd`) seal until every monster in the room is dead, then
   load the target room. Sealed = the path is a grey dashed pencil sketch (`drawn_ghost.gdshader`)
   with cold lanterns; `open()` draws a line of light outwards (`gate_light.gdshader`), fills the
@@ -147,8 +151,10 @@ Shade fight later, for now SHADE AWAITS / TO BE CONTINUED and the main menu.
   candles) and a dim ring of the Writer's marks. Quire's shop stall (`shop_stall.gd`, where Patch
   the dog used to sit; `patch_npc.gd` is unhooked): a carved navy counter
   (`shop_carving.gdshader`), Quire on it; E opens the shop.
-- HUD (clearing_hud.gd): hearts (one per ink drop, `max_health` 6), a healing counter (heals the
-  Ember's fuel covers, F) and the Ember bar with its button (a mouse, right button lit).
+- HUD (clearing_hud.gd, sized to the screen with set_anchors_and_offsets_preset): hearts (one per
+  ink drop, `max_health` 6), a healing counter (heals the Ember's fuel covers, F), the Ember bar
+  with its button (a mouse, right button lit) and, top right, the coin purse on a dark ink tag with
+  a spinning dark-silver coin (Profile.lumens; pops when coins come in).
 - The Writer's Haunting Lamp (`scripts/world25/haunt_lamp.gd`, built on `searchlight.gd`):
   room.gd spawns it in every room from the biome's `haunt` profile (`data/haunt/*.tres`,
   `haunt_profile.gd`), scaled by Settings difficulty and the room's `haunt_scale`; a room's
@@ -194,8 +200,12 @@ edits). Monsters stay dead in story rooms (room.gd sets `respawn_time = 0`).
 ## Progression: Quire's shop, weapons, outfits
 Autoloads `Profile` (the coin purse `lumens`, owned / equipped items, weapon `upgrades`;
 user://profile.cfg) and `Settings` (options; user://settings.cfg). The purse is filled by the Lumen
-coins picked up in the 2D levels (player.gd `add_coins()`; GameState.coins still counts the run);
-the Gutter drops no coins (`lumen.gd` unhooked). The skill tree is retired (`skill_tree.gd`
+coins picked up in the 2D levels (player.gd `add_coins()`; GameState.coins counts the run) and the
+Margins' coins: monsters drop small dark-silver coins in a tight cluster (`scripts/world25/lumen.gd`
+`Lumen.spill()` from monster_3d.gd / scribble.gd `_die()`, `lumens` per monster by difficulty:
+Scribble / diver 1, Smudge 2, Crumple / Inkwell / Crossed-Out 3, Half-Drawn 4, Red Pen 30, Eraser
+45; none when it fell into the void); they glint through the darkness and fly to Vesper within
+`magnet` or after `home_after`. The skill tree is retired (`skill_tree.gd`
 unhooked, Catalog.SKILLS unread, no Ink Points).
 - Catalog (`scripts/core/catalog.gd`): weapons, armor, hats (hat + band colour), scarves (slot
   "cosmetic"), cloaks; `UPGRADES` (3 per weapon, in order: SHARPENED +1 damage, QUICK HAND special
@@ -203,8 +213,11 @@ unhooked, Catalog.SKILLS unread, no Ink Points).
 - Shop overlay `scripts/ui/shop.gd` ("Quire's Curios"; tabs WEAPONS / UPGRADES / HATS / SCARVES /
   CLOAKS / ARMOR, 2D-art preview): B anywhere ("shop" action; 2D: player.gd `Shop.open(tree)`;
   2.5D: room.gd `open_overlay("shop")`), the pause screen (pause_menu.gd, 2D and 2.5D: SHOP
-  is its fifth button), Quire's stall. 2D HUD (hud.gd) shows
-  "B SHOP" when something is affordable and once a run "PRESS B TO OPEN THE SHOP".
+  is its fifth button), Quire's stall. In 2D, B is read in player.gd `_unhandled_input()` (not
+  polled, so the B that closes the shop can't reopen it). Quire's replies show under the sign (red
+  with how many coins are missing). 2D HUD (hud.gd) shows "B SHOP" when something is affordable and,
+  once 10 coins have been collected in a run (`SHOP_HINT_AT`, GameState.coins), a "PRESS B TO OPEN
+  THE SHOP" caption under the counter.
 - Weapons, both modes (2D player.gd, 2.5D clearing_player.gd; `_apply_loadout()` reads the effect
   stats, look and upgrade tier): every one has a hold-attack special (`special`): nib Nib-Sword =
   ink wave; quill Quill Rapier = QUILL VOLLEY (piercing quills); brush Brush Maul = INK SLAM (a ring);

@@ -241,6 +241,41 @@ are untouched.
     - **Armor** still works and now counts in the 2D levels too (+20 health a drop, longer
       safety, the wax seal).
 
+15. **Coins in the Margins, shop fixes** (your next notes):
+    - **The shop's "not enough coins" line** used to be drawn where the Vesper preview
+      covered it. Quire's replies now show in a box under the sign. When you can't afford
+      something, the reply is red and says how many more coins you need.
+    - **Other bugs found and fixed:**
+      - The shop was slightly see-through, so in the Margins the room's caption box and the
+        coin counter showed behind its title and money. It's opaque now.
+      - In 2D, pressing B to close the shop opened it again in the same frame. B is now
+        read as a key event, so one press closes it.
+      - The 2D "PRESS B" caption was hidden behind the Writer's narration box at the top. It
+        now sits under the coin counter on the right.
+      - The seventh hat row touched the details box. The rows are a little tighter now.
+      - The Margins HUD had no size, so anything placed on its right edge was drawn off
+        screen. It now fills the screen.
+    - **Prices are about 20% lower:**
+      - Weapons: 25 / 32 / 45 / 52 / 40.
+      - Upgrades: 12 / 24 / 40.
+      - Hats, scarves and cloaks: 8–16.
+      - Armor: 28–48.
+    - **"PRESS B TO OPEN THE SHOP"** now appears once you've collected 10 coins in the run,
+      not just because the purse already held enough from before.
+    - **Coins in the Margins:** monsters now drop coins when beaten, more for harder ones:
+      - Scribble 1
+      - Smudge 2
+      - Crumple, Inkwell, Crossed-Out 3
+      - Half-Drawn 4
+      - Red Pen 30
+      - Eraser 45
+
+      They're small dark-silver coins that spill in a tight cluster, bounce, settle and
+      twinkle so you can spot them in the dark. They fly to Vesper when he's near, or after a
+      few seconds, and go into the same purse as the 2D coins.
+    - **The map placeholder** in the top right of the Margins is gone. In its place is a coin
+      counter like the 2D one, but on a dark ink tag with a spinning dark-silver coin.
+
 ## Tuning knobs
 
 | What | Where |
@@ -269,6 +304,8 @@ are untouched.
 | Hearts | `clearing_player.gd` `max_health` (6); look in `clearing_hud.gd` (`HEARTS_AT`, `HEART_STEP`) |
 | Vesper's shrine | `altar.gd`: `stone`, `statue_scale`, `ring_color`; the broken statue in `_build_statue()`, the fallen pieces in `_fallen_head()` / `_fallen_hat()` |
 | Shop prices, items | `scripts/core/catalog.gd` `ITEMS` (price, effect, look, special) and `UPGRADES` |
+| Margins coins | per monster `lumens` (monster_3d.gd export; set in each monster's `_ready()`); `scripts/world25/lumen.gd`: `MAX_COINS` (14), `magnet` (3), `home_after` (6 s), coin size in `_ready()`, spill speed in `spill()` |
+| "PRESS B" caption | `scripts/ui/hud.gd` `SHOP_HINT_AT` (10 coins collected in the run) |
 | Weapon specials | "Weapon Specials" exports on `scripts/player/player.gd` (2D, px) and `clearing_player.gd` (2.5D, units): drill radius / pull / tick / burst, sweep radius / stun, whirl reach / drain, dart count / speed, slam radius / damage, `charge_time` (2.5D) |
 | Quire's stall | `scripts/world25/shop_stall.gd`; the carving in `shop_carving.gdshader` |
 | Background style | room.gd `backdrop_style` (SIGIL / COMIC); the page in `comic_page.gdshader` (`brightness`, `panel_size`, `drift`), words in room.gd `SOUND_WORDS` |
@@ -288,10 +325,11 @@ These ran with Godot 4.7-stable under Xvfb with software OpenGL.
   - A swing hits a monster in each of the 8 directions, both by facing and by
     hold-and-swing.
   - Aim assist on, off, out of the cone and out of range.
-- **`tests/gutter/test_phase2.gd`: 19/19 checks** over the hub and the four levels.
+- **`tests/gutter/test_phase2.gd`: 20/20 checks** over the hub and the four levels.
   - No grass, farm or cosy props or round doors in any room, and no shop but Quire's in
     the hub.
-  - No coin drops.
+  - Every room's beaten monsters drop exactly their coins' worth.
+  - The HUD shows the purse, and there's no map in the corner.
   - Patch is gone. The shop opens with E at Quire's stall, with B in a room, and from the
     pause menu; it pauses the game and closes again.
   - The skill tree is gone (from the shrine and from pause).
@@ -330,7 +368,7 @@ These ran with Godot 4.7-stable under Xvfb with software OpenGL.
     - Let go and it comes back.
     - Run dry, it gutters out and won't rise until it has refilled.
 
-- **`tests/gutter/test_shop.gd` (new): 47/47 checks.** It puts your saved progress back
+- **`tests/gutter/test_shop.gd` (new): 57/57 checks.** It puts your saved progress back
   afterwards.
   - The purse:
     - Buying, equipping and the three upgrades in order, with their prices.
@@ -340,9 +378,11 @@ These ran with Godot 4.7-stable under Xvfb with software OpenGL.
     - A coin goes into the purse.
     - The pause screen lists SHOP (no skill tree). Picking it opens the shop on top, and
       closing it comes back to the pause screen.
-    - At 10 coins "PRESS B" and the B SHOP tag show.
+    - Once 10 coins are collected in the run, "PRESS B" and the B SHOP tag show.
     - B opens the shop and pauses the level. Buying a hat in it puts the hat on Vesper at
       once.
+    - Short of coins, Quire says how many more are needed.
+    - B opens it again, and B closes it for good (it doesn't reopen).
     - Esc closes the shop and play goes on.
   - 2D, each special against a real monster:
     - The quill volley, end to end (hold attack, let go): three quills fly and hit.
@@ -361,6 +401,8 @@ These ran with Godot 4.7-stable under Xvfb with software OpenGL.
     - The quills hit.
   - Outfits: the hat, band and cloak reach the 3D model and the billboard art; the 3D model
     carries the equipped weapon.
+  - Margins coins: a Half-Drawn spills 4 small dark-silver coins, clustered where it fell.
+    They fly to Vesper and fill the purse, and the HUD counter shows it.
 
 ## Not verified
 

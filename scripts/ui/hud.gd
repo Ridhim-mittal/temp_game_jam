@@ -2,8 +2,9 @@ extends Control
 ## Draws the continuous health bar (top left) and the Lumen coin counter
 ## (top right: the shop's purse, Profile.lumens). Once there are enough
 ## coins to buy something in Quire's shop, a "B  SHOP" tag shows under the
-## counter, and the first time in a run a caption says "PRESS B TO OPEN THE
-## SHOP" (GameState.seen "shop_hint"). The bar has a trailing "damage ghost" that drains after a
+## counter; once SHOP_HINT_AT (10) coins have been collected in this run
+## (GameState.coins, not what was already in the purse), a caption says
+## "PRESS B TO OPEN THE SHOP", once a run (GameState.seen "shop_hint"). The bar has a trailing "damage ghost" that drains after a
 ## hit (shows how much it took), shakes on damage, flashes green on heals
 ## and pulses when health is low. Under it, the Ember meter (ember.gd):
 ## glows while raised, greys out and shakes when snuffed.
@@ -13,6 +14,8 @@ const INK := Color(0.05, 0.03, 0.1)
 const FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
 const BAR := Rect2(84, 30, 280, 26)
 const EMBER_BAR := Rect2(100, 66, 200, 13)
+## Coins collected in a run that bring up the "PRESS B" caption.
+const SHOP_HINT_AT := 10
 
 var current := 100.0
 var maximum := 100.0
@@ -63,7 +66,7 @@ func _update_shop_hint(delta: float) -> void:
 	var price: int = profile.cheapest_price()
 	_can_shop = price >= 0 and profile.lumens >= price
 	var state := get_node_or_null("/root/GameState")
-	if _can_shop and state and not state.seen.has("shop_hint"):
+	if state and state.coins >= SHOP_HINT_AT and not state.seen.has("shop_hint"):
 		state.seen["shop_hint"] = true
 		_hint = 5.0
 
@@ -200,16 +203,26 @@ func _draw_coin_counter() -> void:
 		_draw_shop_caption()
 
 
-## "PRESS B TO OPEN THE SHOP": a comic caption box near the top, the first
-## time there's enough for something.
+## "PRESS B TO OPEN THE SHOP": a comic caption box under the coin counter
+## (clear of the Writer's narration on the left), the first time 10 coins
+## have been collected in a run.
 func _draw_shop_caption() -> void:
 	var a := clampf(_hint / 0.5, 0.0, 1.0) * clampf((5.0 - _hint) / 0.25, 0.0, 1.0)
-	var text := "ENOUGH COINS!  PRESS  B  TO OPEN THE SHOP"
-	var w := FONT.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 30).x
-	var box := Rect2(Vector2((size.x - w) * 0.5 - 22.0, 104.0), Vector2(w + 44.0, 50.0))
-	var bob := sin(_time * 3.0) * 2.0
-	box.position.y += bob
+	var lines := ["ENOUGH COINS!", "PRESS  B  TO OPEN THE SHOP"]
+	var w := 0.0
+	for l in lines:
+		w = maxf(w, FONT.get_string_size(l, HORIZONTAL_ALIGNMENT_LEFT, -1, 26).x)
+	var right := size.x - 36.0
+	var box := Rect2(Vector2(right - w - 36.0, 112.0 + sin(_time * 3.0) * 2.0), Vector2(w + 36.0, 76.0))
 	draw_rect(Rect2(box.position + Vector2(5, 5), box.size), Color(INK, 0.6 * a))
 	draw_rect(box, Color(1.0, 0.95, 0.75, a))
 	draw_rect(box, Color(INK, a), false, 3.0)
-	draw_string(FONT, box.position + Vector2(22, 36), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 30, Color(INK, a))
+	# a little tail up to the counter
+	var tip := Vector2(right - 40.0, box.position.y - 14.0)
+	draw_colored_polygon(PackedVector2Array([tip, Vector2(tip.x - 14, box.position.y + 2), Vector2(tip.x + 6, box.position.y + 2)]),
+		Color(1.0, 0.95, 0.75, a))
+	draw_polyline(PackedVector2Array([Vector2(tip.x - 14, box.position.y), tip, Vector2(tip.x + 6, box.position.y)]), Color(INK, a), 3.0)
+	for i in lines.size():
+		var lw := FONT.get_string_size(lines[i], HORIZONTAL_ALIGNMENT_LEFT, -1, 26).x
+		draw_string(FONT, Vector2(box.end.x - 18.0 - lw, box.position.y + 32.0 + i * 30.0), lines[i], HORIZONTAL_ALIGNMENT_LEFT, -1, 26,
+			Color(INK if i == 1 else Color(0.8, 0.3, 0.1), a))
