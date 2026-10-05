@@ -20,15 +20,8 @@ const ROWS := [
 	["SCREEN SHAKE", "screen_shake", {"off": ["OFF", "No camera shake."], "low": ["LOW", "Gentle shake on hits."],
 		"full": ["FULL", "Big comic-book impacts."]}],
 	["HIT WORDS", "hit_text", {"on": ["ON", "THWACK! POW! over every hit."], "off": ["OFF", "No sound-effect words."]}],
-	["DIFFICULTY", "difficulty", {"relaxed": ["RELAXED", "+2 ink drops and longer safety after hits."],
-		"normal": ["NORMAL", "As designed."], "hard": ["HARD", "Monsters hit harder and take more beating."]}],
-	["SCRIBBLES", "scribble_style", {"hopper": ["HOPPER", "Hops along the ground and pounces (2.5D design)."],
-		"diver": ["DIVE-BOMBER", "Flies, shakes, then dive-bombs you; flees light (platformer design)."]}],
-	["AIM ASSIST", "aim_assist", {"on": ["ON", "In the Gutter, swings turn toward a monster just off your aim."],
-		"off": ["OFF", "Swings go exactly where Vesper faces."]}],
 	["CURSOR IN GAME", "show_cursor", {"off": ["OFF", "Hide the mouse pointer while playing the Gutter (menus still show it)."],
 		"on": ["ON", "Keep the mouse pointer visible while playing."]}],
-	["TUTORIALS", "!tutorials", {}],
 	["RESET PROGRESS", "!reset", {}],
 	["BACK", "", {}],
 ]
@@ -40,7 +33,6 @@ var _row := 0
 var _time := 0.0
 var _rects: Array[Rect2] = []
 var _confirm_reset := false
-var _tutorials_reset := false
 
 
 func _ready() -> void:
@@ -93,11 +85,6 @@ func _change(step: int) -> void:
 	var key: String = ROWS[_row][1]
 	if key == "":
 		_back()
-	elif key == "!tutorials":
-		var profile := get_node_or_null("/root/Profile")
-		if profile:
-			profile.reset_tutorials()
-		_tutorials_reset = true
 	elif key == "!reset":
 		if _confirm_reset:
 			var profile := get_node_or_null("/root/Profile")
@@ -149,10 +136,6 @@ func _draw() -> void:
 			shown = "<  " + "■".repeat(v) + "□".repeat(10 - v) + "  >"
 			if focused:
 				desc = "Master volume (%d / 10)." % v
-		elif key == "!tutorials":
-			shown = "WILL PLAY AGAIN" if _tutorials_reset else ""
-			if focused:
-				desc = "Show the controls tutorials again the next time you play."
 		elif key == "!reset":
 			shown = "PRESS AGAIN TO WIPE" if _confirm_reset else ""
 			if focused:

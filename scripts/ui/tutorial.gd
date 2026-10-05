@@ -6,7 +6,7 @@ extends Control
 ##
 ## Every step is remembered in Profile, so each one plays only once (a
 ## restart picks up where it left off); Enter skips the rest of the mode and
-## Settings -> Tutorials plays them all again. While the basics run, the
+## PLAY on the main menu plays the 2D ones again. While the basics run, the
 ## level's "Controls" hint line is hidden.
 ##
 ##   Tutorial.start(self, self, "2d")               # scripts/player/player.gd
