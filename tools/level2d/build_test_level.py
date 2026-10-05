@@ -55,6 +55,8 @@ res("Script", "res://scripts/world/caption.gd", "43_caption")
 res("Script", "res://scripts/world/panel_door.gd", "44_door")
 res("Script", "res://scripts/ui/comic_frame.gd", "45_frame")
 res("Script", "res://scripts/ui/narration.gd", "46_narration")
+res("Script", "res://scripts/world/city_block.gd", "47_cityblock")
+res("Script", "res://scripts/world/city_ledge.gd", "48_cityledge")
 
 
 def v(x, y):
@@ -82,16 +84,22 @@ def uniq(prefix):
     return f"{prefix}{counts[prefix]}"
 
 
-def block(x0, x1, top, bottom, script="3_block", name="Block", groups=None, extra=()):
+# the neon trim of the current level's blocks and hover ledges (city_block.gd,
+# city_ledge.gd): [] = their defaults (the City's cyan)
+trim_props = []
+
+
+def block(x0, x1, top, bottom, script="47_cityblock", name="Block", groups=None, extra=()):
     """Solid block spanning x0..x1, top..bottom (world y)."""
     node(uniq(name), "StaticBody2D", "World",
          [("position", v((x0 + x1) / 2, (top + bottom) / 2)), ("script", f'ExtResource("{script}")'),
-          ("size", v(x1 - x0, bottom - top))] + list(extra), groups)
+          ("size", v(x1 - x0, bottom - top))] + (trim_props if script == "47_cityblock" else []) + list(extra), groups)
 
 
 def plank(cx, top, w=160):
     node(uniq("Plank"), "StaticBody2D", "World",
-         [("position", v(cx, top + 8)), ("script", 'ExtResource("11_oneway")'), ("size", v(w, 16))])
+         [("position", v(cx, top + 8)), ("script", 'ExtResource("48_cityledge")'), ("size", v(w, 16))] +
+         [kv for kv in trim_props if kv[0] == "trim"])
 
 
 def crumble(cx, top, w=140):
@@ -275,6 +283,8 @@ write("scenes/levels/test_level.tscn", "TestLevel", (100, 570), page=1, story=[
 # rest, lanterns are free light that walls can shadow, and a lit cut-out's
 # shadow is solid ink.
 reset()
+# warm gold trim here, so solid ground never reads as the blue pencil sketches
+trim_props = [("trim", "Color(1, 0.78, 0.36, 1)"), ("accent", "Color(0.55, 0.9, 1, 1)")]
 block(7900, 8420, GROUND, BOTTOM, name="Ground")
 block(7820, 7900, -600, BOTTOM, name="Wall")
 # 9a. first light: a sketch bridge over spikes, too wide to jump (~470 px max)
