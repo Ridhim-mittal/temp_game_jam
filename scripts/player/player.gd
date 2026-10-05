@@ -4,6 +4,7 @@ extends CharacterBody2D
 ##  - snappy run, variable jump height, apex hang, fast-fall
 ##  - coyote time + jump buffering
 ##  - double jump: one extra jump in the air, refilled on landing or a pogo
+##  - wall cling / slide / wall jump (Hollow Knight's Mantis Claw)
 ##  - hard landing after a long fall (kneel, dust, shake); longer falls hurt
 ##  - dash with brief invincibility (vs enemies), resets on ground / pogo
 ##  - directional slashes (side / up / down-in-air)
@@ -21,6 +22,7 @@ const ComicText = preload("res://scripts/effects/comic_text.gd")
 const InkWave = preload("res://scripts/effects/ink_wave.gd")
 const LandImpact = preload("res://scripts/effects/land_impact.gd")
 const FallStreaks = preload("res://scripts/effects/fall_streaks.gd")
+const WallFx = preload("res://scripts/effects/wall_fx.gd")
 const DeathScreen = preload("res://scripts/ui/death_screen.gd")
 const Tutorial = preload("res://scripts/ui/tutorial.gd")
 const Ember = preload("res://scripts/player/ember.gd")
@@ -58,14 +60,26 @@ const HAZARD_DAMAGE := 20.0
 ## Falls at least this long (px, from the top of the last rise) end in a
 ## Hollow Knight-style hard landing: Vesper slams down and kneels, unable to
 ## act for `hard_land_time`. A normal jump is ~170 px.
-@export var hard_land_height := 500.0
+@export var hard_land_height := 400.0
 @export var hard_land_time := 0.4
 ## Falls at least this long also hurt (0 = no fall damage) and kneel longer.
-@export var fall_damage_height := 900.0
+@export var fall_damage_height := 750.0
 @export var fall_damage := 15.0
 ## Extra damage per 300 px fallen beyond `fall_damage_height`, up to the max.
 @export var fall_damage_step := 10.0
 @export var max_fall_damage := 45.0
+
+@export_group("Wall")
+## Hollow Knight-style wall cling: pushing into a wall while falling grabs it
+## and slides down slowly; jump kicks off it. The wall just kicked off can't be
+## grabbed again until landing or touching the opposite wall, so shafts can be
+## climbed wall to wall but a single wall can't (no skipping puzzles).
+@export var wall_cling := true
+@export var wall_slide_speed := 150.0
+## Kick-off speed: x away from the wall, y up.
+@export var wall_jump_velocity := Vector2(430, -720)
+## Seconds after a kick before steering takes over again.
+@export var wall_jump_lock := 0.15
 
 @export_group("Crouch Jump")
 ## Standing still, holding jump crouches and coils the legs; releasing
@@ -128,6 +142,12 @@ var _fall_top := 0.0  # y where the current fall began (top of the last rise)
 var _land_timer := 0.0  # hard-landing kneel left
 var _land_length := 0.4
 var _streaks: Node2D
+var _wall_dir := 0  # side of the wall being slid down (1 right, -1 left), 0 = none
+var _wall_coyote := 0.0  # a kick still counts this long after letting go
+var _wall_coyote_dir := 0
+var _wall_lock := 0.0
+var _banned_wall := 0  # the side just kicked off (can't re-grab it)
+var _wall_fx: Node2D
 var _dash_timer := 0.0
 var _dash_cooldown_timer := 0.0
 var _attack_timer := 0.0
@@ -170,6 +190,8 @@ func _ready() -> void:
 	_fall_top = global_position.y
 	_streaks = FallStreaks.new()
 	add_child(_streaks)
+	_wall_fx = WallFx.new()
+	add_child(_wall_fx)
 	health_changed.emit(health, max_health)
 	coins_changed.emit(coins)
 	# first run only; waits while the Writer's narration (narration.gd) is writing
@@ -216,6 +238,7 @@ func _physics_process(delta: float) -> void:
 
 	_update_horizontal(input_x, delta)
 	_apply_gravity(delta)
+	_update_wall(input_x)
 	_update_crouch(input_x, delta)
 	_handle_jump()
 	_handle_attack_input()
@@ -239,6 +262,8 @@ func _tick_timers(delta: float) -> void:
 	_invuln_timer = maxf(_invuln_timer - delta, 0.0)
 	_hurt_timer = maxf(_hurt_timer - delta, 0.0)
 	_land_timer = maxf(_land_timer - delta, 0.0)
+	_wall_coyote = maxf(_wall_coyote - delta, 0.0)
+	_wall_lock = maxf(_wall_lock - delta, 0.0)
 	if _dash_timer > 0.0:
 		_dash_timer -= delta
 		if _dash_timer <= 0.0:
@@ -250,6 +275,8 @@ func _update_horizontal(input_x: float, delta: float) -> void:
 	if _recoil_timer > 0.0:
 		velocity.x = _recoil_dir * recoil_speed
 		return
+	if _wall_lock > 0.0:
+		return  # carried by the wall kick
 	# Facing is locked while a slash is active.
 	if input_x != 0.0 and _attack_timer <= 0.0:
 		facing = 1 if input_x > 0.0 else -1
@@ -261,6 +288,45 @@ func _update_horizontal(input_x: float, delta: float) -> void:
 	else:
 		rate = air_accel if accelerating else air_decel
 	velocity.x = move_toward(velocity.x, target, rate * delta)
+
+
+## Wall cling: falling while pushing into a wall grabs it and slides down.
+func _update_wall(input_x: float) -> void:
+	_wall_dir = 0
+	if is_on_floor():
+		_banned_wall = 0
+		return
+	if not wall_cling or not is_on_wall() or velocity.y < -60.0:
+		return
+	var side := -int(signf(get_wall_normal().x))
+	if side == 0 or side == _banned_wall or signf(input_x) != side:
+		return
+	_wall_dir = side
+	_banned_wall = 0  # touching the other wall frees the one kicked off before
+	velocity.y = minf(velocity.y, wall_slide_speed)
+	facing = -side  # back to the wall, like the Knight
+	is_jumping = false
+	can_dash = true
+	_air_jumps_left = air_jumps
+	_wall_coyote = 0.1
+	_wall_coyote_dir = side
+
+
+func _wall_jump() -> void:
+	var away := -_wall_coyote_dir
+	velocity = Vector2(away * wall_jump_velocity.x, wall_jump_velocity.y * _slow_mult().y)
+	facing = away
+	is_jumping = true
+	_jump_buffer_timer = 0.0
+	_wall_coyote = 0.0
+	_wall_lock = wall_jump_lock
+	_banned_wall = _wall_coyote_dir
+	_wall_dir = 0
+	_squash = Vector2(0.7, 1.3)
+	var puff := JumpPuff.new()
+	puff.position = global_position + Vector2(-away * 13.0, 4.0)
+	puff.rotation = -away * PI * 0.5  # fans out from the wall
+	get_tree().current_scene.add_child(puff)
 
 
 func _apply_gravity(delta: float) -> void:
@@ -279,6 +345,8 @@ func _handle_jump() -> void:
 		_jump_buffer_timer = 0.0
 		_coyote_timer = 0.0
 		_squash = Vector2(0.75, 1.25)
+	elif _jump_buffer_timer > 0.0 and _wall_coyote > 0.0 and not is_on_floor():
+		_wall_jump()
 	elif Input.is_action_just_pressed("jump") and not is_on_floor() and _air_jumps_left > 0:
 		# Double jump: only on the press itself, so a jump buffered just before
 		# landing still becomes a ground jump instead of spending this.
@@ -367,7 +435,9 @@ func _crouch_launch(still_holding: bool) -> void:
 
 
 func _start_dash(input_x: float) -> void:
-	if input_x != 0.0:
+	if _wall_dir != 0:
+		facing = -_wall_dir  # off a wall, the dash always goes away from it
+	elif input_x != 0.0:
 		facing = 1 if input_x > 0.0 else -1
 	_dash_timer = dash_time
 	_dash_cooldown_timer = dash_cooldown
@@ -386,8 +456,8 @@ func _post_move(delta: float) -> void:
 		var drop := global_position.y - _fall_top
 		if drop >= hard_land_height and hard_land_height > 0.0:
 			_hard_land(drop)
-	if on_floor or velocity.y <= 0.0:
-		_fall_top = global_position.y  # a fall is measured from the top of the last rise
+	if on_floor or velocity.y <= 0.0 or _wall_dir != 0:
+		_fall_top = global_position.y  # a fall is measured from the top of the last rise (or a wall)
 	if on_floor:
 		_coyote_timer = coyote_time
 		can_dash = true
@@ -687,6 +757,8 @@ func _update_visuals(delta: float) -> void:
 	art.crouch = crouch_amount() if _crouch >= 0.0 else 0.0
 	art.crouching = _crouch >= 0.0
 	art.land = _land_timer / _land_length if _land_timer > 0.0 else 0.0
+	art.wall = 1.0 if _wall_dir != 0 else 0.0
+	_wall_fx.side = _wall_dir
 	var drop := global_position.y - _fall_top if not is_on_floor() and velocity.y > 0.0 else 0.0
 	_streaks.amount = clampf((drop - hard_land_height * 0.6) / (hard_land_height * 0.4), 0.0, 1.0) \
 		if hard_land_height > 0.0 else 0.0

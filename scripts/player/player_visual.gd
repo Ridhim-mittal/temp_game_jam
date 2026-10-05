@@ -32,6 +32,7 @@ var charge_ready := false
 var crouch := 0.0       # 0..1 crouch-jump coil depth
 var crouching := false  # crouch held (even before the coil counts)
 var land := 0.0  # hard-landing kneel left, 1 at impact .. 0 standing (player.gd)
+var wall := 0.0  # 1 while sliding down a wall (the wall is behind him, at -x)
 
 var _phase := 0.0
 var _time := 0.0
@@ -44,11 +45,13 @@ var shoulder := Vector2(2, -33)  # sword arm pivot, read by sword.gd
 var _coil_draw := 0.0
 var _upper := Transform2D()  # hips + lean, for the upper-body parts
 var _kneel := 0.0
+var _wall := 0.0  # eased `wall`
 
 
 func _process(delta: float) -> void:
 	_time += delta
 	_goo = 1.0 if stuck else maxf(_goo - delta * 1.2, 0.0)
+	_wall = move_toward(_wall, wall, delta * 10.0)
 	var speed := clampf(absf(velocity.x) / max_speed, 0.0, 1.0)
 	_run = move_toward(_run, speed if on_floor and not dashing else 0.0, delta * 8.0)
 	if on_floor and not dashing:
@@ -99,6 +102,10 @@ func _draw() -> void:
 		hips.y += 17.0 * _kneel
 		lean += 0.2 * _kneel
 		_coil_draw = maxf(_coil_draw, _kneel)
+	# wall slide (Hollow Knight): back pressed to the wall, leaning on it
+	if _wall > 0.0:
+		hips.x -= 3.0 * _wall
+		lean -= 0.14 * _wall
 
 	# legs behind the cloak (far leg first, slightly lighter)
 	for k in [1, 0]:
@@ -113,6 +120,13 @@ func _draw() -> void:
 			else:  # front foot planted forward
 				foot = foot.lerp(Vector2(9.0, 0.0), _kneel)
 				knee = knee.lerp(Vector2(10.0, -12.0), _kneel)
+		if _wall > 0.0:
+			if k == 1:  # back boot braced flat on the wall
+				foot = foot.lerp(Vector2(-12.0, -5.0), _wall)
+				knee = knee.lerp(Vector2(-3.0, -11.0), _wall)
+			else:  # front leg hangs bent
+				foot = foot.lerp(Vector2(4.0, 9.0), _wall)
+				knee = knee.lerp(Vector2(7.0, -1.0), _wall)
 		draw_polyline(PackedVector2Array([hip, knee, foot]), col, 5.0)
 		draw_circle(knee, 2.5, col)
 		draw_set_transform(foot + Vector2(1.5, 0))
@@ -132,6 +146,13 @@ func _draw() -> void:
 	_draw_cloak(fall)
 	_draw_head()
 	draw_set_transform(Vector2.ZERO)
+	if _wall > 0.3:  # hand dragging along the wall behind him
+		var w := clampf((_wall - 0.3) / 0.4, 0.0, 1.0)
+		var grip := Vector2(-13.0, -27.0)
+		var bend := (shoulder + grip) * 0.5 + Vector2(-2.0, 5.0)
+		draw_polyline(PackedVector2Array([shoulder, bend.lerp(shoulder, 1.0 - w), grip.lerp(shoulder, 1.0 - w)]),
+			INK, 4.5)
+		draw_circle(grip.lerp(shoulder, 1.0 - w), 3.5, INK)
 	if _kneel > 0.3:  # hand braced on the floor
 		var a := clampf((_kneel - 0.3) / 0.3, 0.0, 1.0)
 		var hand := Vector2(17.0, -3.0)
@@ -212,8 +233,8 @@ func _draw_pencil() -> void:
 
 func _draw_cloak(fall: float) -> void:
 	var trail := 7.0 * _run + (8.0 if dashing else 0.0)
-	var flutter := sin(_time * 16.0) * 1.6 * maxf(_run, absf(fall))
-	var lift := -6.0 * maxf(fall, 0.0)  # hem billows up while falling
+	var flutter := sin(_time * 16.0) * 1.6 * maxf(maxf(_run, absf(fall)), _wall)
+	var lift := -6.0 * maxf(fall, 0.0) - 5.0 * _wall  # hem billows up while falling / sliding
 	var flare := 1.0 + 0.55 * _kneel  # a hard landing spreads the hem over the floor
 	# hem points, front to back
 	var hem := PackedVector2Array([

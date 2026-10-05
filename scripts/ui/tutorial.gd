@@ -39,6 +39,7 @@ const BASICS := {
 const LATER := {
 	"2d": [
 		{"id": "ember", "word": "EMBER", "keys": [["Q", "ember"]], "hold": 0.8, "when": "near_lantern"},
+		{"id": "wall", "word": "WALL JUMP", "keys": [["SPACE", "jump"]], "when": "on_wall"},
 	],
 	"25d": [
 		{"id": "flash", "word": "FLASH", "keys": [["Q", "flash"]], "when": "near_monster"},
@@ -224,6 +225,8 @@ func _ready_for(when: String) -> bool:
 			for l in get_tree().get_nodes_in_group("lantern"):
 				if l is Node2D and l.global_position.distance_to(player.global_position) < 320.0:
 					return true
+		"on_wall":
+			return "_wall_dir" in player and player._wall_dir != 0
 		"near_monster":
 			return _nearest_monster() < 6.0
 		"hurt":
