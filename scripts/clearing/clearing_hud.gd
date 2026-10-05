@@ -7,7 +7,9 @@ extends Control
 ##    covers right now (hold F), glowing when at least one is ready
 ##  - the Ember's fuel as a flame and bar with its button, a mouse with the right button lit (hold to raise it);
 ##    it greys while the Ember is guttered out
-## (There is no money in the Gutter: the Lumen counter is gone.)
+## Top-right, the coin purse (Profile.lumens, the shop's money; the Margins'
+## monsters drop small dark-silver coins, lumen.gd): a dark ink tag with a
+## spinning dark-silver coin and the count, which pops when coins come in.
 
 const TITLE_FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
 const INK := Color(0.06, 0.04, 0.09)
@@ -16,6 +18,9 @@ const BLOOD := Color(0.86, 0.17, 0.2)
 const BLOOD_DARK := Color(0.42, 0.06, 0.1)
 const TRAIL := Color(1.0, 0.86, 0.78)
 const HEAL := Color(0.55, 0.95, 0.75)
+const SILVER := Color(0.6, 0.63, 0.7)
+const SILVER_DARK := Color(0.3, 0.32, 0.38)
+const SILVER_TEXT := Color(0.84, 0.87, 0.93)
 
 ## Centre of the first heart, and the step to the next.
 const HEARTS_AT := Vector2(46, 38)
@@ -35,11 +40,17 @@ var _hit_flash := 0.0
 var _heal_flash := 0.0
 var _heals := 0
 var _time := 0.0
+var coins := 0
+var _coin_bump := 0.0  # 1 when coins come in, decays
 
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	set_anchors_preset(Control.PRESET_FULL_RECT)
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)  # sized to the screen: the purse sits on its right edge
+	var profile := get_node_or_null("/root/Profile")
+	if profile:
+		coins = profile.lumens
+		profile.changed.connect(_on_profile_changed)
 	await get_tree().process_frame
 	var player := get_tree().get_first_node_in_group("player")
 	if player and player.has_signal("health_changed"):
@@ -67,6 +78,15 @@ func _on_health_changed(cur: int, max_hp: int) -> void:
 	maximum = max_hp
 
 
+func _on_profile_changed() -> void:
+	var profile := get_node_or_null("/root/Profile")
+	if profile == null:
+		return
+	if profile.lumens > coins:
+		_coin_bump = 1.0
+	coins = profile.lumens
+
+
 func _on_ember_changed(f: float, max_f: float) -> void:
 	fuel = f
 	max_fuel = max_f
@@ -87,6 +107,7 @@ func _process(delta: float) -> void:
 		_hp_shown = move_toward(_hp_shown, current, delta * 2.5)
 	_hit_flash = maxf(_hit_flash - delta * 2.0, 0.0)
 	_heal_flash = maxf(_heal_flash - delta * 1.5, 0.0)
+	_coin_bump = maxf(_coin_bump - delta * 4.0, 0.0)
 	queue_redraw()
 
 
@@ -94,6 +115,42 @@ func _draw() -> void:
 	_draw_health()
 	_draw_heals(Vector2(48, 124))
 	_draw_ember(Vector2(38, 78))
+	_draw_coins()
+
+
+## The coin purse, top right: a dark slanted ink tag, a spinning dark-silver
+## coin and "x N" in pale silver; it pops when coins come in.
+func _draw_coins() -> void:
+	var text := "x %d" % coins
+	var fs := 30 + int(8.0 * _coin_bump)
+	var tw := TITLE_FONT.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var right := size.x - 30.0
+	var tag := Rect2(Vector2(right - tw - 74.0, 22.0), Vector2(tw + 74.0, 48.0))
+	draw_colored_polygon(_slant(Rect2(tag.position + Vector2(4, 4), tag.size), 12.0), Color(0, 0, 0, 0.45))
+	draw_colored_polygon(_slant(tag, 12.0), Color(INK, 0.88))
+	draw_polyline(_close(_slant(tag, 12.0)), Color(SILVER_DARK, 0.9), 2.0)
+	_dark_coin(Vector2(tag.position.x + 32.0, tag.position.y + 24.0), 13.0 * (1.0 + 0.25 * _coin_bump), _time * 2.0 + _coin_bump * 6.0)
+	var base := Vector2(tag.position.x + 54.0, tag.position.y + 35.0)
+	draw_string_outline(TITLE_FONT, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 6, INK)
+	draw_string(TITLE_FONT, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, SILVER_TEXT.lerp(Color.WHITE, _coin_bump * 0.6))
+
+
+## A dark-silver coin seen edge-on as it spins: a rim, a darker face and a
+## bright stroke for the embossed mark.
+func _dark_coin(c: Vector2, r: float, spin: float) -> void:
+	var w := maxf(absf(cos(spin)), 0.12)
+	var rim := PackedVector2Array()
+	var face := PackedVector2Array()
+	for i in 20:
+		var a := TAU * i / 20.0
+		rim.append(c + Vector2(cos(a) * r * w, sin(a) * r))
+		face.append(c + Vector2(cos(a) * r * w * 0.68, sin(a) * r * 0.68))
+	draw_colored_polygon(rim, SILVER)
+	draw_polyline(_close(rim), INK, 2.0)
+	draw_colored_polygon(face, SILVER_DARK)
+	if w > 0.4:
+		draw_line(c + Vector2(-r * 0.25 * w, -r * 0.35), c + Vector2(0, r * 0.35), SILVER_TEXT, 2.0)
+		draw_line(c + Vector2(0, r * 0.35), c + Vector2(r * 0.25 * w, -r * 0.35), SILVER_TEXT, 2.0)
 
 
 func _draw_health() -> void:

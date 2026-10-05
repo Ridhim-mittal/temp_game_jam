@@ -227,6 +227,11 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("pause") and not dead and not get_tree().paused:
 		get_viewport().set_input_as_handled()  # pause, don't leave for the menu (mood.gd)
 		PauseMenu.open_2d(self)
+	elif event.is_action_pressed("shop") and not event.is_echo() and not dead and not get_tree().paused:
+		# B: Quire's shop. On the key event, not polled: the B that closes the
+		# shop is used up there and can't open it again the same frame.
+		get_viewport().set_input_as_handled()
+		_open_shop.call_deferred()
 
 
 func _physics_process(delta: float) -> void:
@@ -234,10 +239,6 @@ func _physics_process(delta: float) -> void:
 		return
 	if Input.is_action_just_pressed("restart"):
 		_reload()
-		return
-
-	if Input.is_action_just_pressed("shop"):
-		_open_shop()
 		return
 
 	_tick_timers(delta)

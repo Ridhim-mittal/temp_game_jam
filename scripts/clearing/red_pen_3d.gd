@@ -56,7 +56,7 @@ var _shadow: MeshInstance3D
 
 
 func _ready() -> void:
-	lumens = 40
+	lumens = 30
 	hp = maxi(hp, 18)
 	sight = 40.0
 	knockback = 0.0
