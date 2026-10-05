@@ -27,7 +27,10 @@ All art is drawn in code (`_draw()`, shaders, primitive meshes); no texture asse
   model, `half_drawn_model.gd` + `half_drawn.gdshader`, is kept but unused.)
 
 ## 2D story start (main menu PLAY)
-`cs_opening` → THE CITY (`scenes/levels/test_level.tscn`, a ~1 min controls tutorial) → glowing
+`cs_book` (scripts/cutscenes/cs_book.gd: ~20 s animated opening, a comic book on a desk opens,
+page one says "I JUST HAD THE CRAZIEST ADVENTURE...", the page turns and the camera dives into the
+first panel, which becomes the live City; all drawn in code, sounds synthesised; Esc/Enter skips;
+the old click-through cs_opening is unused) → THE CITY (`scenes/levels/test_level.tscn`, a ~1 min controls tutorial) → glowing
 `panel_door.gd` ("MOVE TO THE NEXT PANEL") → THE SKETCHBOOK (`sketchbook.tscn`, light tutorial) →
 door into THE LONG DROP. Doors play `scripts/effects/panel_turn.gd` (the frame shrinks into a panel on
 a comic page, pan across the gutter while the next level loads in the background, the next panel inks in

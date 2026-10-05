@@ -28,7 +28,7 @@ const HORIZON := Vector2(640, 468)
 
 ## [label, scene to load ("" = quit, "@chapters" / "@back" switch rows)]
 const MAIN := [
-	["PLAY", "res://scenes/cutscenes/cs_opening.tscn"],
+	["PLAY", "res://scenes/cutscenes/cs_book.tscn"],  # the animated opening (cs_book.gd), into the City
 	["CHAPTERS", "@chapters"],
 	["SETTINGS", "res://scenes/ui/settings.tscn"],
 	["QUIT", ""],

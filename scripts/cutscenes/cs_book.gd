@@ -576,7 +576,7 @@ func _poly3(ci: CanvasItem, pts3: Array, col: Color) -> void:
 	for q in pts3:
 		p.append(_proj(q))
 	if p.size() >= 3:
-		ci.draw_colored_polygon(p, col)
+		_fill(ci, p, col)
 
 
 ## Shadow of a book-space grid on the plane z = `on_z` along SHADOW, clamped to x in [x0, x1].
@@ -693,7 +693,7 @@ func _block_sides(w: Node2D) -> void:
 		if (p[1] - p[0]).cross(p[3] - p[0]) > 0.0:
 			continue
 		var base := _lit(_bk(f[0]), 0.78)
-		w.draw_colored_polygon(p, Color(0.93 * base.r, 0.89 * base.g, 0.8 * base.b))
+		_fill(w, p, Color(0.93 * base.r, 0.89 * base.g, 0.8 * base.b))
 		for k in range(1, 9):  # the edges of the pages
 			var z := THICK * k / 9.0
 			var a := _projb(Vector3(f[0].x, f[0].y, z))
@@ -722,24 +722,24 @@ func _rod(w: Node2D, a: Vector3, b: Vector3, r: float, col: Color, kind: String)
 	var ra := r * FOCAL / maxf((a - _cam).dot(_cf), 1.0)
 	var rb := r * FOCAL / maxf((b - _cam).dot(_cf), 1.0)
 	var n := (pb - pa).orthogonal().normalized()
-	w.draw_colored_polygon(PackedVector2Array([sa + n * ra, sb + n * rb, sb - n * rb, sa - n * ra]), Color(0, 0, 0, 0.35))
+	_fill(w, PackedVector2Array([sa + n * ra, sb + n * rb, sb - n * rb, sa - n * ra]), Color(0, 0, 0, 0.35))
 	var lit := _lit(a)
 	var body := Color(col.r * lit.r, col.g * lit.g, col.b * lit.b)
 	var tip := pb + (pb - pa).normalized() * rb * (6.0 if kind == "pencil" else 9.0)
 	if kind == "pencil":
-		w.draw_colored_polygon(PackedVector2Array([pa + n * ra, pb + n * rb, pb - n * rb, pa - n * ra]), body)
+		_fill(w, PackedVector2Array([pa + n * ra, pb + n * rb, pb - n * rb, pa - n * ra]), body)
 		w.draw_line(pa, pb, body.lightened(0.3), maxf(ra * 0.5, 1.0))
 		var wood := Color(0.86, 0.68, 0.48) * lit
-		w.draw_colored_polygon(PackedVector2Array([pb + n * rb, tip, pb - n * rb]), Color(wood, 1.0))
-		w.draw_colored_polygon(PackedVector2Array([pb.lerp(tip, 0.65) + n * rb * 0.35, tip, pb.lerp(tip, 0.65) - n * rb * 0.35]), Color(0.2, 0.2, 0.22))
+		_fill(w, PackedVector2Array([pb + n * rb, tip, pb - n * rb]), Color(wood, 1.0))
+		_fill(w, PackedVector2Array([pb.lerp(tip, 0.65) + n * rb * 0.35, tip, pb.lerp(tip, 0.65) - n * rb * 0.35]), Color(0.2, 0.2, 0.22))
 		var back := pa - (pb - pa).normalized() * ra * 2.4
-		w.draw_colored_polygon(PackedVector2Array([pa + n * ra, pa - n * ra, back - n * ra, back + n * ra]), Color(0.72, 0.72, 0.76) * lit)
+		_fill(w, PackedVector2Array([pa + n * ra, pa - n * ra, back - n * ra, back + n * ra]), Color(0.72, 0.72, 0.76) * lit)
 		var end := back - (pb - pa).normalized() * ra * 2.2
-		w.draw_colored_polygon(PackedVector2Array([back + n * ra, back - n * ra, end - n * ra * 0.9, end + n * ra * 0.9]), Color(0.95, 0.5, 0.55) * lit)
+		_fill(w, PackedVector2Array([back + n * ra, back - n * ra, end - n * ra * 0.9, end + n * ra * 0.9]), Color(0.95, 0.5, 0.55) * lit)
 	else:
-		w.draw_colored_polygon(PackedVector2Array([pa + n * ra, pb + n * rb, pb - n * rb, pa - n * ra]), body)
+		_fill(w, PackedVector2Array([pa + n * ra, pb + n * rb, pb - n * rb, pa - n * ra]), body)
 		w.draw_line(pa + n * ra * 0.4, pb + n * rb * 0.4, Color(1, 1, 1, 0.25), 1.5)
-		w.draw_colored_polygon(PackedVector2Array([pb + n * rb, tip, pb - n * rb]), Color(0.8, 0.78, 0.72) * lit)  # steel nib
+		_fill(w, PackedVector2Array([pb + n * rb, tip, pb - n * rb]), Color(0.8, 0.78, 0.72) * lit)  # steel nib
 		w.draw_line(pb, tip, Color(0.15, 0.12, 0.2), 1.2)
 
 
@@ -760,10 +760,10 @@ func _eraser(w: Node2D, c: Vector3) -> void:
 			_proj(corner.call(sd[1][0], sd[1][1], 1)), _proj(corner.call(sd[0][0], sd[0][1], 1))])
 		if (p[1] - p[0]).cross(p[3] - p[0]) < 0.0:
 			var k := 0.62 if sd[0][1] == -1 else 0.78
-			w.draw_colored_polygon(p, Color(pink.r * lit.r * k, pink.g * lit.g * k, pink.b * lit.b * k))
+			_fill(w, p, Color(pink.r * lit.r * k, pink.g * lit.g * k, pink.b * lit.b * k))
 			w.draw_polyline(p + PackedVector2Array([p[0]]), Color(INK, 0.7), 1.5)
 	var top := PackedVector2Array([_proj(corner.call(-1, 1, 1)), _proj(corner.call(1, 1, 1)), _proj(corner.call(1, -1, 1)), _proj(corner.call(-1, -1, 1))])
-	w.draw_colored_polygon(top, Color(pink.r * lit.r, pink.g * lit.g, pink.b * lit.b))
+	_fill(w, top, Color(pink.r * lit.r, pink.g * lit.g, pink.b * lit.b))
 	w.draw_polyline(top + PackedVector2Array([top[0]]), Color(INK, 0.75), 1.5)
 	# a doodled angry face on top
 	var f := func(x: float, y: float) -> Vector2: return _proj(c + ex * x + ey * y + Vector3(0, 0, size.z + 0.2))
@@ -789,17 +789,17 @@ func _ink_bottle(w: Node2D, base: Vector3) -> void:
 	var rx: float = c[2]
 	var ry: float = c[3]
 	var lit := _pool(base)
-	w.draw_colored_polygon(_ellipse(b + Vector2(rx * 0.5, ry * 0.4), rx * 1.25, ry * 1.25), Color(0, 0, 0, 0.4))
+	_fill(w, _ellipse(b + Vector2(rx * 0.5, ry * 0.4), rx * 1.25, ry * 1.25), Color(0, 0, 0, 0.4))
 	var shoulder := t.lerp(b, 0.22)
 	var body := PackedVector2Array([b + Vector2(-rx, 0), shoulder + Vector2(-rx, 0), shoulder + Vector2(-rx * 0.5, -ry * 0.6),
 		t + Vector2(-rx * 0.42, 0), t + Vector2(rx * 0.42, 0), shoulder + Vector2(rx * 0.5, -ry * 0.6), shoulder + Vector2(rx, 0), b + Vector2(rx, 0)])
-	w.draw_colored_polygon(_ellipse(b, rx, ry), Color(0.04, 0.03, 0.08))
-	w.draw_colored_polygon(body, Color(0.05, 0.04, 0.12))
+	_fill(w, _ellipse(b, rx, ry), Color(0.04, 0.03, 0.08))
+	_fill(w, body, Color(0.05, 0.04, 0.12))
 	w.draw_line(b.lerp(t, 0.15) + Vector2(-rx * 0.6, 0), b.lerp(t, 0.7) + Vector2(-rx * 0.6, 0), Color(0.6, 0.65, 0.9, 0.35 * lit), maxf(rx * 0.12, 1.0))
 	var lab := Rect2(b.lerp(t, 0.42) - Vector2(rx * 0.75, rx * 0.35), Vector2(rx * 1.5, rx * 0.7))
 	w.draw_rect(lab, Color(0.93, 0.88, 0.76) * lit)
 	w.draw_string(FONT, lab.position + Vector2(lab.size.x * 0.18, lab.size.y * 0.8), "INK", HORIZONTAL_ALIGNMENT_LEFT, -1, int(maxf(rx * 0.55, 6)), INK)
-	w.draw_colored_polygon(_ellipse(t, rx * 0.42, ry * 0.42), Color(0.12, 0.1, 0.16))
+	_fill(w, _ellipse(t, rx * 0.42, ry * 0.42), Color(0.12, 0.1, 0.16))
 	w.draw_polyline(body + PackedVector2Array([body[0]]), Color(INK, 0.9), 1.5)
 
 
@@ -811,12 +811,12 @@ func _mug(w: Node2D, base: Vector3) -> void:
 	var ry: float = c[3]
 	var lit := _pool(base)
 	var col := Color(0.82, 0.3, 0.26) * lit
-	w.draw_colored_polygon(_ellipse(b + Vector2(rx * 0.4, ry * 0.4), rx * 1.2, ry * 1.2), Color(0, 0, 0, 0.4))
-	w.draw_colored_polygon(PackedVector2Array([b + Vector2(-rx, 0), t + Vector2(-rx, 0), t + Vector2(rx, 0), b + Vector2(rx, 0)]), Color(col, 1.0))
-	w.draw_colored_polygon(_ellipse(b, rx, ry), Color(col, 1.0))
+	_fill(w, _ellipse(b + Vector2(rx * 0.4, ry * 0.4), rx * 1.2, ry * 1.2), Color(0, 0, 0, 0.4))
+	_fill(w, PackedVector2Array([b + Vector2(-rx, 0), t + Vector2(-rx, 0), t + Vector2(rx, 0), b + Vector2(rx, 0)]), Color(col, 1.0))
+	_fill(w, _ellipse(b, rx, ry), Color(col, 1.0))
 	w.draw_arc(t.lerp(b, 0.45) + Vector2(rx, 0), rx * 0.45, -PI * 0.5, PI * 0.5, 12, Color(col, 1.0), maxf(rx * 0.16, 1.5))
-	w.draw_colored_polygon(_ellipse(t, rx, ry), Color(0.75, 0.25, 0.22) * lit)
-	w.draw_colored_polygon(_ellipse(t, rx * 0.86, ry * 0.86), Color(0.2, 0.11, 0.06))  # coffee
+	_fill(w, _ellipse(t, rx, ry), Color(0.75, 0.25, 0.22) * lit)
+	_fill(w, _ellipse(t, rx * 0.86, ry * 0.86), Color(0.2, 0.11, 0.06))  # coffee
 	for k in 3:  # steam
 		var x := t.x + (k - 1) * rx * 0.35
 		var pts := PackedVector2Array()
@@ -836,6 +836,15 @@ func _shavings(w: Node2D) -> void:
 		var a0 := rng.randf() * TAU
 		w.draw_arc(s, r, a0, a0 + 3.6, 10, Color(0.85, 0.66, 0.45) * _pool(p), maxf(r * 0.45, 1.0))
 		w.draw_arc(s, r * 1.1, a0, a0 + 3.6, 10, Color(0.95, 0.75, 0.2) * _pool(p), maxf(r * 0.12, 1.0))
+
+
+## Skips shapes seen edge-on (no area to triangulate: a book side, a shadow).
+func _fill(ci: CanvasItem, pts: PackedVector2Array, col: Color) -> void:
+	var area := 0.0
+	for i in pts.size():
+		area += pts[i].cross(pts[(i + 1) % pts.size()])
+	if absf(area) > 2.0:
+		ci.draw_colored_polygon(pts, col)
 
 
 func _ellipse(c: Vector2, rx: float, ry: float, n := 24) -> PackedVector2Array:
