@@ -3,6 +3,7 @@ extends CharacterBody2D
 ## Hollow Knight style movement and "nail" combat:
 ##  - snappy run, variable jump height, apex hang, fast-fall
 ##  - coyote time + jump buffering
+##  - double jump: one extra jump in the air, refilled on landing or a pogo
 ##  - dash with brief invincibility (vs enemies), resets on ground / pogo
 ##  - directional slashes (side / up / down-in-air)
 ##  - down-slash pogo off enemies and hazards, side-slash recoil
@@ -14,6 +15,7 @@ signal died
 signal coins_changed(total: int)
 
 const SlashEffect = preload("res://scripts/effects/slash_effect.gd")
+const JumpPuff = preload("res://scripts/effects/jump_puff.gd")
 const ComicText = preload("res://scripts/effects/comic_text.gd")
 const InkWave = preload("res://scripts/effects/ink_wave.gd")
 const DeathScreen = preload("res://scripts/ui/death_screen.gd")
@@ -42,6 +44,11 @@ const HAZARD_DAMAGE := 20.0
 @export var apex_gravity_mult := 0.55
 @export var coyote_time := 0.1
 @export var jump_buffer_time := 0.12
+## Extra jumps allowed in mid-air (1 = double jump, 0 = off). Refilled on
+## landing and by a pogo.
+@export var air_jumps := 1
+## Launch speed of an air jump: a little weaker than the ground jump.
+@export var air_jump_velocity := -700.0
 
 @export_group("Crouch Jump")
 ## Standing still, holding jump crouches and coils the legs; releasing
@@ -98,6 +105,7 @@ var dead := false
 
 var _coyote_timer := 0.0
 var _jump_buffer_timer := 0.0
+var _air_jumps_left := 0
 var _crouch := -1.0  # seconds spent crouching; -1 = not crouching
 var _dash_timer := 0.0
 var _dash_cooldown_timer := 0.0
@@ -242,6 +250,17 @@ func _handle_jump() -> void:
 		_jump_buffer_timer = 0.0
 		_coyote_timer = 0.0
 		_squash = Vector2(0.75, 1.25)
+	elif Input.is_action_just_pressed("jump") and not is_on_floor() and _air_jumps_left > 0:
+		# Double jump: only on the press itself, so a jump buffered just before
+		# landing still becomes a ground jump instead of spending this.
+		_air_jumps_left -= 1
+		velocity.y = air_jump_velocity * _slow_mult().y
+		is_jumping = true
+		_jump_buffer_timer = 0.0
+		_squash = Vector2(0.7, 1.3)
+		var puff := JumpPuff.new()
+		puff.position = global_position + Vector2(0, BODY_HALF_HEIGHT)
+		get_tree().current_scene.add_child(puff)
 	# Variable jump height: releasing jump while rising cuts the jump short.
 	if is_jumping and velocity.y < 0.0 and not Input.is_action_pressed("jump"):
 		velocity.y *= jump_cut_mult
@@ -337,6 +356,7 @@ func _post_move(delta: float) -> void:
 	if on_floor:
 		_coyote_timer = coyote_time
 		can_dash = true
+		_air_jumps_left = air_jumps
 		if velocity.y >= 0.0:
 			is_jumping = false
 		if not _was_on_floor:
@@ -456,6 +476,7 @@ func _on_attack_connect(target: Object) -> void:
 		velocity.y = pogo_velocity
 		is_jumping = false
 		can_dash = true
+		_air_jumps_left = air_jumps
 		_squash = Vector2(0.8, 1.2)
 	elif _attack_dir.y == 0.0 and not _attack_recoiled:
 		_attack_recoiled = true
