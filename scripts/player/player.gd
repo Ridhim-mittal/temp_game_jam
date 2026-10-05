@@ -17,6 +17,7 @@ const SlashEffect = preload("res://scripts/effects/slash_effect.gd")
 const ComicText = preload("res://scripts/effects/comic_text.gd")
 const InkWave = preload("res://scripts/effects/ink_wave.gd")
 const DeathScreen = preload("res://scripts/ui/death_screen.gd")
+const Tutorial = preload("res://scripts/ui/tutorial.gd")
 const Ember = preload("res://scripts/player/ember.gd")
 
 const MASK_ENEMY := 4   # physics layer 3
@@ -140,6 +141,7 @@ func _ready() -> void:
 	_last_safe_position = global_position
 	health_changed.emit(health, max_health)
 	coins_changed.emit(coins)
+	Tutorial.start(self, self, "2d")  # first run only
 
 
 func _physics_process(delta: float) -> void:

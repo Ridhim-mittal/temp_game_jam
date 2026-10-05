@@ -60,6 +60,11 @@ func caption(text: String, who := "writer") -> void:
 	_queue.append([text, who])
 
 
+## True while a title card or caption is on screen (or queued).
+func busy() -> bool:
+	return _title_t >= 0.0 or _text != "" or not _queue.is_empty()
+
+
 func _process(delta: float) -> void:
 	_time += delta
 	if _title_t >= 0.0:
@@ -74,13 +79,11 @@ func _process(delta: float) -> void:
 		_hold = 2.2 + _text.length() * 0.035
 	if _text != "":
 		_shown += delta * 40.0
-		_alpha = move_toward(_alpha, 1.0, delta * 5.0)
 		if _shown >= _text.length():
 			_hold -= delta
-			if _hold <= 0.0:
-				_alpha = move_toward(_alpha, 0.0, delta * 5.0)
-				if _alpha <= 0.0:
-					_text = ""
+		_alpha = move_toward(_alpha, 1.0 if _hold > 0.0 else 0.0, delta * 5.0)
+		if _hold <= 0.0 and _alpha <= 0.0:
+			_text = ""
 	queue_redraw()
 
 

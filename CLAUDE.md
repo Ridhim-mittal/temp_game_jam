@@ -44,6 +44,8 @@ Autoloads `Profile` (Lumens, Ink Points, skills, owned/equipped items; user://pr
 `Settings` (options; user://settings.cfg). Catalog of skills and shop items:
 `scripts/core/catalog.gd`. clearing_player.gd `_apply_loadout()` turns them into stats from the
 exported base values; room.gd opens overlays (pause, skills, shop, settings) and pauses the tree.
+First-run controls tutorial: `scripts/ui/tutorial.gd` (started by player.gd and room.gd; steps
+are remembered in Profile, Esc skips, Settings -> Tutorials replays them).
 
 ## Conventions
 - Match surrounding code: tabs, `##` doc comments on scripts/exports, typed GDScript.
