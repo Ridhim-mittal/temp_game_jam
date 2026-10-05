@@ -177,7 +177,9 @@ exported base values; room.gd opens overlays (pause, skills, settings) and pause
 The Gutter has no shop or coins: Patch (`patch_npc.gd`) is a guide who talks on E; `shop.gd`,
 `lumen.gd` and the Lumen counter are unhooked. The skill tree opens at the hub shrine and from
 pause.
-Controls tutorial: `scripts/ui/tutorial.gd`, 2D only (player.gd starts it; main menu PLAY forgets the
+Controls tutorial: `scripts/ui/tutorial.gd`, 2D only, and only where a level asks for it (player.gd
+`tutorial_steps`, set by build_test_level.py: the City move/jump/attack/dash/inkwave, the Sketchbook
+ember at its first sketch; other levels none). Main menu PLAY forgets the
 "2d." steps so every new run teaches the controls again; 2.5D rooms start none, the keys are the
 same, but Pause -> Controls still replays the 2.5D one on request). The 2D
 ink wave (hold attack) is taught the first time a Scribble is near, in the City's plank section; steps
@@ -200,9 +202,9 @@ open / close, pause). In `@tool` scripts call it through `get_node("/root/Sfx")`
 - Physics layers: 1 world, 2 player, 3 enemy (mask value 4), 4 hazard, 5 sketch / shadow ink
   (value 16; light rays ignore it, the player and monsters stand on it).
 - Pause screen (`scripts/ui/pause_menu.gd`), the same in 2D and 2.5D, on the `pause` action (Esc /
-  Start): player.gd `PauseMenu.open_2d()` in 2D, room.gd `open_overlay("pause")` in 2.5D (adds SKILL
-  TREE). Resume, Retry (reload the scene), Controls, Settings / Skill Tree (open on top, come back to
-  it), Main Menu. mood.gd's Esc-to-menu now only fires in scenes that don't pause.
+  Start): player.gd `PauseMenu.open_2d()` in 2D, room.gd `open_overlay("pause")` in 2.5D. Only Resume,
+  Retry (reload the scene), Settings (opens on top, comes back to it) and Main Menu; nothing else is
+  drawn over it. mood.gd's Esc-to-menu now only fires in scenes that don't pause.
 - Input actions come from `scripts/core/input_setup.gd` (move_*, up/down, jump, attack, dash).
   Same keys in both modes: A/D move (W/S too in 2.5D), Space jump, left click attack (hold = ink
   wave in 2D), right click the light (2D `ember`, 2.5D `flash`), Shift dash. Key names shown on

@@ -56,6 +56,9 @@ const HAZARD_DAMAGE := 20.0
 @export var jump_cut_mult := 0.4
 @export var apex_hang_threshold := 80.0
 @export var apex_gravity_mult := 0.55
+## Controls tutorial steps this level teaches (tutorial.gd ids, e.g. "move",
+## "ember"); empty = none. Set per level by tools/level2d/build_test_level.py.
+@export var tutorial_steps := PackedStringArray()
 @export var coyote_time := 0.1
 @export var jump_buffer_time := 0.12
 ## Extra jumps allowed in mid-air (1 = double jump, 0 = off). Refilled on
@@ -207,8 +210,10 @@ func _ready() -> void:
 	add_child(_wall_fx)
 	health_changed.emit(health, max_health)
 	coins_changed.emit(coins)
-	# first run only; waits while the Writer's narration (narration.gd) is writing
-	Tutorial.start(self, self, "2d", get_tree().get_first_node_in_group("narration"))
+	# only the steps this level teaches (none in later levels); waits while the
+	# Writer's narration (narration.gd) is writing
+	if not tutorial_steps.is_empty():
+		Tutorial.start(self, self, "2d", get_tree().get_first_node_in_group("narration"), tutorial_steps)
 
 
 ## Esc / Start: the pause screen (the same one as in 2.5D rooms).

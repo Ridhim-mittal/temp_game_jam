@@ -192,7 +192,7 @@ def rects(rs):
     return "Array[Rect2]([" + ", ".join(f"Rect2({x0:g}, {y0:g}, {x1 - x0:g}, {y1 - y0:g})" for x0, y0, x1, y1 in rs) + "])"
 
 
-def write(path, root, player_pos, page=1, story=(), live=()):
+def write(path, root, player_pos, page=1, story=(), live=(), tutorial=()):
     """story: the Writer's captions, [(text, trigger_x)] in order (-1e9 = on arrival)."""
     out = ["[gd_scene format=3]", ""] + ext + ["", f'[node name="{root}" type="Node2D"]', "",
            '[node name="ComicBackground" parent="." instance=ExtResource("6_background")]', "",
@@ -204,7 +204,8 @@ def write(path, root, player_pos, page=1, story=(), live=()):
         out += [f'[node name="Coin{i}" type="Area2D" parent="Coins"]', f"position = {v(round(x), round(y))}",
                 'script = ExtResource("9_coin")', ""]
     out += ['[node name="Enemies" type="Node2D" parent="."]', "", "\n\n".join(enemies), "",
-            '[node name="Player" parent="." instance=ExtResource("1_player")]', f"position = {v(*player_pos)}", "",
+            '[node name="Player" parent="." instance=ExtResource("1_player")]', f"position = {v(*player_pos)}"] + \
+           ([f'tutorial_steps = PackedStringArray({", ".join(chr(34) + t + chr(34) for t in tutorial)})'] if tutorial else []) + ["",
             '[node name="UI" type="CanvasLayer" parent="."]', "layer = 2", "",
             '[node name="HUD" type="Control" parent="UI"]', "layout_mode = 3", "anchors_preset = 15",
             "anchor_right = 1.0", "anchor_bottom = 1.0", "grow_horizontal = 2", "grow_vertical = 2",
@@ -264,7 +265,8 @@ write("scenes/levels/test_level.tscn", "TestLevel", (100, 570), page=1, story=[
     ("THESE MONSTERS HAD INFESTED EVERY STREET OF THE CITY. ONE SWING OF THE SWORD SENT THEM SCATTERING.", 1350),
     ("THE CITY WAS COMING APART, ONE PANEL AT A TIME. WHERE THE STREET BROKE, VESPER LEAPT.", 2250),
     ("AND AT THE EDGE OF THE PAGE, A DOOR OF LIGHT WAS WAITING.", 3150),
-], live=[(-240, -1200, 3780, 660), (2380, 590, 2680, 812)])
+], live=[(-240, -1200, 3780, 660), (2380, 590, 2680, 812)],
+   tutorial=("move", "jump", "attack", "dash", "inkwave"))  # the controls, and the ink wave at the Scribble
 
 # ======================================================== THE SKETCHBOOK (light tutorial)
 # Pencil sketches are only solid in light (scripts/world/lights.gd). Each beat
@@ -322,4 +324,5 @@ write("scenes/levels/sketchbook.tscn", "Sketchbook", (8100, 570), page=2, story=
     ("SOME BRIDGES WERE TOO LONG FOR ONE BREATH OF LIGHT. SO VESPER STOPPED, AND LET THE INK SET.", 9100),
     ("THE OLD LANTERNS STILL REMEMBERED HOW TO SHINE. BUT LIGHT CASTS SHADOWS.", 10840),
     ("AND BELOW THE LAST PAGE OF THE SKETCHBOOK, THE WORLD DROPPED AWAY INTO THE DARK...", 11940),
-], live=[(7820, -1200, 12620, 660), (8420, 590, 8940, 812), (9260, 590, 10700, 812), (10940, 590, 11480, 812)])
+], live=[(7820, -1200, 12620, 660), (8420, 590, 8940, 812), (9260, 590, 10700, 812), (10940, 590, 11480, 812)],
+   tutorial=("ember",))  # the light, at the first lantern
