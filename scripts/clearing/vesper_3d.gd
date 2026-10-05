@@ -38,6 +38,9 @@ const EMBER := Color(1.0, 0.62, 0.3)
 @export var grip_color := Color(1.0, 0.58, 0.14)
 ## Length of the nib blade, in world units.
 @export var blade_length := 0.62
+## Thin cold rim light round his silhouette (toon.gdshader), so the dark
+## cloak still reads in the Gutter's dark.
+@export var rim_light := 0.45
 ## Overall size (1 = about 1.5 units tall).
 @export var model_scale := 1.15
 
@@ -121,6 +124,7 @@ func snap() -> void:
 
 func _mat(color: Color, opts := {}) -> ShaderMaterial:
 	var m: ShaderMaterial = Toon.material(color, opts).duplicate()
+	m.set_shader_parameter("rim_strength", rim_light)
 	_mats.append(m)
 	_mat_glow.append(opts.get("emission", 0.0))
 	return m

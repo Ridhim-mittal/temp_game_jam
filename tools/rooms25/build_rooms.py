@@ -5,22 +5,31 @@ monsters, props and the Writer's captions. Rooms are deterministic (seeded),
 so re-running gives the same layout. Re-running overwrites hand edits."""
 import sys, math
 sys.path.insert(0, __file__.rsplit("/", 1)[0])
-from rooms import Room, forest_ring, KIND, rect_polygon
+from rooms import Room, forest_ring, edge_fence, KIND, rect_polygon
 
 R = "res://scenes/world25/rooms/"
 HUB = "res://scenes/clearing/clearing.tscn"
 
 
-def darkwood_dressing(r, graves=3, stumps=2, rocks=2, pools=1):
+# Lantern flames: cold, pale light only (Vesper's Ember is the only warm one).
+INKWOOD = dict(flame_color="Color(0.42, 0.66, 0.62, 1)", core_color="Color(0.85, 1, 0.96, 1)")
+BONE = dict(flame_color="Color(0.8, 0.8, 0.74, 1)", core_color="Color(1, 1, 0.97, 1)")
+
+
+def darkwood_dressing(r, graves=3, stumps=2, rocks=2, pools=1, clusters=1, trees=1, lamps=1):
     r.clear_path_to_gates()
+    edge_fence(r)
+    r.scatter("GRAVE_CLUSTER", clusters, count=4, radius=1.3, solid=True)
     r.scatter("TOMBSTONE", graves, solid=True)
     r.scatter("STUMP", stumps, solid=True)
+    r.scatter("DEAD_TREE", trees, clearance=2.0, size=1.3, solid=True)
+    r.scatter("DEAD_LAMPPOST", lamps, solid=True)
     r.scatter("INK_POOL", pools, radius=1.4)
     for i in range(rocks):
         spot = r.free_spot()
         if spot:
             r.prop("scatter", spot[0], spot[1], name=f"Rocks{i + 1}", kind=2, count=3, radius=0.9, size=1.2,
-                   color="Color(0.6, 0.58, 0.56, 1)", seed=r.rng.randint(1, 99), solid=True)
+                   color="Color(0.27, 0.28, 0.3, 1)", seed=r.rng.randint(1, 99), solid=True)
 
 
 # ------------------------------------------------------------ Darkwood 1
@@ -33,8 +42,8 @@ r.enemy("scribble", 2, -4)
 r.enemy("scribble", 5, 3)
 r.enemy("crumple", -8, 4)
 darkwood_dressing(r)
-r.prop("brazier", -9.5, -6, name="Lantern1", flame_color="Color(1, 0.25, 0.15, 1)")
-r.prop("brazier", 9.5, 6, name="Lantern2", flame_color="Color(1, 0.25, 0.15, 1)")
+r.prop("brazier", -9.5, -6, name="Lantern1", **INKWOOD)
+r.prop("brazier", 9.5, 6, name="Lantern2", **INKWOOD)
 forest_ring(r)
 r.write("Darkwood Margins", "1 / 3",
         "These woods weren't in any draft I kept.|The way on is always on the far side. Clear a path.",
@@ -52,8 +61,8 @@ r.enemy("scribble", -7, 3)
 darkwood_dressing(r, graves=4)
 r.prop("altar", 0, -5.5, name="Altar")
 r.clear_zones.append((0, -5.5, 2.5))
-r.prop("brazier", -3.5, -6.5, name="Lantern1", flame_color="Color(1, 0.25, 0.15, 1)")
-r.prop("brazier", 3.5, -6.5, name="Lantern2", flame_color="Color(1, 0.25, 0.15, 1)")
+r.prop("brazier", -3.5, -6.5, name="Lantern1", **INKWOOD)
+r.prop("brazier", 3.5, -6.5, name="Lantern2", **INKWOOD)
 forest_ring(r)
 r.write("Darkwood Margins", "2 / 3",
         "Rolling pages. I crumpled those myself, one bad night after another.|They're armoured while they're balled up. Make them hit something, or lead them into the light.",
@@ -77,8 +86,9 @@ r.prop("bprops", 6, -7, name="Stump1", kind=KIND["STUMP"], solid=True)
 r.prop("bprops", -10, -5.5, name="Pillar2", kind=KIND["PILLAR"], seed=3, solid=True)
 r.prop("bprops", -11, 5, name="Pool2", kind=KIND["INK_POOL"], radius=1.3, seed=5)
 r.prop("bprops", -5, -6.5, name="Pillar1", kind=KIND["PILLAR"], seed=8, solid=True)
+r.prop("bprops", -9, 1.5, name="Ruin1", kind=KIND["RUIN_WALL"], rot=20, seed=12, solid=True)
 r.prop("bprops", -8, 1.5, name="Pool1", kind=KIND["INK_POOL"], radius=1.6, seed=2)
-r.prop("brazier", 2, 6.8, name="Lantern1", flame_color="Color(1, 0.25, 0.15, 1)")
+r.prop("brazier", 2, 6.8, name="Lantern1", **INKWOOD)
 r.prop("brazier", -3, -7, name="SpiritFlame", flame_color="Color(0.25, 0.55, 1, 1)", core_color="Color(0.75, 0.92, 1, 1)")
 # surroundings: pines in the east, drowned pillars rising from the deep in the west
 for i, (x, z) in enumerate([(12, -12), (17.5, -5), (17.5, 3), (6, -13)]):
@@ -91,11 +101,13 @@ r.write("Where the Ink Pools", "Darkwood, 3 / 3",
         "...You're getting good at this. Too good.")
 
 
-def shallows_dressing(r, pillars=2, pools=2, mounds=2):
+def shallows_dressing(r, pillars=2, pools=3, walls=1, lamps=1, drifts=1):
     r.clear_path_to_gates()
+    r.scatter("RUIN_WALL", walls, clearance=2.6, radius=2.4, solid=True)
     r.scatter("PILLAR", pillars, solid=True)
-    r.scatter("INK_POOL", pools, radius=1.5)
-    r.scatter("PAPER_MOUND", mounds, count=4, radius=1.1, solid=True)
+    r.scatter("DEAD_LAMPPOST", lamps, solid=True)
+    r.scatter("INK_POOL", pools, radius=1.7)
+    r.scatter("PAGE_DRIFT", drifts, count=5, radius=1.4)
 
 
 def shallows_ring(r):
@@ -104,8 +116,9 @@ def shallows_ring(r):
         x, z = math.cos(a) * (r.hw + 4), math.sin(a) * (r.hd + 4)
         if any(math.dist((x, z), r.gate_pos(s)) < 5.5 for s in r.gates):
             continue
-        r.nodes.append(("Deep", f"Deep{i + 1}", "bprops", (x, -6, z), 0,
-                        {"kind": KIND["PILLAR"], "size": 2.4, "seed": r.rng.randint(1, 99)}))
+        k = "PILLAR" if i % 2 == 0 else "DEAD_TREE"
+        r.nodes.append(("Deep", f"Deep{i + 1}", "bprops", (x, -6 if k == "PILLAR" else -4.5, z), r.rng.uniform(0, 360),
+                        {"kind": KIND[k], "size": 2.4, "seed": r.rng.randint(1, 99)}))
     for i, sx in enumerate((-1, 1)):
         r.nodes.append(("Deep", f"RuinPillar{i + 1}", "bprops", (sx * (r.hw + 3), -6, -r.hd - 1.5), 0,
                         {"kind": KIND["PILLAR"], "size": 2.4, "seed": 40 + i}))
@@ -145,7 +158,7 @@ r.enemy("crossed_out", 4, 1)
 r.enemy("inkwell", 9, -6.5)
 r.enemy("smudge", -8, 5)
 r.enemy("smudge", 7, 6)
-shallows_dressing(r, pillars=0, pools=1, mounds=3)
+shallows_dressing(r, pillars=0, pools=2, walls=1, drifts=2)
 r.prop("brazier", -9.5, -7, name="Spirit1", **SPIRIT)
 r.prop("brazier", 9.5, 7, name="Spirit2", **SPIRIT)
 shallows_ring(r)
@@ -177,11 +190,15 @@ r.write("The Red Pen", "Inkwell Shallows",
 
 
 def wastes_dressing(r, crystals=3, mounds=3, pins=2, totems=2, pots=2):
+    """The Torn Wastes: drifts of torn pages, pins, chains with pages hung
+    on them. (`crystals` places page drifts, `totems` chains and walls.)"""
     r.clear_path_to_gates()
-    r.scatter("CRYSTAL", crystals, count=4, radius=1.2, solid=True)
+    r.scatter("PAGE_DRIFT", crystals, count=6, radius=1.5)
     r.scatter("PAPER_MOUND", mounds, count=5, radius=1.3, solid=True)
     r.scatter("PINS", pins, count=6, radius=1.2)
-    r.scatter("PENCIL_TOTEM", totems, solid=True)
+    r.scatter("HANGING_CHAINS", max(totems - 1, 1), clearance=2.2, count=4, radius=1.8, solid=True)
+    r.scatter("RUIN_WALL", 1, clearance=2.6, radius=2.4, solid=True)
+    r.scatter("DEAD_LAMPPOST", 1, solid=True)
     r.scatter("INK_POT", pots, count=3, radius=0.9, solid=True)
 
 
@@ -191,14 +208,14 @@ def wastes_ring(r):
         x, z = math.cos(a) * (r.hw + 4.5), math.sin(a) * (r.hd + 4.5)
         if any(math.dist((x, z), r.gate_pos(s)) < 5.5 for s in r.gates):
             continue
-        k = ["CRYSTAL", "PAPER_MOUND", "PENCIL_TOTEM"][i % 3]
-        y = {"CRYSTAL": -5.0, "PAPER_MOUND": -3.5, "PENCIL_TOTEM": -6.0}[k]
+        k = ["DEAD_TREE", "PAPER_MOUND", "PENCIL_TOTEM"][i % 3]
+        y = {"DEAD_TREE": -4.5, "PAPER_MOUND": -3.5, "PENCIL_TOTEM": -6.0}[k]
         r.nodes.append(("Deep", f"Deep{i + 1}", "bprops", (x, y, z), 0,
                         {"kind": KIND[k], "size": 2.6, "count": 6, "radius": 1.6, "seed": r.rng.randint(1, 99)}))
-    r.nodes.append(("Deep", "Eyes1", "eyes", (r.rng.uniform(-r.hw, r.hw), -4, r.hd + 3), 0, {"color": "Color(1, 0.6, 0.85, 1)"}))
+    r.nodes.append(("Deep", "Eyes1", "eyes", (r.rng.uniform(-r.hw, r.hw), -4, r.hd + 3), 0, {"color": "Color(0.85, 0.82, 0.74, 1)"}))
 
 
-EMBER = dict(flame_color="Color(1, 0.3, 0.45, 1)", core_color="Color(1, 0.8, 0.85, 1)")
+EMBER = dict(flame_color="Color(0.72, 0.68, 0.58, 1)", core_color="Color(1, 0.97, 0.9, 1)")  # pale parchment
 
 # ------------------------------------------------------------ Wastes 1
 r = Room("wastes_1", "wastes", (-7, -2), 13.5, 9.5, seed=71)
@@ -270,6 +287,7 @@ r.prop("bprops", -1, 0, name="Circle", kind=KIND["RITUAL_CIRCLE"], radius=4.5, c
 r.prop("bprops", -6, -5, name="Pins1", kind=KIND["PINS"], count=7, radius=1.2, seed=91)
 r.prop("bprops", -6, 5, name="Pins2", kind=KIND["PINS"], count=7, radius=1.2, seed=92)
 r.prop("bprops", 5, -6, name="Mound1", kind=KIND["PAPER_MOUND"], count=5, radius=1.2, seed=93, solid=True)
+r.prop("bprops", -3.5, -8.6, name="Chains1", kind=KIND["HANGING_CHAINS"], count=4, seed=94, solid=True)
 r.prop("brazier", 9.5, -4, name="Ember1", **EMBER)
 r.prop("brazier", 9.5, 4, name="Ember2", **EMBER)
 wastes_ring(r)
@@ -321,8 +339,8 @@ r.gate("east", R + "darkwood_2.tscn", "west", offset=1)
 r.gate("west", R + "darkwood_3.tscn", "east", offset=1)
 r.add_bridge()
 r.clear_path_to_gates()
-r.prop("brazier", 5.3, 2.2, name="LanternEast", lit=False, light_radius=4.2, flame_color="Color(1, 0.55, 0.2, 1)")
-r.prop("brazier", -5.3, -2.2, name="LanternWest", lit=False, light_radius=4.2, flame_color="Color(1, 0.55, 0.2, 1)")
+r.prop("brazier", 5.3, 2.2, name="LanternEast", lit=False, light_radius=4.2, **BONE)
+r.prop("brazier", -5.3, -2.2, name="LanternWest", lit=False, light_radius=4.2, **BONE)
 r.clear_zones += [(5.3, 2.2, 1.2), (-5.3, -2.2, 1.2)]
 r.enemy("scribble", 9, -4)
 r.enemy("scribble", 10, 4)
@@ -377,11 +395,11 @@ r.enemy("crossed_out", 10, 4)
 r.enemy("inkwell", -11, -5)
 r.enemy("inkwell", -11, 5)
 r.enemy("scribble_diver", 0, 4)
-r.scatter("CRYSTAL", 3, count=4, radius=1.1, solid=True)
+r.scatter("PAGE_DRIFT", 3, count=5, radius=1.3)
 r.scatter("PINS", 2, count=6, radius=1.1)
 r.scatter("PAPER_MOUND", 2, count=4, radius=1.2, solid=True)
 wastes_ring(r)
-chasm_depths(r, [(("bprops", {"kind": KIND["CRYSTAL"], "size": 3.0, "count": 5, "radius": 1.6, "seed": 7}), 0, 7),
+chasm_depths(r, [(("bprops", {"kind": KIND["DEAD_TREE"], "size": 3.0, "seed": 7}), 0, 7),
                  (("bprops", {"kind": KIND["PENCIL_TOTEM"], "size": 3.0, "seed": 8}), 1, -7)], y=-8)
 r.write("The Torn Page", "Crumple Wastes",
         "~My lamp makes that bridge real too. Funny, isn't it?|~The only way across is my light... and my light hurts you.",

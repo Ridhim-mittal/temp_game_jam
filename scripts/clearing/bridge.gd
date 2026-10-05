@@ -13,7 +13,7 @@ const Toon = preload("res://scripts/clearing/toon.gd")
 	set(v):
 		width = v
 		_rebuild()
-@export var stone := Color(0.6, 0.57, 0.6):
+@export var stone := Color(0.29, 0.29, 0.32):
 	set(v):
 		stone = v
 		_rebuild()

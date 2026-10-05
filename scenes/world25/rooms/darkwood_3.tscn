@@ -109,6 +109,13 @@ kind = 6
 seed = 8
 solid = true
 
+[node name="Ruin1" type="Node3D" parent="Props"]
+transform = Transform3D(0.9397, 0, 0.3420, 0, 1, 0, -0.3420, 0, 0.9397, -9.00, 0.00, 1.50)
+script = ExtResource("bprops")
+kind = 20
+seed = 12
+solid = true
+
 [node name="Pool1" type="Node3D" parent="Props"]
 transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -8.00, 0.00, 1.50)
 script = ExtResource("bprops")
@@ -119,7 +126,8 @@ seed = 2
 [node name="Lantern1" type="Node3D" parent="Props"]
 transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 2.00, 0.00, 6.80)
 script = ExtResource("brazier")
-flame_color = Color(1, 0.25, 0.15, 1)
+flame_color = Color(0.42, 0.66, 0.62, 1)
+core_color = Color(0.85, 1, 0.96, 1)
 
 [node name="SpiritFlame" type="Node3D" parent="Props"]
 transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -3.00, 0.00, -7.00)

@@ -41,7 +41,7 @@ boss_name = "THE RED PEN"
 
 [node name="Island" type="Node3D" parent="."]
 script = ExtResource("island")
-polygon = PackedVector2Array(-10.50, -9.50, -7.00, -9.15, -3.50, -8.92, 0.00, -9.35, 3.50, -9.60, 7.00, -9.17, 13.00, -7.00, 13.00, -2.80, 13.00, 0.80, 12.93, 3.50, 10.50, 9.50, 7.00, 9.98, 3.50, 9.04, 0.00, 9.23, -3.50, 9.48, -7.00, 9.62, -13.00, 7.00, -13.03, 3.50, -13.00, 0.80, -13.00, -2.80)
+polygon = PackedVector2Array(-10.50, -9.50, -7.00, -9.35, -3.50, -9.79, 0.00, -9.76, 3.50, -9.74, 7.00, -9.28, 13.00, -7.00, 13.00, -2.80, 13.00, 0.80, 13.54, 3.50, 10.50, 9.50, 7.00, 9.85, 3.50, 9.87, 0.00, 9.65, -3.50, 9.11, -7.00, 10.04, -13.00, 7.00, -13.11, 3.50, -13.00, 0.80, -13.00, -2.80)
 open_edges = PackedInt32Array(7, 18)
 
 [node name="GateEast" type="Node3D" parent="."]
@@ -136,39 +136,39 @@ seed = 516
 [node name="Deep" type="Node3D" parent="."]
 
 [node name="Deep1" type="Node3D" parent="Deep"]
-transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 16.24, -6.00, 3.99)
-script = ExtResource("bprops")
-kind = 6
-size = 2.4
-seed = 83
-
-[node name="Deep2" type="Node3D" parent="Deep"]
-transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 3.77, -6.00, 13.16)
-script = ExtResource("bprops")
-kind = 6
-size = 2.4
-seed = 8
-
-[node name="Deep3" type="Node3D" parent="Deep"]
-transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -12.47, -6.00, 9.17)
+transform = Transform3D(-0.5974, 0, -0.8020, 0, 1, 0, 0.8020, 0, -0.5974, 16.24, -6.00, 3.99)
 script = ExtResource("bprops")
 kind = 6
 size = 2.4
 seed = 1
 
-[node name="Deep5" type="Node3D" parent="Deep"]
-transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -3.77, -6.00, -13.16)
+[node name="Deep2" type="Node3D" parent="Deep"]
+transform = Transform3D(-0.9930, 0, -0.1181, 0, 1, 0, 0.1181, 0, -0.9930, 3.77, -4.50, 13.16)
+script = ExtResource("bprops")
+kind = 18
+size = 2.4
+seed = 34
+
+[node name="Deep3" type="Node3D" parent="Deep"]
+transform = Transform3D(-0.9269, 0, 0.3752, 0, 1, 0, -0.3752, 0, -0.9269, -12.47, -6.00, 9.17)
 script = ExtResource("bprops")
 kind = 6
 size = 2.4
-seed = 67
+seed = 30
+
+[node name="Deep5" type="Node3D" parent="Deep"]
+transform = Transform3D(0.9923, 0, 0.1239, 0, 1, 0, -0.1239, 0, 0.9923, -3.77, -6.00, -13.16)
+script = ExtResource("bprops")
+kind = 6
+size = 2.4
+seed = 49
 
 [node name="Deep6" type="Node3D" parent="Deep"]
-transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 12.47, -6.00, -9.17)
+transform = Transform3D(-0.4782, 0, -0.8782, 0, 1, 0, 0.8782, 0, -0.4782, 12.47, -4.50, -9.17)
 script = ExtResource("bprops")
-kind = 6
+kind = 18
 size = 2.4
-seed = 47
+seed = 29
 
 [node name="RuinPillar1" type="Node3D" parent="Deep"]
 transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -16.00, -6.00, -11.00)
@@ -185,7 +185,7 @@ size = 2.4
 seed = 41
 
 [node name="Eyes1" type="Node3D" parent="Deep"]
-transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -6.12, -4.00, 12.50)
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -7.77, -4.00, 12.50)
 script = ExtResource("eyes")
 color = Color(0.4, 1, 0.85, 1)
 
