@@ -11,7 +11,6 @@ func _enter_tree() -> void:
 	_add_keys("attack", [KEY_X])  # keyboard fallback (trackpads)
 	_add_mouse_button("attack", MOUSE_BUTTON_LEFT)
 	_add_keys("dash", [KEY_SHIFT, KEY_C])  # C: keyboard fallback
-	_add_keys("restart", [KEY_R])
 	_add_keys("pause", [KEY_ESCAPE])  # the pause screen (pause_menu.gd), 2D and 2.5D
 	# The light is right click in both modes: hold it to raise the Ember.
 	# 2.5D ("flash", clearing_player.gd); Shift dashes in both modes.

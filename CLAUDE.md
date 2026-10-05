@@ -198,7 +198,8 @@ edits). Monsters stay dead in story rooms (room.gd sets `respawn_time = 0`).
 Autoloads `Profile` (the coin purse `lumens`, owned / equipped items, weapon `upgrades`;
 user://profile.cfg) and `Settings` (options; user://settings.cfg). The purse is filled by the Lumen
 coins picked up in the 2D levels (player.gd `add_coins()`; GameState.coins counts the run) and the
-Margins' coins: monsters drop small dark-silver coins in a tight cluster (`scripts/world25/lumen.gd`
+Margins' coins (a new run, PLAY or a chapter on the main menu, empties the purse: `Profile.new_run()`,
+as GameState.reset() puts the levels' coins back; bought items stay): monsters drop small dark-silver coins in a tight cluster (`scripts/world25/lumen.gd`
 `Lumen.spill()` from monster_3d.gd / scribble.gd `_die()`, `lumens` per monster by difficulty:
 Scribble / diver 1, Smudge 2, Crumple / Inkwell / Crossed-Out 3, Half-Drawn 4, Red Pen 30, Eraser
 45; none when it fell into the void); they glint through the darkness and fly to Vesper within
@@ -235,7 +236,8 @@ ember at its first sketch; other levels none). Main menu PLAY forgets the
 same, but Pause -> Controls still replays the 2.5D one on request). The 2D
 ink wave (hold attack) is taught the first time a Scribble is near, in the City's plank section; steps
 are remembered in Profile; Enter / controller Back skips; shows controller buttons when one is used;
-PLAY replays them; the Settings menu no longer has Tutorials, Difficulty, Scribbles or Aim assist:
+PLAY replays them; in 2D the key shows low, under Vesper's feet (`center_y`), so it never covers
+monsters or captions; the Settings menu no longer has Tutorials, Difficulty, Scribbles or Aim assist:
 those stay at their defaults, settings.gd FIXED).
 
 ## Conventions
