@@ -22,6 +22,7 @@ var _target: Node2D
 
 
 func _ready() -> void:
+	add_to_group("boss")
 	setup(Vector2(60, 68), hp)
 	knockback_speed = 90.0
 

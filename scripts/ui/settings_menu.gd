@@ -43,7 +43,11 @@ var _confirm_reset := false
 var _tutorials_reset := false
 
 
+var _sfx_row := 0
+
+
 func _ready() -> void:
+	Sfx.play("menu_open")
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
@@ -51,6 +55,9 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_time += delta
+	if _row != _sfx_row:
+		_sfx_row = _row
+		Sfx.play("menu_hover")
 	queue_redraw()
 
 
@@ -86,6 +93,7 @@ func _gui_input(event: InputEvent) -> void:
 
 
 func _change(step: int) -> void:
+	Sfx.play("menu_select")
 	var key: String = ROWS[_row][1]
 	if key == "":
 		_back()
@@ -109,6 +117,7 @@ func _change(step: int) -> void:
 
 
 func _back() -> void:
+	Sfx.play("menu_close")
 	if overlay:
 		closed.emit()
 		queue_free()

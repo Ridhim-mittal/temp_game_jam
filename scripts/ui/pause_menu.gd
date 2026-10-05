@@ -21,7 +21,11 @@ var _rects: Array[Rect2] = []
 var _time := 0.0
 
 
+var _sfx_row := 0
+
+
 func _ready() -> void:
+	Sfx.play("pause")
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
@@ -29,6 +33,9 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_time += delta
+	if _row != _sfx_row:
+		_sfx_row = _row
+		Sfx.play("menu_hover")
 	queue_redraw()
 
 
@@ -38,12 +45,14 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		match event.physical_keycode:
 			KEY_ESCAPE:
+				Sfx.play("menu_close")
 				chosen.emit("resume")
 			KEY_W, KEY_UP:
 				_row = (_row - 1 + ITEMS.size()) % ITEMS.size()
 			KEY_S, KEY_DOWN:
 				_row = (_row + 1) % ITEMS.size()
 			KEY_ENTER, KEY_SPACE, KEY_E:
+				Sfx.play("menu_select")
 				chosen.emit(ITEMS[_row][1])
 		get_viewport().set_input_as_handled()
 
@@ -53,6 +62,7 @@ func _gui_input(event: InputEvent) -> void:
 		if _rects[i].has_point(event.position if "position" in event else Vector2(-1, -1)):
 			_row = i
 			if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+				Sfx.play("menu_select")
 				chosen.emit(ITEMS[i][1])
 
 

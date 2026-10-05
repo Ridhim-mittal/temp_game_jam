@@ -38,6 +38,7 @@ func _physics_process(delta: float) -> void:
 	var q := PhysicsRayQueryParameters2D.create(global_position, global_position + motion + motion.normalized() * 10.0, 1 | 16)
 	var hit := get_world_2d().direct_space_state.intersect_ray(q)
 	if not hit.is_empty():
+		Sfx.play("ink_splat", -6.0, 1.2)
 		if hit.normal.y < -0.5:
 			var p := Puddle.new()
 			p.position = hit.position

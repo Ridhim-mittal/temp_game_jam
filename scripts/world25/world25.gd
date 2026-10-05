@@ -146,6 +146,7 @@ func once(key: String) -> bool:
 
 
 func go(scene_path: String, gate_id: String) -> void:
+	Sfx.play("teleport", -3.0)
 	if transitioning or scene_path == "":
 		return
 	transitioning = true

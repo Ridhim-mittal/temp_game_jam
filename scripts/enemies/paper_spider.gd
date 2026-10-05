@@ -56,6 +56,7 @@ func _tick(delta: float) -> void:
 				state = State.DROP
 				set_harmful(true)
 				pop("SKREEE!", Color(1.0, 0.86, 0.2), Vector2(0, -70), 30)
+				Sfx.play("ink_enemy_hit", 0.0, 1.6)
 			return
 		State.DROP:
 			_fall(delta)

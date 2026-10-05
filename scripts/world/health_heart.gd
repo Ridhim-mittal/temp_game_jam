@@ -42,6 +42,8 @@ func _physics_process(_delta: float) -> void:
 
 func _collect() -> void:
 	_taken = true
+	if has_node("/root/Sfx"):
+		get_node("/root/Sfx").play("checkpoint", -4.0, 1.25)
 	set_deferred("monitoring", false)
 	var pop := ComicText.new()
 	pop.text = "+%d" % int(amount)

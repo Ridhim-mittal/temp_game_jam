@@ -83,6 +83,7 @@ func _process(delta: float) -> void:
 func _on_defeated() -> void:
 	await get_tree().create_timer(1.2).timeout
 	phase = Phase.CLEARED
+	Sfx.play("gate_unlock")
 	for w in _walls:
 		w.collision_layer = 0
 	var p := get_tree().get_first_node_in_group("player")
@@ -101,6 +102,7 @@ func _on_gate(body: Node2D) -> void:
 	if phase != Phase.CLEARED or not body.is_in_group("player"):
 		return
 	phase = Phase.SPRUNG
+	Sfx.play("teleport")
 	ShadeTrap.start(get_tree(), body, next_scene)
 
 

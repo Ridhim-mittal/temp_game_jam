@@ -41,6 +41,7 @@ var _eye_open := 0.0
 
 func _ready() -> void:
 	setup(Vector2(100, 150), hp)
+	add_to_group("boss")
 	knockback_speed = 40.0
 	outline.scale = Vector2.ONE * art_scale
 	_claw = Area2D.new()
@@ -67,6 +68,7 @@ func wake() -> void:
 		return
 	state = State.WAKE
 	_timer = 1.0
+	Sfx.play("boss_intro")
 	pop("GRRAAAH!", Color(0.95, 0.85, 0.4), Vector2(0, -180), 40)
 	var cam := get_tree().get_first_node_in_group("camera")
 	if cam:
@@ -174,6 +176,7 @@ func _claw_active(on: bool) -> void:
 
 
 func _slam() -> void:
+	Sfx.play("fall_land", 4.0, 0.6)
 	pop("KRAKOOM!", Color(1.0, 0.86, 0.2), Vector2(0, -170), 40)
 	var cam := get_tree().get_first_node_in_group("camera")
 	if cam:
@@ -203,6 +206,7 @@ func _die(_kx: float) -> void:
 	_claw_active(false)
 	set_deferred("collision_layer", 0)
 	pop("BLORRP...", Color(0.7, 0.62, 0.9), Vector2(0, -150), 34)
+	Sfx.play("ink_splat", 4.0, 0.7)
 	defeated.emit()
 	await get_tree().create_timer(1.6).timeout
 	create_tween().tween_property(self, "modulate:a", 0.0, 0.8).finished.connect(queue_free)

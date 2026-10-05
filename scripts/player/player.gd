@@ -325,6 +325,7 @@ func _update_wall(input_x: float) -> void:
 
 
 func _wall_jump() -> void:
+	Sfx.play("jump", 0.0, 1.1)
 	var away := -_wall_coyote_dir
 	velocity = Vector2(away * wall_jump_velocity.x, wall_jump_velocity.y * _slow_mult().y)
 	facing = away
@@ -357,12 +358,14 @@ func _handle_jump() -> void:
 		_jump_buffer_timer = 0.0
 		_coyote_timer = 0.0
 		_squash = Vector2(0.75, 1.25)
+		Sfx.play("jump")
 	elif _jump_buffer_timer > 0.0 and _wall_coyote > 0.0 and not is_on_floor():
 		_wall_jump()
 	elif Input.is_action_just_pressed("jump") and not is_on_floor() and _air_jumps_left > 0:
 		# Double jump: only on the press itself, so a jump buffered just before
 		# landing still becomes a ground jump instead of spending this.
 		_air_jumps_left -= 1
+		Sfx.play("double_jump")
 		velocity.y = air_jump_velocity * _slow_mult().y
 		is_jumping = true
 		_jump_buffer_timer = 0.0
@@ -438,6 +441,7 @@ func _crouch_launch(still_holding: bool) -> void:
 	_coyote_timer = 0.0
 	# spring legs: launch speed grows linearly with crouch depth
 	velocity.y = jump_velocity * lerpf(1.0, crouch_jump_mult, depth) * _slow_mult().y
+	Sfx.play("jump", 0.0, lerpf(1.0, 0.85, depth))
 	# the hold was spent coiling, so a release doesn't cut this jump short
 	is_jumping = still_holding
 	_squash = Vector2(0.75, 1.25).lerp(Vector2(0.62, 1.45), depth)
@@ -447,6 +451,7 @@ func _crouch_launch(still_holding: bool) -> void:
 
 
 func _start_dash(input_x: float) -> void:
+	Sfx.play("dash")
 	if _wall_dir != 0:
 		facing = -_wall_dir  # off a wall, the dash always goes away from it
 	elif input_x != 0.0:
@@ -478,6 +483,8 @@ func _post_move(delta: float) -> void:
 			is_jumping = false
 		if not _was_on_floor:
 			_squash = Vector2(1.25, 0.8)
+			if _land_timer <= 0.0:
+				Sfx.play("fall_land", -9.0, 1.15)  # a soft step down
 	_since_hazard += delta
 	# safe ground: stood on for a moment, solid for good, nowhere near spikes
 	if on_floor and _on_stable_floor() and not _touching_hazard() and _floor_under(global_position):
@@ -495,6 +502,7 @@ func _post_move(delta: float) -> void:
 ## Hollow Knight-style hard landing: freeze-frame, shake, ground burst and a
 ## kneel that locks control; past `fall_damage_height` it also hurts.
 func _hard_land(drop: float) -> void:
+	Sfx.play("fall_land", 2.0 if drop >= fall_damage_height else 0.0)
 	var hurts := fall_damage_height > 0.0 and drop >= fall_damage_height
 	_land_length = hard_land_time * (1.6 if hurts else 1.0)
 	_land_timer = _land_length
@@ -566,6 +574,7 @@ func _cancel_charge() -> void:
 
 
 func _release_wave() -> void:
+	Sfx.play("sword_swing", 2.0, 0.8)
 	var wave := InkWave.new()
 	wave.direction = facing
 	wave.speed = wave_speed
@@ -614,6 +623,7 @@ func _on_attack_connect(target: Object) -> void:
 			return
 		target.take_hit(attack_damage, _attack_dir, global_position)
 		landed = true
+		Sfx.play("sword_hit")
 		_pop_text(target.global_position + Vector2(0, -40), HIT_WORDS.pick_random())
 		_hitstop(0.06)
 		_shake(0.35)
@@ -640,6 +650,7 @@ func _on_attack_connect(target: Object) -> void:
 
 
 func _spawn_slash() -> void:
+	Sfx.play("sword_swing")
 	var box := _get_attack_box()
 	var slash := SlashEffect.new()
 	slash.position = box[0]
@@ -729,6 +740,7 @@ func take_damage(amount: float, source_pos: Vector2, from_hazard := false) -> vo
 	_recoil_timer = 0.0
 	is_jumping = false
 	_pop_text(global_position + Vector2(0, -50), "OOF!", Color(1.0, 0.4, 0.35))
+	Sfx.play("hurt")
 	_hitstop(0.12, 0.02)
 	_shake(0.6)
 
@@ -809,6 +821,7 @@ func _respawn_point() -> Vector2:
 
 func _die() -> void:
 	dead = true
+	Sfx.play("death")
 	died.emit()
 	velocity = Vector2.ZERO
 	var t := create_tween()

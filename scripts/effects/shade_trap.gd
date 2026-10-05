@@ -32,6 +32,8 @@ func _ready() -> void:
 	_view.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_view.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_view.draw.connect(_paint)
+	get_tree().create_timer(0.8).timeout.connect(func(): Sfx.play("ink_splat", 6.0, 0.55))
+	get_tree().create_timer(2.1).timeout.connect(func(): Sfx.play("boss_intro", 0.0, 0.8))
 	add_child(_view)
 
 

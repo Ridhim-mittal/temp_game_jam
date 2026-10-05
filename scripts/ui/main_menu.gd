@@ -269,6 +269,8 @@ func _update_focus() -> void:
 		var on: bool = it.button == focused
 		if on != it.focused:
 			it.focused = on
+			if on and _time > 0.3:
+				Sfx.play("menu_hover")
 			var t := create_tween()
 			t.tween_method(func(v: float): it.hover = v, it.hover, 1.0 if on else 0.0, 0.28 if on else 0.18) \
 				.set_trans(Tween.TRANS_BACK if on else Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
@@ -346,6 +348,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func _choose(it: Dictionary) -> void:
 	if _busy:
 		return
+	Sfx.play("menu_close" if it.target == "@back" else ("menu_open" if it.target == "@chapters" else "menu_select"))
 	var t := create_tween()  # the label punches out
 	t.tween_method(func(v: float): it.pop = v, 0.0, 1.0, 0.12)
 	t.tween_method(func(v: float): it.pop = v, 1.0, 0.0, 0.3).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)

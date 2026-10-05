@@ -59,6 +59,7 @@ var _dots: ImageTexture
 
 
 static func start(from: Node, scene: String, next_title := "", tall_panel := false) -> void:
+	Sfx.play("teleport", -4.0, 1.1)
 	var tree := from.get_tree()
 	var fx: Control = load("res://scripts/effects/panel_turn.gd").new()
 	fx.target = scene

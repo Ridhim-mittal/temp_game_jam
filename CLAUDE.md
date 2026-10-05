@@ -182,6 +182,17 @@ ink wave (hold attack) is taught the first time a Scribble is near, in the City'
 are remembered in Profile; Esc / controller Back skips; shows controller buttons when one is used;
 Settings -> Tutorials or Pause -> Controls replays them).
 
+## Sound effects
+Autoload `Sfx` (`scripts/audio/sfx.gd`) plays the team's SFX pack in `assets/sfx/` by name:
+`Sfx.play("jump")`, optional dB offset and pitch. Numbered files (`sword_swing_1..4`,
+`sword_hit_1..4`) are variants picked at random by their base name; every play gets a slight random
+pitch; `TRIM` / `GAP` set per-sound levels and anti-spam gaps. Hooked into both players (jump, double
+jump, dash, landings, swings, hits, hurt, death), enemies (`ink_enemy_hit`, or `boss_hit` for nodes in
+group "boss": story_ui `set_boss()` and the 2D Eraser / Red Pen / Ink Blot join it; deaths and ink
+globs `ink_splat`), pickups (coin, checkpoint, heart), gates (`gate_unlock`), transitions (`teleport`:
+panel turns, World25.go, Shade's trap), boss intros and the menus (hover on row change, select,
+open / close, pause). In `@tool` scripts call it through `get_node("/root/Sfx")` (no autoload in the editor).
+
 ## Conventions
 - Match surrounding code: tabs, `##` doc comments on scripts/exports, typed GDScript.
 - Physics layers: 1 world, 2 player, 3 enemy (mask value 4), 4 hazard, 5 sketch / shadow ink
