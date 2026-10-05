@@ -25,15 +25,15 @@ const InkBatch = preload("res://scripts/depth/ink_batch.gd")
 @export var birth_time := 0.7
 
 const INK := Color(0.03, 0.02, 0.05)
-const BONE := Color(0.93, 0.9, 0.82)
-const BONE_SHADE := Color(0.66, 0.62, 0.6)
+const BONE := Color(0.88, 0.85, 0.76)
+const BONE_SHADE := Color(0.56, 0.52, 0.52)
 const GOLD := Color(0.95, 0.76, 0.32)
 const GOLD_DARK := Color(0.6, 0.42, 0.16)
 const BARREL := Color(0.55, 0.38, 0.2)
 const BARREL_LIGHT := Color(0.82, 0.62, 0.36)
 const GLOW := Color(1.0, 0.86, 0.45)
-const RIM := Color(0.55, 0.45, 0.85)
-const FOLD := Color(0.2, 0.15, 0.32)
+const RIM_DARK := Color(0.24, 0.17, 0.4)
+const PAPER := Color(0.93, 0.89, 0.78)
 const U := Vector2(0.6, -0.8)  # pen axis, nib -> cap (hand space)
 const N := Vector2(0.8, 0.6)  # across the pen, towards the back of the hand
 const FOREARM := Vector2(0.894, -0.447)  # wrist -> elbow (up and right, off the screen)
@@ -48,6 +48,10 @@ var _queue: Array = []  # [kind, at]
 var _job: Dictionary = {}  # the drawing in progress
 var _sketches: Array = []  # {strokes, done (pts drawn per stroke), at, age, born, life}
 var _sketch_layer: Node2D
+var _xf := Transform2D.IDENTITY  # hand space -> world, from the last draw
+var _tips := [Vector2.ZERO, Vector2.ZERO, Vector2.ZERO, Vector2.ZERO, Vector2.ZERO]  # claw points (hand space)
+var _drips: Array = []  # {p, v, age, r} world space
+var _drip_t := 0.0
 
 
 func _ready() -> void:
@@ -93,6 +97,17 @@ func _process(delta: float) -> void:
 		_run_job(delta)
 	_vel = _vel.lerp((_nib - before) / maxf(delta, 0.001), 1.0 - exp(-delta * 10.0))
 	_tilt = lerpf(_tilt, clampf(_vel.x * 0.00035 - _vel.y * 0.0002, -0.25, 0.25), 1.0 - exp(-delta * 6.0))
+	_drip_t -= delta
+	if _drip_t <= 0.0:
+		# ink drips off a claw now and then, and off the nib while it writes
+		_drip_t = randf_range(0.18, 0.45)
+		var from: Vector2 = _xf * (_tips[randi() % _tips.size()] if randf() < 0.6 or _job.is_empty() else Vector2.ZERO)
+		_drips.append({"p": from, "v": Vector2(randf_range(-10, 10), 40.0), "age": 0.0, "r": randf_range(2.5, 4.5)})
+	for d in _drips:
+		d.age += delta
+		d.v.y += 900.0 * delta
+		d.p += d.v * delta
+	_drips = _drips.filter(func(d): return d.age < 1.4)
 	for s in _sketches:
 		s.age += delta
 		if s.born:
@@ -297,84 +312,172 @@ func _p(s: float, d: float) -> Vector2:
 func _draw() -> void:
 	var b := InkBatch.new()
 	var xf := Transform2D(_tilt + sin(_time * 1.3) * 0.02, Vector2.ONE * hand_scale, 0.0, _nib)
+	_xf = xf
 	b.draw_set_transform_matrix(xf)
+	_draw_aura(b)
+	_draw_smoke(b)
 	# nib glow
 	var g := _glow * (0.85 + 0.15 * sin(_time * 18.0))
 	b.draw_circle(Vector2.ZERO, 46.0 * g, Color(GLOW, 0.12))
 	b.draw_circle(Vector2.ZERO, 24.0 * g, Color(GLOW, 0.3))
 	b.draw_circle(Vector2.ZERO, 9.0 * g, Color(1.0, 0.98, 0.88, 0.85))
-	_draw_sleeve(b)
 	_draw_thumb(b)
 	_draw_pen(b)
 	_draw_hand(b)
+	_draw_scraps(b)
+	# ink drips falling off the claws and the nib (world space)
+	b.draw_set_transform_matrix(Transform2D.IDENTITY)
+	for d in _drips:
+		var a: float = 1.0 - d.age / 1.4
+		var dp: Vector2 = d.p
+		var r: float = d.r
+		b.draw_colored_polygon(PackedVector2Array([dp + Vector2(0, -r * 3.2), dp + Vector2(r, 0), dp + Vector2(0, r),
+			dp + Vector2(-r, 0)]), Color(INK, a))
 	b.flush(self)
 
 
-func _draw_sleeve(b) -> void:
-	# a ragged ink cuff round the forearm, and long wisps of ink pouring off it
-	var w := _p(282, 126)  # the wrist
+## A dark halo of ink-shadow round the hand, so it looms out of the city.
+func _draw_aura(b) -> void:
+	# many faint layers, so it fades softly instead of showing disc edges
+	var c := _p(220, 70)
+	for k in 10:
+		b.draw_circle(c + Vector2(sin(_time * 0.8 + k) * 6.0, 0), 60.0 + k * 22.0, Color(0.05, 0.01, 0.08, 0.035))
+
+
+## The arm: forearm bones vanishing into boiling ink smoke, with ink tendrils
+## curling out of it like hooks and splatters flung round it.
+func _draw_smoke(b) -> void:
+	var w := _p(262, 104)  # the wrist (the carpals sit just below)
 	var f := FOREARM
 	var side := Vector2(-f.y, f.x)
-	# forearm bones (radius and ulna) running up into the cuff
-	_bone(b, w + side * 10.0, w + side * 14.0 + f * 130.0, 15.0)
-	_bone(b, w - side * 12.0, w - side * 10.0 + f * 120.0, 12.0)
-	var cuff := PackedVector2Array()
-	for k in 7:
-		var t := k / 6.0
-		cuff.append(w + f * (90.0 + 420.0 * t) + side * (34.0 + 26.0 * t + sin(_time * 2.0 + k * 1.7) * 4.0))
-	for k in range(6, -1, -1):
-		var t := k / 6.0
-		var rag := 10.0 * sin(k * 2.9) + sin(_time * 2.6 + k) * 5.0
-		cuff.append(w + f * (70.0 + 420.0 * t + rag) - side * (36.0 + 30.0 * t))
-	b.draw_colored_polygon(cuff, INK)
-	# a cold violet rim where the moonlight catches it, and folds in the cloth
-	var rim := PackedVector2Array()
-	for k in 7:
-		rim.append(cuff[k] - side * 4.0)
-	b.draw_polyline(rim, RIM, 4.0)
-	for k in 5:
-		var t := 0.15 + k * 0.17
-		var a0 := w + f * (100.0 + 420.0 * t) + side * (22.0 + 20.0 * t)
-		var a1 := w + f * (130.0 + 420.0 * t) - side * (18.0 + 22.0 * t)
-		var mid := a0.lerp(a1, 0.5) + f * (14.0 + 6.0 * sin(_time * 1.5 + k))
-		b.draw_polyline(PackedVector2Array([a0, mid, a1]), FOLD, 3.0)
-	# the torn edge at the wrist
-	for k in 5:
-		var e := w + f * (84.0 + k * 3.0) + side * (-30.0 + k * 15.0)
-		b.draw_colored_polygon(PackedVector2Array([e - f * 2.0 + side * 6.0, e - f * (22.0 + 10.0 * (k % 2)) + side * sin(_time * 3.0 + k) * 4.0,
-			e - f * 2.0 - side * 6.0]), INK)
-	# wisps hang off the cuff and stream away, thinning to nothing
-	for k in 8:
-		var t0 := 0.1 + k * 0.11
-		var start := w + f * (60.0 + 380.0 * t0) + side * (24.0 if k % 2 == 0 else -28.0)
-		var down := (Vector2(0.15, 1.0) if k % 2 == 0 else Vector2(-0.6, 0.75)).normalized()
-		var length := 110.0 + 70.0 * absf(sin(k * 1.3))
-		var left := PackedVector2Array()
-		var right := PackedVector2Array()
-		for j in 9:
-			var t := j / 8.0
-			var c := start + down * length * t + down.orthogonal() * sin(_time * 2.2 + j * 0.7 + k * 1.1) * 16.0 * t
-			var wide := (9.0 - (k % 3) * 2.0) * (1.0 - t)
-			left.append(c + down.orthogonal() * wide)
-			right.append(c - down.orthogonal() * wide)
-		right.reverse()
-		b.draw_colored_polygon(left + right, INK)
-		b.draw_circle(left[left.size() - 1].lerp(right[0], 0.5) + down * 4.0, 2.5, INK)
+	# radius and ulna, long and knobbly, running up into the smoke
+	_bone(b, w + side * 12.0, w + side * 16.0 + f * 190.0, 17.0)
+	_bone(b, w - side * 13.0, w - side * 9.0 + f * 175.0, 13.0)
+	# tendrils first, so the smoke sits over their roots
+	for k in 9:
+		var t0 := 0.15 + k * 0.09
+		var start := w + f * (110.0 + 420.0 * t0) + side * (30.0 if k % 2 == 0 else -34.0)
+		var ang := (Vector2(0.1, 1.0) if k % 3 == 0 else (Vector2(-0.8, 0.55) if k % 3 == 1 else Vector2(0.3, -1.0))).angle()
+		var turn := (1.0 if k % 2 == 0 else -1.0) * (2.4 + 0.6 * sin(k * 1.7))
+		var length := 150.0 + 90.0 * absf(sin(k * 2.1))
+		_tendril(b, start, ang, turn, length, 11.0 - (k % 3) * 2.0, k)
+	# a torrent of ragged ink along the forearm: spiky edges that flicker like black flame
+	var top := PackedVector2Array()
+	var bottom := PackedVector2Array()
+	var n := 26
+	for k in n + 1:
+		var t := float(k) / n
+		var along := w + f * (90.0 + 470.0 * t)
+		var thick := 22.0 + 34.0 * t
+		var spike := 1.0 if k % 2 == 0 else 0.0
+		var flick := sin(_time * 7.0 + k * 1.9) * 0.5 + 0.5
+		var lick_top := thick + spike * (16.0 + 26.0 * flick) * (0.4 + t)
+		var lick_bot := thick + (1.0 - spike) * (14.0 + 30.0 * flick) * (0.4 + t)
+		top.append(along + side * lick_top + f * spike * 10.0 * sin(_time * 3.0 + k))
+		bottom.append(along - side * lick_bot - f * (1.0 - spike) * 12.0)
+	var rim := top.duplicate()
+	for k in rim.size():
+		rim[k] += side * 3.0
+	bottom.reverse()
+	b.draw_colored_polygon(rim + bottom, RIM_DARK)  # a cold violet edge where the moon catches it
+	b.draw_colored_polygon(top + bottom, INK)
+	# brush streaks tearing off the ink, dragged back along the arm
+	for k in 10:
+		var t := 0.1 + k * 0.085
+		var off := (1.0 if k % 2 == 0 else -1.0) * (60.0 + 40.0 * t + 10.0 * sin(_time * 2.0 + k))
+		var a0 := w + f * (100.0 + 470.0 * t) + side * off
+		var a1 := a0 + f * (80.0 + 60.0 * absf(sin(k * 1.3))) + side * sin(_time * 1.5 + k) * 10.0
+		var wide := 5.0 + 4.0 * absf(sin(k * 2.3))
+		b.draw_colored_polygon(PackedVector2Array([a0 - side * wide * 0.3, a0.lerp(a1, 0.35) + side * wide,
+			a1, a0.lerp(a1, 0.5) - side * wide * 0.6]), INK)
+	# the ragged front of the smoke, licking down over the wrist bones
+	for k in 6:
+		var e := w + f * (80.0 + k * 6.0) + side * (-36.0 + k * 14.0)
+		var lick := f * -(26.0 + 14.0 * (k % 2) + sin(_time * 3.0 + k) * 6.0)
+		b.draw_colored_polygon(PackedVector2Array([e + side * 9.0, e + lick, e - side * 9.0, e + f * 20.0]), INK)
+	# splatters flung off it
+	for k in 14:
+		var t := fmod(k * 0.37, 1.0)
+		var c := w + f * (120.0 + 400.0 * t) + side * (90.0 + 50.0 * sin(k * 3.1)) * (1.0 if k % 2 == 0 else -1.0)
+		b.draw_circle(c, 2.0 + 4.0 * absf(sin(k * 1.9)), INK)
 
 
-func _bone(b, a: Vector2, c: Vector2, w: float) -> void:
-	b.draw_line(a, c, INK, w + 6.0)
-	b.draw_circle(a, w * 0.62 + 3.0, INK)
-	b.draw_circle(c, w * 0.62 + 3.0, INK)
-	b.draw_line(a, c, BONE, w)
-	b.draw_circle(a, w * 0.62, BONE)
-	b.draw_circle(c, w * 0.62, BONE)
+## One ink tendril: a tapering ribbon that bends harder and harder until it
+## curls into a hook at the end (the swirls in the painting).
+func _tendril(b, start: Vector2, ang: float, turn: float, length: float, width: float, seed: int) -> void:
+	var left := PackedVector2Array()
+	var right := PackedVector2Array()
+	var p := start
+	var steps := 16
+	var a := ang
+	for j in steps + 1:
+		var t := float(j) / steps
+		var dir := Vector2.from_angle(a)
+		var wide := width * (1.0 - t * 0.9)
+		left.append(p + dir.orthogonal() * wide)
+		right.append(p - dir.orthogonal() * wide)
+		a += turn * t * t * 0.32 + sin(_time * 2.0 + seed + j * 0.5) * 0.05
+		p += dir * length / steps
+	right.reverse()
+	b.draw_colored_polygon(left + right, INK)
+
+
+## Torn pages caught in the smoke, fluttering round the arm.
+func _draw_scraps(b) -> void:
+	var w := _p(262, 104)
+	for k in 5:
+		var c := w + FOREARM * (160.0 + k * 75.0) + Vector2(-FOREARM.y, FOREARM.x) * (70.0 * sin(_time * 0.6 + k * 2.2))
+		c += Vector2(0, sin(_time * 1.7 + k) * 14.0)
+		var rot := _time * (0.7 + k * 0.2) * (1.0 if k % 2 == 0 else -1.0)
+		var flip := absf(sin(_time * 2.2 + k))  # pages tumbling: squash one way
+		var x := Vector2.from_angle(rot) * 16.0 * maxf(flip, 0.2)
+		var y := Vector2.from_angle(rot + PI * 0.5) * 11.0
+		var quad := PackedVector2Array([c - x - y, c + x - y + y * 0.2, c + x + y, c - x + y - y * 0.3])
+		b.draw_colored_polygon(_grow(quad, 2.0), INK)
+		b.draw_colored_polygon(quad, PAPER)
+		b.draw_line(c - x * 0.7 - y * 0.4, c + x * 0.6 - y * 0.5, Color(INK, 0.7), 1.2)
+		b.draw_line(c - x * 0.7 + y * 0.1, c + x * 0.4, Color(INK, 0.7), 1.2)
+		b.draw_line(c - x * 0.5 + y * 0.5, c + x * 0.7 + y * 0.45, Color(0.6, 0.05, 0.08, 0.8), 1.2)
+
+
+## A gnarled bone: knobbly joint ends, a thin waist, one side in shadow with
+## comic hatching, a crack, and ink stains seeping in from the joints.
+func _bone(b, a: Vector2, c: Vector2, w: float, stained := 0.0) -> void:
 	var d := (c - a).normalized()
-	var nrm := Vector2(-d.y, d.x)
-	b.draw_line(a + nrm * w * 0.25 + d * w * 0.4, c + nrm * w * 0.25 - d * w * 0.4, BONE_SHADE, maxf(w * 0.18, 1.5))
+	var n := d.orthogonal()
+	var len := a.distance_to(c)
+	var cap := minf(w * 0.45, len * 0.3)
+	var outline := PackedVector2Array([
+		a - d * cap * 0.8, a + n * w * 0.62 - d * cap * 0.2, a + n * w * 0.5 + d * cap,
+		a.lerp(c, 0.5) + n * w * 0.3,
+		c + n * w * 0.5 - d * cap, c + n * w * 0.66 + d * cap * 0.1, c + d * cap * 0.9,
+		c - n * w * 0.66 + d * cap * 0.1, c - n * w * 0.5 - d * cap,
+		a.lerp(c, 0.5) - n * w * 0.3,
+		a - n * w * 0.5 + d * cap, a - n * w * 0.62 - d * cap * 0.2])
+	b.draw_colored_polygon(_grow(outline, 3.0), INK)
+	b.draw_colored_polygon(outline, BONE)
+	# shadow side
+	b.draw_colored_polygon(PackedVector2Array([a - n * w * 0.62 - d * cap * 0.2, a - n * w * 0.05 + d * cap,
+		c - n * w * 0.05 - d * cap, c - n * w * 0.66 + d * cap * 0.1, c - n * w * 0.5 - d * cap,
+		a.lerp(c, 0.5) - n * w * 0.3, a - n * w * 0.5 + d * cap]), BONE_SHADE)
+	# hatching across the shadow
+	var hatch := int(len / 9.0)
+	for k in hatch:
+		var t := (k + 0.5) / hatch
+		var q := a.lerp(c, t)
+		b.draw_line(q - n * w * 0.12, q - n * w * 0.36 + d * 3.0, Color(INK, 0.55), 1.2)
+	# a crack
+	if len > 40.0:
+		var q0 := a.lerp(c, 0.35) + n * w * 0.15
+		b.draw_polyline(PackedVector2Array([q0, q0 + d * 6.0 - n * 3.0, q0 + d * 11.0 + n * 1.0, q0 + d * 17.0 - n * 2.0]), INK, 1.4)
+	# ink seeping out of the joints
+	b.draw_circle(a + d * cap * 0.3, w * 0.22, Color(INK, 0.55))
+	if stained > 0.0:
+		b.draw_colored_polygon(PackedVector2Array([c.lerp(a, stained) + n * w * 0.3, c + n * w * 0.6, c + d * cap * 0.9,
+			c - n * w * 0.6, c.lerp(a, stained) - n * w * 0.3]), Color(INK, 0.85))
 
 
-func _finger(b, pts: Array, w: float, curl: float) -> void:
+func _finger(b, pts: Array, w: float, curl: float, claw := 1.0) -> Vector2:
 	# knuckle -> joints -> tip; curl pulls the outer joints in towards the knuckle
 	var k0: Vector2 = pts[0]
 	var out: Array = [k0]
@@ -382,70 +485,89 @@ func _finger(b, pts: Array, w: float, curl: float) -> void:
 		var p: Vector2 = pts[i]
 		out.append(p.lerp(k0, curl * i / (pts.size() - 1.0) * 0.35))
 	for i in out.size() - 1:
-		_bone(b, out[i], out[i + 1], w * (1.0 - i * 0.16))
-	# a pointed tip, like a nib
+		var last := i == out.size() - 2
+		_bone(b, out[i], out[i + 1], w * (1.0 - i * 0.18), 0.55 if last else 0.0)
+	# a long black claw, hooked like a nib, curling round the pen
 	var tip: Vector2 = out[out.size() - 1]
 	var dir: Vector2 = (tip - out[out.size() - 2]).normalized()
-	b.draw_colored_polygon(PackedVector2Array([tip + dir.orthogonal() * w * 0.4, tip + dir * w * 1.1,
-		tip - dir.orthogonal() * w * 0.4]), INK)
+	var hook := dir.rotated(0.9 * (1.0 if claw > 0.0 else -1.0))
+	var l := w * 3.4 * absf(claw)
+	var c1 := tip + dir * l * 0.55
+	var c2 := c1 + hook * l * 0.55
+	var claw_pts := PackedVector2Array([tip + dir.orthogonal() * w * 0.42, c1 + dir.orthogonal() * w * 0.2, c2,
+		c1 - dir.orthogonal() * w * 0.12, tip - dir.orthogonal() * w * 0.42])
+	b.draw_colored_polygon(_grow(claw_pts, 1.5), Color(0.9, 0.85, 0.8, 0.6))
+	b.draw_colored_polygon(claw_pts, INK)
+	b.draw_line(tip + dir * l * 0.15, c1, Color(0.4, 0.32, 0.5), 1.4)  # a glint on the claw
+	return c2
 
 
 func _draw_thumb(b) -> void:
-	_finger(b, [_p(222, 102), _p(170, 84), _p(128, 52), _p(100, 24)], 15.0, _flex)
+	_tips[4] = _finger(b, [_p(222, 102), _p(170, 84), _p(128, 52), _p(100, 24)], 14.0, _flex, -1.0)
 
 
 func _draw_pen(b) -> void:
-	# nib (gold, with its slit and breather hole)
+	# nib (gold, with its slit and breather hole), a bead of ink on the tip
 	var nib := PackedVector2Array([_p(0, 0), _p(30, -9), _p(50, -11), _p(50, 11), _p(30, 9)])
 	b.draw_colored_polygon(_grow(nib, 3.0), INK)
 	b.draw_colored_polygon(nib, GOLD)
 	b.draw_colored_polygon(PackedVector2Array([_p(8, 1), _p(30, 8), _p(50, 10), _p(50, 2)]), GOLD_DARK)
 	b.draw_line(_p(4, 0), _p(30, 0), INK, 2.0)
 	b.draw_circle(_p(32, 0), 3.0, INK)
+	b.draw_arc(_p(42, 0), 6.0, PI * 0.5, PI * 1.5, 6, INK, 1.2)  # engraving on the nib
+	b.draw_circle(_p(2, 0), 4.0 + sin(_time * 5.0) * 1.0, INK)
 	# grip section
 	var grip := PackedVector2Array([_p(50, -11), _p(104, -12), _p(104, 12), _p(50, 11)])
 	b.draw_colored_polygon(_grow(grip, 3.0), INK)
-	b.draw_colored_polygon(grip, Color(0.1, 0.08, 0.1))
+	b.draw_colored_polygon(grip, Color(0.08, 0.06, 0.08))
 	b.draw_line(_p(56, -6), _p(100, -6), Color(0.4, 0.36, 0.42), 2.0)
-	# barrel
+	# barrel: old engraved brass
 	var barrel := PackedVector2Array([_p(104, -14), _p(372, -13), _p(384, -8), _p(384, 8), _p(372, 13), _p(104, 14)])
 	b.draw_colored_polygon(_grow(barrel, 3.0), INK)
 	b.draw_colored_polygon(barrel, BARREL)
-	b.draw_line(_p(112, -7), _p(370, -7), BARREL_LIGHT, 4.0)
-	b.draw_line(_p(112, 8), _p(370, 8), Color(0.32, 0.2, 0.1), 3.0)
+	b.draw_line(_p(112, -8), _p(370, -8), BARREL_LIGHT, 4.0)
+	b.draw_line(_p(112, 9), _p(370, 9), Color(0.28, 0.17, 0.08), 4.0)
 	for s in [104.0, 116.0, 350.0, 362.0]:
 		b.draw_line(_p(s, -14), _p(s, 14), GOLD, 5.0)
 		b.draw_line(_p(s + 2.5, -14), _p(s + 2.5, 14), INK, 1.0)
-	# filigree on the barrel
-	for k in 5:
-		var s := 150.0 + k * 40.0
-		b.draw_arc(_p(s, 0), 8.0, -1.0, 2.2, 6, Color(GOLD, 0.7), 1.6)
+	# engraved scrollwork all along the barrel
+	for k in 9:
+		var sx := 132.0 + k * 25.0
+		b.draw_arc(_p(sx, -1), 7.0, -1.2 + k, 2.0 + k, 7, Color(INK, 0.55), 1.4)
+		b.draw_arc(_p(sx + 12, 2), 4.0, 0.5 + k, 3.6 + k, 5, Color(GOLD, 0.65), 1.2)
 	# the clip
 	b.draw_line(_p(300, -16), _p(372, -18), GOLD, 4.0)
+	b.draw_line(_p(300, -16), _p(372, -18), Color(INK, 0.6), 1.0)
 
 
 func _draw_hand(b) -> void:
-	# carpals: a cluster of knobbly little bones
-	for c in [Vector2(238, 96), Vector2(258, 84), Vector2(250, 110), Vector2(272, 98), Vector2(232, 80)]:
+	# carpals: a cluster of knobbly little bones, ink pooled between them
+	b.draw_circle(_p(252, 94), 26.0, Color(INK, 0.9))
+	for c in [Vector2(238, 96), Vector2(258, 84), Vector2(250, 110), Vector2(272, 98), Vector2(232, 80), Vector2(266, 114)]:
 		var p := _p(c.x, c.y)
-		b.draw_circle(p, 13.0, INK)
-		b.draw_circle(p, 10.0, BONE)
+		b.draw_circle(p, 12.5, INK)
+		b.draw_circle(p, 9.5, BONE)
+		b.draw_circle(p + N * 3.0, 6.0, BONE_SHADE)
 	# metacarpals + fingers, back (pinky) to front (index); each wraps over the pen
 	var knuckles := [Vector2(204, 38), Vector2(224, 48), Vector2(242, 60), Vector2(256, 74)]
 	var fingers := [
 		[Vector2(204, 38), Vector2(164, 22), Vector2(130, 4), Vector2(110, -12)],
 		[Vector2(224, 48), Vector2(200, 18), Vector2(186, -6), Vector2(176, -24)],
 		[Vector2(242, 60), Vector2(232, 30), Vector2(222, 2), Vector2(214, -18)],
-		[Vector2(256, 74), Vector2(252, 46), Vector2(246, 22), Vector2(240, 6)],
+		[Vector2(256, 74), Vector2(256, 44), Vector2(254, 18), Vector2(250, -2)],
 	]
+	# now and then the pinky twitches, like the hand is impatient
+	var twitch := maxf(sin(_time * 0.9) - 0.9, 0.0) * 6.0 * sin(_time * 40.0)
 	for i in range(3, -1, -1):
 		var kn: Vector2 = knuckles[i]
-		_bone(b, _p(250 + i * 6, 90 + i * 4), _p(kn.x, kn.y), 13.0 - i)
+		_bone(b, _p(250 + i * 6, 90 + i * 4), _p(kn.x, kn.y), 12.0 - i)
+		b.draw_circle(_p(kn.x, kn.y), 9.0 - i * 0.8, INK)  # swollen knuckle
+		b.draw_circle(_p(kn.x, kn.y), 6.5 - i * 0.8, BONE)
 		var pts: Array = []
 		for q in fingers[i]:
 			pts.append(_p(q.x, q.y))
-		var curl := _flex * (1.0 + i * 0.2) + 0.04 * sin(_time * 2.0 + i)
-		_finger(b, pts, 13.0 - i * 1.4, curl)
+		var curl := _flex * (1.0 + i * 0.2) + 0.04 * sin(_time * 2.0 + i) + (twitch if i == 3 else 0.0)
+		_tips[i] = _finger(b, pts, 12.0 - i * 1.3, curl)
 
 
 static func _grow(poly: PackedVector2Array, by: float) -> PackedVector2Array:
