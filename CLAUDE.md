@@ -197,7 +197,7 @@ ember at its first sketch; other levels none). Main menu PLAY forgets the
 "2d." steps so every new run teaches the controls again; 2.5D rooms start none, the keys are the
 same, but Pause -> Controls still replays the 2.5D one on request). The 2D
 ink wave (hold attack) is taught the first time a Scribble is near, in the City's plank section; steps
-are remembered in Profile; Esc / controller Back skips; shows controller buttons when one is used;
+are remembered in Profile; Enter / controller Back skips; shows controller buttons when one is used;
 Settings -> Tutorials or Pause -> Controls replays them).
 
 ## Conventions

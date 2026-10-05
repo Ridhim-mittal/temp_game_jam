@@ -5,7 +5,7 @@ extends Control
 ## Heal, the 2D ink wave) pop up on their own the first time they're useful.
 ##
 ## Every step is remembered in Profile, so each one plays only once (a
-## restart picks up where it left off); Esc skips the rest of the mode and
+## restart picks up where it left off); Enter skips the rest of the mode and
 ## Settings -> Tutorials plays them all again. While the basics run, the
 ## level's "Controls" hint line is hidden.
 ##
@@ -141,7 +141,7 @@ func _input(event: InputEvent) -> void:
 		_pad = false
 	if _current.is_empty() or _alpha < 0.5 or get_tree().paused:
 		return
-	var skip: bool = (event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_ESCAPE) \
+	var skip: bool = (event is InputEventKey and event.pressed and not event.echo and event.physical_keycode in [KEY_ENTER, KEY_KP_ENTER]) \
 		or (event is InputEventJoypadButton and event.pressed and event.button_index == JOY_BUTTON_BACK)
 	if skip:
 		get_viewport().set_input_as_handled()  # skip, don't pause / leave
@@ -356,7 +356,7 @@ func _draw() -> void:
 	var sk := Vector2(size.x - 34, size.y - (100.0 if hint_up else 40.0))
 	_text(sk + Vector2(0, 8), "SKIP", 22, Color(PAPER, 0.9 * a), a, false, true)
 	var sw := FONT.get_string_size("SKIP", HORIZONTAL_ALIGNMENT_LEFT, -1, 22).x
-	var key := "BACK" if _pad else "ESC"
+	var key := "BACK" if _pad else "ENTER"
 	_cap(sk - Vector2(sw + 14 + _key_w(key, 30.0) * 0.5, 0), key, 30.0, 0.0, false, a)
 
 
