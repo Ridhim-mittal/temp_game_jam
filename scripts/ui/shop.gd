@@ -6,7 +6,8 @@ extends Control
 ## Tabs: weapons, weapon upgrades, hats, scarves, cloaks and armor; a live
 ## preview of Vesper wearing what you're looking at (the 2D art, with the
 ## highlighted weapon). W/S pick, A/D switch tab, Enter / click buys (or
-## equips what you own), Esc or B closes.
+## equips what you own), Esc or B closes; on a controller the d-pad and
+## shoulders move, A buys, B / Start close.
 ## Items live in scripts/core/catalog.gd; money and ownership in Profile.
 ##
 ##   Shop.open(tree)   # 2D levels (player.gd); the 2.5D rooms use
@@ -114,6 +115,28 @@ func _process(delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventJoypadButton and event.pressed:
+		# controller: B / Start back out, A buys, the d-pad moves
+		var n := maxi(_items().size(), 1)
+		match event.button_index:
+			JOY_BUTTON_B, JOY_BUTTON_START:
+				_close()
+			JOY_BUTTON_A:
+				var items := _items()
+				if _row < items.size():
+					_use(items[_row])
+			JOY_BUTTON_DPAD_UP:
+				_row = (_row - 1 + n) % n
+				_preview()
+			JOY_BUTTON_DPAD_DOWN:
+				_row = (_row + 1) % n
+				_preview()
+			JOY_BUTTON_DPAD_LEFT, JOY_BUTTON_LEFT_SHOULDER:
+				_set_tab((_tab + Catalog.SLOTS.size() - 1) % Catalog.SLOTS.size())
+			JOY_BUTTON_DPAD_RIGHT, JOY_BUTTON_RIGHT_SHOULDER:
+				_set_tab((_tab + 1) % Catalog.SLOTS.size())
+		get_viewport().set_input_as_handled()
+		return
 	if event is InputEventKey and event.pressed and not event.echo:
 		var n := maxi(_items().size(), 1)
 		match event.physical_keycode:

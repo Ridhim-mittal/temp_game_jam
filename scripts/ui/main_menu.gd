@@ -36,10 +36,8 @@ const MAIN := [
 const CHAPTERS := [
 	["THE CITY", "res://scenes/levels/test_level.tscn"],
 	["THE SKETCHBOOK", "res://scenes/levels/sketchbook.tscn"],
-	["THE INK CAVERN", "res://scenes/levels/ink_cavern.tscn"],
 	["THE LONG DROP", "res://scenes/levels/long_drop.tscn"],
 	["THE MARGINS", "res://scenes/clearing/clearing.tscn"],
-	["MONSTER TEST", "res://scenes/levels/monster_test.tscn"],
 	["BACK", "@back"],
 ]
 const TITLE := "VESPER"
@@ -379,6 +377,10 @@ func _leave(it: Dictionary) -> void:
 		if it.target == "":
 			get_tree().quit()
 		else:
+			if it.label == "PLAY":  # a new run always teaches the controls again
+				var profile := get_node_or_null("/root/Profile")
+				if profile:
+					profile.reset_tutorials("2d.")
 			get_tree().change_scene_to_file(it.target))
 
 

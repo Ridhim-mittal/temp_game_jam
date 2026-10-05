@@ -5,7 +5,7 @@ extends Control
 ##    glows green
 ##  - the healing counter: an ink flask with how many heals the Ember's fuel
 ##    covers right now (hold F), glowing when at least one is ready
-##  - the Ember's fuel as a flame and bar with its Q key (hold to raise it);
+##  - the Ember's fuel as a flame and bar with its button, a mouse with the right button lit (hold to raise it);
 ##    it greys while the Ember is guttered out
 ## (There is no money in the Gutter: the Lumen counter is gone.)
 
@@ -191,11 +191,28 @@ func _draw_ember(at: Vector2) -> void:
 	# where a guttered Ember lights again
 	var rx := bar.position.x + bar.size.x * _relight / max_fuel
 	draw_line(Vector2(rx, bar.position.y), Vector2(rx, bar.end.y), Color(INK, 0.6), 2.0)
-	# the key: hold Q to raise it
-	var key := Rect2(bar.end + Vector2(12, -16), Vector2(20, 20))
-	draw_rect(key, Color(PAPER, 0.85 if not snuffed else 0.35))
-	draw_rect(key, INK, false, 2.0)
-	draw_string(TITLE_FONT, key.position + Vector2(4, 17), "Q", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, INK)
+	# the button: hold right click to raise it (a mouse, its right button lit)
+	var mc := bar.end + Vector2(22, -9)  # centre of the mouse
+	draw_colored_polygon(_capsule(mc, 10.0, 13.0), INK)
+	draw_colored_polygon(_capsule(mc, 8.0, 11.0), Color(PAPER, 0.85 if not snuffed else 0.35))
+	var split := mc.y - 2.0
+	var btn := PackedVector2Array([Vector2(mc.x, split)])  # the right button: top-right of the body
+	for i in 9:
+		btn.append(Vector2(mc.x, mc.y - 3.0) + Vector2.from_angle(-PI * 0.5 + PI * 0.5 * i / 8.0) * Vector2(8.0, 8.0))
+	btn.append(Vector2(mc.x + 8.0, split))
+	draw_colored_polygon(btn, ember.lightened(0.25) if not snuffed else Color(ember, 0.35))
+	draw_line(Vector2(mc.x, mc.y - 11.0), Vector2(mc.x, split), INK, 2.0)
+	draw_line(Vector2(mc.x - 8.0, split), Vector2(mc.x + 8.0, split), INK, 2.0)
+
+
+## A mouse-shaped capsule: half-width `hw`, half-height `hh`, round at both ends.
+static func _capsule(c: Vector2, hw: float, hh: float) -> PackedVector2Array:
+	var pts := PackedVector2Array()
+	for i in 13:  # top cap, then bottom cap
+		pts.append(c + Vector2(0, -(hh - hw)) + Vector2.from_angle(PI + PI * i / 12.0) * hw)
+	for i in 13:
+		pts.append(c + Vector2(0, hh - hw) + Vector2.from_angle(PI * i / 12.0) * hw)
+	return pts
 
 
 ## A rectangle as a polygon whose right side leans by `lean` pixels.

@@ -4,8 +4,8 @@ extends CharacterBody3D
 ## Space, dashes on right click / Shift, attacks on left click / X: a
 ## three-hit combo (the third hit is a heavier overhead finisher); holding
 ## attack charges the equipped weapon's special, as in the 2D levels (wave,
-## volley, slam, drill, sweep, whirl; Quire's shop on B). Hold Q to raise
-## the Ember (as in the 2D levels), F heals.
+## volley, slam, drill, sweep, whirl; Quire's shop on B). Hold right click
+## to raise the Ember (as in the 2D levels), F heals.
 ##
 ## Aiming: `facing_dir` (a unit vector on the XZ plane, snapped to
 ## `snap_directions`) is the source of truth. It follows the movement input
@@ -139,7 +139,7 @@ enum AttackStyle { INK_SLASH, NIB_SWORD, BOTH }
 @export var fuel_per_hit := 8.0
 @export var glow_radius_full := 3.4
 @export var glow_radius_empty := 1.6
-## Hold Q (the "flash" action) to raise the Ember, as in the 2D levels: its
+## Hold right click (the "flash" action) to raise the Ember, as in the 2D levels: its
 ## light swells to `raised_radius` and becomes the Writer's kind of light
 ## (it shows the unfinished Scribbles and lets you cut them, dries wet ink,
 ## melts the Red Pen's letters). Raised, it drains `raise_drain` a second;
@@ -190,10 +190,10 @@ var smooth_position := Vector3.ZERO
 ## jumping doesn't bob the view).
 var ground_height := 0.0
 var fuel := 60.0
-## Lowered, the Ember only makes drawn things real; raised (hold Q), it is
+## Lowered, the Ember only makes drawn things real; raised (hold right click), it is
 ## the Writer's kind of light too (world25/light.gd rule 2).
 var monster_light := false
-## True while Q holds the Ember up.
+## True while right click holds the Ember up.
 var ember_raised := false
 ## 0..1: how close a searchlight is to erasing Vesper (searchlight.gd fills
 ## it; she whitens as it rises).
@@ -236,12 +236,12 @@ var _chevron: MeshInstance3D
 var _chevron_mat: ShaderMaterial
 var _chevron_flash := 0.0
 var _chevron_yaw := 0.0
-## The drawn bridge being inked while Q is held (drawn_bridge.gd), or null.
+## The drawn bridge being inked while right click is held (drawn_bridge.gd), or null.
 var _inking: Node3D = null
 var _snuffed := false  # ran dry: the Ember won't rise until relight_at is back
 var _since_raised := 10.0
 var _raise_w := 0.0  # 0..1, eases towards ember_raised (radius and light)
-var _q_prompt: Node2D  # "HOLD Q TO SEE THEM" over Vesper's head
+var _q_prompt: Node2D  # "HOLD RIGHT CLICK TO SEE THEM" over Vesper's head
 var _weapon := "nib"  # equipped weapon (catalog.gd id)
 var _special := "wave"  # what holding attack does
 var _tier := 0  # upgrades bought for it (0..3)
@@ -1094,7 +1094,7 @@ func _flash() -> void:
 	_squash = Vector2(1.2, 0.85)
 
 
-## Hold Q to raise the Ember: it drains while up and comes back once it is
+## Hold right click to raise the Ember: it drains while up and comes back once it is
 ## lowered (faster in a lit lantern's light), and gutters out if it runs dry.
 func _update_ember(delta: float, in_control: bool) -> void:
 	var want := in_control and not dead and Input.is_action_pressed("flash") and not _snuffed and _channel < 0.0
@@ -1118,7 +1118,7 @@ func _update_ember(delta: float, in_control: bool) -> void:
 	_raise_w = move_toward(_raise_w, 1.0 if ember_raised else 0.0, delta * 6.0)
 
 
-## "HOLD Q TO SEE THEM" over Vesper while an unfinished Scribble
+## "HOLD RIGHT CLICK TO SEE THEM" over Vesper while an unfinished Scribble
 ## (half_drawn_3d.gd, group "needs_ember") is near and the Ember is down.
 func _update_q_prompt() -> void:
 	var near := false
@@ -1133,7 +1133,7 @@ func _update_q_prompt() -> void:
 			return
 		_q_prompt = ScreenAnchor.new()
 		_q_label = Label.new()
-		_q_label.text = "HOLD Q TO SEE THEM"
+		_q_label.text = "HOLD RIGHT CLICK TO SEE THEM"
 		_q_label.add_theme_font_override("font", PROMPT_FONT)
 		_q_label.add_theme_font_size_override("font_size", 26)
 		_q_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
@@ -1184,7 +1184,7 @@ func _sketch_near() -> Node3D:
 	return null
 
 
-## Holding Q by a drawn bridge: the Ember is up and ink runs out from his
+## Holding right click by a drawn bridge: the Ember is up and ink runs out from his
 ## feet along the planks (drawn_bridge.gd ink()), until he lets go, it
 ## reaches as far as one hold can, or the Ember runs dry.
 func _update_inking(delta: float) -> void:

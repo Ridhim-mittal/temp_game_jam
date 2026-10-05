@@ -3,12 +3,12 @@ extends "res://scripts/clearing/monster_3d.gd"
 ## (unfinished_model.gd: half inked, half dashed pencil, a nib-blade for a
 ## hand). They are barely on the page: out of the Ember's light only hints
 ## of one show (its eyes, a few motes, a flicker of line), and a sword goes
-## straight through it ("NOT DRAWN YET"). Hold Q: inside the
+## straight through it ("NOT DRAWN YET"). Hold right click: inside the
 ## raised Ember's light it inks in, solid enough to cut
 ## (clearing_player.gd ember_reveals(); the Lantern Flail's whirl counts
 ## too). The Prism Saber's blade is light itself: it cuts one unseen, and
-## the cut shows it for a moment. Vesper shows a "HOLD Q" prompt when one is
-## near and unseen (group "needs_ember").
+## the cut shows it for a moment. Vesper shows a "HOLD RIGHT CLICK" prompt
+## when one is near and unseen (group "needs_ember").
 ## They drift after Vesper and cut at him:
 ##  - WINDUP: the blade snaps up behind the head, the eyes flare; it tracks
 ##    him, then locks for the last moment

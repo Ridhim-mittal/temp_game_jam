@@ -9,7 +9,7 @@ extends SceneTree
 ##    bursts), the blinding sweep (stuns), the whirl (its light makes
 ##    sketches solid)
 ##  - the same in the Gutter: the drill pulls, the sweep blinds and dazzles a
-##    Haunting Lamp, the whirl shows a Half-Drawn without Q, the Prism Saber
+##    Haunting Lamp, the whirl shows a Half-Drawn without raising the Ember, the Prism Saber
 ##    cuts one unseen, the slam (end to end) and the volley hit
 ##  - outfits: the hat and band reach the 2D art and the 3D model
 ## The player's real progress is put back afterwards.
@@ -134,6 +134,26 @@ func coins_2d_test() -> void:
 		await frames(4)
 	check(not paused and current_scene.scene_file_path == LEVEL_2D, "Esc closes the shop and play goes on (not to the main menu)")
 	check(player.art.hat_color.is_equal_approx(Color(0.55, 0.09, 0.11)), "the 2D Vesper wears the new hat at once")
+	# the pause screen (Esc, 2D and 2.5D) has SHOP in place of the skill tree
+	load("res://scripts/ui/pause_menu.gd").open_2d(player)
+	await frames(4)
+	var menu: Node = null
+	for n in current_scene.find_children("*", "Control", true, false):
+		if n.get_script() and n.get_script().resource_path.ends_with("ui/pause_menu.gd"):
+			menu = n
+	var labels: Array = menu._items.map(func(it): return it[1]) if menu else []
+	check(labels.has("shop") and not labels.has("skills"), "the 2D pause screen lists SHOP, no skill tree (%s)" % [labels])
+	if menu:
+		menu._t = 1.0
+		menu._choose(labels.find("shop"))
+		await frames(3)
+		check(menu._sub != null and menu._sub.get_script().resource_path.ends_with("ui/shop.gd"), "pause -> SHOP opens the shop on top")
+		menu._sub._close()
+		await frames(3)
+		check(menu._sub == null and menu.visible and paused, "closing it comes back to the pause screen")
+		menu._act("resume")
+		await frames(3)
+	check(not paused, "resume: play goes on")
 
 
 func _crawler(at: Vector2) -> Node2D:
@@ -305,14 +325,14 @@ func specials_25d_test() -> void:
 	player._drill_burst()
 	check(player._model.spin == 0.0, "the burst ends the spin")
 	g.set_physics_process(false)
-	# the whirl's light shows a Half-Drawn without Q
+	# the whirl's light shows a Half-Drawn without raising the Ember
 	_equip("lantern")
 	player.refresh_loadout()
 	player.fuel = player.max_fuel
 	g.global_position = Vector3(1.5, 0.05, 0)
 	player._start_whirl()
 	await pframes(2)
-	check(player.ember_reveals(g.global_position + Vector3(0, 1, 0)) and player.monster_light, "LANTERN WHIRL: its light shows the Half-Drawn without Q")
+	check(player.ember_reveals(g.global_position + Vector3(0, 1, 0)) and player.monster_light, "LANTERN WHIRL: its light shows the Half-Drawn without raising the Ember")
 	var f0: float = player.fuel
 	for i in 20:
 		await physics_frame

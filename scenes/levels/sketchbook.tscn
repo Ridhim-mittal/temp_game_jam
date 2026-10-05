@@ -53,7 +53,7 @@ size = Vector2(80, 1700)
 z_index = 5
 position = Vector2(8680, 455)
 script = ExtResource("43_caption")
-text = "HOLD Q - RAISE YOUR EMBER\nLIGHT MAKES THE SKETCH REAL"
+text = "HOLD RIGHT CLICK - RAISE YOUR EMBER\nLIGHT MAKES THE SKETCH REAL"
 tilt = -0.03
 
 [node name="PitFloor1" type="StaticBody2D" parent="World"]

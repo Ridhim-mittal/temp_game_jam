@@ -201,8 +201,9 @@ are untouched.
       screenshot. It's dark navy wood with pale curls carved round an arch, a domed lamp at
       one end, and Quire (a pale, long-tailed paper creature with a quill behind his ear)
       sitting on the other. Wares are on show and a hanging sign reads QUIRE'S CURIOS.
-    - **Opening the shop:** press E at the stall, pick SHOP in the pause menu, or press **B
-      anywhere** (2D levels and the Gutter). The game pauses while it's open.
+    - **Opening the shop:** press E at the stall, pick SHOP on the pause screen (Esc, now
+      the same in 2D and the Gutter; SHOP takes the skill tree's place), or press **B
+      anywhere**. The game pauses while it's open.
     - **Money:** the Lumen coins you pick up in the 2D levels. They are kept between runs.
     - **The 2D prompt:** once you have enough coins for something, a caption says "ENOUGH
       COINS! PRESS B TO OPEN THE SHOP" (once a run), and a "B SHOP" tag stays under the coin
@@ -220,11 +221,12 @@ are untouched.
         Vesper like a drill while held, dragging monsters in and grinding them; letting go
         bursts them outward.
       - **Prism Saber** (65, from your sheet): its hits stun longer and it can cut a
-        Half-Drawn without Q. BLINDING SWEEP is a rainbow arc that blinds everything in
+        Half-Drawn without raising the Ember. BLINDING SWEEP is a rainbow arc that blinds everything in
         front and turns a Haunting Lamp's light away from you (the lamp loses you).
       - **Lantern Flail** (50, a "light and twist" weapon of my own): long reach. LANTERN
         WHIRL swings the lantern round you while held, hitting everything it passes. Its
-        light makes 2D sketches solid and shows Half-Drawn without Q. It burns Ember.
+        light makes 2D sketches solid and shows Half-Drawn without raising the Ember. It
+        burns Ember.
     - **Upgrades** (per weapon, bought in order):
       - SHARPENED (15): +1 damage
       - QUICK HAND (30): the special charges 40% faster
@@ -328,7 +330,7 @@ These ran with Godot 4.7-stable under Xvfb with software OpenGL.
     - Let go and it comes back.
     - Run dry, it gutters out and won't rise until it has refilled.
 
-- **`tests/gutter/test_shop.gd` (new): 43/43 checks.** It puts your saved progress back
+- **`tests/gutter/test_shop.gd` (new): 47/47 checks.** It puts your saved progress back
   afterwards.
   - The purse:
     - Buying, equipping and the three upgrades in order, with their prices.
@@ -336,6 +338,8 @@ These ran with Godot 4.7-stable under Xvfb with software OpenGL.
     - No upgrades for a weapon you don't own.
   - 2D, the shop:
     - A coin goes into the purse.
+    - The pause screen lists SHOP (no skill tree). Picking it opens the shop on top, and
+      closing it comes back to the pause screen.
     - At 10 coins "PRESS B" and the B SHOP tag show.
     - B opens the shop and pauses the level. Buying a hat in it puts the hat on Vesper at
       once.
@@ -369,5 +373,6 @@ These ran with Godot 4.7-stable under Xvfb with software OpenGL.
   and tested on its own.
 - **Feel of the weapons:** each special was checked to work, not tuned by playing. The
   numbers are in the tuning table.
-- **2D pause menu:** there isn't one (Esc still goes to the main menu in the 2D levels), so
-  in 2D the shop is on B only.
+- **Controls on `main`:** while this round was in progress, `main` moved the light to
+  right click (Q is no longer used) and dash to Shift, and added one pause screen for 2D and
+  2.5D. I merged that in and kept it. Earlier sections of this report still say Q.

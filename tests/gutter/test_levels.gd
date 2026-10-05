@@ -5,7 +5,7 @@ extends SceneTree
 ## is cleared); each level has its monsters and lamps; the Half-Drawn swing
 ## a blade that hurts, stagger when hit mid-windup and fall in five hits;
 ## spawn protection holds for two seconds; the sketched bridge only forms
-## when Vesper holds Q, and he can then walk across it; the Eraser gets
+## when Vesper holds right click, and he can then walk across it; the Eraser gets
 ## furious at half health.
 ## Run like test_phase1.gd (prints PASS / FAIL; exit code = failures).
 
@@ -154,7 +154,7 @@ func half_drawn_test() -> void:
 	player._invuln = 0.0
 	var hp: int = player.health
 	check(not g.is_harmful(), "touching a Half-Drawn doesn't hurt (only its blade does)")
-	check(player._q_prompt != null and not g.revealed, "an unseen Half-Drawn near: \"HOLD Q TO SEE THEM\" over Vesper")
+	check(player._q_prompt != null and not g.revealed, "an unseen Half-Drawn near: \"HOLD RIGHT CLICK TO SEE THEM\" over Vesper")
 	var swung := false
 	for i in 240:  # up to 4 s
 		await physics_frame
@@ -174,7 +174,7 @@ func half_drawn_test() -> void:
 	await seconds(0.3)  # out of the stagger from the blade
 	Input.action_press("flash")
 	await pframes(6)
-	check(g.revealed and player._q_prompt == null, "holding Q, it inks in (revealed %s) and the prompt goes" % g.revealed)
+	check(g.revealed and player._q_prompt == null, "holding right click, it inks in (revealed %s) and the prompt goes" % g.revealed)
 	g.state = g.State.WINDUP
 	g._timer = g.windup_time
 	g.take_hit(1, Vector3(-1, 0, 0))
@@ -240,7 +240,7 @@ func bridge_test() -> void:
 	await place(player, Vector3(gap + 0.9, 0.05, 0))
 	await seconds(2.0)
 	check(bridge.solid_count() == 0, "the sketch doesn't form on its own, even in the Ember's glow (%d planks)" % bridge.solid_count())
-	# hold Q at the edge: ink runs out along the bridge for a little Ember a
+	# hold right click at the edge: ink runs out along the bridge for a little Ember a
 	# plank (once it has inked all it can reach, the raised Ember drains as usual)
 	var fuel0: float = player.fuel
 	var spent := -1.0
@@ -256,11 +256,11 @@ func bridge_test() -> void:
 	Input.action_release("flash")
 	await pframes(2)
 	var n: int = bridge.solid_count()
-	check(n > 0 and n < bridge._planks.size(), "holding Q inks part of the bridge (%d of %d planks)" % [n, bridge._planks.size()])
+	check(n > 0 and n < bridge._planks.size(), "holding right click inks part of the bridge (%d of %d planks)" % [n, bridge._planks.size()])
 	check(absf(spent - n * bridge.ink_cost) < 0.5, "it costs %.0f Ember a plank (spent %.1f inking)" % [bridge.ink_cost, spent])
 	await seconds(1.0)
 	check(bridge.solid_count() == n, "inked planks stay after letting go (%d)" % bridge.solid_count())
-	# walk out to the end of the ink and hold Q again until it's done
+	# walk out to the end of the ink and hold right click again until it's done
 	Input.action_press("move_left")
 	await seconds(0.25)
 	Input.action_release("move_left")
@@ -277,7 +277,7 @@ func bridge_test() -> void:
 		await seconds(1.6)
 		Input.action_release("flash")
 		await pframes(2)
-	check(bridge.finished(), "a few holds of Q ink the whole bridge (%d more after the first)" % tries)
+	check(bridge.finished(), "a few holds of right click ink the whole bridge (%d more after the first)" % tries)
 	# and he can walk across to the far island
 	await place(player, Vector3(gap + 0.9, 0.05, 0))
 	var hp: int = player.health
@@ -299,7 +299,7 @@ func bridge_test() -> void:
 	await seconds(0.8)
 	Input.action_release("flash")
 	await pframes(2)
-	check(bridge.solid_count() == 0, "with no Ember left, Q inks nothing (%d planks)" % bridge.solid_count())
+	check(bridge.solid_count() == 0, "with no Ember left, right click inks nothing (%d planks)" % bridge.solid_count())
 	# away from the bridge, Q raises the Ember: it drains, and comes back once lowered
 	for m in current_scene.get_node("Enemies").get_children():
 		m.queue_free()
@@ -310,13 +310,14 @@ func bridge_test() -> void:
 	await ember_test(player)
 
 
-## Hold Q: the Ember rises (a bigger light, the Writer's kind), drains, and
+## Hold right click: the Ember rises (a bigger light, the Writer's kind), drains, and
 ## comes back after letting go; run dry, it gutters out until it has
-## `relight_at` again. Right click dashes; Q is no longer a Flash.
+## `relight_at` again. Right click is the light, Shift dashes.
 func ember_test(player: Node) -> void:
-	var rmb_dash := InputMap.action_get_events("dash").any(func(e): return e is InputEventMouseButton and e.button_index == MOUSE_BUTTON_RIGHT)
-	var rmb_q := InputMap.action_get_events("flash").any(func(e): return e is InputEventMouseButton)
-	check(rmb_dash and not rmb_q, "right click dashes now, and isn't the light (dash %s, light %s)" % [rmb_dash, rmb_q])
+	var shift_dash := InputMap.action_get_events("dash").any(func(e): return e is InputEventKey and e.physical_keycode == KEY_SHIFT)
+	var rmb_dash := InputMap.action_get_events("dash").any(func(e): return e is InputEventMouseButton)
+	var rmb_light := InputMap.action_get_events("flash").any(func(e): return e is InputEventMouseButton and e.button_index == MOUSE_BUTTON_RIGHT)
+	check(shift_dash and not rmb_dash and rmb_light, "Shift dashes and right click is the light (dash %s, light %s)" % [shift_dash, rmb_light])
 	player.fuel = 80.0
 	var r0: float = player.glow_radius()
 	await physics_frame
@@ -326,7 +327,7 @@ func ember_test(player: Node) -> void:
 	var r1: float = player.glow_radius()
 	var drained: float = 80.0 - player.fuel
 	Input.action_release("flash")
-	check(raised and r1 > r0 + 1.0, "holding Q raises the Ember: a bigger light, the Writer's kind (radius %.1f -> %.1f)" % [r0, r1])
+	check(raised and r1 > r0 + 1.0, "holding right click raises the Ember: a bigger light, the Writer's kind (radius %.1f -> %.1f)" % [r0, r1])
 	check(drained > 12.0 and drained < 20.0, "it drains while raised (%.1f in 1 s), with no Flash" % drained)
 	var low: float = player.fuel
 	await seconds(1.6)

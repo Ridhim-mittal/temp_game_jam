@@ -1,6 +1,6 @@
 extends Node2D
 ## Vesper's Ember: a little flame that floats at her shoulder. Hold the
-## "ember" action (Q / E) to raise it:
+## "ember" action (right click) to raise it:
 ##  - its light makes sketch platforms solid (light rule 1) and is monster
 ##    light (rule 2: burns a Crossed-Out's X, unfolds Crumples, surfaces
 ##    Smudges, scatters Scribbles)
