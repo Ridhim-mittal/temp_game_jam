@@ -103,8 +103,9 @@ func telegraph_test() -> void:
 	check(strikes > 0, "the Rubbing Room's lamps struck during 90 s of hunting (%d strikes)" % strikes)
 	check(bad == 0, "every strike came after its full telegraph (%d without)" % bad)
 	# a physics tick here is 4 x 1/120 s; even the fastest glide onto a mark
-	# moves well under a unit in that time
-	check(max_jump < 0.6, "the circles glide: no jumps (largest step per tick %.2f u)" % max_jump)
+	# (the Rubbing Room's lamps, ~18 u/s) moves well under a unit in that
+	# time, while a jump would be several
+	check(max_jump < 1.0, "the circles glide: no jumps (largest step per tick %.2f u)" % max_jump)
 
 
 ## A solid wall between the lamp and Vesper hides him: it loses him.

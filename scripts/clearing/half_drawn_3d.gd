@@ -1,35 +1,42 @@
 extends "res://scripts/clearing/monster_3d.gd"
-## The Half-Drawn: ghosts of characters the Writer began and abandoned,
-## half inked, half pencil (half_drawn_model.gd). They drift after Vesper
-## and cut at him with a nib-blade:
-##  - WINDUP: the blade rises high behind the head and the eyes flare (a
-##    slow, readable tell); it tracks him for most of it, then locks
+## The Half-Drawn: scribbles the Writer started and never finished
+## (unfinished_model.gd: pencil and ink strokes, a head of construction
+## lines, a nib-blade for a hand). They are barely on the page: out of the
+## Ember's light each is a faint pale ghost (only its eyes catch the eye),
+## and a sword goes straight through it ("NOT DRAWN YET"). Hold Q: inside the
+## raised Ember's light it inks in, solid enough to cut
+## (clearing_player.gd ember_reveals()). Vesper shows a "HOLD Q" prompt when
+## one is near and unseen (group "needs_ember").
+## They drift after Vesper and cut at him:
+##  - WINDUP: the blade snaps up behind the head, the eyes flare; it tracks
+##    him, then locks for the last moment
 ##  - STRIKE: a quick lunge and a slash across an arc in front (`reach`,
-##    `arc`); only the blade hurts, touching the ghost doesn't
-##  - RECOVER: guard down for a moment, the time to hit back
-## Hitting one mid-windup staggers it out of the swing. There isn't much to
-## them: `hp` 3.
+##    `arc`); only the blade hurts, touching it doesn't
+##  - RECOVER: a short pause, the time to hit back
+## Hitting one mid-windup staggers it out of the swing. `hp` 3.
 
-const Model = preload("res://scripts/clearing/half_drawn_model.gd")
+const Model = preload("res://scripts/clearing/unfinished_model.gd")
 const GHOST_RIM := Color(0.6, 1.0, 0.95)
 
 enum State { DRIFT, WINDUP, STRIKE, RECOVER }
 
-@export var drift_speed := 2.1
+@export var drift_speed := 3.2
 ## Starts a swing when Vesper is this close.
 @export var strike_range := 2.0
 ## How far the slash reaches, and how many degrees either side of its aim.
-@export var reach := 2.1
+@export var reach := 2.2
 @export var arc := 70.0
-@export var windup_time := 0.65
-@export var strike_time := 0.22
-@export var recover_time := 0.85
+@export var windup_time := 0.38
+@export var strike_time := 0.14
+@export var recover_time := 0.5
 ## Seconds between swings.
-@export var cooldown := 0.6
+@export var cooldown := 0.45
 @export var blade_damage := 1
 
 var state := State.DRIFT
 var model: Node3D
+## True while the raised Ember's light is on it: visible and hittable.
+var revealed := false
 
 var _timer := 0.0
 var _cd := 0.0
@@ -46,9 +53,13 @@ func _ready() -> void:
 	add_child(model)
 	setup_monster_model(model)
 	_cd = randf_range(0.3, 1.2)
-	# a faint pool of light, so the ghost shows in the dark (darkness.gd)
-	set_meta("glow_radius", 1.3)
-	add_to_group("glow")
+	add_to_group("needs_ember")
+
+
+func _physics_process(delta: float) -> void:
+	var p := get_tree().get_first_node_in_group("player")
+	revealed = not dead and p != null and p.has_method("ember_reveals") and p.ember_reveals(global_position + Vector3(0, 1.0, 0))
+	super(delta)
 
 
 func _tick(delta: float) -> void:
@@ -122,9 +133,17 @@ func _slash() -> void:
 		_player.take_damage(blade_damage, global_position)
 
 
-## Only the blade hurts: brushing past the ghost is safe.
+## Only the blade hurts: brushing past it is safe.
 func is_harmful() -> bool:
 	return false
+
+
+## Out of the Ember's light there is nothing there to cut.
+func _blocks(_dir: Vector3, _aerial: bool) -> bool:
+	if revealed:
+		return false
+	pop("NOT DRAWN YET", Color(0.78, 0.9, 1.0), 2.2, 22)
+	return true
 
 
 ## A hit mid-windup staggers it out of the swing.
@@ -136,15 +155,15 @@ func _on_hurt() -> void:
 
 
 func _die() -> void:
-	remove_from_group("glow")
-	pop("UNWRITTEN", Color(0.75, 1.0, 0.95), 2.4, 26)
-	Fx.burst(get_tree(), global_position + Vector3(0, 1.0, 0), Color(0.85, 0.95, 0.95), 14, 3.0)
+	remove_from_group("needs_ember")
+	pop("UNWRITTEN", Color(0.95, 0.93, 0.86), 2.4, 26)
+	Fx.burst(get_tree(), global_position + Vector3(0, 1.0, 0), Color(0.42, 0.44, 0.5), 16, 3.2)
 	super()
 
 
 func _on_respawn() -> void:
 	state = State.DRIFT
-	add_to_group("glow")
+	add_to_group("needs_ember")
 
 
 func _sync_puppet() -> void:
@@ -153,3 +172,4 @@ func _sync_puppet() -> void:
 	model.windup = 1.0 - _timer / windup_time if state == State.WINDUP else -1.0
 	model.strike = 1.0 - _timer / strike_time if state == State.STRIKE else -1.0
 	model.dead = dead
+	model.reveal = 1.0 if revealed else 0.0

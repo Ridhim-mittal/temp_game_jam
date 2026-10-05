@@ -141,6 +141,38 @@ Branch `gutter-rework`, made from `main`. Everything here is the 2.5D part (the 
       - **Counterplay:** hit it during the windup and it staggers out of the swing. Three hits
         and it's gone ("UNWRITTEN").
 
+12. **Light, hearts and a scribble you can't see** (your next notes on Level 1):
+    - **Q works like the 2D Ember.** Hold Q to raise it:
+      - **Light:** its light swells to a bigger pool and becomes the Writer's kind of light.
+        It shows the unfinished monsters, dries the Red Pen's wet ink and melts its letters.
+      - **Meter:** it drains while held. Let go and it comes back after a moment, faster
+        beside a lit lantern. Run it dry and it gutters out until a fifth of the bar is back.
+      - **HUD:** the Ember bar shows its Q key.
+      - **The bridge:** pressing Q at the sketched bridge, or holding the Ember still beside
+        it, inks it as before.
+    - **Right click dashes** (Shift still works). The old Flash is gone from the controls;
+      the raised Ember does its job.
+    - **Six hearts** replace the health bar. A lost heart flashes and empties, the last one
+      pulses, and a healed one glows green.
+    - **The monster, redrawn as an unfinished scribble:**
+      - **Look:** drawn entirely in pencil and ink strokes that jitter like hand-drawn
+        animation. A tangled scribble body, half an inked outline, a head that's still only
+        construction lines with an angry brow and a jagged mouth, a nib-blade for one arm,
+        a dashed half-arm for the other, and a scribble tail.
+      - **Unseen:** out of your Ember's light it's a faint pale ghost (only its eyes catch
+        the light), and your sword goes straight through it ("NOT DRAWN YET").
+      - **Seen:** hold Q and the ones inside the light ink in, solid enough to cut.
+      - **Faster:** a much quicker windup and slash (0.38 s, then 0.14 s) and faster
+        movement. Still 3 hits, and still staggered if hit during the windup.
+      - **Prompt and lore:** "HOLD Q TO SEE THEM" floats over Vesper while one is near and
+        unseen, and the Writer explains it on entering the room.
+    - **Vesper's shrine** replaces the bleeding-eye altar in the hub.
+      - **Statue:** a pale plaster statue of Vesper, sword raised, the Ember burning above
+        it, with a gold "VESPER" plaque.
+      - **Offerings:** his red scarf draped over the steps, ink pots, quills, stacks of
+        comic pages and cream candles with golden flames, in an Ember-gold ring of the
+        Writer's marks. The skulls are gone.
+
 ## Tuning knobs
 
 | What | Where |
@@ -164,7 +196,10 @@ Branch `gutter-rework`, made from `main`. Everything here is the 2.5D part (the 
 | Inking the bridge | `drawn_bridge.gd`: `ink_reach` (5), `ink_speed` (6), `ink_cost` (3 Ember a plank); `ink_only` off = old light rule |
 | Eraser difficulty | `build_rooms.py` arena block (hp, walk_speed, lunge_speed, windup_time, tired_time, cooldown); `eraser_3d.gd` `double_charge_below` (0.5) |
 | Which monsters where | `build_rooms.py`, one block per level (`r.enemy(...)`) |
-| Half-Drawn | `half_drawn_3d.gd`: `drift_speed`, `strike_range`, `reach`, `arc`, `windup_time`, `strike_time`, `recover_time`, `cooldown`, `blade_damage`, `hp` (3); look in `half_drawn_model.gd` (`model_scale`, colours) |
+| Half-Drawn | `half_drawn_3d.gd`: `drift_speed` (3.2), `strike_range`, `reach`, `arc`, `windup_time` (0.38), `strike_time` (0.14), `recover_time`, `cooldown`, `blade_damage`, `hp` (3); look in `unfinished_model.gd` (`model_scale`, strokes) and `scribble_stroke.gdshader` (`width`, `boil`, `ghost_alpha`) |
+| Raised Ember (Q) | `clearing_player.gd`: `raised_radius` (5), `raise_drain` (16/s), `regen` (14/s), `regen_delay` (0.6 s), `lantern_regen` (40/s), `relight_at` (20) |
+| Hearts | `clearing_player.gd` `max_health` (6); look in `clearing_hud.gd` (`HEARTS_AT`, `HEART_STEP`) |
+| Vesper's shrine | `altar.gd`: `statue_scale`, `ring_color`, offerings in `_rebuild()` |
 | Background style | room.gd `backdrop_style` (SIGIL / COMIC); the page in `comic_page.gdshader` (`brightness`, `panel_size`, `drift`), words in room.gd `SOUND_WORDS` |
 | Symbols | `shaders/world25/writers_marks.gdshaderinc` (add a mark, raise `WM_COUNT`) |
 | Lamp difficulty | room.gd `_spawn_haunt()`: Relaxed speed ×0.75 / telegraph ×1.3, Hard ×1.25 / ×0.8 |
@@ -193,20 +228,33 @@ These ran with Godot 4.7-stable under Xvfb with software OpenGL.
     telegraph.
   - Hiding behind a wall makes the lamp lose Vesper.
   - The Spine's lamp never damages or strikes.
-  - The circles glide, with no jumps between physics ticks.
-- **`tests/gutter/test_levels.gd`: 34/34 checks.**
+  - The circles glide, with no jumps between physics ticks. The limit is 1 unit per test
+    tick: the Rubbing Room's lamps glide onto their marks at up to 0.6.
+- **`tests/gutter/test_levels.gd`: 43/43 checks.**
   - The gates chain hub → 1 → 2 → 3 → 4, and none leads to a retired room.
   - Every level's way in is one-way. In a cleared room the way on opens and the way back
     stays shut.
   - The hub has 3 Scribbles and the next room has only Half-Drawn (4). Level 3 has no
     Inkwells, Crumples or divers. The Eraser is tougher and turns furious at half health.
-  - The Half-Drawn: touching it is safe; it winds up, swings and its blade takes an ink
-    drop; a hit mid-windup staggers it; three hits finish it.
+  - The Half-Drawn:
+    - Touching it is safe, and "HOLD Q TO SEE THEM" shows while it's unseen.
+    - Its blade takes a heart.
+    - Out of the light a hit passes through it.
+    - Holding Q reveals it and the prompt goes; in the light a hit mid-windup staggers it,
+      and three hits finish it.
+  - Six hearts, and the hub's shrine holds a statue of Vesper.
   - Spawn protection: a hit and a lamp's light do nothing for 2 s, then hits land again.
-  - The bridge stays a sketch while Vesper stands by it.
-  - Holding Q inks 6 of 8 planks for 3 Ember each, with no Flash, and they stay.
-  - One more hold finishes the bridge, and Vesper walks across without falling.
-  - With no Ember, Q inks nothing; away from the bridge, Q still Flashes.
+  - The bridge:
+    - It stays a sketch while Vesper stands by it.
+    - Holding Q inks 6 of 8 planks for 3 Ember each, and they stay.
+    - One more hold finishes it, and Vesper walks across without falling.
+    - With no Ember, Q inks nothing.
+  - The Ember:
+    - Right click is dash, not the light.
+    - Holding Q raises a bigger light (radius 3 → 5) of the Writer's kind and drains about
+      15 a second.
+    - Let go and it comes back.
+    - Run dry, it gutters out and won't rise until it has refilled.
 
 ## Not verified
 
