@@ -10,10 +10,10 @@ extends StaticBody2D
 		size = value
 		queue_redraw()
 		_update_shape()
-@export var face := Color(0.23, 0.22, 0.3)
-@export var body := Color(0.12, 0.11, 0.17)
-@export var lip := Color(0.66, 0.63, 0.78)
-@export var joint_every := 260.0
+@export var face := Color(0.28, 0.27, 0.34)
+@export var body := Color(0.16, 0.15, 0.21)
+@export var lip := Color(0.5, 0.48, 0.58)
+@export var joint_every := 200.0
 
 const INK := Color(0.04, 0.03, 0.08)
 

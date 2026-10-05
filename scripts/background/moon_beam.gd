@@ -6,6 +6,8 @@ extends Node2D
 @export var street_y := 612.0
 @export var moon := Vector2(0.5, 0.08)
 @export var color := Color(1.0, 0.97, 0.8)
+## Overall strength of the beam and its pool of light.
+@export var strength := 1.0
 
 var _time := 0.0
 
@@ -23,9 +25,9 @@ func _draw() -> void:
 	var m := moon * s
 	var flicker := 0.9 + 0.1 * sin(_time * 1.7)
 	draw_colored_polygon(PackedVector2Array([m + Vector2(-30, 0), m + Vector2(30, 0), Vector2(m.x + 180, street_y),
-		Vector2(m.x - 180, street_y)]), Color(color, 0.12 * flicker))
+		Vector2(m.x - 180, street_y)]), Color(color, 0.12 * flicker * strength))
 	draw_colored_polygon(PackedVector2Array([m + Vector2(-15, 0), m + Vector2(15, 0), Vector2(m.x + 80, street_y),
-		Vector2(m.x - 80, street_y)]), Color(color, 0.12 * flicker))
+		Vector2(m.x - 80, street_y)]), Color(color, 0.12 * flicker * strength))
 	# pool of light on the street
 	for k in 4:
 		var pts := PackedVector2Array()
@@ -33,4 +35,7 @@ func _draw() -> void:
 		for j in 24:
 			var a := TAU * j / 24.0
 			pts.append(Vector2(m.x + cos(a) * rx, street_y + sin(a) * rx * 0.12))
-		draw_colored_polygon(pts, Color(color, 0.06 + k * 0.04))
+		draw_colored_polygon(pts, Color(color, (0.06 + k * 0.04) * strength))
+	# glow rising off the street where the light lands
+	for k in 5:
+		draw_circle(Vector2(m.x, street_y - 30.0), 110.0 - k * 20.0, Color(color, 0.035 * strength * (k + 1)))

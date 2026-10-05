@@ -1,9 +1,8 @@
 [gd_scene load_steps=11 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="1_player"]
-[ext_resource type="Script" path="res://scripts/background/corrupt_city_backdrop.gd" id="2_backdrop"]
+[ext_resource type="Script" path="res://scripts/background/city_painting.gd" id="2_backdrop"]
 [ext_resource type="Script" path="res://scripts/world/street_ground.gd" id="3_street"]
-[ext_resource type="Script" path="res://scripts/world/print_clutter.gd" id="4_clutter"]
 [ext_resource type="Script" path="res://scripts/ui/hud.gd" id="5_hud"]
 [ext_resource type="Script" path="res://scripts/audio/level_music.gd" id="8_music"]
 [ext_resource type="Script" path="res://scripts/world/level_mood.gd" id="30_mood"]
@@ -27,14 +26,8 @@ position = Vector2(-640, -1200)
 script = ExtResource("3_street")
 size = Vector2(40, 1800)
 
-[node name="Clutter" type="Node2D" parent="World"]
-z_index = -1
-position = Vector2(-600, 600)
-script = ExtResource("4_clutter")
-length = 7200.0
-
 [node name="Player" parent="." instance=ExtResource("1_player")]
-position = Vector2(400, 574)
+position = Vector2(640, 574)
 
 [node name="Camera2D" parent="Player"]
 framing_offset = Vector2(0, -226)

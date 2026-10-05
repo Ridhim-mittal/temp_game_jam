@@ -63,14 +63,13 @@ Spikes (group `hazard`) cost health and send the 2D player back to the last chec
 level, or the level start (`_respawn_point()` in player.gd); never to the last ground stood on.
 
 ## Shade's City (`scenes/levels/shades_city.tscn`, Act 3: back in 2D after the light catches Vesper)
-Chapters -> SHADE'S CITY. The City's pop-art skyline, corrupted: `corrupt_city_backdrop.gd` raises
-comic_background.tscn's skyline (street in the bottom ~15%; the player's Camera2D `framing_offset`
-is (0, -226) to match), drops its day sky / hills / rooftops / foreground, and adds `night_sky.gd`
-(moon, swirls, constellation), `moon_beam.gd` (the author's light onto the street),
-`corruption_layer.gd` (redaction bars, dripping red graffiti, error notes, cables; endless, seeded
-per slot) and `junk_heaps.gd` (rubble and paper heaps, now and then a bloody printing press).
-Ground: `street_ground.gd` (dark kerb slab, pale lip); `print_clutter.gd` (CMYK bales, rollers,
-ink puddles on the street, no collision). Layout and monsters (paper spider, Ink Blot) come next.
+Chapters -> SHADE'S CITY. The backdrop is the concept painting redrawn in code: `city_painting.gd`
+sets up `night_sky.gd` (moon, swirls, constellation), `moon_beam.gd` (the author's light onto the
+street) and two copies of `city_panorama.gd` in parallax layers repeating every 1280 px: "city"
+(buildings, redaction bars, graffiti, posters) and "junk" (lamp post, heaps, machines, CMYK paper
+stacks, ink spill, scaffold). Shapes are placed in the painting's own pixel coordinates via _p()/_r(),
+so at the start (player x 640, Camera2D `framing_offset` (0, -226)) the screen matches the painting.
+Ground: `street_ground.gd` (dark kerb slab, pale lip) in the bottom ~15%. Layout and monsters next.
 
 ## 2.5D framework
 - Rooms are scenes whose root uses `scripts/world25/room.gd`; it builds environment, light,
