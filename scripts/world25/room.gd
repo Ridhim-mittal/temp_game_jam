@@ -232,17 +232,6 @@ func _build_ui() -> void:
 	ui = Control.new()
 	ui.set_script(StoryUI)
 	layer.add_child(ui)
-	var controls := Label.new()
-	controls.name = "Controls"
-	controls.position = Vector2(24, 684)
-	controls.add_theme_font_size_override("font_size", 15)
-	controls.add_theme_color_override("font_color", Color(0.97, 0.95, 0.9, 0.85))
-	controls.add_theme_color_override("font_outline_color", Color(0.06, 0.03, 0.13))
-	controls.add_theme_constant_override("outline_size", 5)
-	controls.text = "WASD move   Space jump   Click / X attack   Shift dash   Right click / Q flash   Hold F heal   E interact   Esc pause"
-	var settings := get_node_or_null("/root/Settings")
-	controls.visible = settings == null or settings.get_value("controls_hint") == "on"
-	layer.add_child(controls)
 
 
 func _spawn_player(world: Node) -> void:
@@ -368,10 +357,6 @@ func _on_overlay_closed() -> void:
 	get_tree().paused = false
 	if player:
 		player.refresh_loadout()
-	var settings := get_node_or_null("/root/Settings")
-	var controls := get_node_or_null("UI/Controls")
-	if settings and controls:
-		controls.visible = settings.get_value("controls_hint") == "on"
 
 
 func _on_pause_choice(action: String) -> void:

@@ -334,12 +334,6 @@ out += ['[node name="Enemies" type="Node2D" parent="."]', "", "\n\n".join(enemie
         '[node name="HUD" type="Control" parent="UI"]', "layout_mode = 3", "anchors_preset = 15",
         "anchor_right = 1.0", "anchor_bottom = 1.0", "grow_horizontal = 2", "grow_vertical = 2",
         "mouse_filter = 2", 'script = ExtResource("5_hud")', "",
-        '[node name="Controls" type="Label" parent="UI/HUD"]', "layout_mode = 0", "offset_left = 24.0",
-        "offset_top = 640.0", "offset_right = 1260.0", "offset_bottom = 700.0",
-        "theme_override_colors/font_color = Color(0.97, 0.95, 0.9, 1)",
-        "theme_override_colors/font_outline_color = Color(0.06, 0.03, 0.13, 1)",
-        "theme_override_constants/outline_size = 6",
-        'text = "Move: A/D or Arrows   Jump: Space/Z (hold = higher)   Attack: Left Click (+W up, +S down in air = pogo; hold = ink wave)   Dash: Right Click   Ember: hold Q/E   Restart: R"', "",
         '[node name="LevelMusic" type="Node" parent="."]', 'script = ExtResource("8_music")', "",
         '[node name="LevelMood" type="Node" parent="."]', 'script = ExtResource("30_mood")', ""]
 open(os.path.join(ROOT, "scenes/levels/test_level.tscn"), "w").write("\n".join(out))

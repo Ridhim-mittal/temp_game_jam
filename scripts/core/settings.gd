@@ -17,7 +17,6 @@ const OPTIONS := {
 	"fullscreen": ["off", ["off", "on"]],
 	"screen_shake": ["full", ["off", "low", "full"]],
 	"hit_text": ["on", ["on", "off"]],
-	"controls_hint": ["on", ["on", "off"]],
 	"difficulty": ["normal", ["relaxed", "normal", "hard"]],
 	"scribble_style": ["hopper", ["hopper", "diver"]],
 }

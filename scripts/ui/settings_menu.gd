@@ -20,8 +20,6 @@ const ROWS := [
 	["SCREEN SHAKE", "screen_shake", {"off": ["OFF", "No camera shake."], "low": ["LOW", "Gentle shake on hits."],
 		"full": ["FULL", "Big comic-book impacts."]}],
 	["HIT WORDS", "hit_text", {"on": ["ON", "THWACK! POW! over every hit."], "off": ["OFF", "No sound-effect words."]}],
-	["CONTROLS HINT", "controls_hint", {"on": ["ON", "Show the controls line at the bottom of the screen."],
-		"off": ["OFF", "Hide the controls line."]}],
 	["DIFFICULTY", "difficulty", {"relaxed": ["RELAXED", "+2 ink drops and longer safety after hits."],
 		"normal": ["NORMAL", "As designed."], "hard": ["HARD", "Monsters hit harder and take more beating."]}],
 	["SCRIBBLES", "scribble_style", {"hopper": ["HOPPER", "Hops along the ground and pounces (2.5D design)."],
