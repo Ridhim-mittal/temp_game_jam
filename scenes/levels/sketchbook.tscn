@@ -55,13 +55,6 @@ size = Vector2(80, 1700)
 trim = Color(1, 0.78, 0.36, 1)
 accent = Color(0.55, 0.9, 1, 1)
 
-[node name="Caption1" type="Node2D" parent="World"]
-z_index = 5
-position = Vector2(8680, 455)
-script = ExtResource("43_caption")
-text = "HOLD RIGHT CLICK - RAISE YOUR EMBER\nLIGHT MAKES THE SKETCH REAL"
-tilt = -0.03
-
 [node name="PitFloor1" type="StaticBody2D" parent="World"]
 position = Vector2(8680, 950)
 script = ExtResource("47_cityblock")
@@ -87,13 +80,6 @@ script = ExtResource("47_cityblock")
 size = Vector2(320, 500)
 trim = Color(1, 0.78, 0.36, 1)
 accent = Color(0.55, 0.9, 1, 1)
-
-[node name="Caption2" type="Node2D" parent="World"]
-z_index = 5
-position = Vector2(9470, 445)
-script = ExtResource("43_caption")
-text = "TOO FAR FOR ONE EMBER?\nSTAND STILL WITH IT RAISED: INK SPREADS FROM YOUR FEET.\nINK STAYS. REST ON IT."
-tilt = -0.03
 
 [node name="PitFloor2" type="StaticBody2D" parent="World"]
 position = Vector2(9980, 950)
@@ -121,26 +107,12 @@ size = Vector2(510, 20)
 inkable = false
 drinks_light = true
 
-[node name="Caption3" type="Node2D" parent="World"]
-z_index = 5
-position = Vector2(10445, 470)
-script = ExtResource("43_caption")
-text = "BLUE PENCIL NEVER TAKES INK.\nIT DRINKS YOUR LIGHT."
-tilt = 0.03
-
 [node name="Ground3" type="StaticBody2D" parent="World"]
 position = Vector2(10820, 850)
 script = ExtResource("47_cityblock")
 size = Vector2(240, 500)
 trim = Color(1, 0.78, 0.36, 1)
 accent = Color(0.55, 0.9, 1, 1)
-
-[node name="Caption4" type="Node2D" parent="World"]
-z_index = 5
-position = Vector2(11030, 470)
-script = ExtResource("43_caption")
-text = "LANTERNS ARE FREE LIGHT.\nSHADOWS ARE NOT."
-tilt = 0.03
 
 [node name="PitFloor3" type="StaticBody2D" parent="World"]
 position = Vector2(11210, 950)
@@ -177,7 +149,7 @@ size = Vector2(63, 22)
 trim = Color(1, 0.78, 0.36, 1)
 accent = Color(0.55, 0.9, 1, 1)
 
-[node name="Caption5" type="Node2D" parent="World"]
+[node name="Caption1" type="Node2D" parent="World"]
 z_index = 5
 position = Vector2(11510, 385)
 script = ExtResource("43_caption")
@@ -321,20 +293,10 @@ live_areas = Array[Rect2]([Rect2(7820, -1200, 4800, 1860), Rect2(8420, 590, 520,
 
 [node name="Narration1" type="CanvasLayer" parent="."]
 script = ExtResource("46_narration")
-text = "PAST THE CITY, THE WORLD WAS STILL A SKETCH: PENCIL LINES THAT ONLY TURNED REAL IN THE LIGHT."
+text = "PAST THE CITY, THE WORLD WAS ONLY A SKETCH. IT TURNED REAL IN THE LIGHT."
 trigger_x = -1e+09
 
 [node name="Narration2" type="CanvasLayer" parent="."]
 script = ExtResource("46_narration")
-text = "SOME BRIDGES WERE TOO LONG FOR ONE BREATH OF LIGHT. SO VESPER STOPPED, AND LET THE INK SET."
-trigger_x = 9100
-
-[node name="Narration3" type="CanvasLayer" parent="."]
-script = ExtResource("46_narration")
-text = "THE OLD LANTERNS STILL REMEMBERED HOW TO SHINE. BUT LIGHT CASTS SHADOWS."
-trigger_x = 10840
-
-[node name="Narration4" type="CanvasLayer" parent="."]
-script = ExtResource("46_narration")
-text = "AND BELOW THE LAST PAGE OF THE SKETCHBOOK, THE WORLD DROPPED AWAY INTO THE DARK..."
+text = "BELOW THE LAST PAGE, THE WORLD DROPPED AWAY INTO THE DARK..."
 trigger_x = 11940

@@ -40,9 +40,9 @@ const LATER := {
 	"2d": [
 		{"id": "ember", "word": "EMBER", "keys": [["RMB", "ember"]], "hold": 0.8, "when": "near_light"},
 		# hold attack past player.gd's charge_time (0.6 s), let go: an ink wave flies out
-		{"id": "inkwave", "word": "LONG-RANGE INK WAVE", "keys": [["LMB", "attack"]], "hold": 0.7, "when": "near_flyer"},
+		{"id": "inkwave", "word": "INK WAVE", "keys": [["LMB", "attack"]], "hold": 0.7, "when": "near_flyer"},
 		# light or life (player.gd): pour a third of the Ember into half a bottle of ink
-		{"id": "heal", "word": "HEAL: YOUR LIGHT BECOMES INK", "keys": [["F", "heal"]], "hold": 1.0, "when": "hurt_2d"},
+		{"id": "heal", "word": "HEAL", "keys": [["F", "heal"]], "hold": 1.0, "when": "hurt_2d"},
 	],
 	"25d": [
 		{"id": "ember25", "word": "EMBER", "keys": [["RMB", "flash"]], "hold": 0.8, "when": "near_monster"},
