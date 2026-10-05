@@ -1,5 +1,6 @@
 extends Control
-## Pause menu for 2.5D rooms (Esc): Resume, Skill Tree, Settings, Main Menu.
+## Pause menu for 2.5D rooms (Esc): Resume, Skill Tree, Controls (replays the
+## controls tutorial), Settings, Main Menu.
 ## The game is paused while it (or anything it opens) is up. room.gd opens
 ## it and the overlays it leads to.
 
@@ -12,7 +13,8 @@ const RED := Color(0.9, 0.22, 0.16)
 const DIM := Color(0.62, 0.6, 0.62)
 const GOLD := Color(1.0, 0.82, 0.25)
 
-const ITEMS := [["RESUME", "resume"], ["SKILL TREE", "skills"], ["SETTINGS", "settings"], ["MAIN MENU", "menu"]]
+const ITEMS := [["RESUME", "resume"], ["SKILL TREE", "skills"], ["CONTROLS", "controls"], ["SETTINGS", "settings"],
+	["MAIN MENU", "menu"]]
 
 var _row := 0
 var _rects: Array[Rect2] = []

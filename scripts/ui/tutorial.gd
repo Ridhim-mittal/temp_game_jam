@@ -19,7 +19,8 @@ const YELLOW := Color(1.0, 0.84, 0.24)
 const RED := Color(0.92, 0.3, 0.22)
 
 ## Key caps: [shown, input action]. "LMB" / "RMB" draw a mouse.
-## Four keys draw as a W / A S D cluster.
+## Four keys draw as a W / A S D cluster. On a controller each step shows
+## its button from PAD instead, and the move keys become the left stick.
 const BASICS := {
 	"2d": [
 		{"id": "move", "word": "MOVE", "keys": [["A", "move_left"], ["D", "move_right"]]},
@@ -44,6 +45,11 @@ const LATER := {
 		{"id": "heal", "word": "HEAL", "keys": [["F", "heal"]], "hold": 0.6, "when": "hurt"},
 	],
 }
+## Controller button per action (Xbox layout, as bound in input_setup.gd).
+const PAD := {"jump": "A", "attack": "X", "dash": "RB", "flash": "Y", "heal": "B", "ember": "Y"}
+const PAD_COLORS := {"A": Color(0.3, 0.72, 0.3), "B": Color(0.9, 0.28, 0.22),
+	"X": Color(0.22, 0.48, 0.95), "Y": Color(0.95, 0.72, 0.1)}
+const STICK_DIRS := {"move_left": Vector2.LEFT, "move_right": Vector2.RIGHT, "up": Vector2.UP, "down": Vector2.DOWN}
 const CAP := 88.0  # key height in the middle of the screen
 const CLUSTER_CAP := 64.0  # ...when a move has several keys
 const TRAY_SCALE := 0.5
@@ -72,6 +78,7 @@ var _time := 0.0
 var _hint: CanvasItem
 var _hint_was := true
 var _hint_restored := false
+var _pad := false  # the last input came from a controller
 
 
 ## Adds the tutorial for `mode` over the game, unless it has all been seen.
@@ -100,6 +107,7 @@ static func start(host_node: Node, the_player: Node, the_mode: String, story_ui:
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	process_mode = Node.PROCESS_MODE_ALWAYS  # to hide under pause menus (below)
 	for s in BASICS[mode]:
 		if _seen(s):
 			_tray.append(s)
@@ -114,12 +122,19 @@ func _ready() -> void:
 	if _hint:
 		_hint_was = _hint.visible
 	_hint_restored = _basics.is_empty()
+	_pad = not Input.get_connected_joypads().is_empty()
 
 
 func _input(event: InputEvent) -> void:
-	if _current.is_empty() or _alpha < 0.5:
+	if event is InputEventJoypadButton or (event is InputEventJoypadMotion and absf(event.axis_value) > 0.5):
+		_pad = true
+	elif event is InputEventKey or event is InputEventMouseButton:
+		_pad = false
+	if _current.is_empty() or _alpha < 0.5 or get_tree().paused:
 		return
-	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_ESCAPE:
+	var skip: bool = (event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_ESCAPE) \
+		or (event is InputEventJoypadButton and event.pressed and event.button_index == JOY_BUTTON_BACK)
+	if skip:
 		get_viewport().set_input_as_handled()  # skip, don't pause / leave
 		for s in BASICS[mode] + LATER[mode]:
 			_mark(s)
@@ -132,6 +147,9 @@ func _input(event: InputEvent) -> void:
 
 
 func _process(delta: float) -> void:
+	visible = not get_tree().paused
+	if not visible:
+		return
 	_time += delta
 	if not is_instance_valid(player):
 		return
@@ -266,6 +284,10 @@ func _mark(s: Dictionary) -> void:
 	get_node("/root/Profile").mark_tutorial(mode + "." + s.id)
 
 
+func _exit_tree() -> void:
+	_restore_hint()
+
+
 func _restore_hint() -> void:
 	if _hint and is_instance_valid(_hint) and not _hint_restored:
 		_hint.visible = _hint_was
@@ -319,7 +341,8 @@ func _draw() -> void:
 	var sk := Vector2(size.x - 34, size.y - (100.0 if hint_up else 40.0))
 	_text(sk + Vector2(0, 8), "SKIP", 22, Color(PAPER, 0.9 * a), a, false, true)
 	var sw := FONT.get_string_size("SKIP", HORIZONTAL_ALIGNMENT_LEFT, -1, 22).x
-	_cap(sk - Vector2(sw + 34, 0), "ESC", 30.0, 0.0, false, a)
+	var key := "BACK" if _pad else "ESC"
+	_cap(sk - Vector2(sw + 14 + _key_w(key, 30.0) * 0.5, 0), key, 30.0, 0.0, false, a)
 
 
 func _draw_tray() -> void:
@@ -345,26 +368,36 @@ func _tray_slot(s: Dictionary) -> Vector2:
 	return Vector2(x + _keys_size(s, TRAY_SCALE).x * 0.5, size.y - 78.0)
 
 
+## What the caps of a step show: its keys, or its controller button.
+func _labels(s: Dictionary) -> Array:
+	if _pad:
+		return ["STICK"] if STICK_DIRS.has(s.keys[0][1]) else [PAD.get(s.keys[0][1], "?")]
+	var out := []
+	for key in s.keys:
+		out.append(key[0])
+	return out
+
+
 func _cap_h(s: Dictionary) -> float:
-	return CAP if s.keys.size() == 1 else CLUSTER_CAP
+	return CAP if _labels(s).size() == 1 else CLUSTER_CAP
 
 
 ## Offsets of each key cap from the middle of the group.
 func _key_offsets(s: Dictionary, k: float) -> Array:
 	var h := _cap_h(s) * k
 	var gap := 10.0 * k
-	var keys: Array = s.keys
+	var labels := _labels(s)
 	var out := []
-	if keys.size() == 4:
+	if labels.size() == 4:
 		var step := h + gap
 		out = [Vector2(0, -step * 0.5), Vector2(-step, step * 0.5), Vector2(0, step * 0.5), Vector2(step, step * 0.5)]
 		return out
 	var total := -gap
-	for key in keys:
-		total += _key_w(key[0], h) + gap
+	for label in labels:
+		total += _key_w(label, h) + gap
 	var x := -total * 0.5
-	for key in keys:
-		var w := _key_w(key[0], h)
+	for label in labels:
+		var w := _key_w(label, h)
 		out.append(Vector2(x + w * 0.5, 0))
 		x += w + gap
 	return out
@@ -373,24 +406,40 @@ func _key_offsets(s: Dictionary, k: float) -> Array:
 func _keys_size(s: Dictionary, k: float) -> Vector2:
 	var h := _cap_h(s) * k
 	var gap := 10.0 * k
-	if s.keys.size() == 4:
+	var labels := _labels(s)
+	if labels.size() == 4:
 		return Vector2(h * 3.0 + gap * 2.0, h * 2.0 + gap)
+	if labels[0] == "STICK":
+		return Vector2.ONE * _key_w("STICK", h)
 	var total := -gap
-	for key in s.keys:
-		total += _key_w(key[0], h) + gap
+	for label in labels:
+		total += _key_w(label, h) + gap
 	return Vector2(total, h)
 
 
 func _draw_keys(s: Dictionary, at: Vector2, k: float, a: float, lit: bool) -> void:
 	var offs := _key_offsets(s, k)
-	var pulse := 0.5 + 0.5 * sin(_time * 7.0)
-	for i in s.keys.size():
+	var labels := _labels(s)
+	var live := s == _current and _done_t < 0.0
+	var pulse := 0.5 + 0.5 * sin(_time * 7.0) if s == _current else 0.0
+	for i in labels.size():
+		var h := _cap_h(s) * k
+		if labels[i] == "STICK":
+			_stick(at + offs[i], h, s, lit, pulse, a)
+			continue
 		var on: bool = lit or (s == _current and i < _pressed.size() and _pressed[i])
-		var glow := 1.0 if on else (pulse * 0.35 if s == _current else 0.0)
-		_cap(at + offs[i], s.keys[i][0], _cap_h(s) * k, glow, on and s == _current and _done_t < 0.0, a)
+		var glow := 1.0 if on else pulse * 0.35
+		if _pad and PAD_COLORS.has(labels[i]):
+			_face(at + offs[i], labels[i], h, glow, on and live, a)
+		else:
+			_cap(at + offs[i], labels[i], h, glow, on and live, a)
 
 
 func _key_w(label: String, h: float) -> float:
+	if label == "STICK":
+		return h * 1.25
+	if _pad and PAD_COLORS.has(label):
+		return h
 	if label == "LMB" or label == "RMB":
 		return h * 0.8
 	return maxf(h, FONT.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, int(h * 0.5)).x + h * 0.6)
@@ -421,6 +470,41 @@ func _cap(c: Vector2, label: String, h: float, glow: float, down: bool, a: float
 	var s := FONT.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs)
 	draw_string(FONT, Vector2(r.get_center().x - s.x * 0.5, r.get_center().y + fs * 0.36), label,
 		HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(INK, a))
+
+
+## A round controller face button with its letter in the button's colour.
+func _face(c: Vector2, label: String, h: float, glow: float, down: bool, a: float) -> void:
+	var r := h * 0.5
+	var at := c + Vector2(0, h * 0.07 if down else 0.0)
+	draw_circle(c + Vector2(h * 0.05, h * 0.11), r, Color(INK, 0.4 * a), true, -1.0, true)
+	draw_circle(at, r + maxf(h * 0.05, 2.0), Color(INK, a), true, -1.0, true)
+	draw_circle(at, r, Color(PAPER.lerp(YELLOW, glow * 0.9), a), true, -1.0, true)
+	var fs := int(h * 0.56)
+	var w := FONT.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var p := Vector2(at.x - w * 0.5, at.y + fs * 0.36)
+	draw_string_outline(FONT, p, label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, maxi(int(h * 0.08), 2) * 2, Color(INK, a))
+	draw_string(FONT, p, label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(PAD_COLORS[label], a))
+
+
+## The left stick for a move step: an arrow per direction it needs, lit
+## once pushed; the knob follows the stick while it's being taught.
+func _stick(c: Vector2, h: float, s: Dictionary, lit: bool, pulse: float, a: float) -> void:
+	var r := _key_w("STICK", h) * 0.5
+	draw_circle(c + Vector2(h * 0.05, h * 0.11), r, Color(INK, 0.4 * a), true, -1.0, true)
+	draw_circle(c, r + maxf(h * 0.05, 2.0), Color(INK, a), true, -1.0, true)
+	draw_circle(c, r, Color(PAPER.lerp(YELLOW, 0.9 if lit else pulse * 0.25), a), true, -1.0, true)
+	for i in s.keys.size():
+		var dir: Vector2 = STICK_DIRS[s.keys[i][1]]
+		var on: bool = lit or (s == _current and i < _pressed.size() and _pressed[i])
+		var side := dir.orthogonal() * r * 0.17
+		draw_colored_polygon(PackedVector2Array([c + dir * r * 0.9, c + dir * r * 0.64 + side, c + dir * r * 0.64 - side]),
+			Color(YELLOW if on else INK, a if on else 0.55 * a))
+	var knob := Vector2.ZERO
+	if s == _current and not lit:
+		knob = Input.get_vector("move_left", "move_right", "up", "down") * r * 0.2
+	draw_circle(c + knob, r * 0.4 + maxf(h * 0.04, 1.5), Color(INK, a), true, -1.0, true)
+	draw_circle(c + knob, r * 0.4, Color(PAPER.darkened(0.12), a), true, -1.0, true)
+	draw_circle(c + knob + Vector2(-r, -r) * 0.12, r * 0.14, Color(1, 1, 1, 0.5 * a), true, -1.0, true)
 
 
 ## A mouse with the button to press in red.

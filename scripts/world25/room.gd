@@ -381,12 +381,27 @@ func _on_pause_choice(action: String) -> void:
 	match action:
 		"resume":
 			_on_overlay_closed()
+		"controls":
+			_on_overlay_closed()
+			replay_tutorial()
 		"skills", "settings":
 			get_tree().paused = false
 			open_overlay(action)
 		"menu":
 			get_tree().paused = false
 			get_tree().change_scene_to_file("res://scenes/ui/main_menu.tscn")
+
+
+## Pause -> Controls: forget the 2.5D tutorial and play it from the start.
+func replay_tutorial() -> void:
+	var old := get_node_or_null("Tutorial")
+	if old:
+		remove_child(old)  # gives the hint line back right away
+		old.queue_free()
+	var profile := get_node_or_null("/root/Profile")
+	if profile:
+		profile.reset_tutorials("25d.")
+	Tutorial.start(self, player, "25d", ui)
 
 
 # ------------------------------------------------------------------- live
