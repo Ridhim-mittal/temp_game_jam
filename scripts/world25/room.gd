@@ -219,6 +219,7 @@ func _build_ui() -> void:
 	mat.shader = OVERLAY_SHADER
 	mat.set_shader_parameter("vignette_start", 0.78)
 	mat.set_shader_parameter("vignette_strength", _biome().vignette)
+	mat.set_shader_parameter("edge_darkness", _biome().edge_darkness)
 	overlay.material = mat
 	overlay.set_script(RectScript)
 	layer.add_child(overlay)

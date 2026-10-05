@@ -870,8 +870,9 @@ func _update_chevron(height: float, delta: float) -> void:
 
 func _update_ember_light() -> void:
 	var k := fuel / max_fuel
-	ember_light.omni_range = lerpf(2.4, 4.6, k)
-	ember_light.light_energy = lerpf(0.55, 1.35, k)
+	# the Gutter is dark: the Ember lights a real pool round Vesper
+	ember_light.omni_range = lerpf(3.4, 6.0, k)
+	ember_light.light_energy = lerpf(0.9, 1.9, k)
 
 
 func _update_art(delta: float) -> void:

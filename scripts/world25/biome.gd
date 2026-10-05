@@ -40,8 +40,11 @@ enum Ground { GRASS, WATER_STONE, CRACKED }
 @export_group("Mood")
 ## Music track for the Music autoload ("lit", "margins", "boss", "ending").
 @export var music := "margins"
-## Comic overlay vignette strength.
+## Comic overlay vignette strength (halftone dots in the corners).
 @export var vignette := 0.35
+## How far the screen edges sink into darkness (0 = not at all): the
+## middle stays lit, the corners go near black.
+@export var edge_darkness := 0.0
 
 
 ## The nine ground colours in the order ground.gdshader expects.

@@ -30,6 +30,12 @@ const GROUND_SHADER = preload("res://shaders/clearing/ground.gdshader")
 	set(v):
 		stain_zone = v
 		_rebuild()
+## Broken stone piled along the closed edges (one merged mesh): 0 = none,
+## 1 = the usual amount.
+@export var rubble := 1.0:
+	set(v):
+		rubble = v
+		_rebuild()
 ## Ground look (scripts/world25/biome.gd); empty = the clearing's colours.
 @export var biome: Resource:
 	set(v):
@@ -77,6 +83,8 @@ func _rebuild() -> void:
 	_apply_biomes(mat)
 	mi.material_override = mat
 	root.add_child(mi)
+	if rubble > 0.0:
+		_build_rubble(root)
 	_build_colliders(root)
 
 
@@ -93,6 +101,65 @@ func _apply_biomes(mat: ShaderMaterial) -> void:
 	mat.set_shader_parameter("use_blend", 1.0 if biome_b else 0.0)
 	mat.set_shader_parameter("blend_from", blend_from)
 	mat.set_shader_parameter("blend_to", blend_to)
+
+
+## Rocks and broken flagstones along every closed edge, some hanging over
+## the drop, kept clear of the open edges (stairs, bridges, gates).
+func _build_rubble(root: Node3D) -> void:
+	var Toon = preload("res://scripts/clearing/toon.gd")
+	var rng := RandomNumberGenerator.new()
+	rng.seed = polygon.size() * 97 + int(absf(polygon[0].x) * 13.0)
+	var rock := SphereMesh.new()
+	rock.radius = 0.5
+	rock.height = 1.0
+	rock.radial_segments = 6
+	rock.rings = 3
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var n := polygon.size()
+	var placed := 0
+	for i in n:
+		if i in open_edges:
+			continue
+		var a := polygon[i]
+		var b := polygon[(i + 1) % n]
+		var inward := -_outward(a, b)
+		var along := (b - a).normalized()
+		var steps := int(a.distance_to(b) / 1.3 * rubble)
+		for k in steps:
+			if rng.randf() < 0.2:
+				continue
+			var p2 := a.lerp(b, (k + rng.randf()) / maxf(steps, 1))
+			if _near_open_edge(p2, 2.2):
+				continue
+			# a little pile: two to four stones, the biggest nearest the drop
+			for j in 2 + rng.randi() % 3:
+				var size := rng.randf_range(0.25, 0.62) * (1.0 - j * 0.15)
+				var q := p2 + along * rng.randf_range(-0.5, 0.5)
+				var p := Vector3(q.x, 0.0, q.y) + inward * (rng.randf_range(-0.15, 0.35) + j * 0.3)
+				var basis := Basis.from_euler(Vector3(rng.randf() * TAU, rng.randf() * TAU, rng.randf() * TAU))
+				basis = basis.scaled(Vector3(size * rng.randf_range(1.0, 1.6), size * rng.randf_range(0.5, 0.9), size))
+				st.append_from(rock, 0, Transform3D(basis, p + Vector3(0, size * 0.15, 0)))
+				placed += 1
+	if placed == 0:
+		return
+	var a_biome: Resource = biome if biome else DEFAULT_BIOME
+	var color: Color = a_biome.light.lerp(a_biome.accent, 0.15).linear_to_srgb()
+	var mi := MeshInstance3D.new()
+	mi.name = "Rubble"
+	mi.mesh = st.commit()
+	mi.material_override = Toon.material(color, {"outline": 0.035, "from_center": 0.0})
+	root.add_child(mi)
+
+
+func _near_open_edge(p: Vector2, dist: float) -> bool:
+	for i in open_edges:
+		if i < 0 or i >= polygon.size():
+			continue
+		var q := Geometry2D.get_closest_point_to_segment(p, polygon[i], polygon[(i + 1) % polygon.size()])
+		if q.distance_to(p) < dist:
+			return true
+	return false
 
 
 func _signed_area() -> float:

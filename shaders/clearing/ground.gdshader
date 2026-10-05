@@ -1,7 +1,7 @@
 shader_type spatial;
 // Ground (top faces) and cliffs (side faces) for 2.5D islands, painted in
 // world space from a biome palette (scripts/world25/biome.gd):
-//   mode 0 GRASS        mottled grass, hand-drawn strokes, sand patches
+//   mode 0 GRASS        stone tiles (paved over: no grass), earth patches
 //   mode 1 WATER_STONE  flagstones under rippling caustic light (Shallows)
 //   mode 2 CRACKED      cracked earth with pale grit (Crumple Wastes)
 // Two palettes (A and B) can be blended across the island: biome A on the
@@ -69,27 +69,37 @@ float stains(vec2 p) {
 	return fbm(p * 0.45 + 17.0) + boost * 0.35;
 }
 
+// Stone tiles laid in a running bond (the old grass, paved over): each tile
+// its own shade, dark grout, chipped corners, moss in some joints, the odd
+// crack, worn patches, and earth showing where tiles are missing.
 vec3 grass_top(vec2 p, int w) {
 	float n = fbm(p * 0.22) + noise(p * 1.4) * 0.12;
+	float ts = 1.6;
+	vec2 tp = p / ts;
+	tp.x += mod(floor(tp.y), 2.0) * 0.5;
+	vec2 cell = floor(tp);
+	vec2 f = fract(tp);
+	float h = hash(cell);
 	vec3 col = P(w, 0);
-	col = mix(col, P(w, 1), step(0.6, n));
-	col = mix(col, P(w, 2), step(n, 0.38));
+	col = mix(col, P(w, 1), step(0.66, h) * 0.75);
+	col = mix(col, P(w, 2), step(h, 0.2) * 0.7);
+	col *= 0.9 + 0.14 * noise(p * 2.3 + h * 13.0);
+	// worn, darker stretches of floor (the old two-tone mottling)
+	col = mix(col, P(w, 2), step(n, 0.38) * 0.45);
+	// grout and chipped corners
+	float edge = min(min(f.x, 1.0 - f.x), min(f.y, 1.0 - f.y)) * ts;
+	vec2 corner = vec2(step(0.5, hash(cell + 2.0)), step(0.5, hash(cell + 3.0)));
+	float chip = step(0.8, hash(cell + 5.1)) * (1.0 - step(0.22, length(f - corner)));
+	float grout = 1.0 - smoothstep(0.035, 0.065, edge);
+	// moss creeping out of some joints
+	float moss = (1.0 - smoothstep(0.06, 0.2, edge)) * step(0.58, noise(p * 0.6 + 3.0));
+	col = mix(col, P(w, 2) * 0.85, moss * 0.7);
+	col = mix(col, mix(P(w, 4), ink.rgb, 0.65), max(grout, chip));
+	// a hairline crack through some tiles
+	vec2 v = voronoi(p * 0.9 + 5.0, 0.0);
+	col = mix(col, mix(P(w, 4), ink.rgb, 0.5), (1.0 - smoothstep(0.012, 0.03, v.x)) * step(0.8, hash(cell + 9.0)));
 
-	// short hand-drawn grass strokes, one per random cell
-	vec2 cp = p * 2.6;
-	vec2 cell = floor(cp);
-	vec2 f = fract(cp) - (vec2(hash(cell + 3.1), hash(cell + 7.7)) * 0.5 + 0.25);
-	float along = dot(f, vec2(0.86, -0.5));
-	float across = dot(f, vec2(0.5, 0.86));
-	float stroke = step(abs(along), 0.13) * step(abs(across), 0.022) * step(0.55, hash(cell));
-	col = mix(col, P(w, 2) * 0.75, stroke);
-
-	// tiny pale flowers
-	vec2 fp = p * 5.0;
-	float flower = step(0.985, hash(floor(fp))) * step(length(fract(fp) - 0.5), 0.13);
-	col = mix(col, vec3(0.93, 0.92, 0.82), flower);
-
-	// sand patches: wobbly edge with a dashed ink outline and speckles
+	// earth where tiles are missing: wobbly edge, dashed ink outline, grit
 	float sm = -1.0;
 	for (int i = 0; i < 4; i++) {
 		vec3 z = sand_zones[i];
@@ -98,6 +108,8 @@ vec3 grass_top(vec2 p, int w) {
 		}
 	}
 	sm += (noise(p * 0.9) - 0.5) * 0.28;
+	// plus a few small holes in the paving anywhere
+	sm = max(sm, (fbm(p * 0.45 + 40.0) - 0.79) * 3.0);
 	if (sm > 0.0) {
 		col = P(w, 3);
 		col = mix(col, P(w, 4), step(0.62, noise(p * 0.6 + 4.0)) * 0.6);
@@ -174,9 +186,9 @@ vec3 side_color(int w) {
 	col = mix(col, P(w, 8), step(0.68, streak));
 	col = mix(col, P(w, 7), step(-0.55, world_pos.y));
 	col = mix(col, ink.rgb, step(-0.62, world_pos.y) * step(world_pos.y, -0.55));
-	// grass / weed hanging over the lip
-	float hang = noise(vec2(u * 2.5, 0.0)) * 0.45;
-	col = mix(col, P(w, 2), step(-hang, world_pos.y));
+	// moss hanging over the lip
+	float hang = noise(vec2(u * 2.5, 0.0)) * 0.3;
+	col = mix(col, P(w, 2) * 0.7, step(-hang, world_pos.y));
 	col = mix(col, vec3(0.0), depth * 0.85);
 	return col;
 }

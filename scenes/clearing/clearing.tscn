@@ -6,7 +6,7 @@
 [ext_resource type="Script" path="res://scripts/world25/biome_props.gd" id="28_bprops"]
 [ext_resource type="Script" path="res://scripts/world25/patch_npc.gd" id="29_patch"]
 [ext_resource type="Script" path="res://scripts/world25/interactable.gd" id="30_interact"]
-[ext_resource type="Resource" path="res://data/biomes/darkwood.tres" id="27_darkwood"]
+[ext_resource type="Resource" path="res://data/biomes/spine.tres" id="27_spine"]
 [ext_resource type="Script" path="res://scripts/clearing/stairs.gd" id="2_stairs"]
 [ext_resource type="Script" path="res://scripts/clearing/bridge.gd" id="3_bridge"]
 [ext_resource type="Script" path="res://scripts/clearing/archway.gd" id="4_arch"]
@@ -21,7 +21,7 @@
 [node name="Clearing" type="Node3D"]
 script = ExtResource("25_room")
 room_id = "clearing"
-biome = ExtResource("27_darkwood")
+biome = ExtResource("27_spine")
 camera_bounds = Rect2(-28, -27, 40, 37)
 default_spawn = Vector3(2.5, 0.05, 3)
 title = "The Clearing"

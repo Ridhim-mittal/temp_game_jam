@@ -1,0 +1,29 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/world25/biome.gd" id="1_biome"]
+
+[resource]
+script = ExtResource("1_biome")
+display_name = "The Spine"
+ground = 0
+base = Color(0.2, 0.16, 0.3, 1)
+light = Color(0.25, 0.2, 0.36, 1)
+dark = Color(0.14, 0.11, 0.22, 1)
+accent = Color(0.32, 0.24, 0.24, 1)
+accent_dark = Color(0.1, 0.07, 0.14, 1)
+stain = Color(0.06, 0.03, 0.1, 1)
+cliff = Color(0.06, 0.04, 0.1, 1)
+cliff_line = Color(0.12, 0.09, 0.18, 1)
+lip = Color(0.16, 0.12, 0.22, 1)
+tuft_base = Color(0.18, 0.33, 0.27, 1)
+tuft_tip = Color(0.5, 0.68, 0.45, 1)
+background = Color(0.02, 0.015, 0.04, 1)
+ambient = Color(0.42, 0.34, 0.66, 1)
+ambient_energy = 0.32
+sun = Color(0.78, 0.66, 1, 1)
+sun_energy = 0.48
+fog = Color(0.03, 0.02, 0.06, 1)
+motes = Color(1, 0.8, 0.55, 1)
+music = "margins"
+vignette = 0.55
+edge_darkness = 0.78
