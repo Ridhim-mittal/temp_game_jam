@@ -75,7 +75,16 @@ Branch `gutter-rework`, made from `main`. Everything here is the 2.5D part (the 
      - It's drawn smoothly between physics ticks and only wanders over the floor.
      - When there are two, they flank Vesper instead of stacking.
      - Both always look the same: a straight pillar with a slight lean as it moves.
-8. **Names:** title cards, captions and biome names use The Spine, The Inkwood, The Drowned
+8. **Vesper, the Traveler's Ghost** (from your reference model): a tall white egg head with
+   two black dash eyes under a wide black hat with a red band, a chunky red scarf with a
+   trailing tail, a purple cloak open over a cream tunic with a pointed hem, grey legs and
+   brown boots, and a gold-hilted broadsword strapped across his back. During a combo an arm
+   comes out of the cloak with the sword; it goes back on his back a moment later.
+   - **Dash animation:** a hard forward lunge with his body stretched, the cloak and scarf
+     streaming back and the hat pressed back. A puff of dust marks the launch, and pale ghost
+     afterimages fade along the path (`afterimage_every`, `afterimage_life` in
+     `vesper_3d.gd`).
+9. **Names:** title cards, captions and biome names use The Spine, The Inkwood, The Drowned
    Margin, The Torn Wastes and The Rubbing Room.
 
 ## Tuning knobs

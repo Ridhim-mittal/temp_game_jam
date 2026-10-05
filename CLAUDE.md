@@ -9,8 +9,10 @@ All art is drawn in code (`_draw()`, shaders, primitive meshes); no texture asse
   movement/combat. Monsters extend `scripts/enemies/enemy_base.gd` and draw via `paint()`.
 - **2.5D top-down** ("the Gutter": dark, moody rooms; `scenes/clearing/`, `scenes/world25/`,
   `scripts/clearing/`, `scripts/world25/`, `shaders/clearing/`): 3D scenes, tilted camera.
-  Vesper is a procedural 3D model (`scripts/clearing/vesper_3d.gd`; `use_3d_model = false` on the
-  player brings back the 2D art on a billboard). Monsters reuse the 2D art drawn into a
+  Vesper is a procedural 3D model, "the Traveler's Ghost" (`scripts/clearing/vesper_3d.gd`: black
+  hat with a red band, white egg head, red scarf, open purple cloak, broadsword on his back that
+  comes out on swings; dash = lunge + ghost afterimages; `use_3d_model = false` on the player
+  brings back the 2D art on a billboard). Monsters reuse the 2D art drawn into a
   SubViewport (`monster_puppet.gd`).
 
 ## 2D light mechanic (test level section 9, "the Sketchbook")
