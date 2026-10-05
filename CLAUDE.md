@@ -25,6 +25,18 @@ All art is drawn in code (`_draw()`, shaders, primitive meshes); no texture asse
   prompt over Vesper; the Prism Saber's blade and the Lantern Flail's whirl count as light too).
   Quick windup, arc slash, only the blade hurts, hp 5 (half_drawn.tscn). (The earlier toon-shaded
   model, `half_drawn_model.gd` + `half_drawn.gdshader`, is kept but unused.)
+  The 2.5D Scribble (`scripts/clearing/scribble.gd`, `scenes/clearing/scribble.tscn`; not a
+  monster_3d.gd) is the scary "vibrating swarm" from the sketch sheet: a camera-facing quad
+  (`scribble.gdshader`: pen and pencil scratch loops on a 4-drawing loop round a hatched black core,
+  bristling wisps, slanted white eyes that burn red on a windup, a toothed mouth, `mouth` / `rage` /
+  `fray`; the quad jitters every frame). LURK → SHRIEK ("SKRITCH!") → STALK (circles at
+  `keep_distance`, just out of sword reach, in jerky bursts, stays on its island) → WINDUP (a red
+  pencil scratch races along the floor where the claw lands: `scribble_aim.gdshader`) → CLAW (a
+  shape-shifting reach, `claw_reach`, `scribble_claw.gdshader` on a quad turned about its axis;
+  only the claw hurts, a dash dodges it) → TANGLED (the arm reels back, it can't move: hit it).
+  It never steps into a monster light and backs out of one; raising the Ember on a windup stuns it
+  (`light_stun`, the parry). At most `max_attackers` (2) wind up at once (group "scribble_claw").
+  Pen-scratch sounds are synthesised in the script.
 
 ## 2D story start (main menu PLAY)
 `cs_book` (scripts/cutscenes/cs_book.gd: ~20 s animated opening, a comic book on a desk opens,
@@ -142,7 +154,7 @@ ground, it falls back to the last checkpoint pen / level start (`_respawn_point(
 Zones (display names; code names stay): hub = The Spine, darkwood_* = The Inkwood, shallows_* =
 The Drowned Margin, wastes_* = The Torn Wastes, arena = The Rubbing Room.
 Hub `scenes/clearing/clearing.tscn` (hand-made, not generated) → cave → four levels in
-`scenes/world25/rooms/`, a row running west: 1 the hub (3 Scribbles) + darkwood_1 (a few Half-Drawn;
+`scenes/world25/rooms/`, a row running west: 1 the hub (9 Scribbles, two up on the shrine terrace) + darkwood_1 (a few Half-Drawn and 4 Scribbles;
 both with the COMIC backdrop) →
 2 shallows_pen (Red Pen boss, `scripts/clearing/red_pen_3d.gd`: wet-ink circles dry in light; two
 lamps) → 3 wastes_gap (a sketched bridge inked with right click; one slow lamp) → 4 arena (the Eraser, hard:

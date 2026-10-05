@@ -45,6 +45,7 @@ func _run() -> void:
 	roster_test()
 	await one_way_test()
 	await half_drawn_test()
+	await scribble_test()
 	await hub_test()
 	await protection_test()
 	await bridge_test()
@@ -91,9 +92,10 @@ func enemy_kinds(path: String) -> Dictionary:
 
 func roster_test() -> void:
 	var hub := enemy_kinds(HUB)
-	check(hub.keys() == ["scribble"] and hub.scribble == 3, "level 1, the hub: three ink blobs (Scribbles) %s" % hub)
+	check(hub.keys() == ["scribble"] and hub.scribble >= 6, "level 1, the hub: Scribbles all over it %s" % hub)
 	var l1 := enemy_kinds(LEVELS[0])
-	check(l1.keys() == ["half_drawn"] and l1.half_drawn >= 3 and l1.half_drawn <= 5, "level 1, second room: only a few Half-Drawn %s" % l1)
+	check(l1.size() == 2 and l1.get("half_drawn", 0) >= 3 and l1.get("half_drawn", 0) <= 5 and l1.get("scribble", 0) >= 3,
+		"level 1, second room: a few Half-Drawn and a pack of Scribbles %s" % l1)
 	var l2 := enemy_kinds(LEVELS[1])
 	check(l2.keys() == ["red_pen"], "level 2: the Red Pen alone %s" % l2)
 	var l3 := enemy_kinds(LEVELS[2])
@@ -186,6 +188,83 @@ func half_drawn_test() -> void:
 
 
 ## Six hearts, and the hub's shrine is Vesper's.
+## The Scribbles (scribble.gd): touching one is safe, only the claw hurts;
+## a windup shows the red tell on the floor; the claw hits Vesper along its
+## line, not beside it and not mid-dash; raising the Ember on one winding up
+## curls it up (stunned); at most two wind up at once; three hits finish one
+## and it stays down in a story room.
+func scribble_test() -> void:
+	change_scene_to_file(HUB)
+	await frames(4)
+	var room := current_scene
+	for l in get_nodes_in_group("haunt_lamp"):
+		l.queue_free()
+	var all: Array = room.get_node("Enemies").get_children()
+	var s = all[0]
+	for o in all.slice(1):
+		o.set_physics_process(false)
+		o.global_position += Vector3(0, -60, 0)
+	var player = room.player
+	await seconds(2.1)  # past spawn protection
+	s.global_position = Vector3(0, 0.05, 3)
+	s.velocity = Vector3.ZERO
+	s.state = s.State.CHASE
+	s._claw_cd = 0.0
+	await place(player, Vector3(2.0, 0.05, 3))
+	player._invuln = 0.0
+	var hp: int = player.health
+	check(not s.is_harmful(), "touching a Scribble doesn't hurt (only its claw does)")
+	var told := false
+	var hit := false
+	for i in 360:  # up to 3 s
+		await physics_frame
+		if s.state == s.State.WINDUP and s._aim.visible:
+			told = true
+		if player.health < hp:
+			hit = true
+			break
+	check(told, "a Scribble winding up draws its red tell on the floor")
+	check(hit and player.health == hp - 1, "its claw lands (%d -> %d)" % [hp, player.health])
+	await seconds(1.2)
+	s.set_physics_process(false)
+	s.global_position = Vector3(0, 0.05, 3)
+	await place(player, Vector3(2.0, 0.05, 3))
+	s._claw_dir = Vector3(1, 0, 0)
+	player._invuln = 0.0
+	hp = player.health
+	player._dash_timer = 0.3
+	s._claw_hits()
+	player._dash_timer = 0.0
+	check(player.health == hp, "dashing through the claw dodges it")
+	s._claw_dir = Vector3(0, 0, 1)
+	s._claw_hits()
+	check(player.health == hp, "the claw misses Vesper beside its line")
+	# light parry: raise the Ember on a windup
+	s.set_physics_process(true)
+	s.state = s.State.CHASE
+	s._in_light = false
+	s._start_windup(Vector3(1, 0, 0))
+	player.fuel = player.max_fuel
+	Input.action_press("flash")
+	await pframes(8)
+	check(s.state == s.State.STUNNED and not s._aim.visible, "raising the Ember on a windup curls it up (state %d)" % s.state)
+	Input.action_release("flash")
+	await pframes(4)
+	# they take turns
+	await seconds(0.4)
+	all[1].add_to_group("scribble_claw")
+	all[2].add_to_group("scribble_claw")
+	check(not s._may_claw(), "two Scribbles winding up already: a third waits its turn")
+	all[1].remove_from_group("scribble_claw")
+	all[2].remove_from_group("scribble_claw")
+	check(s._may_claw(), "...and goes when one is done")
+	for i in 3:
+		s.take_hit(1, Vector3(1, 0, 0))
+	check(s.dead and not s.is_in_group("enemy"), "three hits finish a Scribble")
+	await seconds(0.6)
+	check(s.dead, "a beaten Scribble stays down in a story room")
+
+
 func hub_test() -> void:
 	change_scene_to_file(HUB)
 	await frames(6)
