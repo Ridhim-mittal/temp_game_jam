@@ -16,6 +16,8 @@
 [ext_resource type="PackedScene" path="res://scenes/enemies/inkwell.tscn" id="24_inkwell"]
 [ext_resource type="Script" path="res://scripts/world/level_mood.gd" id="30_mood"]
 [ext_resource type="Script" path="res://scripts/world/lantern.gd" id="40_lantern"]
+[ext_resource type="Script" path="res://scripts/world/sketch_platform.gd" id="41_sketch"]
+[ext_resource type="Script" path="res://scripts/world/shadow_caster.gd" id="42_caster"]
 [ext_resource type="Script" path="res://scripts/world/caption.gd" id="43_caption"]
 [ext_resource type="Script" path="res://scripts/depth/depth_backdrop.gd" id="50_backdrop"]
 [ext_resource type="Script" path="res://scripts/depth/rock_block.gd" id="51_rock"]
@@ -27,7 +29,7 @@
 [node name="Backdrop" type="Node2D" parent="."]
 script = ExtResource("50_backdrop")
 themes = PackedInt32Array(1, 2, 0)
-zone_bottoms = PackedFloat32Array(2500, 4750)
+zone_bottoms = PackedFloat32Array(2500, 6150)
 
 [node name="World" type="Node2D" parent="."]
 
@@ -37,7 +39,7 @@ script = ExtResource("51_rock")
 size = Vector2(5250, 250)
 
 [node name="Rock2" type="StaticBody2D" parent="World"]
-position = Vector2(2625, 7050)
+position = Vector2(2625, 8750)
 script = ExtResource("51_rock")
 size = Vector2(5250, 300)
 
@@ -77,14 +79,14 @@ script = ExtResource("51_rock")
 size = Vector2(300, 550)
 
 [node name="Rock10" type="StaticBody2D" parent="World"]
-position = Vector2(4450, 5325)
+position = Vector2(4450, 6725)
 script = ExtResource("51_rock")
 size = Vector2(300, 750)
 
 [node name="Rock11" type="StaticBody2D" parent="World"]
-position = Vector2(5100, 4300)
+position = Vector2(5100, 5150)
 script = ExtResource("51_rock")
-size = Vector2(300, 5200)
+size = Vector2(300, 6900)
 
 [node name="Rock12" type="StaticBody2D" parent="World"]
 position = Vector2(1925, 2575)
@@ -92,79 +94,114 @@ script = ExtResource("51_rock")
 size = Vector2(3850, 550)
 
 [node name="Rock13" type="StaticBody2D" parent="World"]
-position = Vector2(1075, 2950)
+position = Vector2(750, 3000)
+script = ExtResource("51_rock")
+size = Vector2(1500, 300)
+
+[node name="Rock14" type="StaticBody2D" parent="World"]
+position = Vector2(4550, 3400)
+script = ExtResource("51_rock")
+size = Vector2(100, 1100)
+
+[node name="Rock15" type="StaticBody2D" parent="World"]
+position = Vector2(1100, 3700)
+script = ExtResource("51_rock")
+size = Vector2(2200, 1100)
+
+[node name="Rock16" type="StaticBody2D" parent="World"]
+position = Vector2(2675, 3550)
+script = ExtResource("51_rock")
+size = Vector2(50, 800)
+
+[node name="Rock17" type="StaticBody2D" parent="World"]
+position = Vector2(3625, 4100)
+script = ExtResource("51_rock")
+size = Vector2(1950, 300)
+
+[node name="Rock18" type="StaticBody2D" parent="World"]
+position = Vector2(1075, 4350)
 script = ExtResource("51_rock")
 size = Vector2(2150, 200)
 
-[node name="Rock14" type="StaticBody2D" parent="World"]
-position = Vector2(1075, 3750)
+[node name="Rock19" type="StaticBody2D" parent="World"]
+position = Vector2(1075, 5150)
 script = ExtResource("51_rock")
 size = Vector2(2150, 300)
 
-[node name="Rock15" type="StaticBody2D" parent="World"]
-position = Vector2(4525, 3650)
+[node name="Rock20" type="StaticBody2D" parent="World"]
+position = Vector2(4525, 5050)
 script = ExtResource("51_rock")
 size = Vector2(150, 1600)
 
-[node name="Rock16" type="StaticBody2D" parent="World"]
-position = Vector2(300, 3325)
-script = ExtResource("51_rock")
-size = Vector2(600, 550)
-
-[node name="Rock17" type="StaticBody2D" parent="World"]
-position = Vector2(300, 4175)
-script = ExtResource("51_rock")
-size = Vector2(600, 550)
-
-[node name="Rock18" type="StaticBody2D" parent="World"]
-position = Vector2(2025, 3200)
-script = ExtResource("51_rock")
-size = Vector2(250, 300)
-
-[node name="Rock19" type="StaticBody2D" parent="World"]
-position = Vector2(2025, 4050)
-script = ExtResource("51_rock")
-size = Vector2(250, 300)
-
-[node name="Rock20" type="StaticBody2D" parent="World"]
-position = Vector2(1200, 4700)
-script = ExtResource("51_rock")
-size = Vector2(2400, 500)
-
 [node name="Rock21" type="StaticBody2D" parent="World"]
-position = Vector2(3725, 4700)
+position = Vector2(300, 4725)
 script = ExtResource("51_rock")
-size = Vector2(1750, 500)
+size = Vector2(600, 550)
 
 [node name="Rock22" type="StaticBody2D" parent="World"]
-position = Vector2(200, 5325)
+position = Vector2(300, 5575)
+script = ExtResource("51_rock")
+size = Vector2(600, 550)
+
+[node name="Rock23" type="StaticBody2D" parent="World"]
+position = Vector2(2025, 4600)
+script = ExtResource("51_rock")
+size = Vector2(250, 300)
+
+[node name="Rock24" type="StaticBody2D" parent="World"]
+position = Vector2(2025, 5450)
+script = ExtResource("51_rock")
+size = Vector2(250, 300)
+
+[node name="Rock25" type="StaticBody2D" parent="World"]
+position = Vector2(1900, 6100)
+script = ExtResource("51_rock")
+size = Vector2(3800, 500)
+
+[node name="Rock26" type="StaticBody2D" parent="World"]
+position = Vector2(4425, 6100)
+script = ExtResource("51_rock")
+size = Vector2(350, 500)
+
+[node name="Rock27" type="StaticBody2D" parent="World"]
+position = Vector2(200, 6725)
 script = ExtResource("51_rock")
 size = Vector2(400, 750)
 
-[node name="Rock23" type="StaticBody2D" parent="World"]
-position = Vector2(1675, 5925)
+[node name="Rock28" type="StaticBody2D" parent="World"]
+position = Vector2(2850, 6975)
 script = ExtResource("51_rock")
-size = Vector2(3350, 450)
+size = Vector2(200, 50)
 
-[node name="Rock24" type="StaticBody2D" parent="World"]
-position = Vector2(4250, 5925)
+[node name="Rock29" type="StaticBody2D" parent="World"]
+position = Vector2(250, 7850)
 script = ExtResource("51_rock")
-size = Vector2(700, 450)
+size = Vector2(500, 1500)
 
-[node name="Rock25" type="StaticBody2D" parent="World"]
-position = Vector2(750, 6525)
+[node name="Rock30" type="StaticBody2D" parent="World"]
+position = Vector2(1575, 7325)
 script = ExtResource("51_rock")
-size = Vector2(1500, 750)
+size = Vector2(1050, 450)
+
+[node name="Rock31" type="StaticBody2D" parent="World"]
+position = Vector2(4100, 7325)
+script = ExtResource("51_rock")
+size = Vector2(1000, 450)
+
+[node name="Rock32" type="StaticBody2D" parent="World"]
+position = Vector2(2825, 7700)
+script = ExtResource("51_rock")
+size = Vector2(3550, 300)
 
 [node name="EdgeLeft" type="StaticBody2D" parent="World"]
-position = Vector2(-450, 3700)
+position = Vector2(-450, 4550)
 script = ExtResource("51_rock")
-size = Vector2(900, 8800)
+size = Vector2(900, 10500)
 
 [node name="EdgeRight" type="StaticBody2D" parent="World"]
-position = Vector2(5700, 3700)
+position = Vector2(5700, 4550)
 script = ExtResource("51_rock")
-size = Vector2(900, 8800)
+size = Vector2(900, 10500)
 
 [node name="EdgeTop" type="StaticBody2D" parent="World"]
 position = Vector2(2625, -250)
@@ -172,7 +209,7 @@ script = ExtResource("51_rock")
 size = Vector2(5250, 900)
 
 [node name="EdgeBottom" type="StaticBody2D" parent="World"]
-position = Vector2(2625, 7650)
+position = Vector2(2625, 9350)
 script = ExtResource("51_rock")
 size = Vector2(5250, 900)
 
@@ -366,396 +403,593 @@ size = Vector2(150, 18)
 theme = 1
 one_way = true
 
+[node name="Checkpoint2" type="Area2D" parent="World"]
+position = Vector2(4350, 3950)
+script = ExtResource("18_pen")
+
+[node name="LanternB" type="Node2D" parent="World"]
+position = Vector2(4196, 3880)
+script = ExtResource("40_lantern")
+radius = 220
+chain = 0
+post = 70
+lit = false
+casts_shadows = true
+
+[node name="StarB" type="StaticBody2D" parent="World"]
+position = Vector2(4076, 3800)
+script = ExtResource("42_caster")
+stick = 150
+shadow_length = 600
+
+[node name="LanternA" type="Node2D" parent="World"]
+position = Vector2(3160, 2850)
+script = ExtResource("40_lantern")
+radius = 260
+chain = 600
+post = 0
+lit = false
+casts_shadows = true
+
+[node name="StarA" type="StaticBody2D" parent="World"]
+position = Vector2(3030, 3365)
+script = ExtResource("42_caster")
+stick = 0
+shadow_length = 520
+
+[node name="GallerySketch" type="StaticBody2D" parent="World"]
+position = Vector2(3210, 3490)
+script = ExtResource("41_sketch")
+size = Vector2(400, 20)
+inkable = false
+
+[node name="Caption1" type="Node2D" parent="World"]
+z_index = 5
+position = Vector2(4340, 3620)
+script = ExtResource("43_caption")
+text = "HIT THE LANTERN.\nA SHADOW IS INK TOO."
+tilt = -0.03
+
+[node name="Caption2" type="Node2D" parent="World"]
+z_index = 5
+position = Vector2(3830, 3310)
+script = ExtResource("43_caption")
+text = "OUT OF REACH?\nHOLD ATTACK, THEN LET GO:\nINK FLIES FURTHER THAN A SWORD."
+tilt = 0.03
+
+[node name="Caption3" type="Node2D" parent="World"]
+z_index = 5
+position = Vector2(3460, 3720)
+script = ExtResource("43_caption")
+text = "BLUE PENCIL NEVER TAKES INK.\nIT NEEDS LIGHT ALL THE WAY (HOLD Q)."
+tilt = -0.03
+
+[node name="Heart2" type="Area2D" parent="World"]
+position = Vector2(1750, 3090)
+script = ExtResource("19_heart")
+
 [node name="Ledge22" type="StaticBody2D" parent="World"]
-position = Vector2(4190, 3029)
+position = Vector2(2295, 3269)
 script = ExtResource("53_ledge")
-size = Vector2(300, 18)
+size = Vector2(170, 18)
 theme = 2
 one_way = true
 
 [node name="Ledge23" type="StaticBody2D" parent="World"]
-position = Vector2(3900, 3139)
+position = Vector2(2555, 3379)
 script = ExtResource("53_ledge")
-size = Vector2(300, 18)
+size = Vector2(170, 18)
 theme = 2
 one_way = true
 
 [node name="Ledge24" type="StaticBody2D" parent="World"]
-position = Vector2(3610, 3249)
+position = Vector2(2295, 3489)
 script = ExtResource("53_ledge")
-size = Vector2(300, 18)
+size = Vector2(170, 18)
 theme = 2
 one_way = true
 
 [node name="Ledge25" type="StaticBody2D" parent="World"]
-position = Vector2(3320, 3359)
+position = Vector2(2555, 3599)
 script = ExtResource("53_ledge")
-size = Vector2(300, 18)
+size = Vector2(170, 18)
 theme = 2
 one_way = true
 
 [node name="Ledge26" type="StaticBody2D" parent="World"]
-position = Vector2(3030, 3469)
+position = Vector2(2295, 3709)
 script = ExtResource("53_ledge")
-size = Vector2(300, 18)
+size = Vector2(170, 18)
 theme = 2
 one_way = true
 
 [node name="Ledge27" type="StaticBody2D" parent="World"]
-position = Vector2(2740, 3579)
+position = Vector2(2555, 3819)
 script = ExtResource("53_ledge")
-size = Vector2(300, 18)
+size = Vector2(170, 18)
 theme = 2
 one_way = true
 
 [node name="Ledge28" type="StaticBody2D" parent="World"]
-position = Vector2(2450, 3689)
+position = Vector2(2295, 3929)
 script = ExtResource("53_ledge")
-size = Vector2(300, 18)
+size = Vector2(170, 18)
 theme = 2
 one_way = true
 
 [node name="Ledge29" type="StaticBody2D" parent="World"]
-position = Vector2(2660, 3799)
+position = Vector2(2555, 4039)
 script = ExtResource("53_ledge")
-size = Vector2(300, 18)
+size = Vector2(170, 18)
 theme = 2
 one_way = true
 
 [node name="Ledge30" type="StaticBody2D" parent="World"]
-position = Vector2(2950, 3909)
+position = Vector2(2295, 4149)
 script = ExtResource("53_ledge")
-size = Vector2(300, 18)
+size = Vector2(170, 18)
 theme = 2
 one_way = true
 
 [node name="Ledge31" type="StaticBody2D" parent="World"]
-position = Vector2(3240, 4019)
+position = Vector2(2410, 4429)
 script = ExtResource("53_ledge")
 size = Vector2(300, 18)
 theme = 2
 one_way = true
 
 [node name="Ledge32" type="StaticBody2D" parent="World"]
-position = Vector2(3530, 4129)
+position = Vector2(2700, 4539)
 script = ExtResource("53_ledge")
 size = Vector2(300, 18)
 theme = 2
 one_way = true
 
 [node name="Ledge33" type="StaticBody2D" parent="World"]
-position = Vector2(3820, 4239)
+position = Vector2(2990, 4649)
 script = ExtResource("53_ledge")
 size = Vector2(300, 18)
 theme = 2
 one_way = true
 
 [node name="Ledge34" type="StaticBody2D" parent="World"]
-position = Vector2(4110, 4349)
+position = Vector2(3280, 4759)
+script = ExtResource("53_ledge")
+size = Vector2(300, 18)
+theme = 2
+one_way = true
+
+[node name="Ledge35" type="StaticBody2D" parent="World"]
+position = Vector2(3570, 4869)
+script = ExtResource("53_ledge")
+size = Vector2(300, 18)
+theme = 2
+one_way = true
+
+[node name="Ledge36" type="StaticBody2D" parent="World"]
+position = Vector2(3860, 4979)
+script = ExtResource("53_ledge")
+size = Vector2(300, 18)
+theme = 2
+one_way = true
+
+[node name="Ledge37" type="StaticBody2D" parent="World"]
+position = Vector2(4150, 5089)
+script = ExtResource("53_ledge")
+size = Vector2(300, 18)
+theme = 2
+one_way = true
+
+[node name="Ledge38" type="StaticBody2D" parent="World"]
+position = Vector2(3940, 5199)
+script = ExtResource("53_ledge")
+size = Vector2(300, 18)
+theme = 2
+one_way = true
+
+[node name="Ledge39" type="StaticBody2D" parent="World"]
+position = Vector2(3650, 5309)
+script = ExtResource("53_ledge")
+size = Vector2(300, 18)
+theme = 2
+one_way = true
+
+[node name="Ledge40" type="StaticBody2D" parent="World"]
+position = Vector2(3360, 5419)
+script = ExtResource("53_ledge")
+size = Vector2(300, 18)
+theme = 2
+one_way = true
+
+[node name="Ledge41" type="StaticBody2D" parent="World"]
+position = Vector2(3070, 5529)
+script = ExtResource("53_ledge")
+size = Vector2(300, 18)
+theme = 2
+one_way = true
+
+[node name="Ledge42" type="StaticBody2D" parent="World"]
+position = Vector2(2780, 5639)
+script = ExtResource("53_ledge")
+size = Vector2(300, 18)
+theme = 2
+one_way = true
+
+[node name="Ledge43" type="StaticBody2D" parent="World"]
+position = Vector2(2490, 5749)
 script = ExtResource("53_ledge")
 size = Vector2(300, 18)
 theme = 2
 one_way = true
 
 [node name="Lantern6" type="Node2D" parent="World"]
-position = Vector2(2750, 2850)
+position = Vector2(3850, 4250)
 script = ExtResource("40_lantern")
 radius = 320
 chain = 220
 casts_shadows = false
 
 [node name="Lantern7" type="Node2D" parent="World"]
-position = Vector2(3850, 2850)
+position = Vector2(2850, 4250)
 script = ExtResource("40_lantern")
 radius = 320
-chain = 520
+chain = 560
 casts_shadows = false
 
 [node name="Lantern8" type="Node2D" parent="World"]
-position = Vector2(3250, 2850)
+position = Vector2(3450, 4250)
 script = ExtResource("40_lantern")
 radius = 320
 chain = 900
 casts_shadows = false
 
-[node name="Ledge35" type="StaticBody2D" parent="World"]
-position = Vector2(2300, 3609)
+[node name="Ledge44" type="StaticBody2D" parent="World"]
+position = Vector2(2300, 5009)
 script = ExtResource("53_ledge")
 size = Vector2(300, 18)
 theme = 2
 one_way = false
 
-[node name="Checkpoint2" type="Area2D" parent="World"]
-position = Vector2(1100, 3600)
+[node name="Ledge45" type="StaticBody2D" parent="World"]
+position = Vector2(2235, 4539)
+script = ExtResource("53_ledge")
+size = Vector2(150, 18)
+theme = 2
+one_way = true
+
+[node name="Ledge46" type="StaticBody2D" parent="World"]
+position = Vector2(2485, 4649)
+script = ExtResource("53_ledge")
+size = Vector2(150, 18)
+theme = 2
+one_way = true
+
+[node name="Ledge47" type="StaticBody2D" parent="World"]
+position = Vector2(2235, 4759)
+script = ExtResource("53_ledge")
+size = Vector2(150, 18)
+theme = 2
+one_way = true
+
+[node name="Ledge48" type="StaticBody2D" parent="World"]
+position = Vector2(2485, 4869)
+script = ExtResource("53_ledge")
+size = Vector2(150, 18)
+theme = 2
+one_way = true
+
+[node name="Checkpoint3" type="Area2D" parent="World"]
+position = Vector2(1100, 5000)
 script = ExtResource("18_pen")
 
 [node name="Lantern9" type="Node2D" parent="World"]
-position = Vector2(1300, 3050)
+position = Vector2(1300, 4450)
 script = ExtResource("40_lantern")
 radius = 280
 chain = 130
 casts_shadows = false
 
-[node name="Heart2" type="Area2D" parent="World"]
-position = Vector2(1550, 3540)
+[node name="Heart3" type="Area2D" parent="World"]
+position = Vector2(1550, 4940)
 script = ExtResource("19_heart")
 
-[node name="Ledge36" type="StaticBody2D" parent="World"]
-position = Vector2(900, 4349)
+[node name="Ledge49" type="StaticBody2D" parent="World"]
+position = Vector2(900, 5749)
 script = ExtResource("53_ledge")
 size = Vector2(220, 18)
 theme = 2
 one_way = true
 
 [node name="Lantern10" type="Node2D" parent="World"]
-position = Vector2(1250, 3900)
+position = Vector2(1250, 5300)
 script = ExtResource("40_lantern")
 radius = 280
 chain = 130
 casts_shadows = false
 
-[node name="Ledge37" type="StaticBody2D" parent="World"]
-position = Vector2(2495, 4569)
+[node name="Ledge50" type="StaticBody2D" parent="World"]
+position = Vector2(3895, 5969)
 script = ExtResource("53_ledge")
 size = Vector2(170, 18)
 theme = 2
 one_way = true
 
-[node name="Ledge38" type="StaticBody2D" parent="World"]
-position = Vector2(2755, 4679)
+[node name="Ledge51" type="StaticBody2D" parent="World"]
+position = Vector2(4155, 6079)
 script = ExtResource("53_ledge")
 size = Vector2(170, 18)
 theme = 2
 one_way = true
 
-[node name="Ledge39" type="StaticBody2D" parent="World"]
-position = Vector2(2495, 4789)
+[node name="Ledge52" type="StaticBody2D" parent="World"]
+position = Vector2(3895, 6189)
 script = ExtResource("53_ledge")
 size = Vector2(170, 18)
 theme = 0
 one_way = true
 
-[node name="Ledge40" type="StaticBody2D" parent="World"]
-position = Vector2(2755, 4899)
+[node name="Ledge53" type="StaticBody2D" parent="World"]
+position = Vector2(4155, 6299)
 script = ExtResource("53_ledge")
 size = Vector2(170, 18)
 theme = 0
 one_way = true
 
-[node name="Ledge41" type="StaticBody2D" parent="World"]
-position = Vector2(2495, 5009)
+[node name="Ledge54" type="StaticBody2D" parent="World"]
+position = Vector2(3895, 6409)
 script = ExtResource("53_ledge")
 size = Vector2(170, 18)
 theme = 0
 one_way = true
 
-[node name="Ledge42" type="StaticBody2D" parent="World"]
-position = Vector2(2755, 5119)
+[node name="Ledge55" type="StaticBody2D" parent="World"]
+position = Vector2(4155, 6519)
 script = ExtResource("53_ledge")
 size = Vector2(170, 18)
 theme = 0
 one_way = true
 
-[node name="Ledge43" type="StaticBody2D" parent="World"]
-position = Vector2(2495, 5229)
+[node name="Ledge56" type="StaticBody2D" parent="World"]
+position = Vector2(3895, 6629)
 script = ExtResource("53_ledge")
 size = Vector2(170, 18)
 theme = 0
 one_way = true
 
-[node name="Ledge44" type="StaticBody2D" parent="World"]
-position = Vector2(2755, 5339)
+[node name="Ledge57" type="StaticBody2D" parent="World"]
+position = Vector2(4155, 6739)
 script = ExtResource("53_ledge")
 size = Vector2(170, 18)
 theme = 0
 one_way = true
 
-[node name="Ledge45" type="StaticBody2D" parent="World"]
-position = Vector2(2495, 5449)
+[node name="Ledge58" type="StaticBody2D" parent="World"]
+position = Vector2(3895, 6849)
 script = ExtResource("53_ledge")
 size = Vector2(170, 18)
 theme = 0
 one_way = true
 
-[node name="Ledge46" type="StaticBody2D" parent="World"]
-position = Vector2(2755, 5559)
+[node name="Ledge59" type="StaticBody2D" parent="World"]
+position = Vector2(4155, 6959)
 script = ExtResource("53_ledge")
 size = Vector2(170, 18)
 theme = 0
 one_way = true
 
-[node name="Checkpoint3" type="Area2D" parent="World"]
-position = Vector2(2150, 5700)
+[node name="Checkpoint4" type="Area2D" parent="World"]
+position = Vector2(3850, 7100)
 script = ExtResource("18_pen")
 
-[node name="Ledge47" type="StaticBody2D" parent="World"]
-position = Vector2(1000, 5599)
+[node name="PendulumBridge" type="StaticBody2D" parent="World"]
+position = Vector2(2850, 7110)
+script = ExtResource("41_sketch")
+size = Vector2(1500, 20)
+inkable = false
+
+[node name="Pendulum" type="Node2D" parent="World"]
+position = Vector2(2850, 6460)
+script = ExtResource("40_lantern")
+radius = 420
+chain = 380
+post = 0
+lit = true
+casts_shadows = true
+swing = 40
+swing_period = 5
+
+[node name="Ledge60" type="StaticBody2D" parent="World"]
+position = Vector2(3385, 7219)
+script = ExtResource("53_ledge")
+size = Vector2(150, 18)
+theme = 0
+one_way = true
+
+[node name="Ledge61" type="StaticBody2D" parent="World"]
+position = Vector2(3515, 7329)
+script = ExtResource("53_ledge")
+size = Vector2(150, 18)
+theme = 0
+one_way = true
+
+[node name="Ledge62" type="StaticBody2D" parent="World"]
+position = Vector2(3385, 7439)
+script = ExtResource("53_ledge")
+size = Vector2(150, 18)
+theme = 0
+one_way = true
+
+[node name="Caption4" type="Node2D" parent="World"]
+z_index = 5
+position = Vector2(3930, 6770)
+script = ExtResource("43_caption")
+text = "THE LIGHT SWINGS. SHADOWS HOLD NOTHING UP.\nYOUR EMBER DOES (HOLD Q).\nA LANTERN'S LIGHT REFILLS IT."
+tilt = -0.03
+
+[node name="Ledge63" type="StaticBody2D" parent="World"]
+position = Vector2(1900, 6999)
 script = ExtResource("53_ledge")
 size = Vector2(220, 18)
 theme = 0
 one_way = true
 
-[node name="Ledge48" type="StaticBody2D" parent="World"]
-position = Vector2(1400, 5489)
-script = ExtResource("53_ledge")
-size = Vector2(220, 18)
-theme = 0
-one_way = true
-
-[node name="Ledge49" type="StaticBody2D" parent="World"]
-position = Vector2(3400, 5599)
-script = ExtResource("53_ledge")
-size = Vector2(240, 18)
-theme = 0
-one_way = true
-
-[node name="Ledge50" type="StaticBody2D" parent="World"]
-position = Vector2(3700, 5489)
+[node name="Ledge64" type="StaticBody2D" parent="World"]
+position = Vector2(1550, 6889)
 script = ExtResource("53_ledge")
 size = Vector2(220, 18)
 theme = 0
 one_way = true
 
 [node name="Lantern11" type="Node2D" parent="World"]
-position = Vector2(2100, 4950)
+position = Vector2(1400, 6350)
 script = ExtResource("40_lantern")
-radius = 320
+radius = 300
 chain = 200
 casts_shadows = false
 
-[node name="Lantern12" type="Node2D" parent="World"]
-position = Vector2(3500, 4950)
-script = ExtResource("40_lantern")
-radius = 300
-chain = 160
-casts_shadows = false
-
-[node name="Ledge51" type="StaticBody2D" parent="World"]
-position = Vector2(3455, 5819)
+[node name="Ledge65" type="StaticBody2D" parent="World"]
+position = Vector2(605, 7219)
 script = ExtResource("53_ledge")
 size = Vector2(190, 18)
 theme = 0
 one_way = true
 
-[node name="Ledge52" type="StaticBody2D" parent="World"]
-position = Vector2(3795, 5929)
+[node name="Ledge66" type="StaticBody2D" parent="World"]
+position = Vector2(945, 7329)
 script = ExtResource("53_ledge")
 size = Vector2(190, 18)
 theme = 0
 one_way = true
 
-[node name="Ledge53" type="StaticBody2D" parent="World"]
-position = Vector2(3455, 6039)
+[node name="Ledge67" type="StaticBody2D" parent="World"]
+position = Vector2(605, 7439)
 script = ExtResource("53_ledge")
 size = Vector2(190, 18)
 theme = 0
 one_way = true
 
-[node name="Ledge54" type="StaticBody2D" parent="World"]
-position = Vector2(3795, 6149)
+[node name="Ledge68" type="StaticBody2D" parent="World"]
+position = Vector2(945, 7549)
 script = ExtResource("53_ledge")
 size = Vector2(190, 18)
 theme = 0
 one_way = true
 
-[node name="Ledge55" type="StaticBody2D" parent="World"]
-position = Vector2(3455, 6259)
+[node name="Ledge69" type="StaticBody2D" parent="World"]
+position = Vector2(605, 7659)
 script = ExtResource("53_ledge")
 size = Vector2(190, 18)
 theme = 0
 one_way = true
 
-[node name="Ledge56" type="StaticBody2D" parent="World"]
-position = Vector2(3795, 6369)
+[node name="Ledge70" type="StaticBody2D" parent="World"]
+position = Vector2(945, 7769)
 script = ExtResource("53_ledge")
 size = Vector2(190, 18)
 theme = 0
 one_way = true
 
-[node name="Ledge57" type="StaticBody2D" parent="World"]
-position = Vector2(3455, 6479)
+[node name="Ledge71" type="StaticBody2D" parent="World"]
+position = Vector2(605, 7879)
 script = ExtResource("53_ledge")
 size = Vector2(190, 18)
 theme = 0
 one_way = true
 
-[node name="Ledge58" type="StaticBody2D" parent="World"]
-position = Vector2(3795, 6589)
+[node name="Ledge72" type="StaticBody2D" parent="World"]
+position = Vector2(945, 7989)
 script = ExtResource("53_ledge")
 size = Vector2(190, 18)
 theme = 0
 one_way = true
 
-[node name="Ledge59" type="StaticBody2D" parent="World"]
-position = Vector2(3455, 6699)
+[node name="Ledge73" type="StaticBody2D" parent="World"]
+position = Vector2(605, 8099)
 script = ExtResource("53_ledge")
 size = Vector2(190, 18)
 theme = 0
 one_way = true
 
-[node name="Ledge60" type="StaticBody2D" parent="World"]
-position = Vector2(3795, 6809)
+[node name="Ledge74" type="StaticBody2D" parent="World"]
+position = Vector2(945, 8209)
 script = ExtResource("53_ledge")
 size = Vector2(190, 18)
 theme = 0
 one_way = true
 
-[node name="Heart3" type="Area2D" parent="World"]
-position = Vector2(3625, 5950)
+[node name="Ledge75" type="StaticBody2D" parent="World"]
+position = Vector2(605, 8319)
+script = ExtResource("53_ledge")
+size = Vector2(190, 18)
+theme = 0
+one_way = true
+
+[node name="Ledge76" type="StaticBody2D" parent="World"]
+position = Vector2(945, 8429)
+script = ExtResource("53_ledge")
+size = Vector2(190, 18)
+theme = 0
+one_way = true
+
+[node name="Heart4" type="Area2D" parent="World"]
+position = Vector2(775, 7350)
 script = ExtResource("19_heart")
 
-[node name="Checkpoint4" type="Area2D" parent="World"]
-position = Vector2(2200, 6900)
+[node name="Checkpoint5" type="Area2D" parent="World"]
+position = Vector2(1400, 8600)
 script = ExtResource("18_pen")
 
-[node name="Lantern13" type="Node2D" parent="World"]
-position = Vector2(2500, 6150)
+[node name="Lantern12" type="Node2D" parent="World"]
+position = Vector2(1900, 7850)
 script = ExtResource("40_lantern")
 radius = 320
 chain = 260
 casts_shadows = false
 
-[node name="Lantern14" type="Node2D" parent="World"]
-position = Vector2(4000, 6150)
+[node name="Lantern13" type="Node2D" parent="World"]
+position = Vector2(3500, 7850)
 script = ExtResource("40_lantern")
 radius = 320
 chain = 220
 casts_shadows = false
 
 [node name="Exit" type="Area2D" parent="World"]
-position = Vector2(4250, 6900)
+position = Vector2(4250, 8600)
 script = ExtResource("17_exit")
 target_scene = "res://scenes/ui/main_menu.tscn"
 label = "THE END OF THE DROP"
 
 [node name="Lift" type="AnimatableBody2D" parent="World"]
-position = Vector2(4775, 6890)
+position = Vector2(4775, 8590)
 script = ExtResource("12_moving")
 size = Vector2(290, 20)
-travel = Vector2(0, -4610)
-period = 44
+travel = Vector2(0, -6310)
+period = 56
 
-[node name="Ledge61" type="StaticBody2D" parent="World"]
+[node name="Ledge77" type="StaticBody2D" parent="World"]
 position = Vector2(4775, 2309)
 script = ExtResource("53_ledge")
 size = Vector2(350, 18)
 theme = 1
 one_way = true
 
-[node name="Caption1" type="Node2D" parent="World"]
+[node name="Caption5" type="Node2D" parent="World"]
+z_index = 5
 position = Vector2(760, 884)
 script = ExtResource("43_caption")
 text = "The way on is down."
 tilt = -0.03
 
-[node name="Caption2" type="Node2D" parent="World"]
-position = Vector2(3300, 2970)
+[node name="Caption6" type="Node2D" parent="World"]
+z_index = 5
+position = Vector2(3300, 4370)
 script = ExtResource("43_caption")
 text = "Mind the drop."
 tilt = -0.03
 
-[node name="Caption3" type="Node2D" parent="World"]
-position = Vector2(3800, 6680)
+[node name="Caption7" type="Node2D" parent="World"]
+z_index = 5
+position = Vector2(3800, 8380)
 script = ExtResource("43_caption")
 text = "The lift goes back to the top."
 tilt = -0.03
@@ -826,345 +1060,457 @@ mode = 0
 theme = 1
 
 [node name="Trim10" type="Node2D" parent="Trims"]
-position = Vector2(2150, 2850)
+position = Vector2(1500, 2850)
 script = ExtResource("52_trim")
-length = 1700
+length = 2350
 mode = 1
 theme = 2
 
 [node name="Trim11" type="Node2D" parent="Trims"]
 position = Vector2(4300, 2850)
 script = ExtResource("52_trim")
-length = 150
+length = 200
 mode = 1
 theme = 2
 
 [node name="Trim12" type="Node2D" parent="Trims"]
-position = Vector2(600, 3050)
+position = Vector2(1500, 3150)
 script = ExtResource("52_trim")
-length = 1300
-mode = 1
+length = 700
+mode = 0
 theme = 2
 
 [node name="Trim13" type="Node2D" parent="Trims"]
-position = Vector2(1900, 3350)
+position = Vector2(2650, 3150)
 script = ExtResource("52_trim")
-length = 250
-mode = 1
+length = 50
+mode = 0
 theme = 2
 
 [node name="Trim14" type="Node2D" parent="Trims"]
-position = Vector2(600, 3600)
+position = Vector2(2700, 3950)
 script = ExtResource("52_trim")
-length = 1550
+length = 1800
 mode = 0
 theme = 2
 
 [node name="Trim15" type="Node2D" parent="Trims"]
-position = Vector2(600, 3900)
+position = Vector2(2150, 4250)
 script = ExtResource("52_trim")
-length = 1300
+length = 50
 mode = 1
 theme = 2
 
 [node name="Trim16" type="Node2D" parent="Trims"]
-position = Vector2(1900, 4200)
+position = Vector2(2650, 4250)
 script = ExtResource("52_trim")
-length = 250
+length = 1800
 mode = 1
 theme = 2
 
 [node name="Trim17" type="Node2D" parent="Trims"]
 position = Vector2(600, 4450)
 script = ExtResource("52_trim")
-length = 1800
-mode = 0
+length = 1300
+mode = 1
 theme = 2
 
 [node name="Trim18" type="Node2D" parent="Trims"]
-position = Vector2(2850, 4450)
+position = Vector2(1900, 4750)
 script = ExtResource("52_trim")
-length = 1600
-mode = 0
+length = 250
+mode = 1
 theme = 2
 
 [node name="Trim19" type="Node2D" parent="Trims"]
-position = Vector2(400, 4950)
+position = Vector2(600, 5000)
 script = ExtResource("52_trim")
-length = 2000
-mode = 1
-theme = 0
+length = 1550
+mode = 0
+theme = 2
 
 [node name="Trim20" type="Node2D" parent="Trims"]
-position = Vector2(2850, 4950)
+position = Vector2(600, 5300)
 script = ExtResource("52_trim")
-length = 1450
+length = 1300
 mode = 1
-theme = 0
+theme = 2
 
 [node name="Trim21" type="Node2D" parent="Trims"]
-position = Vector2(400, 5700)
+position = Vector2(1900, 5600)
 script = ExtResource("52_trim")
-length = 2950
-mode = 0
-theme = 0
+length = 250
+mode = 1
+theme = 2
 
 [node name="Trim22" type="Node2D" parent="Trims"]
-position = Vector2(3900, 5700)
+position = Vector2(600, 5850)
 script = ExtResource("52_trim")
-length = 400
+length = 3200
 mode = 0
-theme = 0
+theme = 2
 
 [node name="Trim23" type="Node2D" parent="Trims"]
-position = Vector2(1500, 6150)
+position = Vector2(4250, 5850)
 script = ExtResource("52_trim")
-length = 1850
-mode = 1
-theme = 0
+length = 200
+mode = 0
+theme = 2
 
 [node name="Trim24" type="Node2D" parent="Trims"]
-position = Vector2(3900, 6150)
+position = Vector2(400, 6350)
 script = ExtResource("52_trim")
-length = 700
+length = 3400
 mode = 1
 theme = 0
 
 [node name="Trim25" type="Node2D" parent="Trims"]
-position = Vector2(1500, 6900)
+position = Vector2(4250, 6350)
 script = ExtResource("52_trim")
-length = 3450
-mode = 0
+length = 50
+mode = 1
 theme = 0
 
 [node name="Trim26" type="Node2D" parent="Trims"]
+position = Vector2(2750, 6950)
+script = ExtResource("52_trim")
+length = 200
+mode = 0
+theme = 0
+
+[node name="Trim27" type="Node2D" parent="Trims"]
+position = Vector2(2750, 7000)
+script = ExtResource("52_trim")
+length = 200
+mode = 1
+theme = 0
+
+[node name="Trim28" type="Node2D" parent="Trims"]
+position = Vector2(400, 7100)
+script = ExtResource("52_trim")
+length = 100
+mode = 0
+theme = 0
+
+[node name="Trim29" type="Node2D" parent="Trims"]
+position = Vector2(1050, 7100)
+script = ExtResource("52_trim")
+length = 1050
+mode = 0
+theme = 0
+
+[node name="Trim30" type="Node2D" parent="Trims"]
+position = Vector2(3600, 7100)
+script = ExtResource("52_trim")
+length = 700
+mode = 0
+theme = 0
+
+[node name="Trim31" type="Node2D" parent="Trims"]
+position = Vector2(2100, 7550)
+script = ExtResource("52_trim")
+length = 1500
+mode = 0
+theme = 0
+
+[node name="Trim32" type="Node2D" parent="Trims"]
+position = Vector2(1050, 7850)
+script = ExtResource("52_trim")
+length = 3550
+mode = 1
+theme = 0
+
+[node name="Trim33" type="Node2D" parent="Trims"]
+position = Vector2(500, 8600)
+script = ExtResource("52_trim")
+length = 4450
+mode = 0
+theme = 0
+
+[node name="Trim34" type="Node2D" parent="Trims"]
 position = Vector2(300, 450)
 script = ExtResource("52_trim")
 length = 650
 mode = 2
 theme = 1
 
-[node name="Trim27" type="Node2D" parent="Trims"]
+[node name="Trim35" type="Node2D" parent="Trims"]
 position = Vector2(300, 1700)
 script = ExtResource("52_trim")
 length = 600
 mode = 2
 theme = 1
 
-[node name="Trim28" type="Node2D" parent="Trims"]
-position = Vector2(400, 4950)
+[node name="Trim36" type="Node2D" parent="Trims"]
+position = Vector2(400, 6350)
 script = ExtResource("52_trim")
 length = 750
 mode = 2
 theme = 0
 
-[node name="Trim29" type="Node2D" parent="Trims"]
-position = Vector2(600, 3050)
+[node name="Trim37" type="Node2D" parent="Trims"]
+position = Vector2(500, 7100)
 script = ExtResource("52_trim")
-length = 550
-mode = 2
-theme = 2
-
-[node name="Trim30" type="Node2D" parent="Trims"]
-position = Vector2(600, 3900)
-script = ExtResource("52_trim")
-length = 550
-mode = 2
-theme = 2
-
-[node name="Trim31" type="Node2D" parent="Trims"]
-position = Vector2(1500, 6150)
-script = ExtResource("52_trim")
-length = 750
+length = 1500
 mode = 2
 theme = 0
 
-[node name="Trim32" type="Node2D" parent="Trims"]
-position = Vector2(1900, 3050)
+[node name="Trim38" type="Node2D" parent="Trims"]
+position = Vector2(600, 4450)
+script = ExtResource("52_trim")
+length = 550
+mode = 2
+theme = 2
+
+[node name="Trim39" type="Node2D" parent="Trims"]
+position = Vector2(600, 5300)
+script = ExtResource("52_trim")
+length = 550
+mode = 2
+theme = 2
+
+[node name="Trim40" type="Node2D" parent="Trims"]
+position = Vector2(1050, 7100)
+script = ExtResource("52_trim")
+length = 750
+mode = 3
+theme = 0
+
+[node name="Trim41" type="Node2D" parent="Trims"]
+position = Vector2(1500, 2850)
+script = ExtResource("52_trim")
+length = 300
+mode = 2
+theme = 2
+
+[node name="Trim42" type="Node2D" parent="Trims"]
+position = Vector2(1900, 4450)
 script = ExtResource("52_trim")
 length = 300
 mode = 3
 theme = 2
 
-[node name="Trim33" type="Node2D" parent="Trims"]
-position = Vector2(1900, 3900)
+[node name="Trim43" type="Node2D" parent="Trims"]
+position = Vector2(1900, 5300)
 script = ExtResource("52_trim")
 length = 300
 mode = 3
 theme = 2
 
-[node name="Trim34" type="Node2D" parent="Trims"]
-position = Vector2(2150, 2850)
+[node name="Trim44" type="Node2D" parent="Trims"]
+position = Vector2(2100, 7100)
+script = ExtResource("52_trim")
+length = 450
+mode = 2
+theme = 0
+
+[node name="Trim45" type="Node2D" parent="Trims"]
+position = Vector2(2150, 4250)
 script = ExtResource("52_trim")
 length = 500
 mode = 2
 theme = 2
 
-[node name="Trim35" type="Node2D" parent="Trims"]
-position = Vector2(2150, 3600)
+[node name="Trim46" type="Node2D" parent="Trims"]
+position = Vector2(2150, 5000)
 script = ExtResource("52_trim")
 length = 600
 mode = 2
 theme = 2
 
-[node name="Trim36" type="Node2D" parent="Trims"]
-position = Vector2(2400, 4450)
+[node name="Trim47" type="Node2D" parent="Trims"]
+position = Vector2(2200, 3150)
 script = ExtResource("52_trim")
-length = 300
+length = 1100
 mode = 2
 theme = 2
 
-[node name="Trim37" type="Node2D" parent="Trims"]
-position = Vector2(2400, 4750)
-script = ExtResource("52_trim")
-length = 200
-mode = 2
-theme = 0
-
-[node name="Trim38" type="Node2D" parent="Trims"]
+[node name="Trim48" type="Node2D" parent="Trims"]
 position = Vector2(2700, 1100)
 script = ExtResource("52_trim")
 length = 600
 mode = 2
 theme = 1
 
-[node name="Trim39" type="Node2D" parent="Trims"]
-position = Vector2(2850, 4450)
+[node name="Trim49" type="Node2D" parent="Trims"]
+position = Vector2(2700, 3150)
 script = ExtResource("52_trim")
-length = 300
+length = 800
+mode = 2
+theme = 2
+
+[node name="Trim50" type="Node2D" parent="Trims"]
+position = Vector2(2650, 3150)
+script = ExtResource("52_trim")
+length = 1100
 mode = 3
 theme = 2
 
-[node name="Trim40" type="Node2D" parent="Trims"]
-position = Vector2(2850, 4750)
+[node name="Trim51" type="Node2D" parent="Trims"]
+position = Vector2(2750, 6950)
 script = ExtResource("52_trim")
-length = 200
+length = 50
 mode = 3
 theme = 0
 
-[node name="Trim41" type="Node2D" parent="Trims"]
+[node name="Trim52" type="Node2D" parent="Trims"]
+position = Vector2(2950, 6950)
+script = ExtResource("52_trim")
+length = 50
+mode = 2
+theme = 0
+
+[node name="Trim53" type="Node2D" parent="Trims"]
 position = Vector2(3150, 1100)
 script = ExtResource("52_trim")
 length = 600
 mode = 3
 theme = 1
 
-[node name="Trim42" type="Node2D" parent="Trims"]
+[node name="Trim54" type="Node2D" parent="Trims"]
 position = Vector2(3200, 450)
 script = ExtResource("52_trim")
 length = 650
 mode = 3
 theme = 1
 
-[node name="Trim43" type="Node2D" parent="Trims"]
-position = Vector2(3350, 5700)
+[node name="Trim55" type="Node2D" parent="Trims"]
+position = Vector2(3600, 7100)
 script = ExtResource("52_trim")
 length = 450
+mode = 3
+theme = 0
+
+[node name="Trim56" type="Node2D" parent="Trims"]
+position = Vector2(3800, 5850)
+script = ExtResource("52_trim")
+length = 300
+mode = 2
+theme = 2
+
+[node name="Trim57" type="Node2D" parent="Trims"]
+position = Vector2(3800, 6150)
+script = ExtResource("52_trim")
+length = 200
 mode = 2
 theme = 0
 
-[node name="Trim44" type="Node2D" parent="Trims"]
+[node name="Trim58" type="Node2D" parent="Trims"]
 position = Vector2(3850, 2300)
 script = ExtResource("52_trim")
 length = 200
 mode = 2
 theme = 1
 
-[node name="Trim45" type="Node2D" parent="Trims"]
+[node name="Trim59" type="Node2D" parent="Trims"]
 position = Vector2(3850, 2500)
 script = ExtResource("52_trim")
 length = 350
 mode = 2
 theme = 2
 
-[node name="Trim46" type="Node2D" parent="Trims"]
-position = Vector2(3900, 5700)
+[node name="Trim60" type="Node2D" parent="Trims"]
+position = Vector2(4250, 5850)
 script = ExtResource("52_trim")
-length = 450
+length = 300
+mode = 3
+theme = 2
+
+[node name="Trim61" type="Node2D" parent="Trims"]
+position = Vector2(4250, 6150)
+script = ExtResource("52_trim")
+length = 200
 mode = 3
 theme = 0
 
-[node name="Trim47" type="Node2D" parent="Trims"]
+[node name="Trim62" type="Node2D" parent="Trims"]
 position = Vector2(4300, 1700)
 script = ExtResource("52_trim")
 length = 250
 mode = 3
 theme = 1
 
-[node name="Trim48" type="Node2D" parent="Trims"]
+[node name="Trim63" type="Node2D" parent="Trims"]
 position = Vector2(4300, 2300)
 script = ExtResource("52_trim")
 length = 200
 mode = 3
 theme = 1
 
-[node name="Trim49" type="Node2D" parent="Trims"]
+[node name="Trim64" type="Node2D" parent="Trims"]
 position = Vector2(4300, 2500)
 script = ExtResource("52_trim")
 length = 350
 mode = 3
 theme = 2
 
-[node name="Trim50" type="Node2D" parent="Trims"]
-position = Vector2(4300, 4950)
+[node name="Trim65" type="Node2D" parent="Trims"]
+position = Vector2(4300, 6350)
 script = ExtResource("52_trim")
 length = 750
 mode = 3
 theme = 0
 
-[node name="Trim51" type="Node2D" parent="Trims"]
-position = Vector2(4450, 2850)
+[node name="Trim66" type="Node2D" parent="Trims"]
+position = Vector2(4450, 4250)
 script = ExtResource("52_trim")
 length = 1600
 mode = 3
 theme = 2
 
-[node name="Trim52" type="Node2D" parent="Trims"]
+[node name="Trim67" type="Node2D" parent="Trims"]
+position = Vector2(4500, 2850)
+script = ExtResource("52_trim")
+length = 1100
+mode = 3
+theme = 2
+
+[node name="Trim68" type="Node2D" parent="Trims"]
 position = Vector2(4600, 1700)
 script = ExtResource("52_trim")
 length = 250
 mode = 2
 theme = 1
 
-[node name="Trim53" type="Node2D" parent="Trims"]
+[node name="Trim69" type="Node2D" parent="Trims"]
 position = Vector2(4600, 2300)
 script = ExtResource("52_trim")
 length = 200
 mode = 2
 theme = 1
 
-[node name="Trim54" type="Node2D" parent="Trims"]
+[node name="Trim70" type="Node2D" parent="Trims"]
 position = Vector2(4600, 2500)
 script = ExtResource("52_trim")
-length = 2250
+length = 3650
 mode = 2
 theme = 2
 
-[node name="Trim55" type="Node2D" parent="Trims"]
-position = Vector2(4600, 4750)
+[node name="Trim71" type="Node2D" parent="Trims"]
+position = Vector2(4600, 6150)
 script = ExtResource("52_trim")
-length = 1400
+length = 1700
 mode = 2
 theme = 0
 
-[node name="Trim56" type="Node2D" parent="Trims"]
+[node name="Trim72" type="Node2D" parent="Trims"]
 position = Vector2(4950, 1700)
 script = ExtResource("52_trim")
 length = 800
 mode = 3
 theme = 1
 
-[node name="Trim57" type="Node2D" parent="Trims"]
+[node name="Trim73" type="Node2D" parent="Trims"]
 position = Vector2(4950, 2500)
 script = ExtResource("52_trim")
-length = 2250
+length = 3650
 mode = 3
 theme = 2
 
-[node name="Trim58" type="Node2D" parent="Trims"]
-position = Vector2(4950, 4750)
+[node name="Trim74" type="Node2D" parent="Trims"]
+position = Vector2(4950, 6150)
 script = ExtResource("52_trim")
-length = 2150
+length = 2450
 mode = 3
 theme = 0
 
@@ -1223,135 +1569,143 @@ position = Vector2(2280, 2040)
 script = ExtResource("9_coin")
 
 [node name="Coin14" type="Area2D" parent="Coins"]
-position = Vector2(3840, 3090)
+position = Vector2(1620, 3110)
 script = ExtResource("9_coin")
 
 [node name="Coin15" type="Area2D" parent="Coins"]
-position = Vector2(3900, 3090)
+position = Vector2(1720, 3110)
 script = ExtResource("9_coin")
 
 [node name="Coin16" type="Area2D" parent="Coins"]
-position = Vector2(3960, 3090)
+position = Vector2(1820, 3110)
 script = ExtResource("9_coin")
 
 [node name="Coin17" type="Area2D" parent="Coins"]
-position = Vector2(2970, 3420)
+position = Vector2(1920, 3110)
 script = ExtResource("9_coin")
 
 [node name="Coin18" type="Area2D" parent="Coins"]
-position = Vector2(3030, 3420)
+position = Vector2(2020, 3110)
 script = ExtResource("9_coin")
 
 [node name="Coin19" type="Area2D" parent="Coins"]
-position = Vector2(3090, 3420)
+position = Vector2(2640, 4490)
 script = ExtResource("9_coin")
 
 [node name="Coin20" type="Area2D" parent="Coins"]
-position = Vector2(2600, 3750)
+position = Vector2(2700, 4490)
 script = ExtResource("9_coin")
 
 [node name="Coin21" type="Area2D" parent="Coins"]
-position = Vector2(2660, 3750)
+position = Vector2(2760, 4490)
 script = ExtResource("9_coin")
 
 [node name="Coin22" type="Area2D" parent="Coins"]
-position = Vector2(2720, 3750)
+position = Vector2(3510, 4820)
 script = ExtResource("9_coin")
 
 [node name="Coin23" type="Area2D" parent="Coins"]
-position = Vector2(3470, 4080)
+position = Vector2(3570, 4820)
 script = ExtResource("9_coin")
 
 [node name="Coin24" type="Area2D" parent="Coins"]
-position = Vector2(3530, 4080)
+position = Vector2(3630, 4820)
 script = ExtResource("9_coin")
 
 [node name="Coin25" type="Area2D" parent="Coins"]
-position = Vector2(3590, 4080)
+position = Vector2(3880, 5150)
 script = ExtResource("9_coin")
 
 [node name="Coin26" type="Area2D" parent="Coins"]
-position = Vector2(800, 3560)
+position = Vector2(3940, 5150)
 script = ExtResource("9_coin")
 
 [node name="Coin27" type="Area2D" parent="Coins"]
-position = Vector2(860, 3560)
+position = Vector2(4000, 5150)
 script = ExtResource("9_coin")
 
 [node name="Coin28" type="Area2D" parent="Coins"]
-position = Vector2(920, 3560)
+position = Vector2(3010, 5480)
 script = ExtResource("9_coin")
 
 [node name="Coin29" type="Area2D" parent="Coins"]
-position = Vector2(980, 3560)
+position = Vector2(3070, 5480)
 script = ExtResource("9_coin")
 
 [node name="Coin30" type="Area2D" parent="Coins"]
-position = Vector2(750, 4250)
+position = Vector2(3130, 5480)
 script = ExtResource("9_coin")
 
 [node name="Coin31" type="Area2D" parent="Coins"]
-position = Vector2(810, 4250)
+position = Vector2(800, 4960)
 script = ExtResource("9_coin")
 
 [node name="Coin32" type="Area2D" parent="Coins"]
-position = Vector2(870, 4250)
+position = Vector2(860, 4960)
 script = ExtResource("9_coin")
 
 [node name="Coin33" type="Area2D" parent="Coins"]
-position = Vector2(930, 4250)
+position = Vector2(920, 4960)
 script = ExtResource("9_coin")
 
 [node name="Coin34" type="Area2D" parent="Coins"]
-position = Vector2(990, 4250)
+position = Vector2(980, 4960)
 script = ExtResource("9_coin")
 
 [node name="Coin35" type="Area2D" parent="Coins"]
-position = Vector2(1050, 4250)
+position = Vector2(750, 5650)
 script = ExtResource("9_coin")
 
 [node name="Coin36" type="Area2D" parent="Coins"]
-position = Vector2(1320, 5440)
+position = Vector2(810, 5650)
 script = ExtResource("9_coin")
 
 [node name="Coin37" type="Area2D" parent="Coins"]
-position = Vector2(1400, 5440)
+position = Vector2(870, 5650)
 script = ExtResource("9_coin")
 
 [node name="Coin38" type="Area2D" parent="Coins"]
-position = Vector2(1480, 5440)
+position = Vector2(930, 5650)
 script = ExtResource("9_coin")
 
 [node name="Coin39" type="Area2D" parent="Coins"]
-position = Vector2(3620, 5440)
+position = Vector2(990, 5650)
 script = ExtResource("9_coin")
 
 [node name="Coin40" type="Area2D" parent="Coins"]
-position = Vector2(3700, 5440)
+position = Vector2(1050, 5650)
 script = ExtResource("9_coin")
 
 [node name="Coin41" type="Area2D" parent="Coins"]
-position = Vector2(3780, 5440)
+position = Vector2(1470, 6840)
 script = ExtResource("9_coin")
 
 [node name="Coin42" type="Area2D" parent="Coins"]
-position = Vector2(3800, 6860)
+position = Vector2(1550, 6840)
 script = ExtResource("9_coin")
 
 [node name="Coin43" type="Area2D" parent="Coins"]
-position = Vector2(3875, 6860)
+position = Vector2(1630, 6840)
 script = ExtResource("9_coin")
 
 [node name="Coin44" type="Area2D" parent="Coins"]
-position = Vector2(3950, 6860)
+position = Vector2(3800, 8560)
 script = ExtResource("9_coin")
 
 [node name="Coin45" type="Area2D" parent="Coins"]
-position = Vector2(4025, 6860)
+position = Vector2(3875, 8560)
 script = ExtResource("9_coin")
 
 [node name="Coin46" type="Area2D" parent="Coins"]
-position = Vector2(4100, 6860)
+position = Vector2(3950, 8560)
+script = ExtResource("9_coin")
+
+[node name="Coin47" type="Area2D" parent="Coins"]
+position = Vector2(4025, 8560)
+script = ExtResource("9_coin")
+
+[node name="Coin48" type="Area2D" parent="Coins"]
+position = Vector2(4100, 8560)
 script = ExtResource("9_coin")
 
 [node name="Enemies" type="Node2D" parent="."]
@@ -1363,37 +1717,40 @@ position = Vector2(1700, 2280)
 position = Vector2(3000, 2280)
 
 [node name="Scribble1" parent="Enemies" instance=ExtResource("20_scribble")]
-position = Vector2(2850, 3270)
+position = Vector2(3650, 4670)
 
 [node name="Scribble2" parent="Enemies" instance=ExtResource("20_scribble")]
-position = Vector2(3650, 3610)
+position = Vector2(2950, 5010)
 
 [node name="Scribble3" parent="Enemies" instance=ExtResource("20_scribble")]
-position = Vector2(3050, 4000)
+position = Vector2(3550, 5400)
 
 [node name="Crumple1" parent="Enemies" instance=ExtResource("21_crumple")]
-position = Vector2(950, 4425)
+position = Vector2(950, 5825)
 
 [node name="Crossed1" parent="Enemies" instance=ExtResource("22_crossed")]
-position = Vector2(1500, 4420)
-
-[node name="Smudge1" parent="Enemies" instance=ExtResource("23_smudge")]
-position = Vector2(1800, 5688)
-
-[node name="Inkwell1" parent="Enemies" instance=ExtResource("24_inkwell")]
-position = Vector2(800, 5674)
-
-[node name="Crawler3" parent="Enemies" instance=ExtResource("2_crawler")]
-position = Vector2(3900, 5680)
-
-[node name="Crossed2" parent="Enemies" instance=ExtResource("22_crossed")]
-position = Vector2(2800, 6870)
+position = Vector2(1500, 5820)
 
 [node name="Scribble4" parent="Enemies" instance=ExtResource("20_scribble")]
-position = Vector2(3200, 6570)
+position = Vector2(3050, 6670)
+
+[node name="Smudge1" parent="Enemies" instance=ExtResource("23_smudge")]
+position = Vector2(1700, 7088)
+
+[node name="Inkwell1" parent="Enemies" instance=ExtResource("24_inkwell")]
+position = Vector2(1200, 7074)
+
+[node name="Crossed2" parent="Enemies" instance=ExtResource("22_crossed")]
+position = Vector2(2200, 8570)
+
+[node name="Crawler3" parent="Enemies" instance=ExtResource("2_crawler")]
+position = Vector2(3100, 8580)
 
 [node name="Scribble5" parent="Enemies" instance=ExtResource("20_scribble")]
-position = Vector2(3400, 6520)
+position = Vector2(2600, 8270)
+
+[node name="Scribble6" parent="Enemies" instance=ExtResource("20_scribble")]
+position = Vector2(2800, 8220)
 
 [node name="Player" parent="." instance=ExtResource("1_player")]
 position = Vector2(500, 1074)
