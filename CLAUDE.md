@@ -33,6 +33,9 @@ It has two light-puzzle rooms: the Shadow Gallery (hit lantern B, ride the shado
 far lantern A with an ink wave, cross the blue sketch, second ramp to the ledge) and the Pendulum (a
 blue sketch bridge under a swinging lantern; no spikes, since spikes can be pogoed across).
 The 2D player has a double jump (`air_jumps`, `air_jump_velocity` in player.gd; set 0 to turn off).
+Falls of `hard_land_height` (500 px) or more end in a Hollow Knight-style hard landing (kneel that
+locks control, `land_impact.gd` burst, speed lines from `fall_streaks.gd` while falling); falls of
+`fall_damage_height` (900 px) or more also hurt (15..45). All in player.gd's "Hard Landing" exports.
 
 ## 2.5D framework
 - Rooms are scenes whose root uses `scripts/world25/room.gd`; it builds environment, light,
