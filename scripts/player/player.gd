@@ -4,6 +4,7 @@ extends CharacterBody2D
 ##  - snappy run, variable jump height, apex hang, fast-fall
 ##  - coyote time + jump buffering
 ##  - double jump: one extra jump in the air, refilled on landing or a pogo
+##  - hard landing after a long fall (kneel, dust, shake); longer falls hurt
 ##  - dash with brief invincibility (vs enemies), resets on ground / pogo
 ##  - directional slashes (side / up / down-in-air)
 ##  - down-slash pogo off enemies and hazards, side-slash recoil
@@ -18,6 +19,8 @@ const SlashEffect = preload("res://scripts/effects/slash_effect.gd")
 const JumpPuff = preload("res://scripts/effects/jump_puff.gd")
 const ComicText = preload("res://scripts/effects/comic_text.gd")
 const InkWave = preload("res://scripts/effects/ink_wave.gd")
+const LandImpact = preload("res://scripts/effects/land_impact.gd")
+const FallStreaks = preload("res://scripts/effects/fall_streaks.gd")
 const DeathScreen = preload("res://scripts/ui/death_screen.gd")
 const Tutorial = preload("res://scripts/ui/tutorial.gd")
 const Ember = preload("res://scripts/player/ember.gd")
@@ -50,6 +53,19 @@ const HAZARD_DAMAGE := 20.0
 @export var air_jumps := 1
 ## Launch speed of an air jump: a little weaker than the ground jump.
 @export var air_jump_velocity := -700.0
+
+@export_group("Hard Landing")
+## Falls at least this long (px, from the top of the last rise) end in a
+## Hollow Knight-style hard landing: Vesper slams down and kneels, unable to
+## act for `hard_land_time`. A normal jump is ~170 px.
+@export var hard_land_height := 500.0
+@export var hard_land_time := 0.4
+## Falls at least this long also hurt (0 = no fall damage) and kneel longer.
+@export var fall_damage_height := 900.0
+@export var fall_damage := 15.0
+## Extra damage per 300 px fallen beyond `fall_damage_height`, up to the max.
+@export var fall_damage_step := 10.0
+@export var max_fall_damage := 45.0
 
 @export_group("Crouch Jump")
 ## Standing still, holding jump crouches and coils the legs; releasing
@@ -108,6 +124,10 @@ var _coyote_timer := 0.0
 var _jump_buffer_timer := 0.0
 var _air_jumps_left := 0
 var _crouch := -1.0  # seconds spent crouching; -1 = not crouching
+var _fall_top := 0.0  # y where the current fall began (top of the last rise)
+var _land_timer := 0.0  # hard-landing kneel left
+var _land_length := 0.4
+var _streaks: Node2D
 var _dash_timer := 0.0
 var _dash_cooldown_timer := 0.0
 var _attack_timer := 0.0
@@ -147,6 +167,9 @@ func _ready() -> void:
 			global_position = spawn  # respawn at the last checkpoint pen
 		coins = state.coins
 	_last_safe_position = global_position
+	_fall_top = global_position.y
+	_streaks = FallStreaks.new()
+	add_child(_streaks)
 	health_changed.emit(health, max_health)
 	coins_changed.emit(coins)
 	Tutorial.start(self, self, "2d")  # first run only
@@ -172,8 +195,10 @@ func _physics_process(delta: float) -> void:
 		_charge_ready = false
 	_update_charge(delta)
 
-	# Hit-stun: no control, just fall with knockback.
-	if _hurt_timer > 0.0:
+	# Hit-stun: no control, just fall with knockback. A hard landing kneels.
+	if _hurt_timer > 0.0 or _land_timer > 0.0:
+		if _land_timer > 0.0:
+			velocity.x = move_toward(velocity.x, 0.0, ground_decel * delta)
 		_apply_gravity(delta)
 		move_and_slide()
 		_post_move(delta)
@@ -212,6 +237,7 @@ func _tick_timers(delta: float) -> void:
 	_recoil_timer = maxf(_recoil_timer - delta, 0.0)
 	_invuln_timer = maxf(_invuln_timer - delta, 0.0)
 	_hurt_timer = maxf(_hurt_timer - delta, 0.0)
+	_land_timer = maxf(_land_timer - delta, 0.0)
 	if _dash_timer > 0.0:
 		_dash_timer -= delta
 		if _dash_timer <= 0.0:
@@ -355,6 +381,12 @@ func _start_dash(input_x: float) -> void:
 
 func _post_move(delta: float) -> void:
 	var on_floor := is_on_floor()
+	if on_floor and not _was_on_floor:
+		var drop := global_position.y - _fall_top
+		if drop >= hard_land_height and hard_land_height > 0.0:
+			_hard_land(drop)
+	if on_floor or velocity.y <= 0.0:
+		_fall_top = global_position.y  # a fall is measured from the top of the last rise
 	if on_floor:
 		_coyote_timer = coyote_time
 		can_dash = true
@@ -368,6 +400,37 @@ func _post_move(delta: float) -> void:
 	_was_on_floor = on_floor
 	_check_hurtbox()
 	_update_visuals(delta)
+
+
+## Hollow Knight-style hard landing: freeze-frame, shake, ground burst and a
+## kneel that locks control; past `fall_damage_height` it also hurts.
+func _hard_land(drop: float) -> void:
+	var hurts := fall_damage_height > 0.0 and drop >= fall_damage_height
+	_land_length = hard_land_time * (1.6 if hurts else 1.0)
+	_land_timer = _land_length
+	_crouch = -1.0
+	_cancel_charge()
+	_attack_timer = 0.0
+	velocity.x *= 0.3
+	_squash = Vector2(1.5, 0.58)
+	var fx := LandImpact.new()
+	fx.power = 1.5 if hurts else 1.0
+	fx.position = global_position + Vector2(0, BODY_HALF_HEIGHT)
+	get_tree().current_scene.add_child(fx)
+	if hurts:
+		var dmg := minf(fall_damage + (drop - fall_damage_height) / 300.0 * fall_damage_step, max_fall_damage)
+		health = maxf(health - dmg, 0.0)
+		health_changed.emit(health, max_health)
+		_invuln_timer = invuln_time
+		_pop_text(global_position + Vector2(0, -50), "CRUNCH!", Color(1.0, 0.4, 0.35))
+		_hitstop(0.12, 0.02)
+		_shake(0.8)
+		if health <= 0.0:
+			_die()
+	else:
+		_pop_text(global_position + Vector2(0, -46), "THUD!", Color(0.97, 0.94, 0.86))
+		_hitstop(0.06, 0.05)
+		_shake(0.45)
 
 
 # ------------------------------------------------------------------ combat
@@ -583,6 +646,7 @@ func take_damage(amount: float, source_pos: Vector2, from_hazard := false) -> vo
 	if from_hazard:
 		velocity = Vector2.ZERO
 		global_position = _last_safe_position
+		_fall_top = global_position.y
 		_hurt_timer = 0.4  # brief freeze after respawn
 	else:
 		var dir := signf(global_position.x - source_pos.x)
@@ -621,6 +685,11 @@ func _update_visuals(delta: float) -> void:
 	art.charge_ready = _charge_ready
 	art.crouch = crouch_amount() if _crouch >= 0.0 else 0.0
 	art.crouching = _crouch >= 0.0
+	art.land = _land_timer / _land_length if _land_timer > 0.0 else 0.0
+	var drop := global_position.y - _fall_top if not is_on_floor() and velocity.y > 0.0 else 0.0
+	_streaks.amount = clampf((drop - hard_land_height * 0.6) / (hard_land_height * 0.4), 0.0, 1.0) \
+		if hard_land_height > 0.0 else 0.0
+	_streaks.danger = fall_damage_height > 0.0 and drop >= fall_damage_height
 	sword.charge = art.charge
 	sword.charge_ready = _charge_ready
 	var col := Color.WHITE
