@@ -29,33 +29,34 @@
 script = ExtResource("room")
 room_id = "shallows_pen"
 biome = ExtResource("b_shallows")
-map_cell = Vector2i(-6, -2)
+map_cell = Vector2i(-2, 0)
 camera_bounds = Rect2(-7.5, -6.5, 15, 13.0)
 default_spawn = Vector3(0, 0.05, 0)
 title = "The Red Pen"
-subtitle = "The Drowned Margin"
-enter_captions = "~My editor marked every page in red. Every single page.|Wet ink dries in the light. Make the nib miss, then hit it while it's stuck."
+subtitle = "The Drowned Margin, 2 / 4"
+enter_captions = "~My editor marked every page in red. Every single page.|Wet ink dries in the light. Make the nib miss, then hit it while it's stuck.|~And this time I'm watching. With both lamps."
 clear_captions = "~...Stet. It means: let it stand.|~I never knew that until now."
+haunt_lamps = 2
 boss_path = NodePath("Enemies/RedPen1")
 boss_name = "THE RED PEN"
 
 [node name="Island" type="Node3D" parent="."]
 script = ExtResource("island")
-polygon = PackedVector2Array(-10.50, -9.50, -7.00, -9.15, -3.50, -8.92, 0.00, -9.35, 3.50, -9.60, 7.00, -9.17, 13.00, -7.00, 13.00, -2.80, 13.00, 0.80, 12.93, 3.50, 10.50, 9.50, 7.00, 9.98, 3.50, 9.04, 0.00, 9.23, -3.50, 9.48, -7.00, 9.62, -13.00, 7.00, -13.03, 3.50, -13.00, 0.80, -13.00, -2.80)
-open_edges = PackedInt32Array(7, 18)
+polygon = PackedVector2Array(-10.50, -9.50, -7.00, -9.17, -3.50, -9.66, 0.00, -10.03, 3.50, -10.09, 7.00, -9.31, 13.00, -7.00, 13.39, -3.50, 13.00, -1.80, 13.00, 1.80, 13.15, 3.50, 10.50, 9.50, 7.00, 9.32, 3.50, 9.95, 0.00, 9.47, -3.50, 9.53, -7.00, 9.87, -13.00, 7.00, -13.17, 3.50, -13.00, 1.80, -13.00, -1.80, -13.32, -3.50)
+open_edges = PackedInt32Array(8, 19)
 
 [node name="GateEast" type="Node3D" parent="."]
-transform = Transform3D(0.0000, 0, -1.0000, 0, 1, 0, 1.0000, 0, 0.0000, 13.00, 0.00, -1.00)
+transform = Transform3D(0.0000, 0, -1.0000, 0, 1, 0, 1.0000, 0, 0.0000, 13.00, 0.00, 0.00)
 script = ExtResource("gate")
 gate_id = "east"
-target_scene = "res://scenes/world25/rooms/shallows_field.tscn"
+target_scene = "res://scenes/world25/rooms/darkwood_1.tscn"
 target_gate = "west"
 
 [node name="GateWest" type="Node3D" parent="."]
-transform = Transform3D(0.0000, 0, 1.0000, 0, 1, 0, -1.0000, 0, 0.0000, -13.00, 0.00, -1.00)
+transform = Transform3D(0.0000, 0, 1.0000, 0, 1, 0, -1.0000, 0, 0.0000, -13.00, 0.00, 0.00)
 script = ExtResource("gate")
 gate_id = "west"
-target_scene = "res://scenes/world25/rooms/wastes_1.tscn"
+target_scene = "res://scenes/world25/rooms/wastes_gap.tscn"
 target_gate = "east"
 
 [node name="Props" type="Node3D" parent="."]
@@ -120,55 +121,48 @@ solid = true
 seed = 832
 
 [node name="InkPool1" type="Node3D" parent="Props"]
-transform = Transform3D(-0.3279, 0, 0.9447, 0, 1, 0, -0.9447, 0, -0.3279, -9.49, 0.00, 3.14)
+transform = Transform3D(0.4203, 0, 0.9074, 0, 1, 0, -0.9074, 0, 0.4203, -10.44, 0.00, 3.54)
 script = ExtResource("bprops")
 kind = 11
 radius = 1.3
-seed = 62
+seed = 603
 
 [node name="InkPool2" type="Node3D" parent="Props"]
-transform = Transform3D(0.5594, 0, 0.8289, 0, 1, 0, -0.8289, 0, 0.5594, -5.32, 0.00, 6.87)
+transform = Transform3D(-0.8101, 0, 0.5863, 0, 1, 0, -0.5863, 0, -0.8101, 9.74, 0.00, -3.86)
 script = ExtResource("bprops")
 kind = 11
 radius = 1.3
-seed = 516
+seed = 396
 
 [node name="Deep" type="Node3D" parent="."]
-
-[node name="Deep1" type="Node3D" parent="Deep"]
-transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 16.24, -6.00, 3.99)
-script = ExtResource("bprops")
-kind = 6
-size = 2.4
-seed = 83
 
 [node name="Deep2" type="Node3D" parent="Deep"]
 transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 3.77, -6.00, 13.16)
 script = ExtResource("bprops")
 kind = 6
 size = 2.4
-seed = 8
+seed = 62
 
 [node name="Deep3" type="Node3D" parent="Deep"]
 transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -12.47, -6.00, 9.17)
 script = ExtResource("bprops")
 kind = 6
 size = 2.4
-seed = 1
+seed = 27
 
 [node name="Deep5" type="Node3D" parent="Deep"]
 transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -3.77, -6.00, -13.16)
 script = ExtResource("bprops")
 kind = 6
 size = 2.4
-seed = 67
+seed = 20
 
 [node name="Deep6" type="Node3D" parent="Deep"]
 transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 12.47, -6.00, -9.17)
 script = ExtResource("bprops")
 kind = 6
 size = 2.4
-seed = 47
+seed = 66
 
 [node name="RuinPillar1" type="Node3D" parent="Deep"]
 transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -16.00, -6.00, -11.00)
@@ -185,7 +179,7 @@ size = 2.4
 seed = 41
 
 [node name="Eyes1" type="Node3D" parent="Deep"]
-transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -6.12, -4.00, 12.50)
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 4.21, -4.00, 12.50)
 script = ExtResource("eyes")
 color = Color(0.4, 1, 0.85, 1)
 

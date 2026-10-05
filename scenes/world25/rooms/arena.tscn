@@ -29,11 +29,11 @@
 script = ExtResource("room")
 room_id = "arena"
 biome = ExtResource("b_arena")
-map_cell = Vector2i(-9, -3)
+map_cell = Vector2i(-4, 0)
 camera_bounds = Rect2(-6.5, -7, 13, 14)
 default_spawn = Vector3(0, 0.05, 0)
 title = "The Rubbing Room"
-subtitle = ""
+subtitle = "4 / 4"
 enter_captions = "~No. Not this one. Turn back.|~You don't need to see what I did to the other drafts."
 clear_captions = "~...That isn't how this goes.|~That isn't how ANY of this goes."
 cutscene_on_clear = "res://scenes/cutscenes/cs_reveal.tscn"
@@ -246,4 +246,9 @@ color = Color(1, 0.6, 0.85, 1)
 
 [node name="Eraser1" parent="Enemies" instance=ExtResource("eraser")]
 transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -3.00, 0.05, 0.00)
-hp = 16
+hp = 26
+walk_speed = 2.0
+lunge_speed = 12.5
+windup_time = 0.45
+tired_time = 1.5
+cooldown = 0.8

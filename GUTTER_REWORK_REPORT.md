@@ -87,6 +87,31 @@ Branch `gutter-rework`, made from `main`. Everything here is the 2.5D part (the 
 9. **Names:** title cards, captions and biome names use The Spine, The Inkwood, The Drowned
    Margin, The Torn Wastes and The Rubbing Room.
 
+10. **Four levels** (your story outline): after the hub, the Gutter is four rooms in a row.
+    - **Level 1, The Inkwood** (`darkwood_1`): where Vesper lands after escaping the eraser.
+      It has one of every ordinary monster: two Scribbles, a Crumple, a Smudge, an Inkwell, a
+      Crossed-Out and a diving Scribble. They're spread out, and the lamp is slow (easy).
+    - **Level 2, The Red Pen** (`shallows_pen`): the Red Pen fight with its wet-ink circles,
+      as before, but two of the Writer's lamps hunt you through it.
+    - **Level 3, The Torn Page** (`wastes_gap`, the room in your screenshot): the bridge is a
+      pencil sketch that never forms on its own.
+      - Stand at its edge and hold Q: ink runs out from Vesper's feet and inks the planks in
+        for good, about 5 units per hold, for 3 Ember a plank. Hits refill the Ember.
+      - A "HOLD Q INK THE BRIDGE" prompt shows at the edge.
+      - Away from the bridge, Q is still the Flash.
+      - Made gentler: a shorter bridge, one slow lamp, no searchlight, and no Inkwells,
+        Crumples or divers (three Scribbles, a Smudge and a Crossed-Out).
+    - **Level 4, The Rubbing Room** (`arena`): the Eraser, made hard.
+      - More health (26), faster walking and charges, a shorter wind-up and shorter rests.
+      - Below half health it turns FURIOUS: a charge that misses goes straight into a second
+        one. Making it slam into a pillar still tires it at once.
+      - The room's two fast lamps hunt as well.
+    - **Retired rooms:** the other eight rooms are no longer linked, and their scenes stay on
+      disk. `OLD_ROOMS = True` in `tools/rooms25/build_rooms.py` rebuilds them.
+    - **Spawn protection:** for 2 seconds after arriving in any Gutter room, or coming back
+      after dying, nothing can hurt Vesper: monsters, falls and the lamps' light all miss, and
+      he blinks while it lasts.
+
 ## Tuning knobs
 
 | What | Where |
@@ -105,7 +130,11 @@ Branch `gutter-rework`, made from `main`. Everything here is the 2.5D part (the 
 | Lamp spacing / feel | `haunt_lamp.gd` `_steer()` (accel), `_separation()` |
 | Gate timing / colour | `gate.gd`: `DRAW_TIME` (0.8 s), `lantern_color` |
 | Lamp per zone | `data/haunt/*.tres` (`haunt_profile.gd`): lamps, grace, seek_speed, circle_radius, strike_every, telegraph, erase_fill, lose_after, can_damage, strike_erase, linger, the Writer's lines |
-| Lamp per room | `room.gd` `haunt_scale` / `haunt_enabled`; set in `tools/rooms25/build_rooms.py` (`r.haunt_scale`) |
+| Lamp per room | `room.gd` `haunt_scale`, `haunt_lamps` (-1 = profile), `haunt_enabled`; set in `tools/rooms25/build_rooms.py` (`r.haunt_scale`, `r.haunt_lamps`) |
+| Spawn protection | `clearing_player.gd`: `spawn_protection` (2 s) |
+| Inking the bridge | `drawn_bridge.gd`: `ink_reach` (5), `ink_speed` (6), `ink_cost` (3 Ember a plank); `ink_only` off = old light rule |
+| Eraser difficulty | `build_rooms.py` arena block (hp, walk_speed, lunge_speed, windup_time, tired_time, cooldown); `eraser_3d.gd` `double_charge_below` (0.5) |
+| Which monsters where | `build_rooms.py`, one block per level (`r.enemy(...)`) |
 | Lamp difficulty | room.gd `_spawn_haunt()`: Relaxed speed ×0.75 / telegraph ×1.3, Hard ×1.25 / ×0.8 |
 | Lamp light direction | `haunt_lamp.gd`: `SOURCE_DIR` (from up and towards the back: props throw shadows towards the camera) |
 
@@ -120,17 +149,28 @@ These ran with Godot 4.7-stable under Xvfb with software OpenGL.
   - A swing hits a monster in each of the 8 directions, both by facing and by
     hold-and-swing.
   - Aim assist on, off, out of the cone and out of range.
-- **`tests/gutter/test_phase2.gd`: 33/33 checks.**
+- **`tests/gutter/test_phase2.gd`: 16/16 checks** over the hub and the four levels.
   - No grass, farm or cosy props, shop or round doors in any room.
   - No coin drops.
   - Patch talks.
   - The skill tree opens at the shrine and from pause.
-- **`tests/gutter/test_phase5.gd`: 32/32 checks.**
-  - Every room spawns the right lamps with its profile, never on the arrival point.
-  - 90 s of the Wastes' lamps hunting: every strike came after its full telegraph.
+- **`tests/gutter/test_phase5.gd`: 17/17 checks.**
+  - Each room has the right number of lamps (1, 2, 1 and 2 in the four levels), never on
+    the arrival point.
+  - 90 s of the Rubbing Room's two lamps hunting: every strike came after its full
+    telegraph.
   - Hiding behind a wall makes the lamp lose Vesper.
   - The Spine's lamp never damages or strikes.
   - The circles glide, with no jumps between physics ticks.
+- **`tests/gutter/test_levels.gd` (new): 24/24 checks.**
+  - The gates chain hub → 1 → 2 → 3 → 4 and back, and none leads to a retired room.
+  - Level 1 has every ordinary monster; level 3 has no Inkwells, Crumples or divers; the
+    Eraser is tougher and turns furious at half health.
+  - Spawn protection: a hit and a lamp's light do nothing for 2 s, then hits land again.
+  - The bridge stays a sketch while Vesper stands by it.
+  - Holding Q inks 6 of 8 planks for 3 Ember each, with no Flash, and they stay.
+  - One more hold finishes the bridge, and Vesper walks across without falling.
+  - With no Ember, Q inks nothing; away from the bridge, Q still Flashes.
 
 ## Not verified
 

@@ -4,6 +4,9 @@ extends "res://scripts/clearing/monster_3d.gd"
 ## TIRED. It plods after the player, leans back, then charges in a straight
 ## line. If the charge misses or slams into something, it is left TIRED,
 ## panting, with its weak spot showing: that's your window.
+## Below `double_charge_below` of its health it gets FURIOUS: a missed
+## charge turns straight into a second one (slamming into something still
+## tires it at once).
 
 enum State { WALK, WINDUP, LUNGE, TIRED, RUB }  # same order as the 2D art
 
@@ -14,8 +17,13 @@ enum State { WALK, WINDUP, LUNGE, TIRED, RUB }  # same order as the 2D art
 @export var windup_time := 0.6
 @export var tired_time := 1.9
 @export var cooldown := 1.2
+## Below this fraction of its health a missed charge is followed by a
+## second (0 = never).
+@export var double_charge_below := 0.5
 
 var state := State.WALK
+var furious := false
+var _charges_left := 0
 var _timer := 0.0
 var _cooldown := 1.5
 var _lunge_dir := Vector3.RIGHT
@@ -34,6 +42,10 @@ func _ready() -> void:
 func _tick(delta: float) -> void:
 	_timer -= delta
 	_cooldown -= delta
+	if not furious and double_charge_below > 0.0 and float(health) <= hp * double_charge_below:
+		furious = true
+		pop("FURIOUS!", Color(1.0, 0.35, 0.3), 2.6, 34)
+		_shake(0.5)
 	match state:
 		State.WALK:
 			if sees_player():
@@ -44,6 +56,7 @@ func _tick(delta: float) -> void:
 					state = State.WINDUP
 					_timer = windup_time
 					_lunge_dir = d.normalized()
+					_charges_left = 2 if furious else 1
 			else:
 				_slow_to_stop(8.0, delta)
 		State.WINDUP:
@@ -59,11 +72,16 @@ func _tick(delta: float) -> void:
 			move_planar(_lunge_dir * lunge_speed, 50.0, delta)
 			var slammed := is_on_wall() and get_slide_collision_count() > 0
 			if _timer <= 0.0 or slammed:
+				_charges_left -= 1
 				if slammed:
 					pop("THUD!", PALE, 2.4)
 					_shake(0.4)
-				state = State.TIRED
-				_timer = tired_time
+				if _charges_left > 0 and not slammed:
+					state = State.WINDUP  # furious: straight into another charge
+					_timer = windup_time * 0.7
+				else:
+					state = State.TIRED
+					_timer = tired_time
 		State.TIRED:
 			_slow_to_stop(12.0, delta)
 			if _timer <= 0.0:
@@ -100,6 +118,7 @@ func _shake(amount: float) -> void:
 
 func _on_respawn() -> void:
 	state = State.WALK
+	furious = false
 	_cooldown = 2.0
 
 
