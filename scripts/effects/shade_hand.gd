@@ -7,11 +7,14 @@ extends Node2D
 ## spawns the real enemy there (`materialize()` gives it a pop-in).
 ##
 ##   hand.draw_monster("spider", Vector2(500, 600))   # kinds: spider bat blot eraser pen
+##   hand.write_name(Vector2(300, 60))                # "SHADE" in huge dripping brush ink
 ##
 ## Place at the world origin; `rest` is where the hand hovers between drawings.
 ## Everything is drawn in code through InkBatch (one draw call per layer).
 
 signal drawn(kind: String, at: Vector2)
+## The hand finished writing its name (`write_name()`).
+signal wrote_name
 
 const InkBatch = preload("res://scripts/depth/ink_batch.gd")
 
@@ -48,6 +51,8 @@ var _queue: Array = []  # [kind, at]
 var _job: Dictionary = {}  # the drawing in progress
 var _sketches: Array = []  # {strokes, done (pts drawn per stroke), at, age, born, life}
 var _sketch_layer: Node2D
+var _names: Array = []  # "SHADE" written in the sky: {strokes, done, age}
+var _name_layer: Node2D
 var _xf := Transform2D.IDENTITY  # hand space -> world, from the last draw
 var _tips := [Vector2.ZERO, Vector2.ZERO, Vector2.ZERO, Vector2.ZERO, Vector2.ZERO]  # claw points (hand space)
 var _drips: Array = []  # {p, v, age, r} world space
@@ -61,11 +66,21 @@ func _ready() -> void:
 	_sketch_layer.z_index = -38  # the sketches sit in the world, under the hand (z 40 - 38 = 2)
 	_sketch_layer.draw.connect(_paint_sketches)
 	add_child(_sketch_layer)
+	_name_layer = Node2D.new()
+	_name_layer.z_index = -45  # far back: behind the street and the monsters (z -5), over the painting
+	_name_layer.draw.connect(_paint_names)
+	add_child(_name_layer)
 
 
 ## Queue a monster drawing. `at` = the monster's feet in world space.
 func draw_monster(kind: String, at: Vector2) -> void:
 	_queue.append([kind, at])
+
+
+## Write "SHADE" across the sky in huge brush strokes; `at` = the top-left of
+## the S, `size` scales the letters (1 = 200 px tall). It stays for good.
+func write_name(at: Vector2, size := 1.0) -> void:
+	_queue.append(["__name__", at, size])
 
 
 ## True while the hand is drawing (or has drawings queued).
@@ -113,12 +128,16 @@ func _process(delta: float) -> void:
 		if s.born:
 			s.life -= delta
 	_sketches = _sketches.filter(func(s): return s.life > 0.0)
+	for n in _names:
+		n.age += delta
 	queue_redraw()
 	_sketch_layer.queue_redraw()
+	_name_layer.queue_redraw()
 
 
 func _start(job: Array) -> void:
-	var strokes := _strokes(job[0])
+	var is_name: bool = job[0] == "__name__"
+	var strokes: Array = _name_strokes(job[2]) if is_name else _strokes(job[0])
 	var sk := {"strokes": [], "done": [], "at": job[1], "age": 0.0, "born": false, "life": 0.9, "flare": 0.0}
 	for st in strokes:
 		var world := PackedVector2Array()
@@ -126,13 +145,21 @@ func _start(job: Array) -> void:
 			world.append(job[1] + p)
 		sk.strokes.append(world)
 		sk.done.append(0.0)
-	_sketches.append(sk)
-	_job = {"kind": job[0], "at": job[1], "sketch": sk, "stroke": 0, "lifting": true, "birth": 0.0}
+	if is_name:
+		_names.append(sk)
+	else:
+		_sketches.append(sk)
+	_job = {"kind": job[0], "at": job[1], "sketch": sk, "stroke": 0, "lifting": true, "birth": 0.0,
+		"speed": 2.4 if is_name else 1.0}
 
 
 func _run_job(delta: float) -> void:
 	var sk: Dictionary = _job.sketch
 	var i: int = _job.stroke
+	if i >= sk.strokes.size() and _job.kind == "__name__":
+		_job = {}
+		wrote_name.emit()
+		return
 	if i >= sk.strokes.size():
 		# every line drawn: the sketch flares with light, then the monster is born
 		_job.birth += delta
@@ -164,7 +191,7 @@ func _run_job(delta: float) -> void:
 	# inking: run the nib along the stroke
 	_glow = move_toward(_glow, 1.0, delta * 4.0)
 	_flex = 0.12 * sin(_time * 16.0)
-	var left := draw_speed * delta
+	var left: float = draw_speed * delta * _job.speed
 	var done: float = sk.done[i]
 	while left > 0.0 and done < stroke.size() - 1:
 		var k := int(done)
@@ -257,6 +284,75 @@ static func _line(pts: Array) -> PackedVector2Array:
 			out.append(a.lerp(b, float(k) / n))
 	out.append(pts[pts.size() - 1])
 	return out
+
+
+## "SHADE" as brush strokes, leaning forward, 200 px tall at size 1.
+static func _name_strokes(size: float) -> Array:
+	var letters := [
+		[[Vector2(112, 22), Vector2(70, 0), Vector2(22, 18), Vector2(14, 62), Vector2(60, 98), Vector2(108, 128),
+			Vector2(116, 172), Vector2(74, 200), Vector2(18, 192), Vector2(-4, 168)]],
+		[[Vector2(14, 0), Vector2(4, 204)], [Vector2(118, -6), Vector2(122, 200)], [Vector2(-6, 104), Vector2(132, 92)]],
+		[[Vector2(-8, 204), Vector2(62, -8), Vector2(132, 204)], [Vector2(20, 128), Vector2(112, 120)]],
+		[[Vector2(12, -4), Vector2(4, 206)], [Vector2(0, 2), Vector2(70, 8), Vector2(118, 52), Vector2(126, 128),
+			Vector2(96, 186), Vector2(30, 204), Vector2(-6, 198)]],
+		[[Vector2(126, 4), Vector2(10, 0), Vector2(4, 204), Vector2(132, 196)], [Vector2(6, 100), Vector2(106, 92)]],
+	]
+	var out: Array = []
+	for i in letters.size():
+		for st in letters[i]:
+			var pts: Array = []
+			for q in st:
+				# slant forward, a little ragged, letter by letter along the line
+				var v: Vector2 = q
+				pts.append((Vector2(i * 168.0 + v.x - v.y * 0.18, v.y + sin(i * 2.1) * 12.0)) * size)
+			out.append(_line(pts))
+	return out
+
+
+## The name in the sky: thick dry-brush ink that swells and tapers, scratchy
+## bristle streaks along it, splatters flung off the strokes, and ink running
+## down from the letters in long drips.
+func _paint_names() -> void:
+	var b := InkBatch.new()
+	for nm in _names:
+		var age: float = nm.age
+		for i in nm.strokes.size():
+			var st: PackedVector2Array = nm.strokes[i]
+			var done: float = nm.done[i]
+			if done <= 0.0:
+				continue
+			var n := mini(int(done) + 1, st.size() - 1)
+			for k in n:
+				var t := float(k) / maxf(st.size() - 1, 1)
+				var a := st[k]
+				var c := st[k + 1] if k + 1 < n or done >= st.size() - 1 else st[k].lerp(st[k + 1], done - int(done))
+				# fat in the middle, sharp at the ends, uneven like a loaded brush
+				var wide := 30.0 * pow(sin(PI * clampf(t * 0.96 + 0.02, 0.0, 1.0)), 0.6) * (0.75 + 0.35 * sin(k * 1.7 + i))
+				b.draw_line(a, c, INK, wide)
+				b.draw_circle(c, wide * 0.42, INK)
+				# dry-brush bristle streaks, broken here and there
+				var d := (c - a).normalized()
+				var nrm := d.orthogonal()
+				for j in 3:
+					if sin(k * (1.3 + j) + i * 2.0 + j) > -0.2:
+						var off := nrm * (wide * 0.5 + 4.0 + j * 5.0) * (1.0 if j % 2 == 0 else -1.0)
+						b.draw_line(a + off, c + off, INK, 2.0 - j * 0.4)
+			# splatters flung off the stroke
+			for k in 4:
+				var q := st[int(fmod(k * 7.3 + i * 3.0, st.size()))]
+				if (int(fmod(k * 7.3 + i * 3.0, st.size()))) > int(done):
+					continue
+				var fling := Vector2(sin(k * 2.7 + i), cos(k * 1.9 + i * 1.3)) * (30.0 + k * 9.0)
+				b.draw_circle(q + fling, 3.0 + 3.0 * absf(sin(k + i)), INK)
+				b.draw_line(q + fling * 0.6, q + fling, INK, 2.0)
+			# drips running down from the lowest points, growing longer
+			if done >= st.size() - 1:
+				for k in [0, st.size() - 1, st.size() / 2]:
+					var q: Vector2 = st[k]
+					var grow := minf(age * 22.0, 40.0 + 70.0 * absf(sin(k + i * 1.7)))
+					b.draw_line(q, q + Vector2(0, grow), INK, 5.0)
+					b.draw_circle(q + Vector2(0, grow), 5.5, INK)
+	b.flush(_name_layer)
 
 
 # --- drawing ------------------------------------------------------------------------
@@ -486,7 +582,32 @@ func _finger(b, pts: Array, w: float, curl: float, claw := 1.0) -> Vector2:
 		out.append(p.lerp(k0, curl * i / (pts.size() - 1.0) * 0.35))
 	for i in out.size() - 1:
 		var last := i == out.size() - 2
-		_bone(b, out[i], out[i + 1], w * (1.0 - i * 0.18), 0.55 if last else 0.0)
+		var a0: Vector2 = out[i]
+		var a1: Vector2 = out[i + 1]
+		var bw := w * (1.0 - i * 0.16)
+		var d := (a1 - a0).normalized()
+		var n := d.orthogonal()
+		_bone(b, a0, a1, bw, 0.55 if last else 0.0)
+		# a sinew strung along the inside of the bone, sagging between the joints
+		b.draw_polyline(PackedVector2Array([a0 - n * bw * 0.55, a0.lerp(a1, 0.5) - n * bw * 0.85, a1 - n * bw * 0.55]),
+			Color(0.35, 0.08, 0.1), 2.2)
+		b.draw_polyline(PackedVector2Array([a0 - n * bw * 0.45, a0.lerp(a1, 0.5) - n * bw * 0.7, a1 - n * bw * 0.45]),
+			Color(INK, 0.8), 1.0)
+		# a bony spur on the back of each joint
+		b.draw_colored_polygon(PackedVector2Array([a1 + n * bw * 0.45 - d * 4.0, a1 + n * bw * 1.25 - d * 2.0,
+			a1 + n * bw * 0.45 + d * 5.0]), INK)
+		b.draw_colored_polygon(PackedVector2Array([a1 + n * bw * 0.5 - d * 2.0, a1 + n * bw * 1.05 - d * 1.5,
+			a1 + n * bw * 0.5 + d * 3.0]), BONE_SHADE)
+		# a dark joint socket
+		b.draw_circle(a1, bw * 0.28, Color(INK, 0.8))
+		# tattered strips of ink-black skin still clinging to the middle bone
+		if i == 1:
+			var m := a0.lerp(a1, 0.45)
+			var rag := PackedVector2Array([m - d * bw * 0.5 + n * bw * 0.75, m + d * bw * 0.6 + n * bw * 0.7,
+				m + d * bw * 0.9 - n * bw * 0.1, m + d * bw * 0.4 - n * (bw * 0.8 + 5.0 + 3.0 * sin(_time * 4.0 + w)),
+				m - n * bw * 0.6, m - d * bw * 0.7 - n * (bw * 0.9 + 4.0)])
+			b.draw_colored_polygon(rag, INK)
+			b.draw_line(m - d * bw * 0.4 + n * bw * 0.5, m + d * bw * 0.5 + n * bw * 0.45, RIM_DARK, 1.5)
 	# a long black claw, hooked like a nib, curling round the pen
 	var tip: Vector2 = out[out.size() - 1]
 	var dir: Vector2 = (tip - out[out.size() - 2]).normalized()
@@ -494,8 +615,10 @@ func _finger(b, pts: Array, w: float, curl: float, claw := 1.0) -> Vector2:
 	var l := w * 3.4 * absf(claw)
 	var c1 := tip + dir * l * 0.55
 	var c2 := c1 + hook * l * 0.55
-	var claw_pts := PackedVector2Array([tip + dir.orthogonal() * w * 0.42, c1 + dir.orthogonal() * w * 0.2, c2,
-		c1 - dir.orthogonal() * w * 0.12, tip - dir.orthogonal() * w * 0.42])
+	var o := dir.orthogonal()
+	var claw_pts := PackedVector2Array([tip + o * w * 0.45, c1 + o * w * 0.24, c2,
+		c1 - o * w * 0.1, tip.lerp(c1, 0.7) - o * w * 0.42, tip.lerp(c1, 0.55) - o * w * 0.2,
+		tip.lerp(c1, 0.4) - o * w * 0.5, tip.lerp(c1, 0.25) - o * w * 0.3, tip - o * w * 0.48])  # serrated inner edge
 	b.draw_colored_polygon(_grow(claw_pts, 1.5), Color(0.9, 0.85, 0.8, 0.6))
 	b.draw_colored_polygon(claw_pts, INK)
 	b.draw_line(tip + dir * l * 0.15, c1, Color(0.4, 0.32, 0.5), 1.4)  # a glint on the claw
@@ -503,7 +626,7 @@ func _finger(b, pts: Array, w: float, curl: float, claw := 1.0) -> Vector2:
 
 
 func _draw_thumb(b) -> void:
-	_tips[4] = _finger(b, [_p(222, 102), _p(170, 84), _p(128, 52), _p(100, 24)], 14.0, _flex, -1.0)
+	_tips[4] = _finger(b, [_p(222, 102), _p(170, 84), _p(128, 52), _p(100, 24)], 19.0, _flex, -1.0)
 
 
 func _draw_pen(b) -> void:
@@ -560,14 +683,15 @@ func _draw_hand(b) -> void:
 	var twitch := maxf(sin(_time * 0.9) - 0.9, 0.0) * 6.0 * sin(_time * 40.0)
 	for i in range(3, -1, -1):
 		var kn: Vector2 = knuckles[i]
-		_bone(b, _p(250 + i * 6, 90 + i * 4), _p(kn.x, kn.y), 12.0 - i)
-		b.draw_circle(_p(kn.x, kn.y), 9.0 - i * 0.8, INK)  # swollen knuckle
-		b.draw_circle(_p(kn.x, kn.y), 6.5 - i * 0.8, BONE)
+		_bone(b, _p(250 + i * 6, 90 + i * 4), _p(kn.x, kn.y), 16.0 - i)
+		b.draw_circle(_p(kn.x, kn.y), 12.0 - i * 0.8, INK)  # swollen knuckle
+		b.draw_circle(_p(kn.x, kn.y), 9.0 - i * 0.8, BONE)
+		b.draw_circle(_p(kn.x, kn.y) + N * 3.0, 5.0 - i * 0.5, BONE_SHADE)
 		var pts: Array = []
 		for q in fingers[i]:
 			pts.append(_p(q.x, q.y))
 		var curl := _flex * (1.0 + i * 0.2) + 0.04 * sin(_time * 2.0 + i) + (twitch if i == 3 else 0.0)
-		_tips[i] = _finger(b, pts, 12.0 - i * 1.3, curl)
+		_tips[i] = _finger(b, pts, 17.0 - i * 1.6, curl)
 
 
 static func _grow(poly: PackedVector2Array, by: float) -> PackedVector2Array:
