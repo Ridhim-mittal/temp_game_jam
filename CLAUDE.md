@@ -2,7 +2,8 @@
 
 Comic-book game about light and ink (design doc: `The-Gutter-Game-Design-Document.pdf`,
 written for Unity — we build everything in Godot 4.7, GDScript, `gl_compatibility` renderer).
-All art is drawn in code (`_draw()`, shaders, primitive meshes); no texture assets yet.
+All art is drawn in code (`_draw()`, shaders, primitive meshes); the one texture is Shade's City's
+backdrop painting (`assets/backgrounds/shades_city.webp`).
 
 ## Two modes
 - **2D platformer** (`scenes/levels/`, `scripts/player/`, `scripts/enemies/`): Hollow Knight-style
@@ -63,13 +64,11 @@ Spikes (group `hazard`) cost health and send the 2D player back to the last chec
 level, or the level start (`_respawn_point()` in player.gd); never to the last ground stood on.
 
 ## Shade's City (`scenes/levels/shades_city.tscn`, Act 3: back in 2D after the light catches Vesper)
-Chapters -> SHADE'S CITY. The backdrop is the concept painting redrawn in code: `city_painting.gd`
-sets up `night_sky.gd` (moon, swirls, constellation), `moon_beam.gd` (the author's light onto the
-street) and two copies of `city_panorama.gd` in parallax layers repeating every 1280 px: "city"
-(buildings, redaction bars, graffiti, posters) and "junk" (lamp post, heaps, machines, CMYK paper
-stacks, ink spill, scaffold). Shapes are placed in the painting's own pixel coordinates via _p()/_r(),
-so at the start (player x 640, Camera2D `framing_offset` (0, -226)) the screen matches the painting.
-Ground: `street_ground.gd` (dark kerb slab, pale lip) in the bottom ~15%. Layout and monsters next.
+Chapters -> SHADE'S CITY. The backdrop is the team's concept painting itself
+(`assets/backgrounds/shades_city.webp`, via `scripts/background/city_painting.gd`): scaled to the
+screen width, fixed on screen like a stage backdrop (`drift` > 0 makes it slide and repeat, but the
+painting is one screen wide so the seam shows). The player's Camera2D `framing_offset` (0, -226) puts
+the street (`street_ground.gd`: dark kerb slab, pale lip) in the bottom ~15%. Layout and monsters next.
 
 ## 2.5D framework
 - Rooms are scenes whose root uses `scripts/world25/room.gd`; it builds environment, light,
