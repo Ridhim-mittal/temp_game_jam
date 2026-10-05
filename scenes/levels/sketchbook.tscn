@@ -1,0 +1,8 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/levels/test_level.tscn" id="1_level"]
+
+[node name="Sketchbook" instance=ExtResource("1_level")]
+
+[node name="Player" parent="."]
+position = Vector2(8180, 570)
