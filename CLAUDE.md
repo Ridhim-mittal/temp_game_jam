@@ -19,7 +19,9 @@ All art is drawn in code (`_draw()`, shaders, primitive meshes); no texture asse
 `cs_opening` → THE CITY (`scenes/levels/test_level.tscn`, a ~1 min controls tutorial) → glowing
 `panel_door.gd` ("MOVE TO THE NEXT PANEL") → THE SKETCHBOOK (`sketchbook.tscn`, light tutorial) →
 door into THE LONG DROP. Doors play `scripts/effects/panel_turn.gd` (the frame shrinks into a panel on
-a comic page, pan across the gutter, the next panel inks in and zooms up). Both levels sit inside a
+a comic page, pan across the gutter while the next level loads in the background, the next panel inks in
+and opens out; the live level inside it is scaled via the root's `global_canvas_transform`; a door's
+`tall_panel` gives a vertical level a tall panel that inks top-down). Both levels sit inside a
 comic page (`scripts/ui/comic_frame.gd`; outside its `live_areas` the world is redrawn as a pencil
 sketch by `shaders/pencil_outside.gdshader`, the HUD stays as is); the City opens with the Writer's typed caption
 (`scripts/ui/narration.gd`, once per run via GameState.seen; the controls tutorial waits for it).
