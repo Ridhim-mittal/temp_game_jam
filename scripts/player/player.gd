@@ -20,6 +20,7 @@ const ComicText = preload("res://scripts/effects/comic_text.gd")
 const InkWave = preload("res://scripts/effects/ink_wave.gd")
 const DeathScreen = preload("res://scripts/ui/death_screen.gd")
 const Tutorial = preload("res://scripts/ui/tutorial.gd")
+const PauseMenu = preload("res://scripts/ui/pause_menu.gd")
 const Ember = preload("res://scripts/player/ember.gd")
 
 const MASK_ENEMY := 4   # physics layer 3
@@ -163,6 +164,13 @@ func _ready() -> void:
 	coins_changed.emit(coins)
 	# first run only; waits while the Writer's narration (narration.gd) is writing
 	Tutorial.start(self, self, "2d", get_tree().get_first_node_in_group("narration"))
+
+
+## Esc / Start: the pause screen (the same one as in 2.5D rooms).
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("pause") and not dead and not get_tree().paused:
+		get_viewport().set_input_as_handled()  # pause, don't leave for the menu (mood.gd)
+		PauseMenu.open_2d(self)
 
 
 func _physics_process(delta: float) -> void:

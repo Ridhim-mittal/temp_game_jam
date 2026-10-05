@@ -164,6 +164,10 @@ Settings -> Tutorials or Pause -> Controls replays them).
 - Match surrounding code: tabs, `##` doc comments on scripts/exports, typed GDScript.
 - Physics layers: 1 world, 2 player, 3 enemy (mask value 4), 4 hazard, 5 sketch / shadow ink
   (value 16; light rays ignore it, the player and monsters stand on it).
+- Pause screen (`scripts/ui/pause_menu.gd`), the same in 2D and 2.5D, on the `pause` action (Esc /
+  Start): player.gd `PauseMenu.open_2d()` in 2D, room.gd `open_overlay("pause")` in 2.5D (adds SKILL
+  TREE). Resume, Retry (reload the scene), Controls, Settings / Skill Tree (open on top, come back to
+  it), Main Menu. mood.gd's Esc-to-menu now only fires in scenes that don't pause.
 - Input actions come from `scripts/core/input_setup.gd` (move_*, up/down, jump, attack, dash).
   Same keys in both modes: A/D move (W/S too in 2.5D), Space jump, left click attack (hold = ink
   wave in 2D), right click the light (2D `ember`, 2.5D `flash`), Shift dash. Key names shown on

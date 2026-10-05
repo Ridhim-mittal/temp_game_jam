@@ -704,7 +704,7 @@ func in_gameplay() -> bool:
 func _unhandled_input(event: InputEvent) -> void:
 	if Engine.is_editor_hint() or _overlay != null:
 		return
-	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_ESCAPE:
+	if event.is_action_pressed("pause"):
 		get_viewport().set_input_as_handled()  # pause here instead of leaving
 		open_overlay("pause")
 
@@ -720,6 +720,7 @@ func open_overlay(action: String) -> void:
 		"pause":
 			_overlay = Control.new()
 			_overlay.set_script(PauseMenu)
+			_overlay.show_skills = true
 			_overlay.chosen.connect(_on_pause_choice)
 		"skills":
 			_overlay = Control.new()
@@ -753,6 +754,10 @@ func _on_pause_choice(action: String) -> void:
 		"controls":
 			_on_overlay_closed()
 			replay_tutorial()
+		"retry":
+			get_tree().paused = false
+			Engine.time_scale = 1.0
+			get_tree().reload_current_scene()
 		"skills", "settings":
 			get_tree().paused = false
 			open_overlay(action)

@@ -12,6 +12,7 @@ func _enter_tree() -> void:
 	_add_mouse_button("attack", MOUSE_BUTTON_LEFT)
 	_add_keys("dash", [KEY_SHIFT, KEY_C])  # C: keyboard fallback
 	_add_keys("restart", [KEY_R])
+	_add_keys("pause", [KEY_ESCAPE])  # the pause screen (pause_menu.gd), 2D and 2.5D
 	# The light is right click in both modes: hold it to raise the Ember.
 	# 2.5D ("flash", clearing_player.gd); Shift dashes in both modes.
 	_add_mouse_button("flash", MOUSE_BUTTON_RIGHT)
@@ -27,6 +28,7 @@ func _enter_tree() -> void:
 	_add_joy_button("heal", JOY_BUTTON_B)
 	_add_joy_button("interact", JOY_BUTTON_LEFT_SHOULDER)
 	_add_joy_button("ember", JOY_BUTTON_Y)
+	_add_joy_button("pause", JOY_BUTTON_START)
 	_add_joy_button("move_left", JOY_BUTTON_DPAD_LEFT)
 	_add_joy_button("move_right", JOY_BUTTON_DPAD_RIGHT)
 	_add_joy_button("up", JOY_BUTTON_DPAD_UP)
