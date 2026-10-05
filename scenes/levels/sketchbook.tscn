@@ -30,6 +30,8 @@
 [ext_resource type="Script" path="res://scripts/world/shadow_caster.gd" id="42_caster"]
 [ext_resource type="Script" path="res://scripts/world/caption.gd" id="43_caption"]
 [ext_resource type="Script" path="res://scripts/world/panel_door.gd" id="44_door"]
+[ext_resource type="Script" path="res://scripts/ui/comic_frame.gd" id="45_frame"]
+[ext_resource type="Script" path="res://scripts/ui/narration.gd" id="46_narration"]
 
 [node name="Sketchbook" type="Node2D"]
 
@@ -190,7 +192,8 @@ script = ExtResource("19_heart")
 [node name="PanelDoor" type="Area2D" parent="World"]
 position = Vector2(12260, 600)
 script = ExtResource("44_door")
-target_scene = "res://scenes/clearing/clearing.tscn"
+target_scene = "res://scenes/levels/long_drop.tscn"
+next_title = "THE LONG DROP"
 
 [node name="Wall3" type="StaticBody2D" parent="World"]
 position = Vector2(12540, 250)
@@ -272,3 +275,6 @@ script = ExtResource("8_music")
 [node name="LevelMood" type="Node" parent="."]
 script = ExtResource("30_mood")
 
+[node name="ComicFrame" type="CanvasLayer" parent="."]
+script = ExtResource("45_frame")
+page_number = 2

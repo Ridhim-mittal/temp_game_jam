@@ -53,6 +53,8 @@ res("Script", "res://scripts/world/sketch_platform.gd", "41_sketch")
 res("Script", "res://scripts/world/shadow_caster.gd", "42_caster")
 res("Script", "res://scripts/world/caption.gd", "43_caption")
 res("Script", "res://scripts/world/panel_door.gd", "44_door")
+res("Script", "res://scripts/ui/comic_frame.gd", "45_frame")
+res("Script", "res://scripts/ui/narration.gd", "46_narration")
 
 
 def v(x, y):
@@ -172,9 +174,9 @@ GROUND = 600
 BOTTOM = 1100
 
 
-def door(x, target):
+def door(x, target, title):
     node("PanelDoor", "Area2D", "World", [("position", v(x, GROUND)), ("script", 'ExtResource("44_door")'),
-         ("target_scene", f'"{target}"')])
+         ("target_scene", f'"{target}"'), ("next_title", f'"{title}"')])
 
 
 def reset():
@@ -183,7 +185,7 @@ def reset():
     counts.clear()
 
 
-def write(path, root, player_pos, mood=""):
+def write(path, root, player_pos, page=1, narration=""):
     out = ["[gd_scene format=3]", ""] + ext + ["", f'[node name="{root}" type="Node2D"]', "",
            '[node name="ComicBackground" parent="." instance=ExtResource("6_background")]', "",
            '[node name="World" type="Node2D" parent="."]', ""]
@@ -200,7 +202,11 @@ def write(path, root, player_pos, mood=""):
             "anchor_right = 1.0", "anchor_bottom = 1.0", "grow_horizontal = 2", "grow_vertical = 2",
             "mouse_filter = 2", 'script = ExtResource("5_hud")', "",
             '[node name="LevelMusic" type="Node" parent="."]', 'script = ExtResource("8_music")', "",
-            '[node name="LevelMood" type="Node" parent="."]', 'script = ExtResource("30_mood")', mood, ""]
+            '[node name="LevelMood" type="Node" parent="."]', 'script = ExtResource("30_mood")', "",
+            '[node name="ComicFrame" type="CanvasLayer" parent="."]', 'script = ExtResource("45_frame")', f"page_number = {page}", ""]
+    if narration:
+        out += ['[node name="Narration" type="CanvasLayer" parent="."]', 'script = ExtResource("46_narration")',
+                f'text = "{narration}"', ""]
     open(os.path.join(ROOT, path), "w").write("\n".join(out))
     print(f"{path}: {len(world)} world nodes, {len(enemies)} enemies, {len(coins)} coins")
 
@@ -241,9 +247,10 @@ coin_row(2940, 3020, 452, 2)
 coin_row(3180, 3260, 352, 3)
 heart(3220, 350)
 # the way on
-door(3600, "res://scenes/levels/sketchbook.tscn")
+door(3600, "res://scenes/levels/sketchbook.tscn", "THE SKETCHBOOK")
 block(3700, 3780, -600, BOTTOM, name="Wall")
-write("scenes/levels/test_level.tscn", "TestLevel", (100, 570))
+write("scenes/levels/test_level.tscn", "TestLevel", (100, 570), page=1,
+      narration="VESPER STARTS OUT IN A CITY INFECTED BY EVIL MONSTERS. HE FIGHTS THEM OFF WITH THE LIGHT AND HIS SWORD.")
 
 # ======================================================== THE SKETCHBOOK (light tutorial)
 # Pencil sketches are only solid in light (scripts/world/lights.gd). Each beat
@@ -289,7 +296,7 @@ coins += [(11720, 380), (11760, 350)]
 for x in [8250, 10780, 11480]:
     checkpoint(x, GROUND)
 heart(10720, 560)
-# over the wall: the way on (into the Margins, for now)
-door(12260, "res://scenes/clearing/clearing.tscn")
+# over the wall: the way on, down the Long Drop
+door(12260, "res://scenes/levels/long_drop.tscn", "THE LONG DROP")
 block(12500, 12580, -600, BOTTOM, name="Wall")
-write("scenes/levels/sketchbook.tscn", "Sketchbook", (8100, 570))
+write("scenes/levels/sketchbook.tscn", "Sketchbook", (8100, 570), page=2)

@@ -2,14 +2,18 @@
 extends "res://scripts/world/level_exit.gd"
 ## The way to the next level: a doorway shaped like a blank comic panel,
 ## pouring warm light onto the floor, with a yellow caption over it
-## ("MOVE TO THE NEXT PANEL") and a bouncing arrow. Walk in to go to
-## `target_scene` (an ink wipe closes over the door first; see level_exit.gd).
+## ("MOVE TO THE NEXT PANEL") and a bouncing arrow. Walk in and the page
+## transition (panel_turn.gd) carries you across the gutter to `target_scene`.
 ## Origin = floor contact point.
 
 const FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
+const PanelTurn = preload("res://scripts/effects/panel_turn.gd")
 const CAPTION := Color(1.0, 0.9, 0.45)
 const W := 96.0
 const H := 156.0
+
+## Pencilled into the next panel during the transition.
+@export var next_title := ""
 
 var _glow_node: Node2D
 
@@ -28,6 +32,12 @@ func _ready() -> void:
 	_glow_node.show_behind_parent = true
 	_glow_node.draw.connect(_draw_light)
 	add_child(_glow_node)
+
+
+func _on_body_entered(body: Node2D) -> void:
+	if body.is_in_group("player") and _leaving == -1.0 and target_scene != "":
+		_leaving = -50.0  # gone for good (never the base class's ink wipe)
+		PanelTurn.start(self, target_scene, next_title)
 
 
 func _process(delta: float) -> void:

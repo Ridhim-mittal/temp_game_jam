@@ -30,6 +30,8 @@
 [ext_resource type="Script" path="res://scripts/world/shadow_caster.gd" id="42_caster"]
 [ext_resource type="Script" path="res://scripts/world/caption.gd" id="43_caption"]
 [ext_resource type="Script" path="res://scripts/world/panel_door.gd" id="44_door"]
+[ext_resource type="Script" path="res://scripts/ui/comic_frame.gd" id="45_frame"]
+[ext_resource type="Script" path="res://scripts/ui/narration.gd" id="46_narration"]
 
 [node name="TestLevel" type="Node2D"]
 
@@ -114,6 +116,7 @@ script = ExtResource("19_heart")
 position = Vector2(3600, 600)
 script = ExtResource("44_door")
 target_scene = "res://scenes/levels/sketchbook.tscn"
+next_title = "THE SKETCHBOOK"
 
 [node name="Wall2" type="StaticBody2D" parent="World"]
 position = Vector2(3740, 250)
@@ -224,3 +227,10 @@ script = ExtResource("8_music")
 [node name="LevelMood" type="Node" parent="."]
 script = ExtResource("30_mood")
 
+[node name="ComicFrame" type="CanvasLayer" parent="."]
+script = ExtResource("45_frame")
+page_number = 1
+
+[node name="Narration" type="CanvasLayer" parent="."]
+script = ExtResource("46_narration")
+text = "VESPER STARTS OUT IN A CITY INFECTED BY EVIL MONSTERS. HE FIGHTS THEM OFF WITH THE LIGHT AND HIS SWORD."
