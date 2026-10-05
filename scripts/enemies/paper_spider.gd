@@ -18,6 +18,9 @@ enum State { HANG, DROP, CHASE, WINDUP, STAB, RECOVER, FLINCH }
 @export var stab_damage := 18.0
 @export var touch_damage := 12.0
 @export var art_scale := 0.62
+## Further than this from Vesper it wanders its patch of street instead.
+@export var notice_range := 650.0
+@export var wander_range := 160.0
 
 const PAPER := Color(0.93, 0.9, 0.8)
 const OLD := Color(0.84, 0.79, 0.68)
@@ -30,10 +33,15 @@ var state := State.CHASE
 var _timer := 0.0
 var _thread_top := 0.0
 var _rear := 0.0  # 0..1 rearing back before a stab
+var _home := 0.0
+var _wander_dir := 1
+var _pause := 0.0
 
 
 func _ready() -> void:
 	setup(Vector2(70, 66), hp)
+	_home = global_position.x
+	_wander_dir = 1 if randf() < 0.5 else -1
 	outline.scale = Vector2.ONE * art_scale
 	if hang_height > 0.0:
 		state = State.HANG
@@ -68,6 +76,8 @@ func _tick(delta: float) -> void:
 			_fall(delta)
 			if is_lit():
 				_flinch()
+			elif _player == null or absf(d.x) > notice_range or absf(d.y) > 200.0:
+				_wander(delta)
 			elif _player:
 				face_player()
 				var want := facing * speed * (1.0 + 0.25 * sin(time * 9.0))
@@ -111,6 +121,22 @@ func _tick(delta: float) -> void:
 	move_and_slide()
 
 
+## Pace back and forth round `_home`, stopping now and then, turning at
+## walls, ledges and the edge of its patch.
+func _wander(delta: float) -> void:
+	_pause -= delta
+	if _pause > 0.0:
+		velocity.x = move_toward(velocity.x, 0.0, 900.0 * delta)
+		return
+	var off := global_position.x - _home
+	if (off > wander_range and _wander_dir > 0) or (off < -wander_range and _wander_dir < 0) \
+			or (is_on_floor() and (hitting_wall() or at_ledge())):
+		_wander_dir = -_wander_dir
+		_pause = randf_range(0.4, 1.2)
+	facing = _wander_dir
+	velocity.x = move_toward(velocity.x, _wander_dir * speed * 0.45, 700.0 * delta)
+
+
 func _flinch() -> void:
 	if state != State.FLINCH:
 		pop("HSSS!", Color(0.98, 0.95, 0.9), Vector2(0, -60), 22)
@@ -129,7 +155,7 @@ func _on_hurt() -> void:
 # ------------------------------------------------------------------ art
 
 func paint(c: CanvasItem) -> void:
-	var walking := state == State.CHASE or state == State.FLINCH
+	var walking := (state == State.CHASE or state == State.FLINCH) and absf(velocity.x) > 10.0
 	var bob := sin(time * 3.0) * 3.0
 	var body := Vector2(-8.0 * _rear, -100.0 + bob - 22.0 * _rear)
 	if state == State.HANG or state == State.DROP:

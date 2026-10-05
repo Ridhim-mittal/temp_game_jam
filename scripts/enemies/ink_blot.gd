@@ -20,7 +20,7 @@ const EYE := Color(1.0, 0.86, 0.32)
 const FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
 
 @export var hp := 14
-@export var walk_speed := 70.0
+@export var walk_speed := 105.0
 @export var wake_range := 420.0
 @export var swipe_damage := 20.0
 @export var slam_damage := 30.0
