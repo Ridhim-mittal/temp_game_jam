@@ -17,6 +17,8 @@ Sources live in audio/music/src/ (a .gdignore keeps Godot from importing them):
                                       quiet, its muddy low mids eased and a little presence
                                       added so it still reads under the sound effects; loops
                                       39 bars, the breakdown leading back into the build
+  hand    <- hand_theme.mp3           the finale's waves, while Shade's hand draws the monsters:
+                                      from 2:33 on, straight in (no intro), 44 bars looping
   duel    <- shade_duel.ogg           the finale's last fight: Shade as Vesper's double
   hunt    <- the_hunters.mp3          the boss fights there (the Ink Blots, Shade): 32 bars
                                       from the driving middle of the same track (its peak,
@@ -79,6 +81,9 @@ TRACKS = {
 				 grid=(0.52615, 0.166), tension=True),
 	# ~75 BPM, beat 0 at 0.07 s: 0..9.69 s (three bars) plays once, then 16 bars
 	# loop (beat 12 to 76; the song itself stops dead at ~64.5 s)
+	# 120 BPM: from 2:33 (153.03 s, the user's pick), no intro; 44 bars come round
+	# to it at 241.02 s (the music matches best there, well before the fade at ~4:25)
+	"hand": dict(src="hand_theme.mp3", s=153.03, length=87.99, slack=0.05, lufs=-19.5, start="s"),
 	"duel": dict(src="shade_duel.ogg", s=9.69, length=51.28, slack=0.04, lufs=-19.5),
 }
 

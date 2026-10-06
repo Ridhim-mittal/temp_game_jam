@@ -15,8 +15,8 @@ extends Node2D
 ## it goes straight to the light, and once the double has been met it's a
 ## checkpoint: a retry starts right at the double fight (GameState.seen
 ## "finale:waves" / "finale:double").
-## Music (music.gd): The Hunters, low, while the hand writes; its tense cut
-## ("hunt") from the first wave; silence as the light falls; the double's own
+## Music (music.gd): The Hunters, low, while the hand writes; the hand's theme
+## ("hand") from the first wave; silence as the light falls; the double's own
 ## song ("duel") when it steps out of it; silence as it cracks apart, then The
 ## Hunters again, slowly, for the end.
 
@@ -151,7 +151,7 @@ func _run() -> void:
 		await hand.wrote_name
 		_say("YOU WANTED A STORY, LITTLE DRAWING? HERE ARE YOUR CHAPTERS.", "shade")
 		await _wait(1.5)
-		_music("hunt", 0.2)
+		_music("hand", 0.2)  # the hand's own theme while it draws the waves
 		for i in WAVES.size():
 			await _wave(WAVES[i])
 			if i == 2:
