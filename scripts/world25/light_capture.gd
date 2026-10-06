@@ -28,6 +28,7 @@ const CIRCLE_SHADER = preload("res://shaders/world25/haunt_circle.gdshader")
 const HAND_SHADER = preload("res://shaders/world25/capture_hand.gdshader")
 const PageClimb = preload("res://scripts/effects/page_climb.gd")
 const FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
+const CaptionStyle = preload("res://scripts/ui/caption_style.gd")
 
 const GOLD := Color(1.0, 0.78, 0.4)
 const INK := Color(0.03, 0.02, 0.05)
@@ -888,7 +889,7 @@ func _draw_screen() -> void:
 		_screen.draw_rect(Rect2(Vector2.ZERO, s), Color(1.0, 0.98, 0.93, white))
 
 
-## Shade's black speech balloon (the final fight's), from above the frame.
+## Shade's red caption panel (caption_style.gd), its tail running up out of the frame.
 func _draw_balloon(s: Vector2) -> void:
 	var shown := _line.substr(0, int((_t - _line_t) * 30.0))
 	var a := clampf((_line_end - _t) / 0.25, 0.0, 1.0)
@@ -901,13 +902,10 @@ func _draw_balloon(s: Vector2) -> void:
 	# the tail runs up out of the frame: Shade is above all this
 	var tail := PackedVector2Array([Vector2(box.position.x + box.size.x * 0.62, box.position.y + 2),
 		Vector2(box.position.x + box.size.x * 0.62 + 34, box.position.y + 2), Vector2(box.position.x + box.size.x * 0.62 + 52, BAR - 4)])
-	var rim := Color(0.85, 0.2, 0.25, a)
-	_screen.draw_rect(box.grow(4), rim)
-	_screen.draw_colored_polygon(PackedVector2Array([tail[0] + Vector2(-5, 0), tail[1] + Vector2(5, 0), tail[2] + Vector2(3, -3)]), rim)
-	_screen.draw_rect(box, Color(0.02, 0.01, 0.04, a))
-	_screen.draw_colored_polygon(tail, Color(0.02, 0.01, 0.04, a))
-	_screen.draw_string(FONT, box.position + Vector2(30, 47), shown, HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(1.0, 0.86, 0.88, a))
-	_screen.draw_string(FONT, box.position + Vector2(box.size.x - 88, box.size.y + 26), "- SHADE", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color(1.0, 0.35, 0.4, a))
+	_screen.draw_colored_polygon(PackedVector2Array([tail[0] + Vector2(-5, 0), tail[1] + Vector2(5, 0), tail[2] + Vector2(3, -3)]), Color(CaptionStyle.INK, a))
+	CaptionStyle.panel(_screen, box, "shade", a)  # Shade's red caption panel (caption_style.gd)
+	_screen.draw_colored_polygon(tail, Color(CaptionStyle.RED, a))
+	_screen.draw_string(FONT, box.position + Vector2(30, 47), shown, HORIZONTAL_ALIGNMENT_LEFT, -1, size, CaptionStyle.text_color("shade", a))
 
 
 # ----------------------------------------------------------------- finish

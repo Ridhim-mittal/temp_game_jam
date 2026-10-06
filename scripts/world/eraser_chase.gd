@@ -23,6 +23,7 @@ const Eraser = preload("res://scripts/enemies/shade_eraser.gd")
 const MarginsFall = preload("res://scripts/effects/margins_fall.gd")
 const GameCamera = preload("res://scripts/camera/game_camera.gd")
 const FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
+const CaptionStyle = preload("res://scripts/ui/caption_style.gd")
 const PAPER := Color(0.95, 0.93, 0.87)
 const SMUDGE := Color(0.72, 0.7, 0.68)
 const INK := Color(0.04, 0.03, 0.07)
@@ -305,10 +306,8 @@ func _draw_ui() -> void:
 			var w := FONT.get_string_size(_line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 			var box := Rect2(s.x * 0.5 - w * 0.5 - 30.0, 96.0, w + 60.0, 66.0)
 			box.position += Vector2(randf_range(-2, 2), randf_range(-2, 2))
-			_ui.draw_rect(box.grow(4.0), Color(0.85, 0.2, 0.25, a))
-			_ui.draw_rect(box, Color(0.02, 0.01, 0.04, a))
-			_ui.draw_string(FONT, box.position + Vector2(30, 46), _line.substr(0, int(_line_t * 30.0)), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(1.0, 0.86, 0.88, a))
-			_ui.draw_string(FONT, box.position + Vector2(box.size.x - 92, box.size.y + 24), "- SHADE", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color(1.0, 0.35, 0.4, a))
+			CaptionStyle.panel(_ui, box, "shade", a)  # Shade's red caption panel
+			_ui.draw_string(FONT, box.position + Vector2(30, 46), _line.substr(0, int(_line_t * 30.0)), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, CaptionStyle.text_color("shade", a))
 
 
 ## Where the cutscene camera takes over from the player's: what it was showing,

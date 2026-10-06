@@ -37,7 +37,7 @@ default_spawn = Vector3(0, 0.05, 0)
 title = "The Torn Page"
 subtitle = "The Torn Wastes, 3 / 4"
 enter_captions = "~This page tore right down the middle. I only ever sketched the bridge.|Stand at the edge and hold right click: your Ember inks the sketch in, plank by plank.|Inking costs Ember. Every hit feeds it, lanterns included."
-clear_captions = "~Stop. Please. You don't want to see the last page."
+clear_captions = "~There you are. I can almost see you now."
 haunt_scale = 0.85
 haunt_lamps = 1
 

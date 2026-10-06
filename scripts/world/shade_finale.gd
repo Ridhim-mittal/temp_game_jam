@@ -26,6 +26,7 @@ const MENU := "res://scenes/ui/main_menu.tscn"
 const INK := Color(0.05, 0.03, 0.1)
 const CAPTION := Color(1.0, 0.9, 0.45)
 const LIGHT := Color(1.0, 0.95, 0.78)
+const CaptionStyle = preload("res://scripts/ui/caption_style.gd")
 
 const SCENES := {
 	"spider": "res://scenes/enemies/paper_spider.tscn",
@@ -268,7 +269,7 @@ func _the_light() -> void:
 	e.tween_property(boss, "modulate", Color(6, 6, 6, 1), 0.5)
 	e.tween_property(boss, "modulate", Color.WHITE, 1.2)
 	await e.finished
-	_say("I AM THE VESPER HE MEANT TO WRITE.", "shade")
+	_say("I AM THE VESPER I SHOULD HAVE WRITTEN.", "shade")
 	var b := create_tween()
 	b.tween_property(self, "_beam", 0.0, 1.4)
 	await _wait(2.4)
@@ -309,6 +310,8 @@ func _the_end() -> void:
 	await _wait(4.5)
 	_say("FOR THE FIRST TIME, VESPER WRITES HIS OWN NEXT PAGE.", "writer")
 	await _wait(4.5)
+	_say("WHY, SHADE? WHY DID YOU WANT ME DEAD?", "vesper")  # the answer is the ending cutscene
+	await _wait(4.0)
 	var e := create_tween()
 	e.tween_property(self, "_end_card", 1.0, 1.5)
 	await e.finished
@@ -404,21 +407,16 @@ func _paint_caption(s: Vector2) -> void:
 	var size := 30
 	var w := minf(FONT.get_string_size(_line, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x, s.x - 120.0)
 	if _who == "shade":
-		# Shade speaks: a black speech balloon with red-tinged letters
-		var box := Rect2(s.x * 0.5 - w * 0.5 - 28.0, 232.0, w + 56.0, 64.0)  # under the name in the sky
-		_view.draw_rect(box.grow(4), Color(0.85, 0.2, 0.25, a))
-		_view.draw_rect(box, Color(0.02, 0.01, 0.04, a))
-		_view.draw_colored_polygon(PackedVector2Array([Vector2(box.end.x - 90, box.end.y), Vector2(box.end.x - 50, box.end.y),
-			Vector2(box.end.x - 20, box.end.y + 34)]), Color(0.02, 0.01, 0.04, a))
-		_view.draw_string(FONT, box.position + Vector2(28, 44), shown, HORIZONTAL_ALIGNMENT_LEFT, w + 4.0, size, Color(1.0, 0.86, 0.88, a))
-		_view.draw_string(FONT, box.position + Vector2(box.size.x - 86, -10), "- SHADE", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color(1.0, 0.35, 0.4, a))
+		# Shade speaks: his red caption panel (caption_style.gd), under the name in the sky
+		var box := Rect2(s.x * 0.5 - w * 0.5 - 28.0, 240.0, w + 56.0, 64.0)
+		CaptionStyle.panel(_view, box, "shade", a)
+		_view.draw_string(FONT, box.position + Vector2(28, 44), shown, HORIZONTAL_ALIGNMENT_LEFT, w + 4.0, size, CaptionStyle.text_color("shade", a))
 	else:
-		# the Writer's yellow caption box
-		var box := Rect2(60.0, 226.0, w + 44.0, 56.0)
-		_view.draw_rect(Rect2(box.position + Vector2(6, 6), box.size), Color(INK, 0.5 * a))
-		_view.draw_rect(box, Color(CAPTION, a))
-		_view.draw_rect(box, Color(INK, a), false, 3.0)
-		_view.draw_string(FONT, box.position + Vector2(22, 39), shown, HORIZONTAL_ALIGNMENT_LEFT, w + 4.0, size, Color(INK, a))
+		# the comic's yellow caption ("writer" = the narration) or Vesper's (with his tab)
+		var who := "vesper" if _who == "vesper" else "narrator"
+		var box := Rect2(60.0, 236.0 if who == "vesper" else 226.0, w + 44.0, 56.0)
+		CaptionStyle.panel(_view, box, who, a)
+		_view.draw_string(FONT, box.position + Vector2(22, 39), shown, HORIZONTAL_ALIGNMENT_LEFT, w + 4.0, size, CaptionStyle.text_color(who, a))
 
 
 func _paint_end(s: Vector2) -> void:

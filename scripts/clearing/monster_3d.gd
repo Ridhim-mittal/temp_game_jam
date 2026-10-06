@@ -35,6 +35,9 @@ const PALE := Color(0.98, 0.96, 0.9)
 
 var health := 0
 var dead := false
+## The Writer's lamps (searchlight.gd, haunt_lamp.gd) don't burn it: the bosses (the
+## Red Pen, the Eraser) are his own.
+var light_immune := false
 ## Flying monsters ignore gravity (the dive-bomber Scribble).
 var flying := false
 var stun := 0.0
@@ -142,7 +145,7 @@ func on_flash(_from: Vector3) -> void:
 
 ## Caught in the Writer's searchlight: crossed-out things are erased.
 func on_searchlight(damage: int) -> void:
-	if dead:
+	if dead or light_immune:
 		return
 	health -= damage
 	Sfx.play("boss_hit" if is_in_group("boss") else "ink_enemy_hit", -3.0)

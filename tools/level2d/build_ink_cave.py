@@ -120,9 +120,12 @@ def heart(x, y):
     node(uniq("Heart"), "Area2D", "World", [("position", v(x, y)), ("script", f'ExtResource("{HEART}")')])
 
 
-def narration(text, x):
-    node(uniq("Narration"), "CanvasLayer", ".", [("script", f'ExtResource("{NARR}")'), ("text", f'"{text}"'),
-         ("trigger_x", str(x))])
+def narration(text, x, speaker="narrator"):
+    """A caption panel (narration.gd): the comic's narration, or "vesper" (yellow) / "shade" (red) talking."""
+    props = [("script", f'ExtResource("{NARR}")'), ("text", f'"{text}"'), ("trigger_x", str(x))]
+    if speaker != "narrator":
+        props.append(("speaker", f'"{speaker}"'))
+    node(uniq("Narration"), "CanvasLayer", ".", props)
 
 
 # the cave floor and its ends
@@ -182,9 +185,9 @@ node("ComicFrame", "CanvasLayer", ".", [("script", f'ExtResource("{FRAME}")'), (
      ("live_areas", "Array[Rect2]([Rect2(-800, -2000, 5600, 3200)])")])
 
 narration("SHADE'S TRAP. VESPER FALLS INTO A CAVE WHERE THE INK BURNS.", -1e9)
-narration("SOMETHING IS ROOSTING UP THERE.", 800)
-narration("SHADE KEEPS DRAWING. AND HIS DRAWINGS KEEP COMING.", 1850)
-narration("THE GROUND SHAKES. TWO OF THEM, THIS TIME.", 3000)
+narration("SOMETHING'S ROOSTING UP THERE...", 800, "vesper")
+narration("I CAN DRAW FASTER THAN YOU CAN CUT, VESPER.", 1850, "shade")
+narration("TWO OF THEM? HE'S GETTING DESPERATE.", 3000, "vesper")
 
 with open(OUT, "w") as f:
     f.write(f"[gd_scene load_steps={len(ext) + 1} format=3]\n\n")
