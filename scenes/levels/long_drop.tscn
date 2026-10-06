@@ -1034,20 +1034,20 @@ position = Vector2(4200, 8540)
 script = ExtResource("19_heart")
 
 [node name="ArenaLanternW" type="Node2D" parent="World"]
-position = Vector2(5240, 8450)
+position = Vector2(5240, 8530)
 script = ExtResource("40_lantern")
 radius = 280
 chain = 0
-post = 150
+post = 70
 lit = true
 casts_shadows = true
 
 [node name="ArenaLanternE" type="Node2D" parent="World"]
-position = Vector2(6360, 8450)
+position = Vector2(6360, 8530)
 script = ExtResource("40_lantern")
 radius = 280
 chain = 0
-post = 150
+post = 70
 lit = true
 casts_shadows = true
 

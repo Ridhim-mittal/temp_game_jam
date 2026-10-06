@@ -445,8 +445,8 @@ heart(ol + 3700, of - 60)
 # the Eraser chase goes in here later). It watches only these two lanterns.
 al, at, ar, af = px("arena")
 gap = (al + ar) / 2
-lantern(gap - 560, af - 150, 280, chain=0, post=150, lit=True, name="ArenaLanternW")
-lantern(gap + 560, af - 150, 280, chain=0, post=150, lit=True, name="ArenaLanternE")
+lantern(gap - 560, af - 70, 280, chain=0, post=70, lit=True, name="ArenaLanternW")
+lantern(gap + 560, af - 70, 280, chain=0, post=70, lit=True, name="ArenaLanternE")
 node("ScribbledBeast", "CharacterBody2D", "Enemies", [("position", v(gap, af + 600)), ("script", 'ExtResource("60_beast")')])
 node("BeastArena", "Node2D", "World", [("position", v(gap, af)), ("script", 'ExtResource("61_arena")'),
      ("beast_path", 'NodePath("../../Enemies/ScribbledBeast")'),

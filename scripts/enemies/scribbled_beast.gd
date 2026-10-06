@@ -14,6 +14,8 @@ extends "res://scripts/enemies/enemy_base.gd"
 ##    (lantern.gd), else Vesper's raised Ember, else Vesper. A hit from the
 ##    side the shield faces is blocked ("SCRITCH!"). So: LIGHT A LANTERN.
 ##    It swings its shield round to the light, and its other side is open.
+##  - A lit lantern pins it: it stops where it is (a charge included) and
+##    cowers behind the shield, no walking, no attacks.
 ##  - SNUFF: a lantern lit for `snuff_delay` s and it lobs an ink glob at it
 ##    (beast_glob.gd). Slash the glob out of the air to keep the light.
 ##  - CLAW: close up it rears back (eyes flare) and rakes the floor in front.
@@ -49,7 +51,7 @@ const VOID := Color(0.006, 0.006, 0.014)
 
 enum State { DORMANT, INTRO, IDLE, CLAW_WINDUP, CLAW, RUSH_WINDUP, RUSH, DAZED, SNUFF, LEAP_WINDUP, LEAP, LAND, SUMMON, STAGGER, DYING, DEAD }
 
-@export var hp := 34
+@export var hp := 12
 @export var walk_speed := 80.0
 @export var rush_speed := 640.0
 ## Radians a second the shield turns towards what it fears.
@@ -58,8 +60,8 @@ enum State { DORMANT, INTRO, IDLE, CLAW_WINDUP, CLAW, RUSH_WINDUP, RUSH, DAZED, 
 @export var guard_arc := 78.0
 @export var claw_range := 240.0
 ## Seconds a lantern may burn before it lobs a glob at it.
-@export var snuff_delay := 2.6
-@export var stagger_every := 6
+@export var snuff_delay := 4.5
+@export var stagger_every := 4
 @export var max_spawn := 3
 ## The gutter's tear in the floor (world x) it climbs out of and drags
 ## Scribbles up through (beast_arena.gd sets it).
@@ -68,7 +70,7 @@ enum State { DORMANT, INTRO, IDLE, CLAW_WINDUP, CLAW, RUSH_WINDUP, RUSH, DAZED, 
 var display_name := "THE SCRIBBLED BEAST"
 
 var state := State.DORMANT
-var max_hp := 34
+var max_hp := 12
 var phase_two := false
 ## World angle the shield faces (from its chest).
 var guard := PI
@@ -139,7 +141,7 @@ func begin_fight() -> void:
 
 
 func damage_default() -> float:
-	return 2.0 if state == State.RUSH else 1.0
+	return 1.0  # half a bottle, even mid-rush
 
 
 func _physics_process(delta: float) -> void:
@@ -170,8 +172,12 @@ func _tick(delta: float) -> void:
 	var speed_k := 1.25 if phase_two else 1.0
 	match state:
 		State.IDLE:
-			if lamp and _lamp_time >= snuff_delay / speed_k and is_on_floor():
-				_start_snuff(lamp)
+			if lamp:
+				# a lit lantern pins it where it stands, cowering behind the shield,
+				# until it can snuff the light: no walking, no attacks
+				velocity.x = move_toward(velocity.x, 0.0, 1200.0 * delta)
+				if _lamp_time >= snuff_delay / speed_k and is_on_floor():
+					_start_snuff(lamp)
 			elif _player:
 				face_player()
 				var want := 0.0
@@ -202,6 +208,8 @@ func _tick(delta: float) -> void:
 				_recover(0.9)
 		State.RUSH_WINDUP:
 			velocity.x = move_toward(velocity.x, -facing * 40.0, 600.0 * delta)
+			if lamp:
+				_recover(0.4)  # the light stops it before it starts
 			if fmod(time, 0.12) < delta:
 				InkBits.burst(get_tree(), global_position + Vector2(-facing * 30, body_size.y * 0.5), 2, 160.0, Vector2(-facing, -0.4), 0.0)
 			if _timer <= 0.0:
@@ -215,6 +223,10 @@ func _tick(delta: float) -> void:
 			# it doesn't stop for Vesper: jump it and it slams into the wall
 			if hitting_wall():
 				_dazed()
+			elif lamp:
+				velocity.x *= 0.2  # a lantern lit mid-charge stops it dead
+				pop("HSSSS!", PALE, Vector2(0, -190), 26)
+				_recover(0.4)
 			elif _timer <= 0.0:
 				velocity.x *= 0.3
 				_recover(0.7)
@@ -349,7 +361,7 @@ func _claw_hit() -> void:
 		return
 	var rel := _player.global_position - global_position
 	if rel.x * facing > -30.0 and absf(rel.x) < claw_range + 30.0 and rel.y > -170.0 and rel.y < 130.0:
-		_player.take_damage(2.0, global_position)
+		_player.take_damage(1.0, global_position)
 
 
 # ------------------------------------------------------------------ the shield
@@ -526,6 +538,9 @@ func paint(c: CanvasItem) -> void:
 			crouch = 0.5
 		State.SNUFF:
 			crouch = 0.2
+		State.IDLE:
+			if light_on_shield > 0.5 and absf(velocity.x) < 5.0:
+				crouch = 0.35  # cowering behind the shield
 	var moving := clampf(absf(velocity.x) / walk_speed, 0.0, 1.0) if state in [State.IDLE, State.RUSH] else 0.0
 	var bob := sin(_walk * 2.0) * 4.0 * moving + sin(t * 2.2) * 2.0
 	var lean := 0.32 + crouch * 0.25 + (0.25 if state == State.RUSH else 0.0)

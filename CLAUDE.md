@@ -102,7 +102,8 @@ a third eye in its chest, long clawed arms, spindly legs), all frantic pen + pen
 gutter (black, the white panel lines down both edges, crossed out) that always faces what it fears
 most: a lit arena lantern, else the raised Ember, else Vesper; hits from that side are blocked
 (`guard_arc`), so light a lantern (`ArenaLanternW/E`, the only lanterns it watches: `arena_lanterns`)
-and hit its open side, or dash through it. Lantern lit for `snuff_delay` -> it lobs an ink glob
+and hit its open side, or dash through it. A lit lantern pins it (it stops, a charge included, and
+cowers: no walking or attacks); lit for `snuff_delay` (4.5 s) -> it lobs an ink glob
 (`beast_glob.gd`, slash it to keep the light). CLAW up close, RUSH across the arena (jump it: it hits
 the wall and is DAZED, shield down), STAGGER every `stagger_every` damage; phase two (half hp): faster,
 red eyes, LEAP slams with floor shockwaves (`beast_shockwave.gd`) and Scribbles dragged up out of the
@@ -112,7 +113,9 @@ rumbles, the tear rips open onto the gutter's dark, the shield comes up first de
 light, claws on the lip, it hauls itself out snuffing both lanterns, three eyes open, ROAR, title card
 "THE SCRIBBLED BEAST", the Writer: "That wasn't supposed to get out." / "...Fine. You were never meant
 to leave this page anyway, Vesper."); after a death a ~3 s short intro (GameState.seen "beast_intro");
-a wall of scribble seals the way back; boss bar; a one-time "LIGHT IT!" tag after 4 blocked hits.
+a wall of scribble seals the way back; boss bar; a one-time "LIGHT IT!" tag after 2 blocked hits.
+Tuned to be beaten in about a minute: hp 12, every hit it lands costs half a bottle, lanterns on
+short posts (70 px) so a plain swing lights them.
 Ending: the camera frames its death, the Writer furious (red shaking caption, red pulse, pen scratches
 across the panel: "No. No, no, no." / "That is NOT how this page ends."), then the way on opens over
 the tear (level_exit.gd, for now to the main menu: the Eraser chase goes here next). The 2D player's

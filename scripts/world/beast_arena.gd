@@ -506,7 +506,7 @@ func on_blocked() -> void:
 func _update_hint(delta: float) -> void:
 	var state := get_node_or_null("/root/GameState")
 	if _hint_t < 0.0:
-		if _blocked >= 4 and not _any_lit() and not (state and state.seen.has("beast_hint")):
+		if _blocked >= 2 and not _any_lit() and not (state and state.seen.has("beast_hint")):
 			_hint_t = 0.0
 			if state:
 				state.seen["beast_hint"] = true

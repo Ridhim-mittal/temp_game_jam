@@ -83,6 +83,11 @@ func _run() -> void:
 	check(absf(angle_difference(beast.guard, to_lamp)) < 0.5, "a lit lantern: the shield swings round to the light")
 	beast.take_hit(1, Vector2.RIGHT, player.global_position)
 	check(beast.health == hp - 1, "and a hit from Vesper's side lands (%d -> %d)" % [hp, beast.health])
+	beast.state = beast.State.IDLE
+	beast._cd = 0.0
+	await seconds(0.8)
+	check(beast.state == beast.State.IDLE and absf(beast.velocity.x) < 5.0, "while the lantern burns it stays put, cowering: no walking, no attacks")
+	check(beast.max_hp <= 14 and beast.get_damage() == 1.0, "a short fight: %d health, its body and rush cost half a bottle" % beast.max_hp)
 	# it snuffs the lantern
 	beast._lamp_time = 99.0
 	await seconds(2.6)
