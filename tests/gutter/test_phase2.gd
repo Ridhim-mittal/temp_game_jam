@@ -9,6 +9,11 @@ const ROOMS := ["res://scenes/clearing/clearing.tscn", "res://scenes/world25/roo
 	"res://scenes/world25/rooms/shallows_pen.tscn", "res://scenes/world25/rooms/wastes_gap.tscn",
 	"res://scenes/world25/rooms/arena.tscn"]
 ## biome_props.gd kinds that must not be placed any more.
+## The music each room starts with (a boss room: the tense "dread" while it lives).
+const MUSIC := {"clearing.tscn": "repose", "darkwood_1.tscn": "silk", "shallows_pen.tscn": "dread",
+	"wastes_gap.tscn": "repose", "arena.tscn": "dread"}
+## ...and what a boss room plays once the boss is beaten.
+const AFTER := {"shallows_pen.tscn": "silk", "arena.tscn": "repose"}
 const RETIRED := {0: "CANOPY", 3: "GARDEN_PLOT", 4: "BARN", 5: "SCARECROW", 9: "CORAL", 10: "TUBE_PLANT", 15: "NEST"}
 var fails := 0
 
@@ -42,6 +47,8 @@ func _run() -> void:
 	for path in ROOMS:
 		change_scene_to_file(path)
 		await frames(8)
+		var music: Node = root.get_node("Music")
+		check(music.current == MUSIC[path.get_file()], "%s: plays \"%s\" (%s)" % [path.get_file(), MUSIC[path.get_file()], music.current])
 		var bad := []
 		for n in current_scene.find_children("*", "", true, false):
 			var sn := script_name(n)
@@ -68,6 +75,9 @@ func _run() -> void:
 		for n in get_nodes_in_group("margin_coin"):
 			value += n.value
 		check(worth > 0 and value == worth, "%s: beaten monsters drop their coins (%d of %d)" % [path.get_file(), value, worth])
+		if AFTER.has(path.get_file()):
+			await frames(30)
+			check(music.current == AFTER[path.get_file()], "%s: boss beaten, the room's own tune comes back (%s)" % [path.get_file(), music.current])
 	# the hub: Quire's stall opens the shop; so do B and the pause menu; no
 	# skill tree any more
 	change_scene_to_file("res://scenes/clearing/clearing.tscn")

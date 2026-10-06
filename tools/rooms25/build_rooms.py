@@ -180,8 +180,8 @@ r.prop("brazier", 9.5, 6, name="Lantern2", flame_color="Color(1, 0.25, 0.15, 1)"
 forest_ring(r)
 r.haunt_scale = 0.85  # the first level: the lamp is slow and patient
 r.write("The Inkwood", "1 / 4",
-        "~You slipped out from under my eraser. Into the gutter, of all places.|~These I never finished. Barely a scribble each. You'll hardly see them coming.|Hold right click and raise your Ember. Only in its light are they drawn enough to cut.|Watch their eyes. When the blade goes up, get out of the way.",
-        "See? Nothing in here you can't handle. ...Yet.",
+        "~You slipped out from under my eraser. Into the gutter, of all places.|~These I never finished. Barely a scribble each. You'll hardly see them coming.|^They're barely drawn... I can only see them in my Ember's light.|Hold right click and raise your Ember. Only in its light are they drawn enough to cut.|Watch their eyes. When the blade goes up, get out of the way.",
+        "~Hide all you like. My light is getting closer.",
         extra_room_props="backdrop_style = 1")
 
 # ------------------------------------------------------------ Level 2: The Red Pen
@@ -204,7 +204,7 @@ shallows_ring(r)
 r.haunt_lamps = 2  # two of the Writer's lamps: a bit harder
 r.write("The Red Pen", "The Drowned Margin, 2 / 4",
         "~My editor marked every page in red. Every single page.|Wet ink dries in the light. Make the nib miss, then hit it while it's stuck.|~And this time I'm watching. With both lamps.",
-        "~...Stet. It means: let it stand.|~I never knew that until now.",
+        "^One more of his drawings down.|~Keep running. Every step brings you closer to my light.",
         extra_room_props='boss_path = NodePath("Enemies/RedPen1")\nboss_name = "THE RED PEN"')
 
 # ------------------------------------------------------------ Level 3: The Torn Page
@@ -241,7 +241,7 @@ r.haunt_lamps = 1
 r.haunt_scale = 0.85  # one slow lamp while you work on the bridge
 r.write("The Torn Page", "The Torn Wastes, 3 / 4",
         "~This page tore right down the middle. I only ever sketched the bridge.|Stand at the edge and hold right click: your Ember inks the sketch in, plank by plank.|Inking costs Ember. Every hit feeds it, lanterns included.",
-        "~Stop. Please. You don't want to see the last page.")
+        "~There you are. I can almost see you now.")
 
 # ------------------------------------------------------------ Level 4: The Rubbing Room
 # The Eraser (scripts/clearing/eraser_3d.gd), tuned hard: more rubber,
@@ -267,9 +267,9 @@ r.prop("brazier", 9.5, -4, name="Ember1", **EMBER)
 r.prop("brazier", 9.5, 4, name="Ember2", **EMBER)
 wastes_ring(r)
 r.write("The Rubbing Room", "4 / 4",
-        "~No. Not this one. Turn back.|~You don't need to see what I did to the other drafts.",
-        "~...That isn't how this goes.|~That isn't how ANY of this goes.",
-        cutscene="res://scenes/cutscenes/cs_reveal.tscn",
+        "~The Rubbing Room. Where I erase what I don't need.|^His eraser... it followed me all the way down here.",
+        "~FOUND YOU.|^The light... it's pulling me up!",
+        ending="res://scenes/world25/light_capture.tscn",  # the lights take him back up to Shade's City
         extra_room_props='boss_path = NodePath("Enemies/Eraser1")\nboss_name = "THE ERASER"')
 
 

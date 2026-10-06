@@ -1,5 +1,7 @@
 extends CanvasLayer
-## The Writer narrating: a yellow caption box in the top-left corner of the
+## A caption panel: the comic's narration (a yellow box), or a character
+## talking (`speaker`: "vesper" = yellow with a VESPER tab, "shade" = blood red
+## with a SHADE tab; caption_style.gd). A caption box in the top-left corner of the
 ## panel whose text types in letter by letter, then holds and fades. Plays once per run (GameState remembers), and
 ## the controls tutorial waits until it's done (busy()).
 ## Drop several into a level, each with its `text` and the `trigger_x` the
@@ -7,9 +9,11 @@ extends CanvasLayer
 
 const FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
 const INK := Color(0.05, 0.03, 0.1)
-const CAPTION := Color(1.0, 0.9, 0.45)
+const CaptionStyle = preload("res://scripts/ui/caption_style.gd")
 
 @export_multiline var text := ""
+## "narrator" (the comic's caption), "vesper" or "shade".
+@export_enum("narrator", "vesper", "shade") var speaker := "narrator"
 @export var delay := 0.8
 @export var letters_per_second := 34.0
 @export var hold := 3.5
@@ -112,17 +116,16 @@ func _draw_caption() -> void:
 	if a <= 0.0:
 		return
 	var lh := font_size * 1.2
-	var box := Rect2(48, 104, width + 28, lh * _lines.size() + 20)  # under the HUD
+	var top := 104.0 if speaker == "narrator" else 124.0  # under the HUD (a name tab needs room)
+	var box := Rect2(48, top, width + 28, lh * _lines.size() + 20)
 	c.draw_set_transform(Vector2.ZERO, -0.015)
-	c.draw_rect(Rect2(box.position + Vector2(6, 6), box.size), Color(INK, 0.35 * a))
-	c.draw_rect(box.grow(3.0), Color(INK, a))
-	c.draw_rect(box, Color(CAPTION, a))
+	CaptionStyle.panel(c, box, speaker, a)
 	# letters appear one by one
 	var left := shown
 	for i in _lines.size():
 		var line: String = _lines[i]
 		var part := line.substr(0, clampi(left, 0, line.length()))
 		var base := box.position + Vector2(14, 12 + lh * (i + 0.8))
-		c.draw_string(FONT, base, part, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color(INK, a))
+		c.draw_string(FONT, base, part, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, CaptionStyle.text_color(speaker, a))
 		left -= line.length() + 1
 	c.draw_set_transform(Vector2.ZERO)

@@ -56,6 +56,7 @@ var _shadow: MeshInstance3D
 
 
 func _ready() -> void:
+	light_immune = true  # the Writer's lamps never burn his own pen
 	lumens = 30
 	hp = maxi(hp, 18)
 	sight = 40.0

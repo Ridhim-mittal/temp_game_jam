@@ -25,8 +25,8 @@ camera_bounds = Rect2(-28, -27, 40, 37)
 default_spawn = Vector3(2.5, 0.05, 3)
 title = "The Spine"
 subtitle = "The fold between the pages"
-enter_captions = "Page one. A clean sheet, a warm lamp, and... wait. Where are you?|This isn't a panel. This is the margin. Nothing I drew is supposed to be down here.|Those scribbles are old mistakes, and they bite. Swat them away and find the way out.|A red scratch on the floor means a claw is coming: dash out of its line, or hold right click and light it up."
-clear_captions = "Good. The cave is open. Go on, I'm right behind you."
+enter_captions = "~Where is he? He fell right off the page.|~No matter. My lamp will find him. Nothing hides from my light.|^Where... am I? This isn't a panel. Everything's grey and torn.|^Those scribbles bite. I'd better swat them away and find a way out.|A red scratch on the floor means a claw is coming: dash out of its line, or hold right click and light it up."
+clear_captions = "^The way's open. I'd better keep moving, before that light finds me."
 
 [node name="Island" type="Node3D" parent="."]
 script = ExtResource("1_island")

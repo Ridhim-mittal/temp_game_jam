@@ -71,6 +71,7 @@ def res(kind, path, rid):
 res("PackedScene", "res://scenes/player/player.tscn", "1_player")
 res("Script", "res://scripts/world/big_coin.gd", "49_bigcoin")
 res("Script", "res://scripts/effects/fall_cutscene.gd", "48_fallcine")
+res("Script", "res://scripts/ui/narration.gd", "46_narration")
 res("PackedScene", "res://scenes/enemies/crawler.tscn", "2_crawler")
 res("Script", "res://scripts/ui/hud.gd", "5_hud")
 res("Script", "res://scripts/audio/level_music.gd", "8_music")
@@ -302,7 +303,6 @@ l2, t2, r2, f2 = px("hall2")
 START = (l2 + 150, f2 - 26)
 nl, nt, nr, nf = px("nook")
 lamp(nl + 220, nt, 260, 120)
-heart(nl + 520, nf - 60)
 ledge(nl + 260, nf - 120, 180)                  # the nook's secret: up on a ledge in the dark corner
 big_coin(nl + 110, nf - 330)
 ledge(l2 + 900, f2 - 110, 240)
@@ -399,6 +399,12 @@ node("EraserChase", "Node2D", "World", [("position", v(rl, rf)), ("script", 'Ext
      ("room_top", f"{rt:g}")])
 
 
+# ------------------------------------------------------------------ the story
+# Vesper's first thought on this page (narration.gd's caption panel, his yellow one). Nobody told
+# him: this panel was drawn for his death (the Beast's intro and ending, beast_arena.gd).
+STORY = [("WAIT... THIS IS A WEIRD PANEL. I SHOULD EXPLORE.", -1e9, "vesper")]
+
+
 # ------------------------------------------------------------------ write
 zone_bottoms = ", ".join(f"{b * U:g}" for b, _ in ZONES[:-1])
 themes = ", ".join(str(th) for _, th in ZONES)
@@ -422,5 +428,8 @@ out += ['[node name="Enemies" type="Node2D" parent="."]', "", "\n\n".join(enemie
         "mouse_filter = 2", 'script = ExtResource("5_hud")', "",
         '[node name="LevelMusic" type="Node" parent="."]', 'script = ExtResource("8_music")', 'track = "deep"', "",
         '[node name="LevelMood" type="Node" parent="."]', 'script = ExtResource("30_mood")', ""]
+for k, (text, x, who) in enumerate(STORY):
+    out += [f'[node name="Narration{k + 1}" type="CanvasLayer" parent="."]', 'script = ExtResource("46_narration")',
+            f'text = "{text}"', f"trigger_x = {x:g}", f'speaker = "{who}"', ""]
 open(os.path.join(ROOT, "scenes/levels/long_drop.tscn"), "w").write("\n".join(out))
 print(f"{len(world)} world nodes, {len(trims)} trims, {len(enemies)} enemies, {len(coins)} coins; start {START}")

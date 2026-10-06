@@ -238,15 +238,18 @@ trigger_x = -1000000000.0
 
 [node name="Narration2" type="CanvasLayer" parent="."]
 script = ExtResource("16_narration")
-text = "SOMETHING IS ROOSTING UP THERE."
+text = "SOMETHING'S ROOSTING UP THERE..."
 trigger_x = 800
+speaker = "vesper"
 
 [node name="Narration3" type="CanvasLayer" parent="."]
 script = ExtResource("16_narration")
-text = "SHADE KEEPS DRAWING. AND HIS DRAWINGS KEEP COMING."
+text = "I CAN DRAW FASTER THAN YOU CAN CUT, VESPER."
 trigger_x = 1850
+speaker = "shade"
 
 [node name="Narration4" type="CanvasLayer" parent="."]
 script = ExtResource("16_narration")
-text = "THE GROUND SHAKES. TWO OF THEM, THIS TIME."
+text = "TWO OF THEM? HE'S GETTING DESPERATE."
 trigger_x = 3000
+speaker = "vesper"

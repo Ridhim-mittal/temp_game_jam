@@ -66,9 +66,16 @@ enum BackdropStyle { SIGIL, COMIC }
 @export_multiline var clear_captions := ""
 ## Played after the room is cleared (e.g. the ending); "" = nothing.
 @export_file("*.tscn") var cutscene_on_clear := ""
+## Spawned in the room once it's cleared and its clear captions are done,
+## instead of cutting to `cutscene_on_clear`: the Gutter's ending
+## (scenes/world25/light_capture.tscn, played out in the room itself).
+@export_file("*.tscn") var ending_on_clear := ""
 ## A monster under "Enemies" shown with a big health bar (boss fights).
 @export var boss_path: NodePath
 @export var boss_name := ""
+## Music while the boss lives (tense, dark: the Margins' boss track); the room's
+## biome music comes back, slowly, once the room is cleared.
+@export var boss_music := "dread"
 
 @export_group("The Writer's lamp")
 ## Spawn the Haunting Lamp(s) from the biome's HauntProfile.
@@ -119,25 +126,30 @@ func _ready() -> void:
 	_spawn_player(world)
 	_build_camera()
 	_spawn_haunt()
-	_play_music(b.music)
 	_prepare_enemies(world)
 	ui.title_card((title if title != "" else b.display_name).to_upper(), subtitle)
 	var boss := get_node_or_null(boss_path)
 	if boss and not (world and world.is_cleared(room_id)):
 		ui.set_boss(boss, boss_name)
+		_play_music(boss_music if boss_music != "" else b.music)
+	else:
+		_play_music(b.music)
 	if enter_captions != "" and (world == null or world.once(room_id + ":enter")):
 		_captions(enter_captions)
 	# no controls tutorial here: the keys are the same as in 2D, where it plays
 	# (Pause -> Controls still shows them on request, replay_tutorial())
 
 
-## "|" separates captions; a leading "~" makes one shaky (the Writer
-## losing their nerve).
+## "|" separates captions; a leading "~" is Shade, the Writer, talking (his
+## red panel), a leading "^" is Vesper (yellow, VESPER tab), the rest are the
+## comic's narration / tips.
 func _captions(text: String) -> void:
 	for line in text.split("|"):
 		line = line.strip_edges()
 		if line.begins_with("~"):
 			ui.caption(line.substr(1).strip_edges(), "shaky")
+		elif line.begins_with("^"):
+			ui.caption(line.substr(1).strip_edges(), "vesper")
 		elif line != "":
 			ui.caption(line)
 
@@ -663,10 +675,10 @@ func _build_camera() -> void:
 	add_child(cam)
 
 
-func _play_music(track: String) -> void:
+func _play_music(track: String, fade := 0.8) -> void:
 	var music := get_node_or_null("/root/Music")
 	if music and track != "":
-		music.play(track)
+		music.play(track, fade)
 
 
 func _prepare_enemies(world: Node) -> void:
@@ -830,8 +842,18 @@ func _on_cleared() -> void:
 	for g in _gates():
 		get_tree().create_timer(0.25 * i).timeout.connect(g.open)
 		i += 1
+	if not boss_path.is_empty():
+		_play_music(_biome().music, 3.0)  # the fight's over: the room's own tune creeps back
 	if clear_captions != "":
 		_captions(clear_captions)
-	if cutscene_on_clear != "" and world:
+	if ending_on_clear != "":
+		await get_tree().create_timer(1.2).timeout
+		var wait := 0.0
+		while is_inside_tree() and ui and ui.busy() and wait < 8.0:  # let the captions finish
+			await get_tree().process_frame
+			wait += get_process_delta_time()
+		if is_inside_tree() and player and not player.dead:
+			add_child(load(ending_on_clear).instantiate())
+	elif cutscene_on_clear != "" and world:
 		await get_tree().create_timer(4.5).timeout
 		world.play_cutscene(cutscene_on_clear)

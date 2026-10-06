@@ -28,6 +28,7 @@ const InkBatch = preload("res://scripts/depth/ink_batch.gd")
 const PlayerArt = preload("res://scripts/player/player_visual.gd")
 const SfxSynth = preload("res://scripts/effects/sfx_synth.gd")
 const FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
+const CaptionStyle = preload("res://scripts/ui/caption_style.gd")
 const PAPER := Color(0.96, 0.93, 0.86)
 const INK := Color(0.04, 0.03, 0.07)
 const DARK := Color(0.02, 0.018, 0.03)
@@ -561,13 +562,11 @@ func _balloon_shade(c: Control, s: Vector2, text: String, t: float, dur: float) 
 	var shake := Vector2(randf_range(-2, 2), randf_range(-2, 2))
 	var box := Rect2(s.x * 0.5 - w * 0.5 - 30.0, 52.0, w + 60.0, 66.0)
 	box.position += shake
-	c.draw_rect(box.grow(4.0), Color(0.85, 0.2, 0.25, a))
-	c.draw_rect(box, Color(0.02, 0.01, 0.04, a))
-	c.draw_string(FONT, box.position + Vector2(30, 46), shown, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(1.0, 0.86, 0.88, a))
-	c.draw_string(FONT, box.position + Vector2(box.size.x - 92, box.size.y + 24), "- SHADE", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color(1.0, 0.35, 0.4, a))
+	CaptionStyle.panel(c, box, "shade", a)  # Shade's red caption panel
+	c.draw_string(FONT, box.position + Vector2(30, 46), shown, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, CaptionStyle.text_color("shade", a))
 
 
-## Vesper's own white speech balloon, over his head.
+## Vesper's yellow caption panel, over his head.
 func _balloon_vesper(c: Control, text: String, t: float, dur: float) -> void:
 	var a := clampf(t / 0.15, 0.0, 1.0) * clampf((dur - t) / 0.2, 0.0, 1.0)
 	var fs := 30
@@ -575,10 +574,9 @@ func _balloon_vesper(c: Control, text: String, t: float, dur: float) -> void:
 	var at := _vesper.position + Vector2(90, -150)
 	var box := Rect2(at - Vector2(w * 0.5 + 20, 26), Vector2(w + 40, 52))
 	c.draw_colored_polygon(PackedVector2Array([Vector2(box.position.x + 24, box.end.y - 2), Vector2(box.position.x + 50, box.end.y - 2),
-		_vesper.position + Vector2(30, -70)]), Color(1, 1, 1, a))
-	c.draw_rect(box.grow(3.0), Color(INK, a))
-	c.draw_rect(box, Color(1, 1, 1, a))
-	c.draw_string(FONT, box.position + Vector2(20, 37), text.substr(0, int(t * 24.0)), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(INK, a))
+		_vesper.position + Vector2(30, -70)]), Color(CaptionStyle.YELLOW, a))
+	CaptionStyle.panel(c, box, "vesper", a)  # Vesper's yellow caption panel
+	c.draw_string(FONT, box.position + Vector2(20, 37), text.substr(0, int(t * 24.0)), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, CaptionStyle.text_color("vesper", a))
 
 
 func _title(c: Control, s: Vector2) -> void:
