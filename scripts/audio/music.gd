@@ -62,7 +62,8 @@ const TRIM := {
 }
 const PLAY_ONCE := ["ending"]
 
-@export var volume_db := -8.0
+## 4 dB over the SFX bus (sfx.gd LEVEL_DB -8), so the effects don't bury the music.
+@export var volume_db := -4.0
 
 var current := ""
 var _player: AudioStreamPlayer
