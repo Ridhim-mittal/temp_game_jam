@@ -160,6 +160,7 @@ func half_drawn_test() -> void:
 	player._invuln = 0.0
 	var hp: int = player.health
 	check(not g.is_harmful(), "touching a Half-Drawn doesn't hurt (only its blade does)")
+	player._update_q_prompt()  # (it was drifting about out of range until now: the prompt follows the move at once)
 	check(player._q_prompt != null and not g.revealed, "an unseen Half-Drawn near: \"HOLD RIGHT CLICK TO SEE THEM\" over Vesper")
 	var swung := false
 	for i in 240:  # up to 4 s
