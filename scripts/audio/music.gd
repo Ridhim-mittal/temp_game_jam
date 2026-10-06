@@ -10,6 +10,9 @@ extends Node
 ## into loops and masters them quiet): "city" (Cool Down: THE CITY and the
 ## Sketchbook), "deep" (A Flicker in the Deep: THE LONG DROP) and "beast"
 ## (Incisive Battle: the Scribbled Beast's fight and the Eraser's chase).
+## The Margins (2.5D): "repose" (Repose: the Spine, the Torn Wastes), "silk"
+## (Silksong: the Inkwood) and "dread" (the battle, lower, darker and far back in
+## a cavern: the Red Pen and the Eraser; room.gd `boss_music`).
 
 const TRACKS := {
 	"lit": "res://audio/music/lit_pages.ogg",
@@ -19,6 +22,9 @@ const TRACKS := {
 	"city": "res://audio/music/city.ogg",
 	"deep": "res://audio/music/deep.ogg",
 	"beast": "res://audio/music/beast.ogg",
+	"repose": "res://audio/music/repose.ogg",
+	"silk": "res://audio/music/silk.ogg",
+	"dread": "res://audio/music/dread.ogg",
 }
 ## Where a track loops back to (seconds; master_music.py prints these): the part
 ## before it is an intro, heard once.
@@ -26,6 +32,9 @@ const LOOP_FROM := {
 	"city": 34.78,
 	"deep": 36.47,
 	"beast": 11.89,
+	"repose": 1.37,
+	"silk": 2.71,
+	"dread": 11.89,
 }
 ## Per-track level (dB on top of volume_db): the 2D loops are mastered quiet,
 ## and kept a little under the old tracks so they sit behind the sound effects.
@@ -33,6 +42,9 @@ const TRIM := {
 	"city": 2.0,
 	"deep": 3.0,
 	"beast": 2.0,
+	"repose": 3.0,
+	"silk": 3.0,
+	"dread": 2.5,
 }
 const PLAY_ONCE := ["ending"]
 
