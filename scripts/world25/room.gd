@@ -846,10 +846,10 @@ func _on_cleared() -> void:
 	if ending_on_clear != "":
 		await get_tree().create_timer(1.2).timeout
 		var wait := 0.0
-		while ui and ui.busy() and wait < 8.0:  # let the captions finish
+		while is_inside_tree() and ui and ui.busy() and wait < 8.0:  # let the captions finish
 			await get_tree().process_frame
 			wait += get_process_delta_time()
-		if player and not player.dead and is_inside_tree():
+		if is_inside_tree() and player and not player.dead:
 			add_child(load(ending_on_clear).instantiate())
 	elif cutscene_on_clear != "" and world:
 		await get_tree().create_timer(4.5).timeout

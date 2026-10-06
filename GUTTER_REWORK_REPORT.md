@@ -512,8 +512,8 @@ These ran with Godot 4.7-stable under Xvfb with software OpenGL.
   - The drop gives the level back (unpaused, Vesper shown), the page goes, the canvas
     transform is back to normal, and he lands on the street.
   - Enter skips the lot and lands in Shade's City the same way.
-- Round 18 reruns: test_phase1 35/35, test_phase2 20/20, test_phase5 17/17,
-  test_levels 67/67, test_shop 57/57, test_beast 40/40.
+- Round 18 reruns, after merging `main`'s new music: test_phase1 35/35, test_phase2 27/27,
+  test_phase5 17/17, test_levels 67/67, test_shop 57/57, test_beast 43/43.
 - **`tests/gutter/test_shop.gd` (new): 57/57 checks.** It puts your saved progress back
   afterwards.
   - The purse:
