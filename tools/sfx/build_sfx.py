@@ -1,23 +1,26 @@
 #!/usr/bin/env python3
 """Synthesises Vesper's movement and sword sounds into assets/sfx (re-running
 overwrites them; deterministic, no dependencies):
-  jump.wav             a paper flick: a short bright puff of paper air
+  jump.wav             a paper flick: one soft breath of air, 70 ms
   dash.wav             a pen stroke: a nib dragged fast across paper, rising then easing off
   sword_swing_1..4     a miss: a thin nib swish through the air (four takes)
   sword_hit_1..4       a hit: a crisp nib click, a dull ink thwack and a short wet splat
 Everything is kept short and dry so it sits under the music and repeats
 without tiring. Played by the Sfx autoload (scripts/audio/sfx.gd) by name;
 a play picks one of the numbered takes at random.
-Run from anywhere: python3 tools/sfx/build_sfx.py
+Run from anywhere: python3 tools/sfx/build_sfx.py [--out DIR] [names...]
+(--out writes somewhere else, e.g. to listen first; names limit it to those sounds)
 """
 import math
 import os
 import random
 import struct
+import sys
 import wave
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 OUT = os.path.join(ROOT, "assets", "sfx")
+ONLY = []
 RATE = 44100
 
 
@@ -79,6 +82,8 @@ def finish(samples, peak_db):
 
 
 def write(name, samples):
+    if ONLY and not any(name.startswith(o) for o in ONLY):
+        return
     path = os.path.join(OUT, name + ".wav")
     with wave.open(path, "wb") as w:
         w.setnchannels(1)
@@ -91,19 +96,17 @@ def write(name, samples):
 # ------------------------------------------------------------------ the sounds
 
 def jump(seed=1):
-    """A paper flick: a bright puff of air (band-passed noise rising 900 -> 2600 Hz)
-    over a soft low push, gone in a tenth of a second."""
+    """A paper flick, barely there: one soft breath of air (band-passed noise
+    lifting 1200 -> 2200 Hz) that's gone in 70 ms. No low push, no tail."""
     rng = random.Random(seed)
-    n = int(0.13 * RATE)
-    bp = BandPass(1.4)
+    dur = 0.07
+    n = int(dur * RATE)
+    bp = BandPass(2.0)
     out = []
     for i in range(n):
         t = i / RATE
-        k = t / 0.13
-        air = bp(rng.uniform(-1, 1), 900.0 + 1700.0 * math.sqrt(k)) * env(t, 0.004, 0.035) * 2.2
-        push = math.sin(2 * math.pi * (140.0 * t + 300.0 * t * t)) * env(t, 0.003, 0.025) * 0.35
-        out.append(air + push)
-    return finish(out, -4.0)
+        out.append(bp(rng.uniform(-1, 1), 1200.0 + 1000.0 * (t / dur)) * env(t, 0.006, 0.018))
+    return finish(out, -9.0)
 
 
 def dash(seed=2):
@@ -178,4 +181,11 @@ def main():
 
 
 if __name__ == "__main__":
+    args = sys.argv[1:]
+    if "--out" in args:
+        i = args.index("--out")
+        OUT = os.path.abspath(args[i + 1])
+        del args[i:i + 2]
+    ONLY = args
+    os.makedirs(OUT, exist_ok=True)
     main()
