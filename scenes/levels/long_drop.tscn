@@ -1,6 +1,7 @@
 [gd_scene format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="1_player"]
+[ext_resource type="Script" path="res://scripts/world/big_coin.gd" id="49_bigcoin"]
 [ext_resource type="PackedScene" path="res://scenes/enemies/crawler.tscn" id="2_crawler"]
 [ext_resource type="Script" path="res://scripts/ui/hud.gd" id="5_hud"]
 [ext_resource type="Script" path="res://scripts/audio/level_music.gd" id="8_music"]
@@ -355,20 +356,31 @@ position = Vector2(820, 2240)
 script = ExtResource("19_heart")
 
 [node name="Ledge14" type="StaticBody2D" parent="World"]
+position = Vector2(560, 2189)
+script = ExtResource("53_ledge")
+size = Vector2(180, 18)
+theme = 1
+one_way = true
+
+[node name="BigCoin1" type="Area2D" parent="World"]
+position = Vector2(410, 1970)
+script = ExtResource("49_bigcoin")
+
+[node name="Ledge15" type="StaticBody2D" parent="World"]
 position = Vector2(1900, 2199)
 script = ExtResource("53_ledge")
 size = Vector2(240, 18)
 theme = 1
 one_way = true
 
-[node name="Ledge15" type="StaticBody2D" parent="World"]
+[node name="Ledge16" type="StaticBody2D" parent="World"]
 position = Vector2(2500, 2199)
 script = ExtResource("53_ledge")
 size = Vector2(240, 18)
 theme = 1
 one_way = true
 
-[node name="Ledge16" type="StaticBody2D" parent="World"]
+[node name="Ledge17" type="StaticBody2D" parent="World"]
 position = Vector2(2200, 2089)
 script = ExtResource("53_ledge")
 size = Vector2(240, 18)
@@ -398,28 +410,28 @@ radius = 300
 chain = 150
 casts_shadows = false
 
-[node name="Ledge17" type="StaticBody2D" parent="World"]
+[node name="Ledge18" type="StaticBody2D" parent="World"]
 position = Vector2(3945, 2419)
 script = ExtResource("53_ledge")
 size = Vector2(170, 18)
 theme = 1
 one_way = true
 
-[node name="Ledge18" type="StaticBody2D" parent="World"]
+[node name="Ledge19" type="StaticBody2D" parent="World"]
 position = Vector2(4205, 2529)
 script = ExtResource("53_ledge")
 size = Vector2(170, 18)
 theme = 2
 one_way = true
 
-[node name="Ledge19" type="StaticBody2D" parent="World"]
+[node name="Ledge20" type="StaticBody2D" parent="World"]
 position = Vector2(3945, 2639)
 script = ExtResource("53_ledge")
 size = Vector2(170, 18)
 theme = 2
 one_way = true
 
-[node name="Ledge20" type="StaticBody2D" parent="World"]
+[node name="Ledge21" type="StaticBody2D" parent="World"]
 position = Vector2(4205, 2749)
 script = ExtResource("53_ledge")
 size = Vector2(170, 18)
@@ -477,154 +489,154 @@ tilt = -0.03
 position = Vector2(1750, 3090)
 script = ExtResource("19_heart")
 
-[node name="Ledge21" type="StaticBody2D" parent="World"]
+[node name="Ledge22" type="StaticBody2D" parent="World"]
 position = Vector2(2295, 3269)
 script = ExtResource("53_ledge")
 size = Vector2(170, 18)
 theme = 2
 one_way = true
 
-[node name="Ledge22" type="StaticBody2D" parent="World"]
+[node name="Ledge23" type="StaticBody2D" parent="World"]
 position = Vector2(2555, 3379)
 script = ExtResource("53_ledge")
 size = Vector2(170, 18)
 theme = 2
 one_way = true
 
-[node name="Ledge23" type="StaticBody2D" parent="World"]
+[node name="Ledge24" type="StaticBody2D" parent="World"]
 position = Vector2(2295, 3489)
 script = ExtResource("53_ledge")
 size = Vector2(170, 18)
 theme = 2
 one_way = true
 
-[node name="Ledge24" type="StaticBody2D" parent="World"]
+[node name="Ledge25" type="StaticBody2D" parent="World"]
 position = Vector2(2555, 3599)
 script = ExtResource("53_ledge")
 size = Vector2(170, 18)
 theme = 2
 one_way = true
 
-[node name="Ledge25" type="StaticBody2D" parent="World"]
+[node name="Ledge26" type="StaticBody2D" parent="World"]
 position = Vector2(2295, 3709)
 script = ExtResource("53_ledge")
 size = Vector2(170, 18)
 theme = 2
 one_way = true
 
-[node name="Ledge26" type="StaticBody2D" parent="World"]
+[node name="Ledge27" type="StaticBody2D" parent="World"]
 position = Vector2(2555, 3819)
 script = ExtResource("53_ledge")
 size = Vector2(170, 18)
 theme = 2
 one_way = true
 
-[node name="Ledge27" type="StaticBody2D" parent="World"]
+[node name="Ledge28" type="StaticBody2D" parent="World"]
 position = Vector2(2295, 3929)
 script = ExtResource("53_ledge")
 size = Vector2(170, 18)
 theme = 2
 one_way = true
 
-[node name="Ledge28" type="StaticBody2D" parent="World"]
+[node name="Ledge29" type="StaticBody2D" parent="World"]
 position = Vector2(2555, 4039)
 script = ExtResource("53_ledge")
 size = Vector2(170, 18)
 theme = 2
 one_way = true
 
-[node name="Ledge29" type="StaticBody2D" parent="World"]
+[node name="Ledge30" type="StaticBody2D" parent="World"]
 position = Vector2(2295, 4149)
 script = ExtResource("53_ledge")
 size = Vector2(170, 18)
 theme = 2
 one_way = true
 
-[node name="Ledge30" type="StaticBody2D" parent="World"]
+[node name="Ledge31" type="StaticBody2D" parent="World"]
 position = Vector2(2410, 4429)
 script = ExtResource("53_ledge")
 size = Vector2(300, 18)
 theme = 2
 one_way = true
 
-[node name="Ledge31" type="StaticBody2D" parent="World"]
+[node name="Ledge32" type="StaticBody2D" parent="World"]
 position = Vector2(2700, 4539)
 script = ExtResource("53_ledge")
 size = Vector2(300, 18)
 theme = 2
 one_way = true
 
-[node name="Ledge32" type="StaticBody2D" parent="World"]
+[node name="Ledge33" type="StaticBody2D" parent="World"]
 position = Vector2(2990, 4649)
 script = ExtResource("53_ledge")
 size = Vector2(300, 18)
 theme = 2
 one_way = true
 
-[node name="Ledge33" type="StaticBody2D" parent="World"]
+[node name="Ledge34" type="StaticBody2D" parent="World"]
 position = Vector2(3280, 4759)
 script = ExtResource("53_ledge")
 size = Vector2(300, 18)
 theme = 2
 one_way = true
 
-[node name="Ledge34" type="StaticBody2D" parent="World"]
+[node name="Ledge35" type="StaticBody2D" parent="World"]
 position = Vector2(3570, 4869)
 script = ExtResource("53_ledge")
 size = Vector2(300, 18)
 theme = 2
 one_way = true
 
-[node name="Ledge35" type="StaticBody2D" parent="World"]
+[node name="Ledge36" type="StaticBody2D" parent="World"]
 position = Vector2(3860, 4979)
 script = ExtResource("53_ledge")
 size = Vector2(300, 18)
 theme = 2
 one_way = true
 
-[node name="Ledge36" type="StaticBody2D" parent="World"]
+[node name="Ledge37" type="StaticBody2D" parent="World"]
 position = Vector2(4150, 5089)
 script = ExtResource("53_ledge")
 size = Vector2(300, 18)
 theme = 2
 one_way = true
 
-[node name="Ledge37" type="StaticBody2D" parent="World"]
+[node name="Ledge38" type="StaticBody2D" parent="World"]
 position = Vector2(3940, 5199)
 script = ExtResource("53_ledge")
 size = Vector2(300, 18)
 theme = 2
 one_way = true
 
-[node name="Ledge38" type="StaticBody2D" parent="World"]
+[node name="Ledge39" type="StaticBody2D" parent="World"]
 position = Vector2(3650, 5309)
 script = ExtResource("53_ledge")
 size = Vector2(300, 18)
 theme = 2
 one_way = true
 
-[node name="Ledge39" type="StaticBody2D" parent="World"]
+[node name="Ledge40" type="StaticBody2D" parent="World"]
 position = Vector2(3360, 5419)
 script = ExtResource("53_ledge")
 size = Vector2(300, 18)
 theme = 2
 one_way = true
 
-[node name="Ledge40" type="StaticBody2D" parent="World"]
+[node name="Ledge41" type="StaticBody2D" parent="World"]
 position = Vector2(3070, 5529)
 script = ExtResource("53_ledge")
 size = Vector2(300, 18)
 theme = 2
 one_way = true
 
-[node name="Ledge41" type="StaticBody2D" parent="World"]
+[node name="Ledge42" type="StaticBody2D" parent="World"]
 position = Vector2(2780, 5639)
 script = ExtResource("53_ledge")
 size = Vector2(300, 18)
 theme = 2
 one_way = true
 
-[node name="Ledge42" type="StaticBody2D" parent="World"]
+[node name="Ledge43" type="StaticBody2D" parent="World"]
 position = Vector2(2490, 5749)
 script = ExtResource("53_ledge")
 size = Vector2(300, 18)
@@ -656,35 +668,35 @@ radius = 320
 chain = 900
 casts_shadows = false
 
-[node name="Ledge43" type="StaticBody2D" parent="World"]
+[node name="Ledge44" type="StaticBody2D" parent="World"]
 position = Vector2(2300, 5009)
 script = ExtResource("53_ledge")
 size = Vector2(300, 18)
 theme = 2
 one_way = false
 
-[node name="Ledge44" type="StaticBody2D" parent="World"]
+[node name="Ledge45" type="StaticBody2D" parent="World"]
 position = Vector2(2235, 4539)
 script = ExtResource("53_ledge")
 size = Vector2(150, 18)
 theme = 2
 one_way = true
 
-[node name="Ledge45" type="StaticBody2D" parent="World"]
+[node name="Ledge46" type="StaticBody2D" parent="World"]
 position = Vector2(2485, 4649)
 script = ExtResource("53_ledge")
 size = Vector2(150, 18)
 theme = 2
 one_way = true
 
-[node name="Ledge46" type="StaticBody2D" parent="World"]
+[node name="Ledge47" type="StaticBody2D" parent="World"]
 position = Vector2(2235, 4759)
 script = ExtResource("53_ledge")
 size = Vector2(150, 18)
 theme = 2
 one_way = true
 
-[node name="Ledge47" type="StaticBody2D" parent="World"]
+[node name="Ledge48" type="StaticBody2D" parent="World"]
 position = Vector2(2485, 4869)
 script = ExtResource("53_ledge")
 size = Vector2(150, 18)
@@ -702,7 +714,7 @@ casts_shadows = false
 position = Vector2(1550, 4940)
 script = ExtResource("19_heart")
 
-[node name="Ledge48" type="StaticBody2D" parent="World"]
+[node name="Ledge49" type="StaticBody2D" parent="World"]
 position = Vector2(900, 5749)
 script = ExtResource("53_ledge")
 size = Vector2(220, 18)
@@ -716,70 +728,81 @@ radius = 280
 chain = 130
 casts_shadows = false
 
-[node name="Ledge49" type="StaticBody2D" parent="World"]
+[node name="Ledge50" type="StaticBody2D" parent="World"]
+position = Vector2(720, 5609)
+script = ExtResource("53_ledge")
+size = Vector2(160, 18)
+theme = 2
+one_way = true
+
+[node name="BigCoin2" type="Area2D" parent="World"]
+position = Vector2(710, 5440)
+script = ExtResource("49_bigcoin")
+
+[node name="Ledge51" type="StaticBody2D" parent="World"]
 position = Vector2(3895, 5969)
 script = ExtResource("53_ledge")
 size = Vector2(170, 18)
 theme = 2
 one_way = true
 
-[node name="Ledge50" type="StaticBody2D" parent="World"]
+[node name="Ledge52" type="StaticBody2D" parent="World"]
 position = Vector2(4155, 6079)
 script = ExtResource("53_ledge")
 size = Vector2(170, 18)
 theme = 2
 one_way = true
 
-[node name="Ledge51" type="StaticBody2D" parent="World"]
+[node name="Ledge53" type="StaticBody2D" parent="World"]
 position = Vector2(3895, 6189)
 script = ExtResource("53_ledge")
 size = Vector2(170, 18)
 theme = 0
 one_way = true
 
-[node name="Ledge52" type="StaticBody2D" parent="World"]
+[node name="Ledge54" type="StaticBody2D" parent="World"]
 position = Vector2(4155, 6299)
 script = ExtResource("53_ledge")
 size = Vector2(170, 18)
 theme = 0
 one_way = true
 
-[node name="Ledge53" type="StaticBody2D" parent="World"]
+[node name="Ledge55" type="StaticBody2D" parent="World"]
 position = Vector2(3895, 6409)
 script = ExtResource("53_ledge")
 size = Vector2(170, 18)
 theme = 0
 one_way = true
 
-[node name="Ledge54" type="StaticBody2D" parent="World"]
+[node name="Ledge56" type="StaticBody2D" parent="World"]
 position = Vector2(4155, 6519)
 script = ExtResource("53_ledge")
 size = Vector2(170, 18)
 theme = 0
 one_way = true
 
-[node name="Ledge55" type="StaticBody2D" parent="World"]
+[node name="Ledge57" type="StaticBody2D" parent="World"]
 position = Vector2(3895, 6629)
 script = ExtResource("53_ledge")
 size = Vector2(170, 18)
 theme = 0
 one_way = true
 
-[node name="Ledge56" type="StaticBody2D" parent="World"]
+[node name="Ledge58" type="StaticBody2D" parent="World"]
 position = Vector2(4155, 6739)
 script = ExtResource("53_ledge")
 size = Vector2(170, 18)
 theme = 0
 one_way = true
 
-[node name="Ledge57" type="StaticBody2D" parent="World"]
+[node name="Ledge59" type="StaticBody2D" parent="World"]
 position = Vector2(3895, 6849)
 script = ExtResource("53_ledge")
 size = Vector2(170, 18)
 theme = 0
 one_way = true
 
-[node name="Ledge58" type="StaticBody2D" parent="World"]
+[node name="Ledge60" type="StaticBody2D" parent="World"]
 position = Vector2(4155, 6959)
 script = ExtResource("53_ledge")
 size = Vector2(170, 18)
@@ -807,35 +830,35 @@ casts_shadows = true
 swing = 40
 swing_period = 5
 
-[node name="Ledge59" type="StaticBody2D" parent="World"]
+[node name="Ledge61" type="StaticBody2D" parent="World"]
 position = Vector2(3385, 7219)
 script = ExtResource("53_ledge")
 size = Vector2(150, 18)
 theme = 0
 one_way = true
 
-[node name="Ledge60" type="StaticBody2D" parent="World"]
+[node name="Ledge62" type="StaticBody2D" parent="World"]
 position = Vector2(3515, 7329)
 script = ExtResource("53_ledge")
 size = Vector2(150, 18)
 theme = 0
 one_way = true
 
-[node name="Ledge61" type="StaticBody2D" parent="World"]
+[node name="Ledge63" type="StaticBody2D" parent="World"]
 position = Vector2(3385, 7439)
 script = ExtResource("53_ledge")
 size = Vector2(150, 18)
 theme = 0
 one_way = true
 
-[node name="Ledge62" type="StaticBody2D" parent="World"]
+[node name="Ledge64" type="StaticBody2D" parent="World"]
 position = Vector2(1900, 6999)
 script = ExtResource("53_ledge")
 size = Vector2(220, 18)
 theme = 0
 one_way = true
 
-[node name="Ledge63" type="StaticBody2D" parent="World"]
+[node name="Ledge65" type="StaticBody2D" parent="World"]
 position = Vector2(1550, 6889)
 script = ExtResource("53_ledge")
 size = Vector2(220, 18)
@@ -849,84 +872,84 @@ radius = 300
 chain = 200
 casts_shadows = false
 
-[node name="Ledge64" type="StaticBody2D" parent="World"]
+[node name="Ledge66" type="StaticBody2D" parent="World"]
 position = Vector2(605, 7219)
 script = ExtResource("53_ledge")
 size = Vector2(190, 18)
 theme = 0
 one_way = true
 
-[node name="Ledge65" type="StaticBody2D" parent="World"]
+[node name="Ledge67" type="StaticBody2D" parent="World"]
 position = Vector2(945, 7329)
 script = ExtResource("53_ledge")
 size = Vector2(190, 18)
 theme = 0
 one_way = true
 
-[node name="Ledge66" type="StaticBody2D" parent="World"]
+[node name="Ledge68" type="StaticBody2D" parent="World"]
 position = Vector2(605, 7439)
 script = ExtResource("53_ledge")
 size = Vector2(190, 18)
 theme = 0
 one_way = true
 
-[node name="Ledge67" type="StaticBody2D" parent="World"]
+[node name="Ledge69" type="StaticBody2D" parent="World"]
 position = Vector2(945, 7549)
 script = ExtResource("53_ledge")
 size = Vector2(190, 18)
 theme = 0
 one_way = true
 
-[node name="Ledge68" type="StaticBody2D" parent="World"]
+[node name="Ledge70" type="StaticBody2D" parent="World"]
 position = Vector2(605, 7659)
 script = ExtResource("53_ledge")
 size = Vector2(190, 18)
 theme = 0
 one_way = true
 
-[node name="Ledge69" type="StaticBody2D" parent="World"]
+[node name="Ledge71" type="StaticBody2D" parent="World"]
 position = Vector2(945, 7769)
 script = ExtResource("53_ledge")
 size = Vector2(190, 18)
 theme = 0
 one_way = true
 
-[node name="Ledge70" type="StaticBody2D" parent="World"]
+[node name="Ledge72" type="StaticBody2D" parent="World"]
 position = Vector2(605, 7879)
 script = ExtResource("53_ledge")
 size = Vector2(190, 18)
 theme = 0
 one_way = true
 
-[node name="Ledge71" type="StaticBody2D" parent="World"]
+[node name="Ledge73" type="StaticBody2D" parent="World"]
 position = Vector2(945, 7989)
 script = ExtResource("53_ledge")
 size = Vector2(190, 18)
 theme = 0
 one_way = true
 
-[node name="Ledge72" type="StaticBody2D" parent="World"]
+[node name="Ledge74" type="StaticBody2D" parent="World"]
 position = Vector2(605, 8099)
 script = ExtResource("53_ledge")
 size = Vector2(190, 18)
 theme = 0
 one_way = true
 
-[node name="Ledge73" type="StaticBody2D" parent="World"]
+[node name="Ledge75" type="StaticBody2D" parent="World"]
 position = Vector2(945, 8209)
 script = ExtResource("53_ledge")
 size = Vector2(190, 18)
 theme = 0
 one_way = true
 
-[node name="Ledge74" type="StaticBody2D" parent="World"]
+[node name="Ledge76" type="StaticBody2D" parent="World"]
 position = Vector2(605, 8319)
 script = ExtResource("53_ledge")
 size = Vector2(190, 18)
 theme = 0
 one_way = true
 
-[node name="Ledge75" type="StaticBody2D" parent="World"]
+[node name="Ledge77" type="StaticBody2D" parent="World"]
 position = Vector2(945, 8429)
 script = ExtResource("53_ledge")
 size = Vector2(190, 18)
@@ -998,8 +1021,8 @@ casts_shadows = false
 [node name="Exit" type="Area2D" parent="World"]
 position = Vector2(4250, 8600)
 script = ExtResource("17_exit")
-target_scene = "res://scenes/ui/main_menu.tscn"
-label = "THE END OF THE DROP"
+target_scene = "res://scenes/clearing/clearing.tscn"
+label = "INTO THE MARGINS"
 
 [node name="Trims" type="Node2D" parent="."]
 

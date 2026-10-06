@@ -1,7 +1,7 @@
 extends Node3D
 ## A Margins coin dropped by a beaten monster (monster_3d.gd and scribble.gd
-## _die()): small and dark silver, to suit the Gutter (the 2D levels' Lumens
-## are big and gold). They spill out in a tight little cluster, bounce,
+## _die()): the same gold Lumen as the 2D levels' coins (coin.gd: a gold
+## disc, a darker ring and the embossed V), only small. They spill out in a tight little cluster, bounce,
 ## settle and spin, each twinkling now and then (a small additive glint,
 ## bright enough to show through the Gutter's darkness, darkness.gd). Within
 ## `magnet` of Vesper (or after `home_after` seconds, wherever he is) they
@@ -9,9 +9,9 @@ extends Node3D
 ## HUD's counter (clearing_hud.gd) shows it. Spawn them with Lumen.spill().
 
 const Toon = preload("res://scripts/clearing/toon.gd")
-const SILVER := Color(0.6, 0.63, 0.7)
-const SILVER_DARK := Color(0.32, 0.34, 0.4)
-const SILVER_LIGHT := Color(0.85, 0.88, 0.95)
+const GOLD := Color(1.0, 0.8, 0.22)
+const GOLD_DARK := Color(0.78, 0.46, 0.1)
+const GOLD_LIGHT := Color(1.0, 0.95, 0.65)
 ## Most coins one monster spills (the rest go into their values).
 const MAX_COINS := 14
 
@@ -54,12 +54,7 @@ func _ready() -> void:
 	add_to_group("margin_coin")
 	_coin = Node3D.new()
 	add_child(_coin)
-	var size := 0.1 + 0.015 * minf(value - 1, 4)
-	Toon.part(_coin, Toon.cylinder(size, size, 0.035, 14), SILVER, Vector3.ZERO, Vector3(90, 0, 0), {"outline": 0.018, "emission": 0.35})
-	Toon.part(_coin, Toon.cylinder(size * 0.62, size * 0.62, 0.04, 12), SILVER_DARK, Vector3.ZERO, Vector3(90, 0, 0),
-		{"outline": 0.0, "emission": 0.2})
-	Toon.part(_coin, Toon.box(Vector3(size * 0.18, size * 0.7, 0.045)), SILVER_LIGHT, Vector3.ZERO, Vector3(0, 0, 0),
-		{"outline": 0.0, "emission": 0.6})
+	build_coin(_coin, 0.1 + 0.015 * minf(value - 1, 4))
 	_coin.rotation.y = randf() * TAU
 	_glint = MeshInstance3D.new()
 	var q := QuadMesh.new()
@@ -72,6 +67,20 @@ func _ready() -> void:
 	_phase = randf() * TAU
 
 
+## The Lumen's model under `parent`, facing +z (as coin.gd draws it): a gold
+## disc with a ring and the embossed V on both faces. big_lumen.gd uses it too.
+static func build_coin(parent: Node3D, size: float) -> void:
+	Toon.part(parent, Toon.cylinder(size, size, size * 0.35, 18), GOLD, Vector3.ZERO, Vector3(90, 0, 0),
+		{"outline": size * 0.18, "emission": 0.35})
+	Toon.part(parent, Toon.cylinder(size * 0.72, size * 0.72, size * 0.38, 16), GOLD_DARK, Vector3.ZERO, Vector3(90, 0, 0),
+		{"outline": 0.0, "emission": 0.25})
+	Toon.part(parent, Toon.cylinder(size * 0.6, size * 0.6, size * 0.4, 16), GOLD, Vector3.ZERO, Vector3(90, 0, 0),
+		{"outline": 0.0, "emission": 0.35})
+	for sx in [-1.0, 1.0]:  # the V's two strokes
+		Toon.part(parent, Toon.box(Vector3(size * 0.16, size * 0.82, size * 0.46)), GOLD_LIGHT,
+			Vector3(sx * size * 0.15, 0, 0), Vector3(0, 0, -sx * 22.0), {"outline": 0.0, "emission": 0.6})
+
+
 static func _glint_material() -> StandardMaterial3D:
 	if _glint_mat == null:
 		var tex := GradientTexture2D.new()
@@ -82,7 +91,7 @@ static func _glint_material() -> StandardMaterial3D:
 		tex.fill_to = Vector2(1.0, 0.5)
 		var g := Gradient.new()
 		g.offsets = PackedFloat32Array([0.0, 0.15, 0.45, 1.0])
-		g.colors = PackedColorArray([Color(1, 1, 1, 1), Color(0.9, 0.93, 1.0, 0.8), Color(0.7, 0.75, 0.85, 0.15), Color(1, 1, 1, 0)])
+		g.colors = PackedColorArray([Color(1, 1, 0.9, 1), Color(1.0, 0.9, 0.6, 0.8), Color(0.9, 0.7, 0.3, 0.15), Color(1, 1, 1, 0)])
 		tex.gradient = g
 		_glint_mat = StandardMaterial3D.new()
 		_glint_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED

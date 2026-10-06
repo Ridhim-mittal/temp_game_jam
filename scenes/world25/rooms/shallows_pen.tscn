@@ -10,6 +10,7 @@
 [ext_resource type="Script" path="res://scripts/clearing/scatter_props.gd" id="scatter"]
 [ext_resource type="Script" path="res://scripts/clearing/watcher_eyes.gd" id="eyes"]
 [ext_resource type="Script" path="res://scripts/clearing/altar.gd" id="altar"]
+[ext_resource type="Script" path="res://scripts/world25/big_lumen.gd" id="biglumen"]
 [ext_resource type="PackedScene" path="res://scenes/clearing/scribble.tscn" id="scribble"]
 [ext_resource type="PackedScene" path="res://scenes/clearing/monsters/crumple.tscn" id="crumple"]
 [ext_resource type="PackedScene" path="res://scenes/clearing/monsters/crossed_out.tscn" id="crossed_out"]
