@@ -195,6 +195,8 @@ Shade's black speech balloon):
    pens (`pen_diver.gd`: the Red Pen's art, hovers, shakes to aim, dives nib-first and sticks in the street),
    erasers (hp 6) and now and then one weakened Ink Blot (`blot_hp` 10; never two Blots at once). Only the
    Blot keeps a boss bar. Kills drop half a bottle at `drop_chance`; a cleared wave always drops a bottle.
+   No drop (kills, waves, an Ink Blot's big heart) is made while Vesper's ink is full (health_heart.gd
+   `player_full()`), and a seeking heart that reaches him full fades away instead of sitting on him.
 3. The light: a pillar of light falls on the street, Vesper is healed to full, the hand plunges into it and
    steps out as Vesper's double (`scripts/enemies/shade_double.gd`, "SHADE", hp 30): Vesper's own
    player_visual.gd + sword inked black, blood-red scarf, burning red eyes (player_visual `eye_color`). It
