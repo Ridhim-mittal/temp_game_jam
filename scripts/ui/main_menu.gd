@@ -11,7 +11,10 @@ extends Control
 ## the items slide up; hovering pops an item and draws its brush stroke;
 ## lightning flashes now and then and a letter of the sign blinks out.
 ## Edit MAIN / CHAPTERS to change the options ("@chapters" / "@back" switch
-## rows, "" quits).
+## rows, "@continue" picks up the saved run, "" quits).
+## CONTINUE goes back to where the last run was left (GameState's saved run:
+## the level and its checkpoint, or the Gutter room), showing where under it;
+## greyed out when there is none. NEW GAME starts the story from the opening.
 
 const NightShader = preload("res://shaders/menu_night.gdshader")
 const ArcShader = preload("res://shaders/menu_arc.gdshader")
@@ -32,7 +35,8 @@ const ARC_DIP := 150.0
 
 ## [label, scene to load ("" = quit, "@chapters" / "@back" switch rows)]
 const MAIN := [
-	["PLAY", "res://scenes/cutscenes/cs_book.tscn"],  # the animated opening (cs_book.gd), into the City
+	["CONTINUE", "@continue"],  # the run that was left (GameState.continue_run())
+	["NEW GAME", "res://scenes/cutscenes/cs_book.tscn"],  # the animated opening (cs_book.gd), into the City
 	["CHAPTERS", "@chapters"],
 	["SETTINGS", "res://scenes/ui/settings.tscn"],
 	["QUIT", ""],
@@ -80,6 +84,7 @@ var _wipe := -1.0
 var _wipe_from := Vector2.ZERO
 var _windows: Array = []
 var _rng := RandomNumberGenerator.new()
+var _place := ""          # where the saved run is (_saved_place()), "" = none
 
 
 func _ready() -> void:
@@ -89,7 +94,9 @@ func _ready() -> void:
 	_rng.seed = 7
 	var state := get_node_or_null("/root/GameState")
 	if state:
-		state.reset()  # the menu starts a fresh run: no checkpoint, no banked coins
+		state.leave_run()  # the run that was going is saved for CONTINUE...
+		state.reset()  # ...and the menu starts afresh: no checkpoint, no banked coins
+	_place = _saved_place()
 	_sky_mat = _shader_rect(NightShader)
 	_scene = Node2D.new()
 	_scene.draw.connect(_draw_street)
@@ -198,8 +205,8 @@ func _build_row(list: Array, delay := 0.0) -> void:
 		it.button.queue_free()
 	_items.clear()
 	var half := ceili(list.size() * 0.5)
-	var rows: Array = [list] if list.size() <= 4 else [list.slice(0, half), list.slice(half)]
-	var px := 46 if rows.size() == 1 else 34
+	var rows: Array = [list] if list.size() <= 5 else [list.slice(0, half), list.slice(half)]
+	var px := (46 if list.size() <= 4 else 42) if rows.size() == 1 else 34
 	for r in rows.size():
 		var row: Array = rows[r]
 		var y := 652.0 if rows.size() == 1 else 618.0 + r * 58.0
@@ -227,7 +234,11 @@ func _build_row(list: Array, delay := 0.0) -> void:
 		var t := create_tween()
 		t.tween_interval(delay + i * 0.07)
 		t.tween_method(func(v: float): it.appear = v, 0.0, 1.0, 0.45).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	_items[0].button.grab_focus()
+	# CONTINUE when there's a run to go back to, else the first thing that works
+	for it in _items:
+		if _why_not(it) == "":
+			it.button.grab_focus()
+			break
 
 
 func _intro() -> void:
@@ -378,10 +389,32 @@ func _locked(it: Dictionary) -> bool:
 	return it.target == "@chapters" and not (profile and profile.finished)
 
 
+## Why an item can't be chosen ("" = it can): a locked CHAPTERS, or
+## CONTINUE with no saved run.
+func _why_not(it: Dictionary) -> String:
+	if _locked(it):
+		return "FINISH THE STORY TO UNLOCK"
+	if it.target == "@continue" and _place == "":
+		return "NO GAME TO CONTINUE"
+	return ""
+
+
+## Where the saved run is, by its chapter's name ("" = no saved run).
+func _saved_place() -> String:
+	var state := get_node_or_null("/root/GameState")
+	var path: String = state.saved_scene() if state else ""
+	if path == "":
+		return ""
+	for c in CHAPTERS:
+		if c[1] == path:
+			return c[0]
+	return "THE MARGINS"  # a room of the Gutter
+
+
 func _choose(it: Dictionary) -> void:
 	if _busy:
 		return
-	if _locked(it):
+	if _why_not(it) != "":
 		Sfx.play("menu_close", -4.0, 0.8)
 		var no := create_tween()  # it shakes its head
 		no.tween_method(func(v: float): it.deny = v, 1.0, 0.0, 0.45)
@@ -420,18 +453,25 @@ func _leave(it: Dictionary) -> void:
 			get_tree().quit()
 		else:
 			var profile := get_node_or_null("/root/Profile")
+			var state := get_node_or_null("/root/GameState")
+			if it.target == "@continue":
+				# back where he left off: the purse, the checkpoint and the story as they were
+				get_tree().change_scene_to_file(state.continue_run())
+				return
+			if state:
+				state.clear_run()  # a new game (or a chapter) replaces the saved run
 			if profile and _starts_run(it.label):
 				profile.new_run()  # the coins come back, so the purse starts at 0
-			if it.label == "PLAY" and profile:  # a new run always teaches the controls again
+			if it.label == "NEW GAME" and profile:  # a new run always teaches the controls again
 				profile.reset_tutorials("2d.")
 			get_tree().change_scene_to_file(it.target))
 
 
-## PLAY and the 2D chapters start a new run (the purse back to 0); SETTINGS
+## NEW GAME and the 2D chapters start a new run (the purse back to 0); SETTINGS
 ## doesn't, and nor does THE MARGINS: the 2.5D half spends the coins brought
 ## from the 2D levels, so the purse carries over.
 func _starts_run(label: String) -> bool:
-	if label == "PLAY":
+	if label == "NEW GAME":
 		return true
 	for c in CHAPTERS:
 		if c[0] == label and c[1].begins_with("res://scenes/levels/"):
@@ -550,7 +590,8 @@ func _draw_menu() -> void:
 		var h: float = it.hover
 		var px: int = it.px
 		var p: Vector2 = it.pos + Vector2(0, (1.0 - it.appear) * 50.0 + sin(_time * 3.0 + it.pos.x) * 1.5 * h)
-		var locked := _locked(it)
+		var why := _why_not(it)
+		var locked := why != ""
 		var s := 1.0 + 0.16 * h * (0.4 if locked else 1.0) + 0.25 * float(it.pop)
 		p.x += sin(_time * 55.0) * 9.0 * float(it.deny)
 		m.draw_set_transform(p, sin(_time * 7.0) * 0.02 * h * float(not locked), Vector2(s, s))
@@ -559,14 +600,14 @@ func _draw_menu() -> void:
 		if locked:
 			# greyed out, a padlock hung on it, and why, while it is looked at
 			col = Color(0.5, 0.48, 0.54).lerp(Color(0.72, 0.68, 0.7), h)
-			var lock := Vector2(o.x - 30.0, -px * 0.36)
-			m.draw_arc(lock + Vector2(0, -9), 9.0, PI, TAU, 12, Color(INK, a), 9.0)
-			m.draw_arc(lock + Vector2(0, -9), 9.0, PI, TAU, 12, Color(col, a), 4.0)
-			m.draw_rect(Rect2(lock + Vector2(-15, -10), Vector2(30, 25)), Color(INK, a))
-			m.draw_rect(Rect2(lock + Vector2(-12, -7), Vector2(24, 19)), Color(col, a))
-			m.draw_circle(lock + Vector2(0, 1), 3.5, Color(INK, a))
+			if _locked(it):
+				var lock := Vector2(o.x - 30.0, -px * 0.36)
+				m.draw_arc(lock + Vector2(0, -9), 9.0, PI, TAU, 12, Color(INK, a), 9.0)
+				m.draw_arc(lock + Vector2(0, -9), 9.0, PI, TAU, 12, Color(col, a), 4.0)
+				m.draw_rect(Rect2(lock + Vector2(-15, -10), Vector2(30, 25)), Color(INK, a))
+				m.draw_rect(Rect2(lock + Vector2(-12, -7), Vector2(24, 19)), Color(col, a))
+				m.draw_circle(lock + Vector2(0, 1), 3.5, Color(INK, a))
 			if h > 0.02:
-				var why := "FINISH THE STORY TO UNLOCK"
 				var ww := FONT.get_string_size(why, HORIZONTAL_ALIGNMENT_LEFT, -1, 20).x
 				m.draw_string_outline(FONT, Vector2(-ww * 0.5, 34), why, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, 7, Color(INK, a * h))
 				m.draw_string(FONT, Vector2(-ww * 0.5, 34), why, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color(GOLD, a * h))
@@ -574,6 +615,12 @@ func _draw_menu() -> void:
 		m.draw_string(FONT, o + Vector2(4, 5), it.label, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Color(RED.darkened(0.3), 0.85 * a))
 		m.draw_string_outline(FONT, o, it.label, HORIZONTAL_ALIGNMENT_LEFT, -1, px, 9, Color(INK, a))
 		m.draw_string(FONT, o, it.label, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Color(col, a))
+		if h > 0.02 and not locked and it.target == "@continue":
+			# where the run was left, under CONTINUE
+			var place := _place
+			var pw := FONT.get_string_size(place, HORIZONTAL_ALIGNMENT_LEFT, -1, 20).x
+			m.draw_string_outline(FONT, Vector2(-pw * 0.5, 34), place, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, 7, Color(INK, a * h))
+			m.draw_string(FONT, Vector2(-pw * 0.5, 34), place, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color(GOLD, a * h))
 		if h > 0.02 and not locked:
 			# a brush stroke draws itself in under the focused item
 			var pts := PackedVector2Array()

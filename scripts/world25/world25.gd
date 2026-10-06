@@ -41,6 +41,9 @@ var transitioning := false
 ## > 0: the next room spawns the player this high up so they fall in from
 ## the sky (used when Vesper drops out of a 2D comic panel into the gutter).
 var arrive_from_sky := 0.0
+## The main menu's CONTINUE has just put a saved run back (GameState
+## continue_run()): keep it while the menu is still on screen.
+var hold_state := false
 
 var _layer: CanvasLayer
 var _wipe: ColorRect
@@ -98,8 +101,14 @@ func reset() -> void:
 
 func _process(_delta: float) -> void:
 	var scene := get_tree().current_scene
-	if scene and scene.scene_file_path == MENU_SCENE and current_room != "":
+	var on_menu := scene != null and scene.scene_file_path == MENU_SCENE
+	if on_menu and current_room != "" and not hold_state:
+		var state := get_node_or_null("/root/GameState")
+		if state:
+			state.leave_run()  # the run is saved before it's forgotten
 		reset()
+	elif scene and not on_menu:
+		hold_state = false
 	_update_cursor(scene)
 
 

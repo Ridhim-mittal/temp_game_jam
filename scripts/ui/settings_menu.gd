@@ -98,6 +98,9 @@ func _change(step: int) -> void:
 			var profile := get_node_or_null("/root/Profile")
 			if profile:
 				profile.reset()
+				var state := get_node_or_null("/root/GameState")
+				if state:
+					state.clear_run()  # and nothing left to CONTINUE
 			_confirm_reset = false
 		else:
 			_confirm_reset = true

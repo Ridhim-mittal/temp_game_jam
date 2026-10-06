@@ -45,7 +45,15 @@ paintings of Shade's City and the Ink Cave (`assets/backgrounds/shades_city.webp
   a black clawed hand on its shield, an X of two splintered nailed planks with a red-ink stain; light
   chars the planks, edges glowing, until they crumble (`_shield`). Strokes boil at 12 fps, one InkBatch.
 
-## 2D story start (main menu PLAY)
+## 2D story start (main menu NEW GAME)
+The main menu's row is CONTINUE / NEW GAME / CHAPTERS / SETTINGS / QUIT. The run being played is saved
+to user://run.cfg (GameState `save_run()`: the story scene, a 2D level or a Gutter room, its checkpoint,
+coins, collected pickups, `seen`, and World25's story state) whenever a story scene starts, at every
+checkpoint, every 20 s, on leaving for the menu (`leave_run()`, before the menu resets it) and on closing
+the game; CONTINUE (`continue_run()`) loads it back, at the checkpoint as after dying, and shows where under
+it ("THE LONG DROP", "THE MARGINS"); greyed out ("NO GAME TO CONTINUE") with none. NEW GAME, a chapter,
+Settings -> Reset progress and the end of the story (shade_finale.gd `_the_end()`) `clear_run()`.
+test_continue checks it.
 The main menu's CHAPTERS are locked (greyed, a padlock, "FINISH THE STORY TO UNLOCK") until the story
 has been played to its end once: `Profile.finished`, saved in user://profile.cfg, set by shade_finale.gd
 `_the_end()` (`Profile.mark_finished()`), cleared by Settings -> Reset progress; main_menu.gd `_locked()`.
@@ -479,7 +487,7 @@ edits). Monsters stay dead in story rooms (room.gd sets `respawn_time = 0`).
 Autoloads `Profile` (the coin purse `lumens`, owned / equipped items, weapon `upgrades`;
 user://profile.cfg) and `Settings` (options; user://settings.cfg). The purse is filled by the Lumen
 coins picked up in the 2D levels (player.gd `add_coins()`; GameState.coins counts the run) and the
-Margins' coins (a new run, PLAY or a 2D chapter on the main menu, empties the purse: `Profile.new_run()`,
+Margins' coins (a new run, NEW GAME or a 2D chapter on the main menu, empties the purse: `Profile.new_run()`,
 as GameState.reset() puts the levels' coins back; bought items stay; THE MARGINS chapter keeps it, and the
 Long Drop's exit leads into the hub, so the 2D coins carry over): monsters drop small gold Lumens (the 2D coin:
 gold disc, ring, embossed V) in a tight cluster (`scripts/world25/lumen.gd`
@@ -521,12 +529,12 @@ unhooked, Catalog.SKILLS unread, no Ink Points).
   `band_color`, vesper_3d.gd `apply_look()`).
 Controls tutorial: `scripts/ui/tutorial.gd`, 2D only, and only where a level asks for it (player.gd
 `tutorial_steps`, set by build_test_level.py: the City move/jump/attack/dash/inkwave, the Sketchbook
-ember at its first sketch; other levels none). Main menu PLAY forgets the
+ember at its first sketch; other levels none). Main menu NEW GAME forgets the
 "2d." steps so every new run teaches the controls again; 2.5D rooms start none, the keys are the
 same, but Pause -> Controls still replays the 2.5D one on request). The 2D
 ink wave (hold attack) is taught the first time a Scribble is near, in the City's plank section; steps
 are remembered in Profile; Enter / controller Back skips; shows controller buttons when one is used;
-PLAY replays them; in 2D the key shows low, under Vesper's feet (`center_y`), so it never covers
+NEW GAME replays them; in 2D the key shows low, under Vesper's feet (`center_y`), so it never covers
 monsters or captions; the Settings menu no longer has Tutorials, Difficulty, Scribbles or Aim assist:
 those stay at their defaults, settings.gd FIXED).
 
@@ -605,7 +613,7 @@ nib swish, a nib click + ink thwack + splat); re-running overwrites them (`--out
 - Gutter checks (need a display, e.g. `xvfb-run`): `godot --path . --rendering-driver opengl3 -s
   res://tests/gutter/test_phase1.gd` (also test_phase2, test_phase5, test_levels, test_shop,
   test_beast for the end of the Long Drop: the Scribbled Beast, the Eraser's chase and the fall
-  into the Margins, test_shade_music for Shade's part's music and boss sounds, and test_capture
+  into the Margins, test_continue for the main menu's CONTINUE / NEW GAME, test_shade_music for Shade's part's music and boss sounds, and test_capture
   for the end of the Gutter: the capture and the climb into
   Shade's City); exit code = failures. test_shop puts the player's Profile back when it's done.
 - Screenshots: from a script in a temporary scene, call `RenderingServer.force_draw(false)` then
