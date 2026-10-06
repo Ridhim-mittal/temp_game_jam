@@ -65,6 +65,7 @@ def res(kind, path, rid):
 
 
 res("PackedScene", "res://scenes/player/player.tscn", "1_player")
+res("Script", "res://scripts/world/big_coin.gd", "49_bigcoin")
 res("PackedScene", "res://scenes/enemies/crawler.tscn", "2_crawler")
 res("Script", "res://scripts/ui/hud.gd", "5_hud")
 res("Script", "res://scripts/audio/level_music.gd", "8_music")
@@ -279,6 +280,11 @@ def checkpoint(x, floor_y):
     node(uniq("Checkpoint"), "Area2D", "World", [("position", v(x, floor_y)), ("script", 'ExtResource("18_pen")')])
 
 
+def big_coin(x, y):
+    """The big Lumen (big_coin.gd): 15 coins at once, off the usual path."""
+    node(uniq("BigCoin"), "Area2D", "World", [("position", v(x, y)), ("script", 'ExtResource("49_bigcoin")')])
+
+
 def heart(x, y):
     node(uniq("Heart"), "Area2D", "World", [("position", v(x, y)), ("script", 'ExtResource("19_heart")')])
 
@@ -304,6 +310,8 @@ coin_row(sl + 225, sl + 225, st + 200, 1)
 nl, nt, nr, nf = px("nook")
 lamp(nl + 220, nt, 260, 120)
 heart(nl + 520, nf - 60)
+ledge(nl + 260, nf - 120, 180)                  # the nook's secret: up on a ledge in the dark corner
+big_coin(nl + 110, nf - 330)
 ledge(l2 + 900, f2 - 110, 240)
 ledge(l2 + 1500, f2 - 110, 240)
 ledge(l2 + 1200, f2 - 220, 240)
@@ -370,6 +378,8 @@ enemy("crossed", bl + 900, bf - 30)
 coin_row(bl + 150, bl + 450, bf - 200, 6)
 ledge(bl + 300, bf - 110, 220)
 lamp(bl + 650, bt, 280, 130)
+ledge(bl + 120, bf - 250, 160)                  # the ambush room's prize, over the low ledge
+big_coin(bl + 110, bf - 410)
 
 # 3. THE DRIPPING MARGINS: shaft, the Pendulum (light puzzle), the pit, the bottom
 sl, st, sr, sf = px("shaft3")
@@ -423,7 +433,7 @@ enemy("crawler", lr0 + 300, of - 20)
 lamp(ol + 1400, ot, 320, 260)
 coin_row(lr0 + 200, lr0 + 400, of - 40, 4)
 node("Exit", "Area2D", "World", [("position", v(ol + 3750, of)), ("script", 'ExtResource("17_exit")'),
-     ("target_scene", '"res://scenes/ui/main_menu.tscn"'), ("label", '"THE END OF THE DROP"')])
+     ("target_scene", '"res://scenes/clearing/clearing.tscn"'), ("label", '"INTO THE MARGINS"')])  # the purse comes along
 
 
 # ------------------------------------------------------------------ write

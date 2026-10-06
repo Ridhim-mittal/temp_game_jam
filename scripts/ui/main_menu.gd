@@ -391,12 +391,14 @@ func _leave(it: Dictionary) -> void:
 			get_tree().change_scene_to_file(it.target))
 
 
-## PLAY and the chapters start a new run; SETTINGS doesn't.
+## PLAY and the 2D chapters start a new run (the purse back to 0); SETTINGS
+## doesn't, and nor does THE MARGINS: the 2.5D half spends the coins brought
+## from the 2D levels, so the purse carries over.
 func _starts_run(label: String) -> bool:
 	if label == "PLAY":
 		return true
 	for c in CHAPTERS:
-		if c[0] == label and not c[1].begins_with("@"):
+		if c[0] == label and c[1].begins_with("res://scenes/levels/"):
 			return true
 	return false
 

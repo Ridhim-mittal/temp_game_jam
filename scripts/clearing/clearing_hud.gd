@@ -6,17 +6,17 @@ extends Control
 ##    it greys while the Ember is guttered out. Light or life, as in 2D (hud.gd):
 ##    the bar is marked in thirds, each third one heal, and an "F HEAL" tag shows
 ##    under it whenever holding F would heal right now (player can_heal())
-## Top-right, the coin purse (Profile.lumens, the shop's money; the Margins'
-## monsters drop small dark-silver coins, lumen.gd): a dark ink tag with a
-## spinning dark-silver coin and the count, which pops when coins come in.
+## Top-right, the coin purse (Profile.lumens, the shop's money, carried over
+## from the 2D levels; the Margins' monsters drop the same gold Lumens,
+## lumen.gd): a dark ink tag with the 2D HUD's spinning gold coin (coin.gd
+## draw_coin) and the count in gold, which pops when coins come in.
 
 const TITLE_FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
 const InkBottles = preload("res://scripts/ui/ink_bottles.gd")
+const Coin = preload("res://scripts/world/coin.gd")
+const GOLD_TEXT := Color(1.0, 0.85, 0.3)
 const INK := Color(0.06, 0.04, 0.09)
 const PAPER := Color(0.97, 0.95, 0.9)
-const SILVER := Color(0.6, 0.63, 0.7)
-const SILVER_DARK := Color(0.3, 0.32, 0.38)
-const SILVER_TEXT := Color(0.84, 0.87, 0.93)
 
 ## Centre of the first heart, and the step to the next.
 const HEARTS_AT := Vector2(46, 40)  # centre of the first ink bottle
@@ -100,8 +100,8 @@ func _draw() -> void:
 	_draw_coins()
 
 
-## The coin purse, top right: a dark slanted ink tag, a spinning dark-silver
-## coin and "x N" in pale silver; it pops when coins come in.
+## The coin purse, top right: a dark slanted ink tag, the spinning gold Lumen
+## and "x N" in gold, as in 2D; it pops when coins come in.
 func _draw_coins() -> void:
 	var text := "x %d" % coins
 	var fs := 30 + int(8.0 * _coin_bump)
@@ -110,29 +110,11 @@ func _draw_coins() -> void:
 	var tag := Rect2(Vector2(right - tw - 74.0, 22.0), Vector2(tw + 74.0, 48.0))
 	draw_colored_polygon(_slant(Rect2(tag.position + Vector2(4, 4), tag.size), 12.0), Color(0, 0, 0, 0.45))
 	draw_colored_polygon(_slant(tag, 12.0), Color(INK, 0.88))
-	draw_polyline(_close(_slant(tag, 12.0)), Color(SILVER_DARK, 0.9), 2.0)
-	_dark_coin(Vector2(tag.position.x + 32.0, tag.position.y + 24.0), 13.0 * (1.0 + 0.25 * _coin_bump), _time * 2.0 + _coin_bump * 6.0)
+	draw_polyline(_close(_slant(tag, 12.0)), Color(Coin.GOLD_DARK, 0.9), 2.0)
+	Coin.draw_coin(self, Vector2(tag.position.x + 32.0, tag.position.y + 24.0), 13.0 * (1.0 + 0.25 * _coin_bump), _time * 2.0 + _coin_bump * 6.0)
 	var base := Vector2(tag.position.x + 54.0, tag.position.y + 35.0)
 	draw_string_outline(TITLE_FONT, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 6, INK)
-	draw_string(TITLE_FONT, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, SILVER_TEXT.lerp(Color.WHITE, _coin_bump * 0.6))
-
-
-## A dark-silver coin seen edge-on as it spins: a rim, a darker face and a
-## bright stroke for the embossed mark.
-func _dark_coin(c: Vector2, r: float, spin: float) -> void:
-	var w := maxf(absf(cos(spin)), 0.12)
-	var rim := PackedVector2Array()
-	var face := PackedVector2Array()
-	for i in 20:
-		var a := TAU * i / 20.0
-		rim.append(c + Vector2(cos(a) * r * w, sin(a) * r))
-		face.append(c + Vector2(cos(a) * r * w * 0.68, sin(a) * r * 0.68))
-	draw_colored_polygon(rim, SILVER)
-	draw_polyline(_close(rim), INK, 2.0)
-	draw_colored_polygon(face, SILVER_DARK)
-	if w > 0.4:
-		draw_line(c + Vector2(-r * 0.25 * w, -r * 0.35), c + Vector2(0, r * 0.35), SILVER_TEXT, 2.0)
-		draw_line(c + Vector2(0, r * 0.35), c + Vector2(r * 0.25 * w, -r * 0.35), SILVER_TEXT, 2.0)
+	draw_string(TITLE_FONT, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, GOLD_TEXT.lerp(Color.WHITE, _coin_bump * 0.6))
 
 
 func _draw_health() -> void:

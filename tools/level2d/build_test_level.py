@@ -57,6 +57,7 @@ res("Script", "res://scripts/ui/comic_frame.gd", "45_frame")
 res("Script", "res://scripts/ui/narration.gd", "46_narration")
 res("Script", "res://scripts/world/city_block.gd", "47_cityblock")
 res("Script", "res://scripts/world/city_ledge.gd", "48_cityledge")
+res("Script", "res://scripts/world/big_coin.gd", "49_bigcoin")
 
 
 def v(x, y):
@@ -100,6 +101,11 @@ def plank(cx, top, w=160):
     node(uniq("Plank"), "StaticBody2D", "World",
          [("position", v(cx, top + 8)), ("script", 'ExtResource("48_cityledge")'), ("size", v(w, 16))] +
          [kv for kv in trim_props if kv[0] == "trim"])
+
+
+def big_coin(x, y):
+    """The big Lumen (big_coin.gd): 15 coins at once, off the usual path."""
+    node(uniq("BigCoin"), "Area2D", "World", [("position", v(x, y)), ("script", 'ExtResource("49_bigcoin")')])
 
 
 def crumble(cx, top, w=140):
@@ -264,6 +270,11 @@ enemy("scribble", 3220, 300)
 coin_row(2940, 3020, 452, 2)
 coin_row(3180, 3260, 352, 3)
 heart(3220, 350)
+# off the path: a stack of hover decks climbing high above the door, the big Lumen on top
+for i, (x, top) in enumerate([(3600, 380), (3450, 270), (3600, 160), (3450, 50), (3600, -60), (3450, -170)]):
+    plank(x, top, 130)
+coins += [(3600, 120), (3450, 10), (3600, -100)]
+big_coin(3450, -260)
 # the way on
 door(3600, "res://scenes/levels/sketchbook.tscn", "THE SKETCHBOOK")
 block(3700, 3780, -600, BOTTOM, name="Wall")
