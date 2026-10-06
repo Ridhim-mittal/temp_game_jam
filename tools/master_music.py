@@ -99,11 +99,11 @@ TRACKS = {
 				 top=-6.0, top_fc=3800.0, verb=0.22, grid=(0.49993, 0.0111), tension=True),
 	# the destroyed city: no intro, straight into the loop; the opening's quiet
 	# build (0:07..0:34) comes round on itself (the music matches best there)
-	"ruin": dict(src="orsted_theme.mp3", s=7.00, length=26.85, slack=0.05, lufs=-21.0, start="s",
+	"ruin": dict(src="orsted_theme.mp3", s=7.00, length=26.85, slack=0.05, lufs=-18.0, start="s", ride=6.0,
 				 mid_eq=[(2400.0, -2.5, 0.8)], eq=[(70.0, 1.5, 0.8)], top=-3.0, top_fc=5000.0),
 	# the Ink Cave: the full section (1:00..2:20), darker and further back, so
 	# it reads as a cave and leaves room for the Blots' "hunt"
-	"inkcave": dict(src="orsted_theme.mp3", s=59.8, length=80.52, slack=0.05, lufs=-20.5, start="s",
+	"inkcave": dict(src="orsted_theme.mp3", s=59.8, length=80.52, slack=0.05, lufs=-18.0, start="s", ride=3.0,
 					mid_eq=[(1200.0, -2.5, 0.7), (2600.0, -3.0, 0.8)], eq=[(70.0, 2.0, 0.8)],
 					top=-5.0, top_fc=4200.0, verb=0.2),
 	"duel": dict(src="shade_duel.ogg", s=9.69, length=51.28, slack=0.04, lufs=-19.5),
@@ -297,6 +297,13 @@ def master(name):
 		for f0, g, q in t["mid_eq"]:
 			mid = peak_eq(mid, f0, g, q)
 		x = np.stack([mid + side, mid - side])
+	if t.get("ride", 0.0):  # slow level riding: lift the quiet passages towards the median
+		mono = x.mean(0); w = int(0.4 * SR)
+		env = np.sqrt(np.convolve(mono ** 2, np.ones(w) / w, mode="same")) + 1e-6
+		k = int(1.5 * SR); env = np.convolve(env, np.ones(k) / k, mode="same")  # breathe slowly
+		env_db = 20 * np.log10(env + 1e-6)
+		lift = np.clip((np.median(env_db) - env_db) * 0.7, 0.0, t["ride"])
+		x = x * 10 ** (lift / 20)
 	if t.get("verb", 0.0):
 		x = cavern(x, t["verb"])
 	if t.get("tension"):
