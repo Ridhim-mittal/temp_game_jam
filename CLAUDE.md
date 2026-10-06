@@ -231,7 +231,7 @@ Shade's black speech balloon):
   (ink_bottles.gd, as in 2D), the Ember bar with its button (a mouse, right button lit), marked in
   thirds like 2D (one heal each) with an "F HEAL" tag under it only when clearing_player.gd
   `can_heal()` (no flask counter; F when it can't heal pops why: INK FULL / NOT ENOUGH EMBER) and, top right, the coin purse on a dark ink tag with
-  a spinning dark-silver coin (Profile.lumens; pops when coins come in).
+  the 2D HUD's spinning gold Lumen (coin.gd `draw_coin()`; Profile.lumens; pops when coins come in).
 - The Writer's Haunting Lamp (`scripts/world25/haunt_lamp.gd`, built on `searchlight.gd`):
   room.gd spawns it in every room from the biome's `haunt` profile (`data/haunt/*.tres`,
   `haunt_profile.gd`), scaled by Settings difficulty and the room's `haunt_scale`; a room's
@@ -280,12 +280,18 @@ edits). Monsters stay dead in story rooms (room.gd sets `respawn_time = 0`).
 Autoloads `Profile` (the coin purse `lumens`, owned / equipped items, weapon `upgrades`;
 user://profile.cfg) and `Settings` (options; user://settings.cfg). The purse is filled by the Lumen
 coins picked up in the 2D levels (player.gd `add_coins()`; GameState.coins counts the run) and the
-Margins' coins (a new run, PLAY or a chapter on the main menu, empties the purse: `Profile.new_run()`,
-as GameState.reset() puts the levels' coins back; bought items stay): monsters drop small dark-silver coins in a tight cluster (`scripts/world25/lumen.gd`
+Margins' coins (a new run, PLAY or a 2D chapter on the main menu, empties the purse: `Profile.new_run()`,
+as GameState.reset() puts the levels' coins back; bought items stay; THE MARGINS chapter keeps it, and the
+Long Drop's exit leads into the hub, so the 2D coins carry over): monsters drop small gold Lumens (the 2D coin:
+gold disc, ring, embossed V) in a tight cluster (`scripts/world25/lumen.gd`
 `Lumen.spill()` from monster_3d.gd / scribble.gd `_die()`, `lumens` per monster by difficulty:
 Scribble / diver 1, Smudge 2, Crumple / Inkwell / Crossed-Out 3, Half-Drawn 4, Red Pen 30, Eraser
 45; none when it fell into the void); they glint through the darkness and fly to Vesper within
-`magnet` or after `home_after`. The skill tree is retired (`skill_tree.gd`
+`magnet` or after `home_after`. Big Lumens ("gems": the same coin, much bigger, own glow, 15 at once with
+an "x15" pop, taken for the run via GameState.collected) sit off the usual path: 2D `scripts/world/big_coin.gd`
+(extends coin.gd; the City's hover-deck stack above the door, the Long Drop's nook and side_b), 2.5D
+`scripts/world25/big_lumen.gd` (aura + ray billboards, group "glow"; darkwood_1's far north-east corner,
+wastes_gap's west island on the chasm lip). The skill tree is retired (`skill_tree.gd`
 unhooked, Catalog.SKILLS unread, no Ink Points).
 - Catalog (`scripts/core/catalog.gd`): weapons, armor, hats (hat + band colour), scarves (slot
   "cosmetic"), cloaks; `UPGRADES` (3 per weapon, in order: SHARPENED +1 damage, QUICK HAND special
