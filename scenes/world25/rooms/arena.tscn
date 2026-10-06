@@ -38,7 +38,7 @@ title = "The Rubbing Room"
 subtitle = "4 / 4"
 enter_captions = "~The Rubbing Room. Where I erase what I don't need.|^His eraser... it followed me all the way down here."
 clear_captions = "~FOUND YOU.|^The light... it's pulling me up!"
-cutscene_on_clear = "res://scenes/cutscenes/cs_reveal.tscn"
+ending_on_clear = "res://scenes/world25/light_capture.tscn"
 boss_path = NodePath("Enemies/Eraser1")
 boss_name = "THE ERASER"
 

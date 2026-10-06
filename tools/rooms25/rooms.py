@@ -131,7 +131,7 @@ class Room:
         self.clear_zones.append((x, z, 1.2))
 
     # ---- output
-    def write(self, title, subtitle, enter, clear, cutscene="", extra_room_props=""):
+    def write(self, title, subtitle, enter, clear, cutscene="", extra_room_props="", ending=""):
         pts, open_edges = self.polygon()
         ext = "".join(f'[ext_resource type="{t}" path="{p}" id="{i}"]\n' for t, p, i in EXT)
         lines = [f"[gd_scene format=3]\n\n{ext}"]
@@ -143,6 +143,8 @@ class Room:
                 f'enter_captions = "{enter}"', f'clear_captions = "{clear}"']
         if cutscene:
             room.append(f'cutscene_on_clear = "{cutscene}"')
+        if ending:
+            room.append(f'ending_on_clear = "{ending}"')
         if self.biome_b:
             room.append(f'biome_b = ExtResource("b_{self.biome_b}")')
             room.append(f"blend_from = Vector2({self.blend[0][0]}, {self.blend[0][1]})")
