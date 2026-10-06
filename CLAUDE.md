@@ -162,9 +162,10 @@ ground, it falls back to the last checkpoint pen / level start (`_respawn_point(
   the dog used to sit; `patch_npc.gd` is unhooked): a carved navy counter
   (`shop_carving.gdshader`), Quire on it; E opens the shop. The hub's way on (CaveGate) stands
   at the back of the terrace, where the skill tree was (the archway by the stairs is gone).
-- HUD (clearing_hud.gd, sized to the screen with set_anchors_and_offsets_preset): hearts (one per
-  ink drop, `max_health` 6), a healing counter (heals the Ember's fuel covers, F), the Ember bar
-  with its button (a mouse, right button lit) and, top right, the coin purse on a dark ink tag with
+- HUD (clearing_hud.gd, sized to the screen with set_anchors_and_offsets_preset): ink bottles
+  (ink_bottles.gd, as in 2D), the Ember bar with its button (a mouse, right button lit), marked in
+  thirds like 2D (one heal each) with an "F HEAL" tag under it only when clearing_player.gd
+  `can_heal()` (no flask counter; F when it can't heal pops why: INK FULL / NOT ENOUGH EMBER) and, top right, the coin purse on a dark ink tag with
   a spinning dark-silver coin (Profile.lumens; pops when coins come in).
 - The Writer's Haunting Lamp (`scripts/world25/haunt_lamp.gd`, built on `searchlight.gd`):
   room.gd spawns it in every room from the biome's `haunt` profile (`data/haunt/*.tres`,

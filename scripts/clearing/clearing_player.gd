@@ -1199,12 +1199,13 @@ func _update_inking(delta: float) -> void:
 ## ground with the Ember lowered, to pour `heal_cost` of its fuel (a third)
 ## into half a bottle of ink.
 func _update_heal(delta: float) -> void:
-	var can := Input.is_action_pressed("heal") and is_on_floor() and health < max_health \
-		and fuel >= heal_cost and _attack_timer <= 0.0 and _dash_timer <= 0.0 and not ember_raised
-	if not can:
+	if Input.is_action_just_pressed("heal") and not can_heal():
+		_heal_refused()
+	if not (Input.is_action_pressed("heal") and can_heal()):
 		_channel = -1.0
 		return
 	_channel = maxf(_channel, 0.0) + delta
+	_since_raised = 0.0  # no regen while pouring (2D: ember.hold_regen())
 	if _channel >= heal_time:
 		_channel = -1.0
 		add_fuel(-heal_cost)
@@ -1213,6 +1214,25 @@ func _update_heal(delta: float) -> void:
 		Fx.pop_text(get_tree(), global_position + Vector3(0, 1.8, 0), "+½ INK", Color(1.0, 0.85, 0.45), 32)
 		Fx.burst(get_tree(), global_position + Vector3(0, 0.8, 0), Color(1.0, 0.75, 0.35), 14, 2.5)
 		_squash = Vector2(0.85, 1.2)
+
+
+## Could hold F right now and heal (the HUD's "F HEAL" tag asks).
+func can_heal() -> bool:
+	return not dead and _hurt_timer <= 0.0 and is_on_floor() and health < max_health and fuel >= heal_cost \
+		and _attack_timer <= 0.0 and _dash_timer <= 0.0 and not ember_raised
+
+
+## F pressed when it can't heal: say why, so it never seems broken.
+func _heal_refused() -> void:
+	var why := ""
+	if health >= max_health:
+		why = "INK FULL"
+	elif fuel < heal_cost:
+		why = "NOT ENOUGH EMBER"
+	elif ember_raised:
+		why = "LOWER THE EMBER"
+	if why != "":
+		Fx.pop_text(get_tree(), global_position + Vector3(0, 1.8, 0), why, Color(0.75, 0.72, 0.7), 24)
 
 
 # ------------------------------------------------------------------ damage
