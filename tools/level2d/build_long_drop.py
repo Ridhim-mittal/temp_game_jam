@@ -67,6 +67,7 @@ def res(kind, path, rid):
 
 res("PackedScene", "res://scenes/player/player.tscn", "1_player")
 res("Script", "res://scripts/world/big_coin.gd", "49_bigcoin")
+res("Script", "res://scripts/effects/fall_cutscene.gd", "48_fallcine")
 res("PackedScene", "res://scenes/enemies/crawler.tscn", "2_crawler")
 res("Script", "res://scripts/ui/hud.gd", "5_hud")
 res("Script", "res://scripts/audio/level_music.gd", "8_music")
@@ -333,6 +334,11 @@ lamp(l2 + 2500, t2, 300, 150)
 sl, st, sr, sf = px("shaft2")
 gl, gt, gr, F = px("gallery")
 steps(sl, sr, st, gt + 60)
+# Below the shaft's last ledge it's a ~1200 px drop into the gallery, past the fall-damage height and
+# out of the player's hands: a short cutscene (fall_cutscene.gd) instead. HUD out, letterbox in, the
+# camera leans in, and he lands kneeling but unhurt.
+node("DropCutscene", "Area2D", "World", [("position", v((sl + sr) / 2, gt + 20)), ("script", 'ExtResource("48_fallcine")'),
+     ("size", v(sr - sl, 120))])
 # The Shadow Gallery. You land on the right; the way on is a ledge 800 px up on the left.
 #   1. Hit lantern B (on a post). The cut-out star beside it throws a ramp of shadow ink up and left.
 #   2. From the top of that ramp lantern A hangs dead ahead, out of sword reach: an ink wave

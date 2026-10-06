@@ -183,8 +183,9 @@ const HAZARD_DAMAGE := 2.0  # one ink bottle
 @export var hurt_stun_time := 0.22
 
 var facing := 1
-## True while a cutscene has the controls (beast_arena.gd): no input, no damage,
-## Vesper just comes to a stop and stands.
+## True while a cutscene has the controls (beast_arena.gd, fall_cutscene.gd): no
+## input, pause or shop, no damage; Vesper comes to a stop, and a long fall
+## still ends in the hard-landing kneel (without the fall damage).
 var cutscene := false
 var health := 0.0
 var coins := 0
@@ -281,6 +282,8 @@ func _ready() -> void:
 
 ## Esc / Start: the pause screen (the same one as in 2.5D rooms).
 func _unhandled_input(event: InputEvent) -> void:
+	if cutscene:
+		return
 	if event.is_action_pressed("pause") and not dead and not get_tree().paused:
 		get_viewport().set_input_as_handled()  # pause, don't leave for the menu (mood.gd)
 		PauseMenu.open_2d(self)
@@ -301,7 +304,12 @@ func _physics_process(delta: float) -> void:
 		velocity.x = move_toward(velocity.x, 0.0, ground_decel * delta)
 		_apply_gravity(delta)
 		move_and_slide()
-		_was_on_floor = is_on_floor()
+		var on_floor := is_on_floor()
+		if on_floor and not _was_on_floor and hard_land_height > 0.0 and global_position.y - _fall_top >= hard_land_height:
+			_hard_land(global_position.y - _fall_top)  # the kneel; no fall damage in a cutscene
+		if on_floor or velocity.y <= 0.0:
+			_fall_top = global_position.y
+		_was_on_floor = on_floor
 		_update_visuals(delta)
 		return
 	var input_x := Input.get_axis("move_left", "move_right")
@@ -729,7 +737,7 @@ func _post_move(delta: float) -> void:
 ## kneel that locks control; past `fall_damage_height` it also hurts.
 func _hard_land(drop: float) -> void:
 	Sfx.play("fall_land", 2.0 if drop >= fall_damage_height else 0.0)
-	var hurts := fall_damage_height > 0.0 and drop >= fall_damage_height
+	var hurts := not cutscene and fall_damage_height > 0.0 and drop >= fall_damage_height
 	_land_length = hard_land_time * (1.6 if hurts else 1.0)
 	_land_timer = _land_length
 	_crouch = -1.0
@@ -1296,7 +1304,7 @@ func _update_visuals(delta: float) -> void:
 	var drop := global_position.y - _fall_top if not is_on_floor() and velocity.y > 0.0 else 0.0
 	_streaks.amount = clampf((drop - hard_land_height * 0.6) / (hard_land_height * 0.4), 0.0, 1.0) \
 		if hard_land_height > 0.0 else 0.0
-	_streaks.danger = fall_damage_height > 0.0 and drop >= fall_damage_height
+	_streaks.danger = not cutscene and fall_damage_height > 0.0 and drop >= fall_damage_height
 	sword.charge = art.charge
 	sword.charge_ready = _charge_ready
 	var col := Color.WHITE

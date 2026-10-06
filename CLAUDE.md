@@ -92,7 +92,11 @@ blue sketch bridge under a swinging lantern; no spikes, since spikes can be pogo
 It also replays every tutorial challenge on the main path (spike pits are CUTS 200 px into the
 rock, so the level's size is unchanged): a spike strip in hall 1, a 450 px dash pit in hall 2
 (needs a double jump plus a dash), and in the bottom room the Sketchbook's Blue Gap and its
-lantern bridge with a sign shadowing the far end. Checkpoints sit only on the path (hall 2 landing,
+lantern bridge with a sign shadowing the far end. The ~1200 px drop from shaft 2's last ledge into the Shadow Gallery
+can't be steered, so it is a short cutscene (`scripts/effects/fall_cutscene.gd`, an Area2D under the
+ledge): the HUD (the level's UI layer) fades out, letterbox bars slide in, the camera zooms in
+(`zoom_in`), player.gd `cutscene` takes the controls and the hard landing kneels without fall damage;
+`hold_after_land` later it all comes back. Checkpoints sit only on the path (hall 2 landing,
 gallery, tower floor, cavern, bottom x3, the last just before the boss); the nook and the side rooms have none.
 It ends in the boss arena (room "arena", east of the bottom room): THE SCRIBBLED BEAST
 (`scripts/enemies/scribbled_beast.gd`, run by `scripts/world/beast_arena.gd` on the arena floor at the
