@@ -14,6 +14,8 @@ extends Node
 ##   Profile.tutorial_seen("2d.jump") / Profile.mark_tutorial("2d.jump")
 ##   Profile.finished / Profile.mark_finished()    # the whole game beaten once:
 ##                                                 # unlocks CHAPTERS on the main menu
+##   Profile.unlock_all()                          # cheat (F8 anywhere): every item
+##                                                 # owned, every weapon fully upgraded
 ## Items are defined in scripts/core/catalog.gd. (The skill tree is retired:
 ## `skills` / `skill_points` are kept in the save but give nothing.)
 
@@ -36,9 +38,62 @@ var finished := false
 
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS  # (F8 works in the shop and when paused too)
 	for id in Catalog.STARTING.values():
 		owned[id] = true
 	_load()
+
+
+# Cheat (for the jam's judges, in the submission notes, never shown in the
+# game): F8 unlocks every weapon, upgrade and outfit.
+func _input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_F8:
+		unlock_all()
+		_toast("ALL ITEMS UNLOCKED")
+		var sfx := get_node_or_null("/root/Sfx")
+		if sfx:
+			sfx.play("gate_unlock")
+
+
+## Every item in the shop owned (the retired ones aside) and every weapon's
+## upgrades bought. What's equipped stays as it is.
+func unlock_all() -> void:
+	for id in Catalog.ITEMS:
+		if Catalog.ITEMS[id].get("retired", false):
+			continue
+		owned[id] = true
+		if Catalog.ITEMS[id].slot == "weapon":
+			upgrades[id] = Catalog.UPGRADES.size()
+	_changed()
+
+
+## A line at the top of the screen for a moment (over everything).
+func _toast(text: String) -> void:
+	var old := get_node_or_null("Toast")
+	if old:
+		old.free()
+	var layer := CanvasLayer.new()
+	layer.name = "Toast"
+	layer.layer = 128
+	add_child(layer)
+	var label := Label.new()
+	label.text = text
+	label.add_theme_font_override("font", preload("res://assets/fonts/Bangers-Regular.ttf"))
+	label.add_theme_font_size_override("font_size", 44)
+	label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
+	label.add_theme_color_override("font_outline_color", Color(0.04, 0.03, 0.05))
+	label.add_theme_constant_override("outline_size", 12)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	label.offset_left = -400
+	label.offset_right = 400
+	label.offset_top = 24
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(label)
+	var t := label.create_tween()
+	t.tween_interval(1.8)
+	t.tween_property(label, "modulate:a", 0.0, 0.6)
+	t.tween_callback(layer.queue_free)
 
 
 func add_lumens(amount: int) -> void:

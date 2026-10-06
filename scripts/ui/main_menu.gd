@@ -351,9 +351,9 @@ func _update_weather(delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	# for the team, in debug builds only (never in an exported game): F9
-	# unlocks CHAPTERS without playing the story through
-	if OS.is_debug_build() and event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_F9:
+	# cheat (for the jam's judges, in the submission notes, never shown in the
+	# game): F9 unlocks CHAPTERS without playing the story through
+	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_F9:
 		var profile := get_node_or_null("/root/Profile")
 		if profile:
 			profile.mark_finished()
