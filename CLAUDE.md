@@ -164,7 +164,17 @@ dip): SHADE'S ERASER (`scripts/enemies/shade_eraser.gd`, from the team's sheet: 
 chipped crown, a torn tan sleeve with a blue "SHADE'S ERASER" band and a skull face, angry white eyes and
 a jagged maw, thin scribbled clawed arms, thick outlines, a 24 fps vibration; `rubbing` scrubs it side to
 side throwing pink shavings and dust; touching it costs half a bottle) follows, rubber-banded (catches
-up when far, eases off right behind him), and everything behind it is rubbed back to blank paper. The
+up when far, eases off right behind him), and everything behind it is rubbed back to blank paper.
+Every Eraser in the game is drawn by `scripts/enemies/eraser_art.gd` (from the team's model sheet: the block three-
+quarters on, the crown's top face and two big bites, the blue band on the left side face, a skull filling the
+sleeve, pen hatching and doubled sketchy outlines, long arms with five spidery claws; draw in sheet
+units W 210 x H 330, `EraserArt.draw(ci, xf, pose)` or `draw_into(batch, ...)` inside another batch): front
+view (idle, `rubbing`, `roar`, `windup` (leans back, arms up, eyes lit), `tired` (dizzy spiral eyes, tongue out,
+stars and a weak-spot marker), `rage` (red eyes)) and the sheet's side / attack view (`side`, the charge: crown
+first, speed streaks and dust). Used by the chase's SHADE'S ERASER, the 2D mini-boss in Shade's waves (eraser.gd,
+body 62 x 92, the art 100 px tall), the Rubbing Room's boss in the Gutter (eraser_3d.gd: the 2D art on the
+puppet billboard, red-eyed when FURIOUS), Shade's hand's sketch of it, the opening book's THE ERASER panel and
+the fall into the Margins. The
 corridor ends where its panel ends: the gutter (a pit, `end_x`); there the controls go (player.gd
 `cutscene_run` keeps him running), Shade: "THE END, VESPER.", the Eraser lunges, Vesper leaps into the gap
 and falls, and `scripts/effects/margins_fall.gd` plays (~12 s, Enter skips): the frozen moment becomes a
