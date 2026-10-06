@@ -38,7 +38,7 @@ title = "The Rubbing Room"
 subtitle = "4 / 4"
 enter_captions = "~No. Not this one. Turn back.|~You don't need to see what I did to the other drafts."
 clear_captions = "~...That isn't how this goes.|~That isn't how ANY of this goes."
-cutscene_on_clear = "res://scenes/cutscenes/cs_reveal.tscn"
+ending_on_clear = "res://scenes/world25/light_capture.tscn"
 boss_path = NodePath("Enemies/Eraser1")
 boss_name = "THE ERASER"
 

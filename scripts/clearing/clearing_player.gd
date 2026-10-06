@@ -186,6 +186,14 @@ var facing_dir := Vector3(0, 0, 1)
 var facing := 1
 var health := 0
 var dead := false
+## A cutscene has the controls (light_capture.gd): no input, no damage, the
+## Ember stays down; Vesper walks along `cutscene_dir` (zero = stands still).
+var cutscene := false
+var cutscene_dir := Vector3.ZERO
+## With `cutscene` too: the cutscene moves Vesper itself (no physics at all):
+## he hangs at `cutscene_point`, posed as if in the air.
+var cutscene_hold := false
+var cutscene_point := Vector3.ZERO
 ## Interpolated position of the visuals; the camera follows this.
 var smooth_position := Vector3.ZERO
 ## Height of the ground under the player (the shadow and camera use it, so
@@ -342,12 +350,21 @@ func _physics_process(delta: float) -> void:
 		velocity = Vector3.ZERO
 		_prev_tick_pos = _tick_pos
 		return
-	var input := Input.get_vector("move_left", "move_right", "up", "down")
+	if cutscene and cutscene_hold:
+		velocity = (cutscene_point - global_position) / maxf(delta, 0.001)  # (for the pose)
+		global_position = cutscene_point
+		_prev_tick_pos = _tick_pos
+		_tick_pos = global_position
+		return
+	var input := Vector2.ZERO if cutscene else Input.get_vector("move_left", "move_right", "up", "down")
 	var dir := Vector3(input.x, 0.0, input.y)
-	var in_control := _hurt_timer <= 0.0
+	var in_control := _hurt_timer <= 0.0 and not cutscene
 	if not in_control:
 		dir = Vector3.ZERO
 		_inking = null
+	if cutscene:
+		dir = cutscene_dir
+		set_facing(dir)
 	if in_control and input.length() > facing_deadzone and _attack_timer <= 0.0:
 		set_facing(dir)
 
@@ -548,6 +565,16 @@ func _aim_direction(move_dir: Vector3) -> Vector3:
 		if d.length() > 0.05:
 			dir = d.normalized()
 	return dir
+
+
+## A cutscene's dash (light_capture.gd): the same lunge and afterimages.
+func cutscene_dash(dir: Vector3) -> void:
+	_dash_dir = Vector3(dir.x, 0.0, dir.z).normalized()
+	set_facing(_dash_dir)
+	_dash_timer = dash_time
+	_dash_cooldown_timer = dash_cooldown
+	Sfx.play("dash")
+	_squash = Vector2(1.3, 0.75)
 
 
 ## Turns Vesper to face `dir` (flattened, snapped to snap_directions).
@@ -1267,7 +1294,7 @@ func is_protected() -> bool:
 
 
 func take_damage(amount: int, from_pos: Vector3) -> void:
-	if dead or _invuln > 0.0 or _spawn_guard > 0.0 or _dash_timer > 0.0:
+	if dead or cutscene or _invuln > 0.0 or _spawn_guard > 0.0 or _dash_timer > 0.0:
 		return
 	if _seal_ready:
 		# Wax-Seal Mantle: the first hit in a room cracks the seal instead
@@ -1392,7 +1419,7 @@ func _update_model(delta: float) -> void:
 	_squash = _squash.lerp(Vector2.ONE, 1.0 - exp(-14.0 * delta))
 	_model.facing_dir = facing_dir
 	_model.speed = Vector2(velocity.x, velocity.z).length() / max_speed
-	_model.on_floor = is_on_floor()
+	_model.on_floor = is_on_floor() and not (cutscene and cutscene_hold)
 	_model.vertical = velocity.y
 	_model.dashing = _dash_timer > 0.0
 	_model.squash = _squash

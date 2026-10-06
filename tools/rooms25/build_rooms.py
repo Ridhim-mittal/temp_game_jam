@@ -269,7 +269,7 @@ wastes_ring(r)
 r.write("The Rubbing Room", "4 / 4",
         "~No. Not this one. Turn back.|~You don't need to see what I did to the other drafts.",
         "~...That isn't how this goes.|~That isn't how ANY of this goes.",
-        cutscene="res://scenes/cutscenes/cs_reveal.tscn",
+        ending="res://scenes/world25/light_capture.tscn",  # the lights take him back up to Shade's City
         extra_room_props='boss_path = NodePath("Enemies/Eraser1")\nboss_name = "THE ERASER"')
 
 

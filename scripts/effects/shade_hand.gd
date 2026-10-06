@@ -42,6 +42,14 @@ const U := Vector2(0.6, -0.8)  # pen axis, nib -> cap (hand space)
 const N := Vector2(0.8, 0.6)  # across the pen, towards the back of the hand
 const FOREARM := Vector2(0.894, -0.447)  # wrist -> elbow (up and right, off the screen)
 
+## A cutscene steers the hand itself (light_capture.gd, page_climb.gd): with
+## `puppet` on, the nib sits exactly at `puppet_nib` and the fingers curl to
+## `puppet_flex` (0 open .. 1 clenched), the hand turned by `puppet_turn`
+## (radians; the drips still fall straight down); nothing is drawn or queued.
+var puppet := false
+var puppet_nib := Vector2.ZERO
+var puppet_flex := 0.0
+var puppet_turn := 0.0
 var _nib := Vector2.ZERO  # world position of the nib tip
 var _vel := Vector2.ZERO
 var _tilt := 0.0
@@ -101,16 +109,21 @@ static func materialize(node: CanvasItem) -> void:
 func _process(delta: float) -> void:
 	_time += delta
 	var before := _nib
-	if _job.is_empty() and not _queue.is_empty():
-		_start(_queue.pop_front())
-	if _job.is_empty():
-		# idle: hover at rest, circling slowly like it's thinking what to draw next
-		var hover := rest + Vector2(sin(_time * 0.9) * 40.0, sin(_time * 1.7) * 18.0)
-		_nib = _nib.lerp(hover, 1.0 - exp(-delta * 3.0))
-		_flex = move_toward(_flex, 0.0, delta * 2.0)
-		_glow = move_toward(_glow, 0.35 + 0.1 * sin(_time * 3.0), delta * 2.0)
+	if puppet:
+		_nib = puppet_nib
+		_flex = move_toward(_flex, puppet_flex, delta * 5.0)
+		_glow = move_toward(_glow, 0.45 + 0.15 * sin(_time * 3.0), delta * 2.0)
 	else:
-		_run_job(delta)
+		if _job.is_empty() and not _queue.is_empty():
+			_start(_queue.pop_front())
+		if _job.is_empty():
+			# idle: hover at rest, circling slowly like it's thinking what to draw next
+			var hover := rest + Vector2(sin(_time * 0.9) * 40.0, sin(_time * 1.7) * 18.0)
+			_nib = _nib.lerp(hover, 1.0 - exp(-delta * 3.0))
+			_flex = move_toward(_flex, 0.0, delta * 2.0)
+			_glow = move_toward(_glow, 0.35 + 0.1 * sin(_time * 3.0), delta * 2.0)
+		else:
+			_run_job(delta)
 	_vel = _vel.lerp((_nib - before) / maxf(delta, 0.001), 1.0 - exp(-delta * 10.0))
 	_tilt = lerpf(_tilt, clampf(_vel.x * 0.00035 - _vel.y * 0.0002, -0.25, 0.25), 1.0 - exp(-delta * 6.0))
 	_drip_t -= delta
@@ -446,7 +459,8 @@ func _p(s: float, d: float) -> Vector2:
 
 func _draw() -> void:
 	var b := InkBatch.new()
-	var xf := Transform2D(_tilt + sin(_time * 1.3) * 0.02, Vector2.ONE * hand_scale, 0.0, _nib)
+	var turn := puppet_turn if puppet else 0.0
+	var xf := Transform2D(_tilt + sin(_time * 1.3) * 0.02 + turn, Vector2.ONE * hand_scale, 0.0, _nib)
 	_xf = xf
 	b.draw_set_transform_matrix(xf)
 	_draw_aura(b)
