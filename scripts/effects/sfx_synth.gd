@@ -13,6 +13,8 @@ static var _cache := {}
 
 
 static func play(tree: SceneTree, sound: String, db := 0.0, pitch := 1.0) -> void:
+	if tree == null:  # (a node that has just left the tree)
+		return
 	var scene := tree.current_scene
 	if scene == null:
 		return

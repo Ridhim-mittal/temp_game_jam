@@ -13,8 +13,13 @@ extends Node2D
 ##     away, the city brightens, THE END, and back to the main menu.
 ## Dying restarts the level; after the waves have been beaten once in this run
 ## it goes straight to the light (GameState.seen).
+## Music (music.gd): The Hunters, low, while the hand writes; its tense cut
+## ("hunt") from the first wave; silence as the light falls; "hunt" crashing back
+## in when the double steps out of it; silence as it cracks apart, then The
+## Hunters again, slowly, for the end.
 
 const Hand = preload("res://scripts/effects/shade_hand.gd")
+const SfxSynth = preload("res://scripts/effects/sfx_synth.gd")
 const Heart = preload("res://scripts/world/health_heart.gd")
 const FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
 const MENU := "res://scenes/ui/main_menu.tscn"
@@ -87,6 +92,8 @@ func _ready() -> void:
 	hand._nib = hand_rest + Vector2(900, -700)  # reaches in from off-screen
 	hand.drawn.connect(_on_drawn)
 	_beam_x = (arena_left + arena_right) * 0.5
+	for snd in ["roar", "rumble", "thud", "rip", "whoosh", "splut", "screech", "scritch", "shatter", "clang"]:
+		SfxSynth.get_stream(snd)  # built now, not mid-fight
 	_run.call_deferred()
 
 
@@ -137,6 +144,7 @@ func _run() -> void:
 		await hand.wrote_name
 		_say("YOU WANTED A STORY, LITTLE DRAWING? HERE ARE YOUR CHAPTERS.", "shade")
 		await _wait(1.5)
+		_music("hunt", 0.2)
 		for i in WAVES.size():
 			await _wave(WAVES[i])
 			if i == 2:
@@ -195,7 +203,7 @@ func _on_drawn(kind: String, at: Vector2) -> void:
 			m.position = at + Vector2(0, -40)
 			m.hp = 4
 		"eraser":
-			m.position = at + Vector2(0, -34)
+			m.position = at + Vector2(0, -46)  # half its body (eraser.gd setup): feet on the street
 			m.hp = 6
 		"blot":
 			m.position = at + Vector2(0, -75)
@@ -213,6 +221,7 @@ func _on_drawn(kind: String, at: Vector2) -> void:
 
 
 func _the_light() -> void:
+	_music("", 2.0)  # everything holds its breath
 	_say("ENOUGH SCRIBBLES. IF YOU WANT AN ENDING SO BADLY...", "shade")
 	hand.rest = Vector2(_beam_x + 60.0, floor_y - 380.0)
 	await _wait(2.2)
@@ -220,6 +229,8 @@ func _the_light() -> void:
 	await _wait(1.2)
 	# the pillar of light falls on the street
 	Sfx.play("teleport", 2.0, 0.6)
+	SfxSynth.play(get_tree(), "whoosh", 0.0, 0.45)
+	SfxSynth.play(get_tree(), "rumble", -2.0, 0.8)
 	var t := create_tween()
 	t.tween_property(self, "_beam", 1.0, 0.8).set_ease(Tween.EASE_OUT)
 	await t.finished
@@ -234,12 +245,15 @@ func _the_light() -> void:
 	# the hand plunges into the light and is gone
 	hand.rest = Vector2(_beam_x, floor_y - 120.0)
 	await _wait(1.0)
+	SfxSynth.play(get_tree(), "whoosh", -2.0, 0.6)  # the hand plunges into the light
 	var h := create_tween().set_parallel()
 	h.tween_property(hand, "hand_scale", 0.35, 1.1).set_ease(Tween.EASE_IN)
 	h.tween_property(hand, "self_modulate:a", 0.0, 1.1).set_ease(Tween.EASE_IN)  # the name in the sky stays
 	await h.finished
 	_flash = 1.0
 	Sfx.play("boss_intro", 2.0, 0.7)
+	SfxSynth.play(get_tree(), "shatter", -4.0, 0.8)
+	SfxSynth.play(get_tree(), "thud", 0.0, 0.6)
 	var cam := get_tree().get_first_node_in_group("camera")
 	if cam:
 		cam.add_trauma(0.8)
@@ -260,6 +274,7 @@ func _the_light() -> void:
 	var b := create_tween()
 	b.tween_property(self, "_beam", 0.0, 1.4)
 	await _wait(2.4)
+	_music("hunt", 0.15)  # (from the top: it stopped for the light)
 	boss.begin()
 
 
@@ -273,14 +288,21 @@ func _the_end() -> void:
 		if cam and "framing_offset" in cam:
 			var want := Vector2((boss.global_position.x - p.global_position.x) * 0.5, cam.framing_offset.y)
 			create_tween().tween_property(cam, "framing_offset", want, 1.2).set_trans(Tween.TRANS_SINE)
+	_music("", 2.5)
 	await _wait(1.0)
 	_say("...YOU WERE NEVER... SUPPOSED... TO WIN...", "shade")
+	SfxSynth.play(get_tree(), "rip", -4.0, 0.6)  # cracking open with light
+	get_tree().create_timer(1.4).timeout.connect(func():
+		if is_inside_tree():
+			SfxSynth.play(get_tree(), "rip", -2.0, 0.75))
 	var c := create_tween()
 	c.tween_method(boss.crumble, 0.0, 1.0, 3.0)
 	await c.finished
 	_flash = 1.0
 	Sfx.play("ink_splat", 6.0, 0.5)
+	SfxSynth.play(get_tree(), "shatter", 2.0, 0.6)
 	boss.visible = false
+	_music("hunters", 5.0)  # the city's tune, slowly, as it brightens
 	# the name in the sky runs away, the city brightens
 	var n := create_tween().set_parallel()
 	n.tween_property(hand._name_layer, "modulate:a", 0.0, 3.0)
@@ -306,6 +328,17 @@ func _the_end() -> void:
 
 func _say(text: String, who: String) -> void:
 	_lines.append([text, who])
+
+
+## Music autoload: a track ("" = fade out).
+func _music(track: String, fade: float) -> void:
+	var m := get_node_or_null("/root/Music")
+	if m == null:
+		return
+	if track == "":
+		m.stop(fade)
+	else:
+		m.play(track, fade)
 
 
 func _wait(t: float) -> void:

@@ -400,6 +400,56 @@ are untouched.
       `shade_hand.gd` has a puppet mode. The low camera hides any tall prop, and any of the
       void's heaps and statues, that would block the shot.
 
+19. **Music for Shade's part, a tense cut for its bosses, and their sounds** (your next note:
+    "add this music to the shade part... keep the sound low... much more tense when the boss
+    fight and add sound effects there"). The track is `audio/music/src/the_hunters.mp3`; the
+    team's `tools/master_music.py` makes both versions from it.
+    - **"hunters", in Shade's City, the Ink Cave and the finale:**
+      - Kept low. It's mastered at -23 LUFS with no level boost, so it's the quietest track
+        in the game.
+      - The original is dark and bass-heavy, so its muddy low mids are eased (-2 dB round
+        380 Hz) and a little presence is added (+2 dB round 2.8 kHz). That way it still
+        reads quietly under the sound effects.
+      - Its intro plays once. Then it loops 39 whole bars (7.0 to 89.1 s), with the
+        breakdown leading back into the build. The loop point was found by matching the
+        music either side of it (its chroma and spectrum), and lands on the beat.
+    - **"hunt", in the boss fights:**
+      - It's 32 bars from the track's driving middle (its peak, breakdown and climb back),
+        made 8% faster (about 123 BPM) and brighter, and it starts right on the groove.
+      - Tension is laid over it, on the track's own beat grid (114.04 BPM, found to within
+        13 ms all through):
+        - a heartbeat thump on every beat;
+        - ticking sixteenths;
+        - a trembling D / E-flat string cluster that swells over each 8-bar phrase;
+        - a riser into a sub hit at every phrase.
+      - I checked that every layer lands on the music's beat, and that the loops have no
+        gap or click.
+    - **When it switches:**
+      - The Ink Blot's gate: the tense cut comes in as the walls rise, and the city's tune
+        creeps back when it melts.
+      - The two Blots in the cave: tense, then silence before the cave collapses.
+      - The finale:
+        - The Hunters plays while the hand writes SHADE.
+        - The tense cut comes in from the first wave.
+        - The light falls in silence.
+        - The tense cut crashes back in when the double steps out.
+        - Silence as it cracks apart, then The Hunters again, slowly, for the end.
+    - **New sounds in those fights:**
+      - The Ink Blot: roars as it wakes, enrages and takes its turn. Its footfalls are wet and
+        heavy. It growls before each swipe, which then whooshes. It strains before a slam,
+        which booms and sends its shockwaves rumbling. Its globs retch out, light sears it
+        with a hiss, and it groans and slops as it melts.
+      - The arenas: the ink walls rumble up and thud home, then sink with a rumble, and the
+        tape rips off.
+      - Shade's hand: the nib scratches while it draws its monsters; its name gets lower,
+        heavier brush strokes.
+      - Shade's double: its blade rings before a cut. Its cuts, dashes and dives whoosh, its
+        plunge booms and rumbles, and its ink waves slosh. Light makes it hiss, it screams when
+        it rages and it shatters when it dies.
+      - The pillar of light whooshes and rumbles.
+      - All of these are synthesised in code and built when the level loads, so nothing
+        hitches mid-fight.
+
 ## Tuning knobs
 
 | What | Where |
@@ -500,6 +550,18 @@ These ran with Godot 4.7-stable under Xvfb with software OpenGL.
     - Let go and it comes back.
     - Run dry, it gutters out and won't rise until it has refilled.
 
+- **`tests/gutter/test_shade_music.gd` (new, round 19): 24/24 checks.**
+  - Both tracks load, and The Hunters sits lower than every other track.
+  - Shade's City plays it, looping from bar 4.
+  - The Blot waking turns the music tense. Its roar and the walls' rumble and thud play,
+    and so do its slam, globs and dying groan. The Hunters comes back when it melts.
+  - The Ink Cave plays The Hunters, then tense for the two Blots, with a roar on MY TURN!
+    The music goes silent when the last one melts, and the collapse rumbles.
+  - The finale: the light falls in silence, and the double brings the tense cut back. Its
+    plunge booms and its blade rings. The finale opens on The Hunters, the nib scratches as
+    Shade writes, and the first wave is tense.
+- Round 19 reruns: test_capture 21/21, test_phase1 35/35, test_phase2 27/27, test_phase5
+  17/17, test_levels 67/67, test_shop 57/57, test_beast 43/43.
 - **`tests/gutter/test_capture.gd` (new, round 18): 21/21 checks.** It clears the Rubbing
   Room and plays the real thing:
   - The ending starts once the captions are done. It takes the controls, holds off
@@ -551,6 +613,12 @@ These ran with Godot 4.7-stable under Xvfb with software OpenGL.
     They fly to Vesper and fill the purse, and the HUD counter shows it.
 
 ## Not verified
+
+- **Hearing the new music and sounds:** this machine has no audio device. The Hunters'
+  loops, the tense cut's layers and the new effects were checked by analysis instead:
+  loudness, the loop seams, the beat alignment, the layers' level per band and
+  spectrograms. Their final balance needs a listen. Levels are in `master_music.py`
+  (`TENSION`, each track's `lufs` and `eq`), music.gd `TRIM`, and the dB in each sound call.
 
 - **The capture at full speed and with sound:** it was checked frame by frame in
   screenshots, at a fixed 30 fps. This machine has no audio device, so the clanks, rips

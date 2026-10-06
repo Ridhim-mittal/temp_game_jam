@@ -18,6 +18,7 @@ extends Control
 
 const ComicFrame = preload("res://scripts/ui/comic_frame.gd")
 const PlayerArt = preload("res://scripts/player/player_visual.gd")
+const EraserArt = preload("res://scripts/enemies/eraser_art.gd")
 const CrawlerArt = preload("res://scripts/enemies/crawler_visual.gd")
 const FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
 const HAND = preload("res://assets/fonts/Chewy-Regular.ttf")
@@ -1401,20 +1402,9 @@ func _paint_panel_fx(c: Node2D, i: int) -> void:
 		3:
 			var rub := sin(t * 6.0)
 			var ex := 112 + rub * 46
-			c.draw_set_transform(Vector2(ex, 120), -0.25 + rub * 0.06)
-			var body := Rect2(-62, -34, 124, 68)
-			c.draw_rect(Rect2(body.position + Vector2(6, 8), body.size), Color(INK, 0.3))
-			c.draw_rect(body.grow(3.0), INK)
-			c.draw_rect(body, Color(0.96, 0.52, 0.6))
-			c.draw_rect(Rect2(body.position, Vector2(body.size.x, 18)), Color(0.4, 0.6, 0.95))
-			c.draw_line(Vector2(-34, -2), Vector2(-12, 6), INK, 4.0)  # angry brows
-			c.draw_line(Vector2(34, -2), Vector2(12, 6), INK, 4.0)
-			c.draw_circle(Vector2(-22, 12), 5, INK)
-			c.draw_circle(Vector2(22, 12), 5, INK)
-			c.draw_rect(Rect2(-18, 22, 36, 8), INK)
-			for k in 4:
-				c.draw_rect(Rect2(-16 + k * 9, 22, 6, 4), PAPER)
-			c.draw_set_transform(Vector2.ZERO)
+			# SHADE'S ERASER (eraser_art.gd, the same as in the game), scrubbing the panel out
+			c.draw_colored_polygon(PackedVector2Array([Vector2(ex - 60, 186), Vector2(ex + 60, 186), Vector2(ex + 50, 192), Vector2(ex - 50, 192)]), Color(INK, 0.25))
+			EraserArt.draw(c, Transform2D(0.0, Vector2.ONE * 0.38, 0.0, Vector2(ex, 190)), {"time": _t, "rubbing": 1.0, "roar": 0.7})
 			for k in 7:  # crumbs
 				var cp := Vector2(ex + sin(_t * 9.0 + k) * 70.0, 160 + fmod(_t * 60.0 + k * 13.0, 40.0))
 				c.draw_circle(cp, 2.5, Color(0.9, 0.5, 0.55))
