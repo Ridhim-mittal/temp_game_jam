@@ -641,3 +641,13 @@ nib swish, a nib click + ink thwack + splat); re-running overwrites them (`--out
   `get_viewport().get_texture().get_image().save_png(...)`. `--write-movie` stops drawing after a few
   frames when the screen is locked, and hit-stop freezes look far too long in it.
 - `.godot/imported/` is a generated cache: never commit it.
+
+## Smooth and sharp in a browser
+- Physics ticks 60 a second on the web (120 on desktop) while a laptop screen may refresh at 144 Hz,
+  so 2D bodies are drawn between their last two ticks by `scripts/core/tick_smooth.gd`
+  (`TickSmooth.attach(body, camera)`: player.gd with its Camera2D, enemy_base.gd, crawler.gd; only
+  the drawing moves, a jump of `SNAP` or more is shown at once). A new 2D body moved in
+  `_physics_process` should attach one. The 2.5D player does the same itself (`smooth_position`).
+- The web build draws at the screen's own resolution, like desktop (no `stretch/mode.web` override).
+  Settings RESOLUTION: AUTO (default; settings.gd `_watch_speed()` drops to 1280x720, the root's
+  CONTENT_SCALE_MODE_VIEWPORT, after 4 s under 40 fps, and back to sharp if that didn't help), SHARP, FAST.

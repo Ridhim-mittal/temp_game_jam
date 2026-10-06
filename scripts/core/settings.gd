@@ -8,6 +8,9 @@ extends Node
 ## Read by: cameras (shake), clearing_fx.gd (hit words), room.gd (controls
 ## hint), clearing_player.gd and monster_3d.gd (difficulty), scribble.gd,
 ## clearing_player.gd (aim assist) and World25 (cursor in the Gutter).
+## "resolution" is applied here: SHARP draws at the screen's own size, FAST at
+## 1280x720 scaled up (blurrier, far lighter on a weak graphics chip), AUTO is
+## sharp until the game keeps running slowly (`_watch_speed()`).
 
 signal changed(key: String)
 
@@ -22,13 +25,23 @@ const OPTIONS := {
 	"scribble_style": ["hopper", ["hopper", "diver"]],
 	"show_cursor": ["off", ["off", "on"]],
 	"aim_assist": ["on", ["on", "off"]],
+	"resolution": ["auto", ["auto", "sharp", "fast"]],
 }
+
+## AUTO drops to 1280x720 after this many seconds in a row under SLOW_FPS...
+const SLOW_SECONDS := 4
+const SLOW_FPS := 40.0
 
 ## Not in the settings menu any more: always the default (an old save can't
 ## leave a player stuck on a value they can no longer change).
 const FIXED := ["difficulty", "scribble_style", "aim_assist"]
 
 var _values := {}
+var _auto_fast := false  # AUTO has dropped to 1280x720 this session
+var _auto_done := false  # ...and made up its mind (it stays as it is)
+var _slow := 0  # seconds in a row under SLOW_FPS
+var _fps_at_drop := 0.0
+var _clock := 0.0
 
 
 func _ready() -> void:
@@ -45,6 +58,43 @@ func _ready() -> void:
 				_values[key] = v
 	for key in OPTIONS:
 		_apply(key)
+
+
+func _process(delta: float) -> void:
+	_clock += delta
+	if _clock >= 1.0:
+		_clock = 0.0
+		_watch_speed()
+
+
+## AUTO resolution: when the game keeps running under SLOW_FPS (not while
+## paused or loading), draw at 1280x720 instead; if that doesn't speed it up
+## (the computer, not the drawing, is the slow part) go back to sharp for good.
+func _watch_speed() -> void:
+	if get_value("resolution") != "auto" or _auto_done or get_tree().paused:
+		_slow = 0
+		return
+	var fps := Engine.get_frames_per_second()
+	_slow = _slow + 1 if fps < SLOW_FPS else 0
+	if _slow < SLOW_SECONDS:
+		if _auto_fast and _slow == 0:
+			_auto_done = true  # fast enough now: keep 1280x720
+		return
+	_slow = 0
+	if not _auto_fast:
+		var screen := get_tree().root.size
+		if screen.x * screen.y <= 1280 * 720 * 1.2:
+			_auto_done = true  # already about that small: nothing to gain
+			return
+		_auto_fast = true
+		_fps_at_drop = fps
+		print("Settings: running at %.0f fps, drawing at 1280x720 (resolution AUTO)" % fps)
+	else:
+		_auto_done = true
+		if fps < _fps_at_drop * 1.15:
+			_auto_fast = false  # no faster at 1280x720: sharp it is
+			print("Settings: no faster at 1280x720, back to sharp")
+	_apply("resolution")
 
 
 func get_value(key: String):
@@ -91,3 +141,12 @@ func _apply(key: String) -> void:
 			if DisplayServer.get_name() != "headless":
 				DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN if get_value("fullscreen") == "on" \
 					else DisplayServer.WINDOW_MODE_WINDOWED)
+		"resolution":
+			var v: String = get_value("resolution")
+			if v != "auto":
+				_auto_fast = false
+				_auto_done = false
+				_slow = 0
+			var fast := v == "fast" or (v == "auto" and _auto_fast)
+			get_tree().root.content_scale_mode = Window.CONTENT_SCALE_MODE_VIEWPORT if fast \
+				else Window.CONTENT_SCALE_MODE_CANVAS_ITEMS

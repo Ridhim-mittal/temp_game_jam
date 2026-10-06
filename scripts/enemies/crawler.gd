@@ -70,6 +70,7 @@ func _ready() -> void:
 	add_to_group("enemy")
 	_walk_timer = randf_range(2.0, 4.0)
 	_spit_cd = randf_range(0.5, 1.5)
+	TickSmooth.attach(self)  # drawn between physics ticks: no judder on fast screens
 
 
 func _physics_process(delta: float) -> void:

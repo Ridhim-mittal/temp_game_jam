@@ -271,6 +271,7 @@ func _ready() -> void:
 		profile.changed.connect(_on_profile_changed)
 	_last_safe_position = global_position
 	_fall_top = global_position.y
+	TickSmooth.attach(self, get_node_or_null("Camera2D") as Camera2D)  # no judder on 144 Hz screens
 	_streaks = FallStreaks.new()
 	add_child(_streaks)
 	_wall_fx = WallFx.new()

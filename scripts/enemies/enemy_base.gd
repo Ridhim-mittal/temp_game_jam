@@ -74,6 +74,11 @@ func setup(size: Vector2, hp: int) -> void:
 	time = randf() * 10.0
 
 
+## (_notification reaches every class in the chain, so subclasses' _ready needn't call this)
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_READY:
+		TickSmooth.attach(self)  # drawn between physics ticks: no judder on fast screens
+
 func _physics_process(delta: float) -> void:
 	if dead:
 		return
