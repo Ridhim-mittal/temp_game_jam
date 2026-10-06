@@ -187,6 +187,9 @@ var facing := 1
 ## input, pause or shop, no damage; Vesper comes to a stop, and a long fall
 ## still ends in the hard-landing kneel (without the fall damage).
 var cutscene := false
+## While `cutscene` is on: run on by itself at this share of max_speed (sign =
+## direction; 0 = stand), e.g. the run to the edge at the end of the chase.
+var cutscene_run := 0.0
 var health := 0.0
 var coins := 0
 var can_dash := true
@@ -301,7 +304,9 @@ func _physics_process(delta: float) -> void:
 	_tick_timers(delta)
 	if cutscene:
 		_cancel_charge_for_cutscene()
-		velocity.x = move_toward(velocity.x, 0.0, ground_decel * delta)
+		velocity.x = move_toward(velocity.x, cutscene_run * max_speed, ground_decel * delta)
+		if cutscene_run != 0.0:
+			facing = 1 if cutscene_run > 0.0 else -1
 		_apply_gravity(delta)
 		move_and_slide()
 		var on_floor := is_on_floor()

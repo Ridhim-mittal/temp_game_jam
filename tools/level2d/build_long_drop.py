@@ -19,7 +19,7 @@ import os
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 U = 5          # px per map unit
 G = 50         # grid cell, px
-W, H = 1400, 1780   # level bounds in map units (rock fills what is not a room)
+W, H = 2150, 1780   # level bounds in map units (rock fills what is not a room)
 Y0 = 40             # first map row that matters
 
 # zone borders (map y) and their themes: 1 archive, 2 works, 0 cavern
@@ -35,13 +35,18 @@ ROOMS = {
     "cavern": (80, 1270, 780, 150),                       # light puzzle 2: the Pendulum, over the sump
     "sump": (420, 1420, 300, 90), "pit": (100, 1420, 110, 150), "bottom": (100, 1570, 840, 150),
     "arena": (940, 1520, 440, 200),                       # the Scribbled Beast (boss)
+    "run": (1380, 1570, 700, 150),                        # the Eraser's chase, to the gutter
 }
 # solid rock put back inside rooms (applied after ROOMS), then air cut through it again
 SOLIDS = {
+    "bump1": (1560, 1712, 20, 8),       # the chase: two easy hops (40 px)...
+    "bump2": (1810, 1712, 24, 8),
     "shelf": (300, 630, 240, 160),      # the gallery's high exit ledge
     "slab": (550, 1390, 40, 10),        # hangs under the pendulum lantern and shadows the bridge
 }
 CUTS = {
+    "run_dip": (1680, 1720, 40, 10),    # ...a shallow dip (50 px)
+    "gutter_pit": (2030, 1720, 50, 60),  # the end of the page: the gutter, down into the Margins
     "shaft2b": (440, 630, 90, 220),     # down through the shelf into the tower
     # spike pits cut 200 px into the floor (the level's size is unchanged)
     "dash_pit": (650, 460, 90, 40),     # hall2: 450 px, needs a double jump and a dash
@@ -73,7 +78,6 @@ res("Script", "res://scripts/ui/hud.gd", "5_hud")
 res("Script", "res://scripts/audio/level_music.gd", "8_music")
 res("Script", "res://scripts/world/spikes.gd", "4_spikes")
 res("Script", "res://scripts/world/coin.gd", "9_coin")
-res("Script", "res://scripts/world/level_exit.gd", "17_exit")
 res("Script", "res://scripts/world/checkpoint_pen.gd", "18_pen")
 res("Script", "res://scripts/world/health_heart.gd", "19_heart")
 res("PackedScene", "res://scenes/enemies/scribble.tscn", "20_scribble")
@@ -92,6 +96,7 @@ res("Script", "res://scripts/depth/depth_trim.gd", "52_trim")
 res("Script", "res://scripts/depth/depth_ledge.gd", "53_ledge")
 res("Script", "res://scripts/enemies/scribbled_beast.gd", "60_beast")
 res("Script", "res://scripts/world/beast_arena.gd", "61_arena")
+res("Script", "res://scripts/world/eraser_chase.gd", "62_chase")
 
 
 def v(x, y):
@@ -444,11 +449,10 @@ coin_row(lr0 + 200, lr0 + 400, of - 40, 4)
 checkpoint(ol + 3950, of)                           # before the boss
 heart(ol + 3700, of - 60)
 
-# THE SCRIBBLED BEAST (scribbled_beast.gd, run by beast_arena.gd): it climbs out of a tear in
-# the floor (the gutter) holding a shield torn out of the gutter itself. Two lanterns on posts:
-# it snuffs them as it rises; light one and its shield swings round to the light. The way on
-# (level_exit.gd) opens over the tear after the fight, INTO THE MARGINS (the purse comes along;
-# the Eraser chase goes in here later). It watches only these two lanterns.
+# THE SCRIBBLED BEAST (scribbled_beast.gd, run by beast_arena.gd): it comes out of the gutter
+# between the page's columns, holding a shield torn out of the gutter itself. Two lanterns on
+# posts: it snuffs them as it comes; light one and it cowers a moment, its shield turned to the
+# light, then lobs ink at it. It watches only these two lanterns.
 al, at, ar, af = px("arena")
 gap = (al + ar) / 2
 lantern(gap - 560, af - 70, 280, chain=0, post=70, lit=True, name="ArenaLanternW")
@@ -457,9 +461,19 @@ node("ScribbledBeast", "CharacterBody2D", "Enemies", [("position", v(gap, af + 6
 node("BeastArena", "Node2D", "World", [("position", v(gap, af)), ("script", 'ExtResource("61_arena")'),
      ("beast_path", 'NodePath("../../Enemies/ScribbledBeast")'),
      ("lantern_paths", 'Array[NodePath]([NodePath("../ArenaLanternW"), NodePath("../ArenaLanternE")])'),
-     ("trigger_x", f"{al + 340:g}"), ("barrier_x", f"{al + 30:g}"), ("room_height", f"{af - at:g}"),
-     ("exit_x", f"{gap:g}"), ("exit_target", '"res://scenes/clearing/clearing.tscn"'),
-     ("exit_label", '"INTO THE MARGINS"')])
+     ("trigger_x", f"{al + 340:g}"), ("barrier_x", f"{al + 30:g}"), ("east_x", f"{ar - 20:g}"), ("room_height", f"{af - at:g}"),
+     ("chase_path", 'NodePath("../EraserChase")')])
+
+# THE ERASER'S CHASE (eraser_chase.gd): after the fight Shade drops his eraser into the arena,
+# the arena's right-hand border rips open and Vesper runs east down this corridor, the Eraser
+# rubbing the world out behind him. Two easy hops and a dip. The corridor ends where its panel
+# ends: the gutter (a pit), and he falls into the Margins (margins_fall.gd, then the 2.5D hub).
+rl, rt, rr, rf = px("run")
+gl1, _, gr1, _ = px("gutter_pit")
+checkpoint(rl + 160, rf)                            # dying in the chase restarts it here
+node("EraserChase", "Node2D", "World", [("position", v(rl, rf)), ("script", 'ExtResource("62_chase")'),
+     ("end_x", f"{(gl1 + gr1) / 2:g}"), ("gutter_half", f"{(gr1 - gl1) / 2:g}"), ("erase_from", f"{al + 60:g}"),
+     ("room_top", f"{rt:g}")])
 
 
 # ------------------------------------------------------------------ write
