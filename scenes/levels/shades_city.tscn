@@ -1,23 +1,24 @@
-[gd_scene load_steps=19 format=3]
+[gd_scene load_steps=20 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="1_player"]
 [ext_resource type="PackedScene" path="res://scenes/enemies/paper_spider.tscn" id="2_paper_spider"]
 [ext_resource type="PackedScene" path="res://scenes/enemies/ink_blot.tscn" id="3_ink_blot"]
 [ext_resource type="Script" path="res://scripts/background/city_painting.gd" id="4_city_painting"]
 [ext_resource type="Script" path="res://scripts/world/street_ground.gd" id="5_street_ground"]
-[ext_resource type="Script" path="res://scripts/world/light_cover.gd" id="6_light_cover"]
-[ext_resource type="Script" path="res://scripts/world/paper_stack.gd" id="7_paper_stack"]
-[ext_resource type="Script" path="res://scripts/world/author_light.gd" id="8_author_light"]
-[ext_resource type="Script" path="res://scripts/world/gate_arena.gd" id="9_gate_arena"]
-[ext_resource type="Script" path="res://scripts/world/checkpoint_pen.gd" id="10_checkpoint_pen"]
-[ext_resource type="Script" path="res://scripts/world/health_heart.gd" id="11_health_heart"]
-[ext_resource type="Script" path="res://scripts/world/coin.gd" id="12_coin"]
-[ext_resource type="Script" path="res://scripts/ui/hud.gd" id="13_hud"]
-[ext_resource type="Script" path="res://scripts/ui/boss_bar.gd" id="14_boss_bar"]
-[ext_resource type="Script" path="res://scripts/audio/level_music.gd" id="15_level_music"]
-[ext_resource type="Script" path="res://scripts/world/level_mood.gd" id="16_level_mood"]
-[ext_resource type="Script" path="res://scripts/ui/comic_frame.gd" id="17_comic_frame"]
-[ext_resource type="Script" path="res://scripts/ui/narration.gd" id="18_narration"]
+[ext_resource type="Script" path="res://scripts/world/city_block.gd" id="6_city_block"]
+[ext_resource type="Script" path="res://scripts/world/light_cover.gd" id="7_light_cover"]
+[ext_resource type="Script" path="res://scripts/world/paper_stack.gd" id="8_paper_stack"]
+[ext_resource type="Script" path="res://scripts/world/author_light.gd" id="9_author_light"]
+[ext_resource type="Script" path="res://scripts/world/gate_arena.gd" id="10_gate_arena"]
+[ext_resource type="Script" path="res://scripts/world/checkpoint_pen.gd" id="11_checkpoint_pen"]
+[ext_resource type="Script" path="res://scripts/world/health_heart.gd" id="12_health_heart"]
+[ext_resource type="Script" path="res://scripts/world/coin.gd" id="13_coin"]
+[ext_resource type="Script" path="res://scripts/ui/hud.gd" id="14_hud"]
+[ext_resource type="Script" path="res://scripts/ui/boss_bar.gd" id="15_boss_bar"]
+[ext_resource type="Script" path="res://scripts/audio/level_music.gd" id="16_level_music"]
+[ext_resource type="Script" path="res://scripts/world/level_mood.gd" id="17_level_mood"]
+[ext_resource type="Script" path="res://scripts/ui/comic_frame.gd" id="18_comic_frame"]
+[ext_resource type="Script" path="res://scripts/ui/narration.gd" id="19_narration"]
 
 [node name="ShadesCity" type="Node2D"]
 
@@ -36,47 +37,51 @@ script = ExtResource("5_street_ground")
 size = Vector2(8000, 500)
 
 [node name="WallLeft" type="StaticBody2D" parent="World"]
-position = Vector2(-660, -1400)
-script = ExtResource("5_street_ground")
+position = Vector2(-630.0, -350.0)
+script = ExtResource("6_city_block")
 size = Vector2(60, 2100)
+trim = Color(1, 0.36, 0.66, 1)
+accent = Color(0.4, 0.85, 1, 1)
 
 [node name="WallRight" type="StaticBody2D" parent="World"]
-position = Vector2(7340, -1400)
-script = ExtResource("5_street_ground")
+position = Vector2(7370.0, -350.0)
+script = ExtResource("6_city_block")
 size = Vector2(60, 2100)
+trim = Color(1, 0.36, 0.66, 1)
+accent = Color(0.4, 0.85, 1, 1)
 
 [node name="Stack1" type="StaticBody2D" parent="World"]
 position = Vector2(700, 600)
-script = ExtResource("7_paper_stack")
+script = ExtResource("8_paper_stack")
 size = Vector2(120, 70)
 
 [node name="Stack2" type="StaticBody2D" parent="World"]
 position = Vector2(860, 600)
-script = ExtResource("7_paper_stack")
+script = ExtResource("8_paper_stack")
 size = Vector2(120, 140)
 
 [node name="Cover1" type="StaticBody2D" parent="World"]
 position = Vector2(1030, 430)
-script = ExtResource("6_light_cover")
+script = ExtResource("7_light_cover")
 kind = 3
 size = Vector2(190, 22)
 post_height = 148
 
 [node name="Coin1" type="Area2D" parent="Coins"]
 position = Vector2(1060, 390)
-script = ExtResource("12_coin")
+script = ExtResource("13_coin")
 
 [node name="Coin2" type="Area2D" parent="Coins"]
 position = Vector2(1108, 390)
-script = ExtResource("12_coin")
+script = ExtResource("13_coin")
 
 [node name="Coin3" type="Area2D" parent="Coins"]
 position = Vector2(1156, 390)
-script = ExtResource("12_coin")
+script = ExtResource("13_coin")
 
 [node name="Stack3" type="StaticBody2D" parent="World"]
 position = Vector2(1320, 600)
-script = ExtResource("7_paper_stack")
+script = ExtResource("8_paper_stack")
 size = Vector2(150, 90)
 
 [node name="Spider1" parent="Enemies" instance=ExtResource("2_paper_spider")]
@@ -85,31 +90,31 @@ hang_height = 300
 
 [node name="Stack4" type="StaticBody2D" parent="World"]
 position = Vector2(2150, 600)
-script = ExtResource("7_paper_stack")
+script = ExtResource("8_paper_stack")
 size = Vector2(110, 60)
 
 [node name="Cover2" type="StaticBody2D" parent="World"]
 position = Vector2(2330, 450)
-script = ExtResource("6_light_cover")
+script = ExtResource("7_light_cover")
 kind = 3
 size = Vector2(220, 22)
 post_height = 128
 
 [node name="Coin4" type="Area2D" parent="Coins"]
 position = Vector2(2370, 410)
-script = ExtResource("12_coin")
+script = ExtResource("13_coin")
 
 [node name="Coin5" type="Area2D" parent="Coins"]
 position = Vector2(2418, 410)
-script = ExtResource("12_coin")
+script = ExtResource("13_coin")
 
 [node name="Coin6" type="Area2D" parent="Coins"]
 position = Vector2(2466, 410)
-script = ExtResource("12_coin")
+script = ExtResource("13_coin")
 
 [node name="Coin7" type="Area2D" parent="Coins"]
 position = Vector2(2514, 410)
-script = ExtResource("12_coin")
+script = ExtResource("13_coin")
 
 [node name="Spider2" parent="Enemies" instance=ExtResource("2_paper_spider")]
 position = Vector2(2600, 567)
@@ -120,31 +125,31 @@ hang_height = 280
 
 [node name="Checkpoint1" type="Area2D" parent="World"]
 position = Vector2(3060, 600)
-script = ExtResource("10_checkpoint_pen")
+script = ExtResource("11_checkpoint_pen")
 
 [node name="AuthorLight" type="Node2D" parent="World"]
-script = ExtResource("8_author_light")
+script = ExtResource("9_author_light")
 zone_from = 3250.0
 zone_to = 5560.0
 street_y = 600.0
 
 [node name="Cover3" type="StaticBody2D" parent="World"]
 position = Vector2(3460, 452)
-script = ExtResource("6_light_cover")
+script = ExtResource("7_light_cover")
 kind = 0
 size = Vector2(220, 22)
 post_height = 126
 
 [node name="Cover4" type="StaticBody2D" parent="World"]
 position = Vector2(3900, 452)
-script = ExtResource("6_light_cover")
+script = ExtResource("7_light_cover")
 kind = 0
 size = Vector2(200, 22)
 post_height = 126
 
 [node name="Stack5" type="StaticBody2D" parent="World"]
 position = Vector2(4120, 600)
-script = ExtResource("7_paper_stack")
+script = ExtResource("8_paper_stack")
 size = Vector2(100, 60)
 
 [node name="Spider4" parent="Enemies" instance=ExtResource("2_paper_spider")]
@@ -152,7 +157,7 @@ position = Vector2(4180, 567)
 
 [node name="Cover5" type="StaticBody2D" parent="World"]
 position = Vector2(4360, 440)
-script = ExtResource("6_light_cover")
+script = ExtResource("7_light_cover")
 kind = 1
 size = Vector2(280, 22)
 post_height = 138
@@ -162,31 +167,31 @@ position = Vector2(4700, 567)
 
 [node name="Cover6" type="StaticBody2D" parent="World"]
 position = Vector2(4880, 452)
-script = ExtResource("6_light_cover")
+script = ExtResource("7_light_cover")
 kind = 0
 size = Vector2(220, 22)
 post_height = 126
 
 [node name="Cover7" type="StaticBody2D" parent="World"]
 position = Vector2(5240, 430)
-script = ExtResource("6_light_cover")
+script = ExtResource("7_light_cover")
 kind = 2
 size = Vector2(400, 22)
 post_height = 148
 
 [node name="Checkpoint2" type="Area2D" parent="World"]
 position = Vector2(5440, 600)
-script = ExtResource("10_checkpoint_pen")
+script = ExtResource("11_checkpoint_pen")
 
 [node name="Heart1" type="Area2D" parent="World"]
 position = Vector2(5530, 560)
-script = ExtResource("11_health_heart")
+script = ExtResource("12_health_heart")
 
 [node name="InkBlot" parent="Enemies" instance=ExtResource("3_ink_blot")]
 position = Vector2(6450, 525)
 
 [node name="GateArena" type="Node2D" parent="World"]
-script = ExtResource("9_gate_arena")
+script = ExtResource("10_gate_arena")
 blot_path = NodePath("../../Enemies/InkBlot")
 trigger_x = 5960.0
 left_x = 5800.0
@@ -212,7 +217,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-script = ExtResource("13_hud")
+script = ExtResource("14_hud")
 
 [node name="BossBar" type="Control" parent="UI"]
 layout_mode = 3
@@ -220,35 +225,35 @@ anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
-script = ExtResource("14_boss_bar")
+script = ExtResource("15_boss_bar")
 
 [node name="LevelMusic" type="Node" parent="."]
-script = ExtResource("15_level_music")
+script = ExtResource("16_level_music")
 
 [node name="LevelMood" type="Node" parent="."]
-script = ExtResource("16_level_mood")
+script = ExtResource("17_level_mood")
 
 [node name="ComicFrame" type="CanvasLayer" parent="."]
-script = ExtResource("17_comic_frame")
+script = ExtResource("18_comic_frame")
 page_number = 7
-live_areas = Array[Rect2]([Rect2(-700, -2000, 8200, 3200)])
+live_areas = Array[Rect2]([Rect2(-660, -2000, 8060, 3200)])
 
 [node name="Narration1" type="CanvasLayer" parent="."]
-script = ExtResource("18_narration")
+script = ExtResource("19_narration")
 text = "VESPER HAS BEEN DRAGGED BACK INTO SHADE'S CORRUPTED COMIC CITY. THE AUTHOR IS TRYING TO DELETE THE METROPOLIS."
 trigger_x = -1000000000.0
 
 [node name="Narration2" type="CanvasLayer" parent="."]
-script = ExtResource("18_narration")
+script = ExtResource("19_narration")
 text = "SOMETHING SKITTERS IN THE GUTTERS. SHADE HAS BEEN DRAWING NEW THINGS."
 trigger_x = 1500
 
 [node name="Narration3" type="CanvasLayer" parent="."]
-script = ExtResource("18_narration")
+script = ExtResource("19_narration")
 text = "THE AUTHOR IS LOOKING FOR YOU. STAY OUT OF THE LIGHT."
 trigger_x = 3200
 
 [node name="Narration4" type="CanvasLayer" parent="."]
-script = ExtResource("18_narration")
+script = ExtResource("19_narration")
 text = "A GATE OUT OF THE CITY. AND SOMETHING GUARDING IT."
 trigger_x = 5700
