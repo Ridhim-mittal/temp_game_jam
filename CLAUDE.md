@@ -273,7 +273,9 @@ Shade's black speech balloon):
    it's only staggered when not attacking. All its hits cost a bottle.
 4. The end: the double cracks apart with light, the name in the sky fades, the city brightens, captions,
    THE END card, then the main menu. Dying restarts the level; once the waves are beaten in a run
-   (GameState.seen "finale:waves") a retry skips straight to the light.
+   (GameState.seen "finale:waves") a retry skips straight to the light, and once the double has stepped out
+   ("finale:double") the double fight is a checkpoint: a retry puts Vesper on the street with the name already
+   in the sky, a flash heals him, "BACK FOR MORE?" and the fight is on in ~2 s (`_checkpoint_double()`).
 
 ## 2.5D framework
 - Rooms are scenes whose root uses `scripts/world25/room.gd`; it builds environment, light,

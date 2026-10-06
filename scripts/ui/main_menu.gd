@@ -286,9 +286,15 @@ func _update_focus() -> void:
 			it.focused = on
 			if on and _time > 0.3:
 				Sfx.play("menu_hover")
+			# one fade per item: a new one stops the old, so a quick sweep of the mouse
+			# can't leave a stale "light up" finishing after the "fade out" (2-3 lit at once)
+			var old: Tween = it.get("tween")
+			if old and old.is_valid():
+				old.kill()
 			var t := create_tween()
 			t.tween_method(func(v: float): it.hover = v, it.hover, 1.0 if on else 0.0, 0.28 if on else 0.18) \
 				.set_trans(Tween.TRANS_BACK if on else Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+			it["tween"] = t
 
 
 func _update_arc(delta: float, mouse: Vector2) -> void:
