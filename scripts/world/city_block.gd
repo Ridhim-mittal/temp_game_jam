@@ -6,9 +6,17 @@ extends StaticBody2D
 ## cap band with clean panel seams and small indicator lights, and on tall
 ## pieces a facade of faint panels and lit window slits. Ink outline, so it
 ## sits in the comic. One draw call (ink_batch.gd). Collision = `size`.
+## Wide pieces (roofs, the street) carry rooftop clutter behind the walkway
+## (`props`): AC units with turning fans, steaming vents, antennas with a
+## blinking light, dishes, a water tank, a flickering neon sign, railings,
+## crates and the odd pigeon. Placed by hash, animated at 12 fps on screen.
 
 const InkBatch = preload("res://scripts/depth/ink_batch.gd")
 const INK := Color(0.05, 0.03, 0.1)
+const FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
+## Rooftop props are drawn this much bigger than their numbers (about Vesper's scale).
+const PROP_SCALE := 1.4
+const SIGNS := ["NOODLES", "24/7", "INK", "OPEN", "HOTEL", "COMICS", "BAR", "ARCADE"]
 
 @export var size := Vector2(128, 32):
 	set(value):
@@ -22,8 +30,13 @@ const INK := Color(0.05, 0.03, 0.1)
 @export var accent := Color(1.0, 0.42, 0.75)
 @export var top_color := Color(0.22, 0.2, 0.42)
 @export var bottom_color := Color(0.07, 0.06, 0.15)
+## Rooftop clutter behind the walkway (only on pieces wide enough to be a roof).
+@export var props := true
 
 var _glow: Node2D
+var _props: Node2D
+var _prop_t := 0.0
+var _prop_frame := -1
 
 
 func _ready() -> void:
@@ -34,6 +47,11 @@ func _ready() -> void:
 	_glow.material = mat
 	_glow.draw.connect(_draw_glow)
 	add_child(_glow)
+	if props and size.x >= 220.0 and size.y <= size.x * 1.2:
+		_props = Node2D.new()
+		_props.z_index = -1  # behind the walkway and the player; feet hidden behind the cap
+		_props.draw.connect(_draw_props)
+		add_child(_props)
 	if Engine.is_editor_hint():
 		return
 	var cs := CollisionShape2D.new()
@@ -41,6 +59,22 @@ func _ready() -> void:
 	rect.size = size
 	cs.shape = rect
 	add_child(cs)
+
+
+func _process(delta: float) -> void:
+	if _props == null:
+		return
+	_prop_t += delta
+	var f := int(_prop_t * 12.0)
+	if f == _prop_frame:
+		return
+	_prop_frame = f
+	if Engine.is_editor_hint():
+		_props.queue_redraw()
+		return
+	var on := get_global_transform_with_canvas() * Rect2(-size * 0.5 - Vector2(0, 110), size + Vector2(0, 110))
+	if get_viewport_rect().grow(80.0).intersects(on):
+		_props.queue_redraw()
 
 
 func _chamfer() -> float:
@@ -116,3 +150,147 @@ func _draw_glow() -> void:
 		PackedColorArray([Color(trim, 0.28), Color(trim, 0.28), Color(trim, 0.0), Color(trim, 0.0)]))
 	_glow.draw_polygon(PackedVector2Array([Vector2(x0, y), Vector2(x1, y), Vector2(x1, y + 8), Vector2(x0, y + 8)]),
 		PackedColorArray([Color(trim, 0.2), Color(trim, 0.2), Color(trim, 0.0), Color(trim, 0.0)]))
+
+
+# ---------------------------------------------------------------- rooftop props
+
+func _draw_props() -> void:
+	var r := Rect2(-size * 0.5, size)
+	var y := r.position.y + 3.0
+	var t := float(_prop_frame) / 12.0
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash(Vector2i(position))
+	var b := InkBatch.new()
+	var sil := top_color.darkened(0.3)
+	var lit := Color(trim, 0.55)
+	var texts: Array = []
+	var x := r.position.x + rng.randf_range(50.0, 140.0)
+	var sign_done := false
+	var tank_done := false
+	while x < r.end.x - 60.0:
+		var kind := rng.randi() % 9
+		var ph := rng.randf() * 10.0
+		var w := 30.0
+		var ps := PROP_SCALE
+		b.draw_set_transform(Vector2(x, y) * (1.0 - ps), 0.0, Vector2.ONE * ps)  # scale each prop about its foot
+		match kind:
+			0:  # AC unit, its fan turning
+				w = 30.0
+				_box(b, Rect2(x, y - 17, 30, 17), sil, lit)
+				b.draw_circle(Vector2(x + 10, y - 8.5), 5.5, sil.darkened(0.4))
+				for k in 3:
+					var a := t * 9.0 + k * TAU / 3.0 + ph
+					b.draw_line(Vector2(x + 10, y - 8.5), Vector2(x + 10, y - 8.5) + Vector2.from_angle(a) * 4.5, sil.lightened(0.25), 1.5)
+				for k in 3:
+					b.draw_line(Vector2(x + 18, y - 13 + k * 4), Vector2(x + 27, y - 13 + k * 4), Color(INK, 0.6), 1.0)
+			1:  # vent pipes, steaming
+				w = 22.0
+				for k in 2:
+					var px := x + k * 11.0
+					var ph2 := 16.0 + k * 9.0
+					_box(b, Rect2(px, y - ph2, 7, ph2), sil, lit)
+					b.draw_rect(Rect2(px - 2, y - ph2 - 3, 11, 4), sil.lightened(0.1))
+					for q in 3:
+						var u := fmod(t * 0.6 + q / 3.0 + ph * 0.1 + k * 0.17, 1.0)
+						b.draw_circle(Vector2(px + 3.5 + sin(u * 5.0 + ph) * 3.0, y - ph2 - 6 - u * 26.0), 3.0 + u * 5.0,
+							Color(0.9, 0.92, 1.0, 0.16 * (1.0 - u)))
+			2:  # antenna mast, a red light blinking on top
+				w = 18.0
+				var hgt := rng.randf_range(44.0, 78.0)
+				b.draw_line(Vector2(x + 9, y), Vector2(x + 9, y - hgt), INK, 2.5)
+				b.draw_line(Vector2(x + 9, y), Vector2(x + 9, y - hgt), sil.lightened(0.15), 1.2)
+				for k in 2:
+					var cy := y - hgt * (0.45 + 0.3 * k)
+					b.draw_line(Vector2(x + 3, cy), Vector2(x + 15, cy), INK, 1.5)
+				b.draw_line(Vector2(x + 9, y - hgt * 0.7), Vector2(x - 6, y), Color(INK, 0.5), 1.0)
+				b.draw_line(Vector2(x + 9, y - hgt * 0.7), Vector2(x + 24, y), Color(INK, 0.5), 1.0)
+				if fmod(t + ph, 1.6) < 0.3:
+					b.draw_circle(Vector2(x + 9, y - hgt - 2), 6.0, Color(1.0, 0.2, 0.25, 0.3))
+					b.draw_circle(Vector2(x + 9, y - hgt - 2), 2.4, Color(1.0, 0.35, 0.35))
+				else:
+					b.draw_circle(Vector2(x + 9, y - hgt - 2), 2.0, Color(0.45, 0.1, 0.12))
+			3:  # satellite dish
+				w = 26.0
+				b.draw_line(Vector2(x + 12, y), Vector2(x + 12, y - 12), INK, 3.0)
+				var dish := PackedVector2Array()
+				for k in 9:
+					var a := lerpf(-0.2, PI + 0.2, k / 8.0)
+					dish.append(Vector2(x + 12, y - 18) + Vector2(cos(a) * 12.0, sin(a) * 5.0).rotated(-0.55))
+				b.draw_colored_polygon(dish, sil.lightened(0.12))
+				b.draw_polyline(dish, INK, 1.5)
+				b.draw_line(Vector2(x + 12, y - 18), Vector2(x + 18, y - 28), INK, 1.5)
+				b.draw_circle(Vector2(x + 18, y - 28), 1.8, Color(trim, 0.9))
+			4:  # water tank on legs
+				if tank_done:
+					x += 10.0
+					continue
+				tank_done = true
+				w = 34.0
+				for k in 4:
+					b.draw_line(Vector2(x + 4 + k * 8.5, y), Vector2(x + 6 + k * 7.0, y - 18), INK, 2.0)
+				_box(b, Rect2(x + 2, y - 44, 30, 26), sil.lightened(0.05), lit)
+				for k in 2:
+					b.draw_line(Vector2(x + 2, y - 36 + k * 10), Vector2(x + 32, y - 36 + k * 10), Color(INK, 0.6), 1.2)
+				var roof := PackedVector2Array([Vector2(x, y - 44), Vector2(x + 17, y - 56), Vector2(x + 34, y - 44)])
+				b.draw_colored_polygon(roof, sil.darkened(0.15))
+				roof.append(roof[0])
+				b.draw_polyline(roof, INK, 1.5)
+			5:  # a neon sign on legs, flickering
+				if sign_done:
+					x += 10.0
+					continue
+				sign_done = true
+				var text: String = SIGNS[rng.randi() % SIGNS.size()]
+				w = 18.0 + text.length() * 10.0
+				var col := accent if rng.randf() < 0.5 else trim
+				var on := fmod(t * 1.3 + ph, 7.0) > 0.35 and not (fmod(t * 1.3 + ph, 7.0) > 0.9 and fmod(t * 1.3 + ph, 7.0) < 1.05)
+				for k in 2:
+					b.draw_line(Vector2(x + 6 + k * (w - 12), y), Vector2(x + 6 + k * (w - 12), y - 22), INK, 2.5)
+				var panel := Rect2(x, y - 46, w, 24)
+				if on:
+					b.draw_rect(panel.grow(6), Color(col, 0.16))
+				b.draw_rect(panel, INK.lightened(0.05))
+				b.draw_rect(panel.grow(-2), Color(col, 0.9 if on else 0.25), false, 1.6)
+				var at := Vector2(x, y) + (Vector2(x + 9, y - 28.5) - Vector2(x, y)) * ps
+				texts.append([at, text, Color(col.lightened(0.35), 1.0 if on else 0.3), int(16 * ps)])
+			6:  # a stretch of railing
+				w = rng.randf_range(48.0, 90.0)
+				b.draw_line(Vector2(x, y - 12), Vector2(x + w, y - 12), INK, 2.5)
+				b.draw_line(Vector2(x, y - 12), Vector2(x + w, y - 12), sil.lightened(0.2), 1.0)
+				var px := x
+				while px <= x + w:
+					b.draw_line(Vector2(px, y), Vector2(px, y - 12), INK, 2.0)
+					px += 14.0
+			7:  # crates
+				w = 34.0
+				for k in 2 + rng.randi() % 2:
+					var cs := 14.0 - k * 1.5
+					var cr := Rect2(x + k * 9.0 + (0.0 if k < 2 else -6.0), y - cs - (0.0 if k < 2 else 13.0), cs, cs)
+					_box(b, cr, Color(0.36, 0.26, 0.3), Color(1, 1, 1, 0.12))
+					b.draw_line(cr.position, cr.end, Color(INK, 0.6), 1.0)
+					b.draw_line(Vector2(cr.end.x, cr.position.y), Vector2(cr.position.x, cr.end.y), Color(INK, 0.6), 1.0)
+			8:  # a pigeon, pecking now and then
+				w = 12.0
+				var peck := 3.0 if fmod(t + ph, 2.6) < 0.25 else 0.0
+				b.draw_colored_polygon(_oval(Vector2(x + 6, y - 4), 5.0, 3.5), Color(0.55, 0.55, 0.65))
+				b.draw_circle(Vector2(x + 10, y - 8 + peck), 2.4, Color(0.6, 0.6, 0.7))
+				b.draw_line(Vector2(x + 12, y - 8 + peck), Vector2(x + 14, y - 7.5 + peck), Color(1.0, 0.7, 0.3), 1.2)
+				b.draw_line(Vector2(x + 1, y - 4), Vector2(x - 2, y - 6), Color(0.4, 0.4, 0.5), 1.5)
+		x += w * ps + rng.randf_range(70.0, 200.0)
+	b.draw_set_transform(Vector2.ZERO)
+	b.flush(_props)
+	for tx in texts:
+		_props.draw_string(FONT, tx[0], tx[1], HORIZONTAL_ALIGNMENT_LEFT, -1, tx[3], tx[2])
+
+
+func _box(b: InkBatch, rect: Rect2, fill: Color, edge: Color) -> void:
+	b.draw_rect(rect, fill)
+	b.draw_line(rect.position + Vector2(1, 1), Vector2(rect.end.x - 1, rect.position.y + 1), edge, 1.2)
+	b.draw_rect(rect, INK, false, 1.5)
+
+
+func _oval(c: Vector2, rx: float, ry: float) -> PackedVector2Array:
+	var out := PackedVector2Array()
+	for i in 10:
+		out.append(c + Vector2(cos(TAU * i / 10.0) * rx, sin(TAU * i / 10.0) * ry))
+	return out

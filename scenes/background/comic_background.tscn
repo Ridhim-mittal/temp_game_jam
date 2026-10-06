@@ -10,6 +10,7 @@
 [ext_resource type="Script" path="res://scripts/background/drift_motes.gd" id="8_motes"]
 [ext_resource type="Script" path="res://scripts/background/comic_foreground.gd" id="9_foreground"]
 [ext_resource type="Script" path="res://scripts/background/depth_fog.gd" id="10_fog"]
+[ext_resource type="Script" path="res://scripts/background/sky_traffic.gd" id="11_traffic"]
 
 [ext_resource type="Script" path="res://scripts/background/dark_veil.gd" id="20_veil"]
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_sky"]
@@ -95,6 +96,21 @@ lit_chance = 0.2
 side_windows = false
 detail_chance = 0.5
 
+[node name="TrafficFar" type="Parallax2D" parent="."]
+z_index = -10
+scroll_scale = Vector2(0.2, 0.2)
+script = ExtResource("5_parallax")
+
+[node name="Drawer" type="Node2D" parent="TrafficFar"]
+script = ExtResource("11_traffic")
+lanes = PackedFloat32Array(196, 232)
+speed = 45.0
+car_scale = 0.85
+spacing = 340.0
+fill = 0.55
+haze = 0.45
+seed = 7
+
 [node name="SkylineMid" type="Parallax2D" parent="."]
 z_index = -10
 scroll_scale = Vector2(0.28, 0.28)
@@ -116,6 +132,21 @@ haze = 0.3
 window_size = Vector2(5, 8)
 window_gap = Vector2(5, 7)
 lit_chance = 0.25
+
+[node name="TrafficNear" type="Parallax2D" parent="."]
+z_index = -10
+scroll_scale = Vector2(0.36, 0.36)
+script = ExtResource("5_parallax")
+
+[node name="Drawer" type="Node2D" parent="TrafficNear"]
+script = ExtResource("11_traffic")
+lanes = PackedFloat32Array(262, 308)
+speed = 95.0
+car_scale = 1.6
+spacing = 600.0
+fill = 0.5
+haze = 0.1
+seed = 3
 
 [node name="SkylineNear" type="Parallax2D" parent="."]
 z_index = -10

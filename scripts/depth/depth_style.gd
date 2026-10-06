@@ -4,8 +4,15 @@ extends RefCounted
 ## Drawing helpers take a CanvasItem or an InkBatch (ink_batch.gd).
 ## Used by the backdrop (scripts/depth/depth_backdrop.gd), the terrain trims
 ## (depth_trim.gd) and the ledges (depth_ledge.gd).
+## Story detail on the trims: torn pages of Shade's script nailed to the walls
+## (scrawled lines, a word struck out in red), fallen pages on the floors, paper
+## strips hanging from ceilings, and per zone glowing mushrooms (Cavern), candle
+## stubs (Archive) or dropped pencil stubs (Works).
 
 enum { CAVERN, ARCHIVE, WORKS }
+
+const PAPER := Color(0.6, 0.58, 0.53)
+const RED_INK := Color(0.62, 0.1, 0.1)
 
 const PALETTES := [
 	{  # the Dripping Margins: teal on near-black
@@ -96,6 +103,7 @@ static func floor_trim(ci, x0: float, x1: float, y: float, theme: int, rng: Rand
 				ci.draw_arc(Vector2(qx, y + 26.0), r2 * 0.8, PI + 0.5, TAU - 0.9, 5, depth(theme, 0.62), 1.5)
 				qx += r2 * 1.5
 	ci.draw_line(Vector2(x0, y), Vector2(x1, y), Color(depth(theme, 0.5), 0.9), 1.5)
+	_floor_details(ci, x0, x1, y, theme, rng)
 
 
 ## Things hanging from a ceiling from x0 to x1 at height y.
@@ -135,6 +143,86 @@ static func ceiling_trim(ci, x0: float, x1: float, y: float, theme: int, rng: Ra
 				var l2 := rng.randf_range(14, 60)
 				ci.draw_line(Vector2(tx, y + 10), Vector2(tx + rng.randf_range(-4, 4), y + 10 + l2), Color(0.6, 0.52, 0.42), 1.5)
 				tx += rng.randf_range(60, 160)
+	# torn paper strips dangling here and there
+	var px := x0 + rng.randf_range(80, 260)
+	while px < x1 - 30.0:
+		if rng.randf() < 0.55:
+			var l := rng.randf_range(34, 80)
+			var bend := rng.randf_range(-6, 6)
+			ci.draw_colored_polygon(PackedVector2Array([Vector2(px - 5, y), Vector2(px + 5, y),
+				Vector2(px + 5 + bend, y + l * 0.6), Vector2(px + 1 + bend * 1.6, y + l), Vector2(px - 5 + bend * 1.4, y + l * 0.85),
+				Vector2(px - 5 + bend, y + l * 0.5)]), PAPER.darkened(0.25))
+			for k in 2:
+				ci.draw_line(Vector2(px - 1.5 + bend * (0.3 + k * 0.3), y + 6 + k * 9), Vector2(px + 1.5 + bend * (0.3 + k * 0.3), y + 7 + k * 9),
+					Color(0.1, 0.08, 0.1, 0.7), 1.0)
+			ci.draw_circle(Vector2(px, y + 2), 1.6, Color(0.2, 0.2, 0.24))
+		px += rng.randf_range(220, 480)
+
+
+## A torn page of Shade's script nailed up (or lying flat when `fallen`):
+## scrawled lines of handwriting, now and then a word struck out in red.
+static func page(ci, c: Vector2, rot: float, scale: float, rng: RandomNumberGenerator, fallen := false) -> void:
+	var w := 16.0 * scale
+	var h := (22.0 if not fallen else 7.0) * scale
+	var xf := Transform2D(rot, c)
+	var torn := PackedVector2Array([Vector2(-w * 0.5, -h * 0.5), Vector2(w * 0.5, -h * 0.5),
+		Vector2(w * 0.5, h * 0.2), Vector2(w * 0.3, h * 0.35), Vector2(w * 0.42, h * 0.5), Vector2(w * 0.05, h * 0.42),
+		Vector2(-w * 0.2, h * 0.5), Vector2(-w * 0.5, h * 0.38)])
+	var poly := PackedVector2Array()
+	for p in torn:
+		poly.append(xf * p)
+	ci.draw_colored_polygon(poly, PAPER.darkened(0.12 if fallen else 0.0))
+	poly.append(poly[0])
+	ci.draw_polyline(poly, Color(0.05, 0.04, 0.08), 1.2)
+	if fallen:
+		return
+	var rows := 5
+	for k in rows:
+		var ly := -h * 0.5 + 4.0 * scale + k * (h - 8.0 * scale) / rows
+		var lx0 := -w * 0.5 + 2.5 * scale
+		var lx1 := w * 0.5 - rng.randf_range(2.5, 6.0) * scale
+		ci.draw_line(xf * Vector2(lx0, ly), xf * Vector2(lx1, ly + rng.randf_range(-0.6, 0.6)), Color(0.12, 0.1, 0.14, 0.75), 1.0)
+	if rng.randf() < 0.6:  # a word struck out in red
+		var ry := -h * 0.5 + 4.0 * scale + rng.randi_range(1, rows - 2) * (h - 8.0 * scale) / rows
+		ci.draw_line(xf * Vector2(-w * 0.35, ry - 1.5), xf * Vector2(w * 0.25, ry + 1.5), RED_INK, 1.6)
+	ci.draw_circle(xf * Vector2(0, -h * 0.5 + 2.5 * scale), 1.6 * scale, Color(0.25, 0.25, 0.3))  # the nail
+
+
+## Detail along a floor: fallen pages and the zone's own clutter.
+static func _floor_details(ci, x0: float, x1: float, y: float, theme: int, rng: RandomNumberGenerator) -> void:
+	var pal: Dictionary = PALETTES[theme]
+	var x := x0 + rng.randf_range(40, 200)
+	while x < x1 - 30.0:
+		var r := rng.randf()
+		if r < 0.3:
+			page(ci, Vector2(x, y - 4.0), rng.randf_range(-0.12, 0.12), 1.7, rng, true)
+		elif r < 0.75:
+			match theme:
+				CAVERN:  # a cluster of glowing mushrooms
+					for k in rng.randi_range(2, 4):
+						var mx := x + k * rng.randf_range(8, 13)
+						var mh := rng.randf_range(8, 22)
+						ci.draw_line(Vector2(mx, y), Vector2(mx + rng.randf_range(-3, 3), y - mh), depth(theme, 0.4), 2.4)
+						ci.draw_circle(Vector2(mx, y - mh), 11.0, Color(pal.glow, 0.12))
+						ci.draw_colored_polygon(arc_pts(Vector2(mx, y - mh + 1), rng.randf_range(5.5, 8.5), 5.5, PI, TAU, 7), Color(pal.glow, 0.9))
+				ARCHIVE:  # a burnt-down candle stub
+					var ch := rng.randf_range(10, 22)
+					ci.draw_rect(Rect2(x - 4.5, y - ch, 9, ch), Color(0.62, 0.58, 0.5))
+					ci.draw_colored_polygon(ell(Vector2(x, y - 1), 9, 3, 10), Color(0.55, 0.5, 0.42))
+					ci.draw_line(Vector2(x, y - ch), Vector2(x, y - ch - 3), Color(0.1, 0.08, 0.08), 1.0)
+					ci.draw_circle(Vector2(x, y - ch - 9), 15.0, Color(pal.accent, 0.12))
+					ci.draw_colored_polygon(PackedVector2Array([Vector2(x - 3, y - ch - 4), Vector2(x, y - ch - 15), Vector2(x + 3, y - ch - 4)]),
+						Color(pal.accent, 0.95))
+				WORKS:  # a dropped pencil stub
+					var len := rng.randf_range(26, 40)
+					var dir := 1.0 if rng.randf() < 0.5 else -1.0
+					ci.draw_rect(Rect2(x - len * 0.5, y - 7.0, len, 7.0), Color(0.82, 0.62, 0.3))
+					ci.draw_line(Vector2(x - len * 0.5, y - 3.5), Vector2(x + len * 0.5, y - 3.5), Color(0.6, 0.42, 0.2), 1.0)
+					var tip := x + dir * len * 0.5
+					ci.draw_colored_polygon(PackedVector2Array([Vector2(tip, y - 7.0), Vector2(tip + dir * 11, y - 3.5), Vector2(tip, y)]),
+						Color(0.85, 0.75, 0.6))
+					ci.draw_circle(Vector2(tip + dir * 9.5, y - 3.5), 1.5, Color(0.15, 0.12, 0.15))
+		x += rng.randf_range(150, 360)
 
 
 ## Faint lit edge down a wall at x from y0 to y1. facing: +1 = open air to the right.
@@ -153,3 +241,9 @@ static func wall_trim(ci, x: float, y0: float, y1: float, facing: float, theme: 
 			WORKS:
 				ci.draw_line(Vector2(x - facing * 12.0, y), Vector2(x + facing * 4.0, y), Color(0.6, 0.52, 0.42), 2.0)
 		y += rng.randf_range(50, 130)
+	# torn pages of the script nailed to the rock
+	var py := y0 + rng.randf_range(60, 220)
+	while py < y1 - 30.0:
+		if rng.randf() < 0.55:
+			page(ci, Vector2(x + facing * rng.randf_range(16, 24), py), rng.randf_range(-0.3, 0.3), rng.randf_range(1.8, 2.3), rng)
+		py += rng.randf_range(260, 520)
