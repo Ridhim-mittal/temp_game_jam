@@ -171,12 +171,16 @@ one_way = true
 
 [node name="InkBlotA" parent="Enemies" instance=ExtResource("4_ink_blot")]
 position = Vector2(3250, 525)
-hp = 12
+hp = 10
+swipe_damage = 1.5
+slam_damage = 2.25
 display_name = "THE INK BLOT"
 
 [node name="InkBlotB" parent="Enemies" instance=ExtResource("4_ink_blot")]
 position = Vector2(3900, 525)
-hp = 12
+hp = 10
+swipe_damage = 1.5
+slam_damage = 2.25
 display_name = "ITS TWIN"
 
 [node name="CaveArena" type="Node2D" parent="World"]

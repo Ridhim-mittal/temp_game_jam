@@ -4,8 +4,11 @@ extends "res://scripts/enemies/enemy_base.gd"
 ## meant to write. It wears Vesper's own body and sword (player_visual.gd,
 ## sword.tscn), inked black, a blood-red scarf and burning red eyes, and it
 ## fights with his moves:
-##  - SLASH  a glint on the blade (the tell), then a lunging combo (2, then 3)
-##  - DASH   crouches, then dashes straight through Vesper leaving afterimages
+##  - SLASH  a glint on the blade (the tell), then a lunging combo of
+##           alternating cuts (3, then 4); from further off it rushes in first
+##  - DASH   crouches, then a dash-thrust straight through Vesper leaving
+##           afterimages, finished with a cut
+##  - UPCUT  jumps up at Vesper with a rising cut when he's above it
 ##  - LEAP   jumps over him and plunges down, shockwaves rolling both ways
 ##  - WAVE   sweeps an ink wave along the street (two in the second half)
 ## It sidesteps Vesper's swings now and then. Below half health it rages:
@@ -28,14 +31,17 @@ const AURA := Color(0.5, 0.02, 0.1)
 
 enum State { INTRO, STALK, SLASH_WIND, SLASH, DASH_WIND, DASH, LEAP, PLUNGE, WAVE_WIND, BACKSTEP, RECOVER, DEFEATED }
 
-@export var hp := 30
+@export var hp := 34
 @export var display_name := "SHADE"
 @export var walk_speed := 230.0
 @export var slash_damage := 2.0
 @export var dash_damage := 2.0
 @export var wave_damage := 2.0
 @export var touch_damage := 1.0
-@export var dodge_chance := 0.25
+@export var dodge_chance := 0.3
+## Its sword is longer than Vesper's (and it stands a little taller).
+@export var blade_length := 58.0
+@export var body_scale := 1.15
 
 var state := State.INTRO
 var _timer := 0.0
@@ -48,7 +54,10 @@ var _tell := 0.0  # 0..1 the blade glints before an attack
 var _ghosts: Array = []  # dash afterimages {p, facing, age}
 var _ghost_t := 0.0
 var _waves_left := 0
-var _crumble := 0.0  # 0..1 cracking apart when beaten (shade_finale.gd)
+var _crumble := 0.0
+var _cut := 0  # which cut of the combo (they alternate overhead / rising)
+var _upcut := false  # the SLASH is a jumping rising cut
+var _rush := false  # it ran in before the combo  # 0..1 cracking apart when beaten (shade_finale.gd)
 
 var _vis: CanvasGroup
 var _art: Node2D
@@ -88,6 +97,8 @@ func _ready() -> void:
 	_vis.add_child(_art)
 	_sword = SwordScene.instantiate()
 	_sword.grip_color = Color(0.55, 0.03, 0.08)
+	_sword.blade_length = blade_length
+	_sword.arm_length = 12.0
 	_sword.cloak_color = Color(0.03, 0.02, 0.05)
 	_vis.add_child(_sword)
 	# the blade's hitbox: on the enemy layer only mid-swing
@@ -97,7 +108,7 @@ func _ready() -> void:
 	_blade.collision_mask = 0
 	var cs := CollisionShape2D.new()
 	var r := RectangleShape2D.new()
-	r.size = Vector2(84, 60)
+	r.size = Vector2(100, 70)
 	cs.shape = r
 	_blade.add_child(cs)
 	add_child(_blade)
@@ -173,7 +184,7 @@ func _tick(delta: float) -> void:
 	_iframes -= delta
 	var d := to_player()
 	var dist := absf(d.x)
-	_blade_on(state == State.SLASH or state == State.PLUNGE)
+	_blade_on(state == State.SLASH or state == State.PLUNGE or state == State.DASH)
 	match state:
 		State.STALK:
 			face_player()
@@ -182,6 +193,8 @@ func _tick(delta: float) -> void:
 				velocity.x = move_toward(velocity.x, 0.0, 1500.0 * delta)
 			elif _try_dodge(dist):
 				pass
+			elif d.y < -90.0 and dist < 170.0 and is_on_floor() and _cooldown < 0.2:
+				_up_cut()
 			elif _cooldown > 0.0:
 				# circle at sword's length, never quite still
 				var want := 0.0
@@ -195,21 +208,28 @@ func _tick(delta: float) -> void:
 			_fall(delta)
 		State.SLASH_WIND:
 			face_player()
-			velocity.x = move_toward(velocity.x, 0.0, 2000.0 * delta)
+			velocity.x = move_toward(velocity.x, 0.0, (700.0 if _rush else 2000.0) * delta)
 			_tell = 1.0
 			_fall(delta)
 			if _timer <= 0.0:
 				state = State.SLASH
 				_timer = 0.2
-				velocity.x = facing * 430.0
-				_sword.swing(Vector2(facing, 0))
+				_rush = false
+				velocity.x = facing * 480.0
+				# the cuts alternate: overhead down through him, then a rising one
+				_sword.swing(Vector2(facing, 0) if _cut % 2 == 0 else Vector2(0, -1))
+				_cut += 1
 				Sfx.play("sword_swing", 0.0, 0.8)
 				_snd("whoosh", -6.0, 1.2)
 		State.SLASH:
 			velocity.x = move_toward(velocity.x, 0.0, 1600.0 * delta)
 			_tell = 0.0
 			_fall(delta)
-			if _timer <= 0.0:
+			if _timer <= 0.0 and _upcut:
+				if is_on_floor() or velocity.y > 0.0:
+					_upcut = false
+					_recover(0.45)
+			elif _timer <= 0.0:
 				if _combo > 1:
 					_combo -= 1
 					state = State.SLASH_WIND
@@ -225,6 +245,7 @@ func _tick(delta: float) -> void:
 				state = State.DASH
 				_timer = 0.32
 				_iframes = 0.32
+				_sword.thrust()  # the dash is a thrust: sword straight out in front
 				Sfx.play("dash", 0.0, 0.8)
 				_snd("whoosh", -3.0, 0.8)
 		State.DASH:
@@ -240,8 +261,12 @@ func _tick(delta: float) -> void:
 					_timer = 0.32
 					Sfx.play("dash", 0.0, 0.9)
 				else:
+					# finish the dash with a cut back at him
 					velocity.x = facing * 200.0
-					_recover(0.5)
+					face_player()
+					state = State.SLASH_WIND
+					_timer = 0.12
+					_combo = 1
 		State.LEAP:
 			_fall(delta)
 			if velocity.y > 0.0 and _player and global_position.y < _player.global_position.y - 60.0:
@@ -303,14 +328,14 @@ func _choose(dist: float) -> void:
 		else:
 			_backstep()
 	elif dist < 420.0:
-		if r < 0.35:
+		if r < 0.3:
 			_dash()
 		elif r < 0.6:
+			_rush_slash()
+		elif r < 0.78:
 			_leap()
-		elif r < 0.8:
-			_wave_wind()
 		else:
-			_cooldown = 0.3  # walk in
+			_wave_wind()
 	else:
 		if r < 0.5:
 			_dash()
@@ -321,9 +346,29 @@ func _choose(dist: float) -> void:
 func _slash() -> void:
 	state = State.SLASH_WIND
 	_timer = 0.22 if _rage else 0.3
-	_combo = 3 if _rage else 2
+	_combo = 4 if _rage else 3
+	_cut = 0
 	pop("!", EYE, Vector2(0, -70), 30)
 	_snd("clang", -10.0, 1.9)  # the glint rings on the blade
+
+
+## From further off: runs in at him and goes straight into the combo.
+func _rush_slash() -> void:
+	_slash()
+	_rush = true
+	_timer = 0.34
+	velocity.x = facing * 620.0
+	Sfx.play("dash", -4.0, 1.2)
+
+
+## He's above it: it leaps up at him with a rising cut.
+func _up_cut() -> void:
+	state = State.SLASH
+	_upcut = true
+	_timer = 0.3
+	velocity = Vector2(facing * 120.0, -760.0)
+	_sword.swing(Vector2(0, -1))
+	Sfx.play("sword_swing", 0.0, 0.9)
 
 
 func _dash() -> void:
@@ -371,7 +416,8 @@ func _try_dodge(dist: float) -> bool:
 
 func _recover(t: float) -> void:
 	state = State.RECOVER
-	_timer = t * (0.75 if _rage else 1.0)
+	_upcut = false
+	_timer = t * (0.65 if _rage else 0.85)
 
 
 func _impact() -> void:
@@ -407,7 +453,12 @@ func _wave() -> void:
 
 func _blade_on(on: bool) -> void:
 	_blade.damage = slash_damage
-	_blade.position = Vector2(0, 30) if state == State.PLUNGE else Vector2(facing * 44.0, -6.0)
+	if state == State.PLUNGE:
+		_blade.position = Vector2(0, 30)
+	elif _upcut:
+		_blade.position = Vector2(facing * 24.0, -50.0)
+	else:
+		_blade.position = Vector2(facing * 52.0, -6.0)
 	if on and not _blade.is_in_group("enemy"):
 		_blade.collision_layer = 4
 		_blade.add_to_group("enemy")
@@ -440,7 +491,7 @@ func _process(delta: float) -> void:
 		if not is_on_floor():
 			velocity.y = minf(velocity.y + gravity * delta, 900.0)
 			move_and_slide()
-	_vis.scale = Vector2(facing, 1.0)
+	_vis.scale = Vector2(facing, 1.0) * body_scale
 	_art.velocity = velocity
 	_art.facing = facing
 	_art.on_floor = is_on_floor()
