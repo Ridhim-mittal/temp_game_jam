@@ -19,39 +19,37 @@ import os
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 U = 5          # px per map unit
 G = 50         # grid cell, px
-W, H = 2150, 1780   # level bounds in map units (rock fills what is not a room)
+W, H = 2150, 900    # level bounds in map units (rock fills what is not a room)
 Y0 = 40             # first map row that matters
 
 # zone borders (map y) and their themes: 1 archive, 2 works, 0 cavern
-ZONES = [(500, 1), (1230, 2), (10 ** 6, 0)]
+ZONES = [(265, 1), (545, 2), (10 ** 6, 0)]
 
-# open air, map units: x, y, w, h
+# open air, map units: x, y, w, h. Cut down for a ~3 minute run (+ the boss): the hall with the dash
+# pit, the drop into the Shadow Gallery, a shaft and a second drop into the Pendulum's cavern, whose
+# far bank walks straight into the boss arena. (Retired: hall 1 and its shaft, the plank tower, the two
+# side rooms, the pit and the bottom room with the Sketchbook's Blue Gap / lantern bridge replays.)
 ROOMS = {
-    "hall1": (60, 90, 580, 130), "shaft1": (540, 220, 90, 120), "hall2": (200, 340, 660, 120),
-    "nook": (60, 340, 160, 120), "shaft2": (770, 460, 90, 110),
-    "gallery": (300, 570, 600, 220),                      # light puzzle 1: the Shadow Gallery
-    "tower": (430, 850, 460, 320), "side_a": (120, 890, 260, 110), "door_a": (380, 950, 50, 50),
-    "side_b": (120, 1060, 260, 110), "door_b": (380, 1120, 50, 50), "shaft3": (760, 1170, 90, 100),
-    "cavern": (80, 1270, 780, 150),                       # light puzzle 2: the Pendulum, over the sump
-    "sump": (420, 1420, 300, 90), "pit": (100, 1420, 110, 150), "bottom": (100, 1570, 840, 150),
-    "arena": (940, 1520, 440, 200),                       # the Scribbled Beast (boss)
-    "run": (1380, 1570, 700, 150),                        # the Eraser's chase, to the gutter
+    "hall2": (200, 90, 660, 120), "nook": (60, 90, 160, 120), "shaft2": (770, 210, 90, 110),
+    "gallery": (300, 320, 600, 220),                      # light puzzle 1: the Shadow Gallery
+    "cavern": (400, 600, 540, 150),                       # light puzzle 2: the Pendulum, over the sump
+    "sump": (520, 750, 300, 90),
+    "arena": (940, 550, 440, 200),                        # the Scribbled Beast (boss)
+    "run": (1380, 600, 700, 150),                         # the Eraser's chase, to the gutter
 }
 # solid rock put back inside rooms (applied after ROOMS), then air cut through it again
 SOLIDS = {
-    "bump1": (1560, 1712, 20, 8),       # the chase: two easy hops (40 px)...
-    "bump2": (1810, 1712, 24, 8),
-    "shelf": (300, 630, 240, 160),      # the gallery's high exit ledge
-    "slab": (550, 1390, 40, 10),        # hangs under the pendulum lantern and shadows the bridge
+    "bump1": (1560, 742, 20, 8),        # the chase: two easy hops (40 px)...
+    "bump2": (1810, 742, 24, 8),
+    "shelf": (300, 380, 240, 160),      # the gallery's high exit ledge
+    "slab": (650, 720, 40, 10),         # hangs under the pendulum lantern and shadows the bridge
 }
 CUTS = {
-    "run_dip": (1680, 1720, 40, 10),    # ...a shallow dip (50 px)
-    "gutter_pit": (2030, 1720, 50, 60),  # the end of the page: the gutter, down into the Margins
-    "shaft2b": (440, 630, 90, 220),     # down through the shelf into the tower
+    "run_dip": (1680, 750, 40, 10),     # ...a shallow dip (50 px)
+    "gutter_pit": (2030, 750, 50, 150),  # the end of the page: the gutter, down into the Margins
+    "shaft2b": (410, 380, 90, 220),     # down through the shelf into the cavern
     # spike pits cut 200 px into the floor (the level's size is unchanged)
-    "dash_pit": (650, 460, 90, 40),     # hall2: 450 px, needs a double jump and a dash
-    "blue_gap": (300, 1720, 290, 40),   # bottom: the Blue Gap (grey, a gap, then blue)
-    "lamp_pit": (660, 1720, 110, 40),   # bottom: a lantern's bridge, a sign shadowing its end
+    "dash_pit": (650, 210, 90, 40),     # hall2: 450 px, needs a double jump and a dash
 }
 
 
@@ -299,23 +297,9 @@ def heart(x, y):
 
 
 # ------------------------------------------------------------- the rooms
-# 1. THE ARCHIVE: top hall, first shaft, lower hall, a quiet nook
-l, t, r, f = px("hall1")
-START = (l + 200, f - 26)
-ledge(l + 900, f - 110, 220)
-ledge(l + 1250, f - 220, 220)
-ledge(l + 1650, f - 110, 220)
-coin_row(l + 820, l + 980, f - 150, 3)
-coin_row(l + 1170, l + 1330, f - 260, 3)
-coin_row(l + 1570, l + 1730, f - 150, 3)
-spikes(l + 1900, l + 2060, f)                 # the City's spike strip: hop it, or pogo off it
-coin_row(l + 1900, l + 2060, f - 150, 3)
-lamp(l + 520, t, 300, 150)
-lamp(l + 1900, t, 300, 190)
-sl, st, sr, sf = px("shaft1")
+# 1. THE ARCHIVE: the hall with the dash pit (the level starts here), a quiet nook to the left
 l2, t2, r2, f2 = px("hall2")
-steps(sl, sr, st, f2)
-coin_row(sl + 225, sl + 225, st + 200, 1)
+START = (l2 + 150, f2 - 26)
 nl, nt, nr, nf = px("nook")
 lamp(nl + 220, nt, 260, 120)
 heart(nl + 520, nf - 60)
@@ -324,9 +308,9 @@ big_coin(nl + 110, nf - 330)
 ledge(l2 + 900, f2 - 110, 240)
 ledge(l2 + 1500, f2 - 110, 240)
 ledge(l2 + 1200, f2 - 220, 240)
+coin_row(l2 + 820, l2 + 980, f2 - 150, 3)
 coin_row(l2 + 1120, l2 + 1280, f2 - 260, 3)
-enemy("crawler", l2 + 700, f2 - 20)
-checkpoint(l2 + 1800, f2)                       # where shaft 1 lands you
+enemy("crawler", l2 + 1400, f2 - 20)
 enemy("crawler", l2 + 2050, f2 - 20)
 # the City's dash pit, wider: 450 px of spikes. A dash (at most ~430 px) or a double jump
 # (~470 at its very best, from the very edge) falls short; jump, jump again, dash (~510) clears it.
@@ -335,7 +319,7 @@ coin_row(px("dash_pit")[0] + 80, px("dash_pit")[2] - 80, f2 - 150, 3)
 lamp(l2 + 1200, t2, 320, 110)
 lamp(l2 + 2500, t2, 300, 150)
 
-# 2. THE PENCIL WORKS: the Shadow Gallery (light puzzle), the scaffold tower, two side rooms
+# 2. THE PENCIL WORKS: the Shadow Gallery (light puzzle)
 sl, st, sr, sf = px("shaft2")
 gl, gt, gr, F = px("gallery")
 steps(sl, sr, st, gt + 60)
@@ -360,94 +344,33 @@ caption(wall + 1640, F - 330, "HIT THE LANTERN.\nA SHADOW IS INK TOO.")
 hl, ht, hr, hf = px("shelf")
 heart(hl + 250, ht - 60)
 coin_row(hl + 120, hl + 520, ht - 40, 5)
-sl, st, sr, sf = px("shaft2b")
-tl, tt, tr, tf = px("tower")
-steps(sl, sr, st, tt + 60)
-# the tower: a zigzag of planks from the shaft mouth down to the floor
-y, i = tt + 170, 0
-span = (tr - 260) - (tl + 260)
-while y <= tf - 100:
-    k = (i * 290) % (2 * span)
-    cx = (tl + 260) + (k if k <= span else 2 * span - k)
-    ledge(cx, y, 300)
-    if i % 3 == 1:
-        coin_row(cx - 60, cx + 60, y - 40, 3)
-    y += 110
-    i += 1
-checkpoint(tl + 1400, tf)                       # the tower floor, before shaft 3
-for sx, sy in [(tl + 1500, tt + 420), (tl + 800, tt + 760), (tl + 1400, tt + 1150)]:
-    enemy("scribble", sx, sy)
-lamp(tl + 1700, tt, 320, 220)
-lamp(tl + 700, tt, 320, 560)
-lamp(tl + 1300, tt, 320, 900)
-al, at, ar, af = px("side_a")
-ledge(tl + 150, af, 300, one_way=False)        # landing outside the upper side room
-steps(tl, tl + 420, tt + 170, af, 150)         # and a ladder of ledges back up from it
-coin_row(al + 200, al + 380, af - 40, 4)
-lamp(al + 700, at, 280, 130)
-heart(al + 950, af - 60)
-bl, bt, br, bf = px("side_b")                    # the ambush room
-enemy("crumple", bl + 350, bf - 25)
-enemy("crossed", bl + 900, bf - 30)
-coin_row(bl + 150, bl + 450, bf - 200, 6)
-ledge(bl + 300, bf - 110, 220)
-lamp(bl + 650, bt, 280, 130)
-ledge(bl + 120, bf - 250, 160)                  # the ambush room's prize, over the low ledge
-big_coin(bl + 110, bf - 410)
 
-# 3. THE DRIPPING MARGINS: shaft, the Pendulum (light puzzle), the pit, the bottom
-sl, st, sr, sf = px("shaft3")
+# 3. THE DRIPPING MARGINS: down through the shelf (a short shaft of ledges, then a second drop
+# cutscene into the cavern), the Pendulum (light puzzle), its far bank and the boss.
+sl, st, sr, sf = px("shaft2b")
 cl, ct, cr, cf = px("cavern")
-steps(sl, sr, st, cf)
+steps(sl, sr, st, ct)
+node("DropCutscene2", "Area2D", "World", [("position", v((sl + sr) / 2, ct + 20)), ("script", 'ExtResource("48_fallcine")'),
+     ("size", v(sr - sl, 120))])
 # The Pendulum. A blue sketch bridge over the sump, 1500 px: too far for one Ember (about
 # 1200 px), far too far to jump. The lantern swings across the middle of it and refills the
 # Ember in its light, but its reach stops short of both ends and the slab under it shadows the
 # centre. Cross with the swing; spend the Ember only where the lantern's light is not.
-# Falling in is not deadly: ledges on the near side climb back out.
+# You land on the near (west) bank. Falling in is not deadly: ledges climb back out, and down
+# there, under the bridge, lies the second big Lumen.
 ul, ut, ur, uf = px("sump")
 mid = (ul + ur) / 2
-checkpoint(ur + 250, cf)
+checkpoint(ul - 300, cf)
 sketch(ul, ur, cf, inkable=False, name="PendulumBridge")
 lantern(mid, cf - 640, 420, chain=380, swing=40, period=5.0, name="Pendulum")
-steps(ur - 300, ur, cf, uf, 150)
+steps(ul, ul + 300, cf, uf, 150)
+big_coin(ur - 200, uf - 70)
 enemy("scribble", mid + 200, cf - 430)
-# the far bank
-ledge(cl + 1500, cf - 110, 220)
-ledge(cl + 1150, cf - 220, 220)
-coin_row(cl + 1070, cl + 1230, cf - 260, 3)
-enemy("smudge", cl + 1300, cf - 12)
-enemy("inkwell", cl + 800, cf - 26)
-lamp(cl + 1000, ct, 300, 200)
-pl, pt, pr, pf = px("pit")
-ol, ot, orr, of = px("bottom")
-steps(pl, pr, pt, of, 190)
-heart(pl + 275, pt + 250)
-checkpoint(ol + 900, of)
-# The Sketchbook's Blue Gap, again: grey pencil (inkable), an open gap, then non-photo blue that
-# drinks the light. Straight across is more than one Ember: stand still at the end of the grey,
-# let the ink set, rest on it till the Ember is full, then jump the gap and sprint the blue.
-gl0, _, gr0, _ = px("blue_gap")
-pit_spikes("blue_gap")
-sketch(gl0, gl0 + 780, of)
-sketch(gl0 + 930, gr0, of, inkable=False, drinks=True)
-coin_row(gl0 + 820, gl0 + 890, of - 60, 2)
-enemy("scribble", ol + 2100, of - 330)
-enemy("scribble", ol + 2300, of - 380)
-checkpoint(gr0 + 100, of)
-enemy("crossed", gr0 + 250, of - 30)              # its X only burns in light
-# The Sketchbook's lantern bridge: free light that refills the Ember, but a sign hanging under
-# the lantern shadows the far end of the sketch. Cross the shadow on your own Ember.
-ll0, _, lr0, _ = px("lamp_pit")
-pit_spikes("lamp_pit")
-sketch(ll0, lr0, of)
-lantern(ll0 + 260, ot, 400, chain=of - 260 - ot, name="BridgeLantern")
-node("Sign", "StaticBody2D", "World", [("position", v(ll0 + 346, of - 149)), ("script", 'ExtResource("51_rock")'),
-     ("size", v(63, 22))])                          # shadows the last ~150 px of the bridge
-enemy("crawler", lr0 + 300, of - 20)
-lamp(ol + 1400, ot, 320, 260)
-coin_row(lr0 + 200, lr0 + 400, of - 40, 4)
-checkpoint(ol + 3950, of)                           # before the boss
-heart(ol + 3700, of - 60)
+lamp(cl + 250, ct, 300, 200)
+# the far bank: a breath, a heart and the last checkpoint, then the arena
+coin_row(ur + 60, ur + 260, cf - 60, 3)
+heart(ur + 200, cf - 60)
+checkpoint(cr - 150, cf)                           # before the boss
 
 # THE SCRIBBLED BEAST (scribbled_beast.gd, run by beast_arena.gd): it comes out of the gutter
 # between the page's columns, holding a shield torn out of the gutter itself. Two lanterns on
