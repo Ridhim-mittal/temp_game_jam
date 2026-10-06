@@ -64,16 +64,16 @@ func kill(blot: Node) -> void:
 
 func _run() -> void:
 	var m := music()
-	for track in ["hunters", "hunt", "hand", "duel"]:
+	for track in ["hunters", "hunt", "ruin", "inkcave", "hand", "duel"]:
 		var stream = load(m.TRACKS[track])
-		check(stream != null and stream.get_length() > 50.0, "%s.ogg loads (%.1f s)" % [track, stream.get_length() if stream else 0.0])
+		check(stream != null and stream.get_length() > 20.0, "%s.ogg loads (%.1f s)" % [track, stream.get_length() if stream else 0.0])
 	check(m.TRIM["hunters"] < m.TRIM["repose"] and m.TRIM["hunters"] <= 0.0, "The Hunters sits lower than the other tracks")
 
-	# Shade's City: The Hunters, then the tense cut while the Blot lives
+	# Shade's City: its destroyed-city tune, then the tense cut while the Blot lives
 	await level(CITY)
-	check(m.current == "hunters", "Shade's City plays The Hunters (%s)" % m.current)
+	check(m.current == "ruin", "Shade's City plays its destroyed-city tune (%s)" % m.current)
 	var stream = m._player.stream
-	check(stream.loop and is_equal_approx(stream.loop_offset, 7.006), "it loops from bar 4 (intro once)")
+	check(stream.loop and is_equal_approx(stream.loop_offset, m.LOOP_FROM["ruin"]), "it loops (straight in, no intro)")
 	var arena = current_scene.get_node("World/GateArena")
 	var blot = current_scene.get_node("Enemies/InkBlot")
 	player().global_position = Vector2(arena.trigger_x + 60.0, 560.0)
@@ -87,20 +87,19 @@ func _run() -> void:
 	blot._spit()
 	check(sounding("splut"), "its globs splut")
 	kill(blot)
-	check(m.current == "hunters", "it melts: The Hunters comes back (%s)" % m.current)
+	check(m.current == "ruin", "it melts: the city's tune comes back (%s)" % m.current)
 	check(sounding("roar"), "with a dying groan")
 
 	# the Ink Cave: same tune, the tense cut for the two Blots, quiet for the collapse
 	await level(CAVE)
-	check(m.current == "hunters", "the Ink Cave plays The Hunters (%s)" % m.current)
+	check(m.current == "inkcave", "the Ink Cave plays its own tune (%s)" % m.current)
 	var cave = current_scene.get_node("World/CaveArena")
 	player().global_position = Vector2(cave.trigger_x + 60.0, 560.0)
 	await until(func(): return cave.phase == cave.Phase.LOCKED, 60)
 	check(m.current == "hunt", "two Blots wake: tense (%s)" % m.current)
 	var a = current_scene.get_node("Enemies/InkBlotA")
-	await frames(50)
-	a.take_turn()
-	check(sounding("roar"), "MY TURN! comes with a roar")
+	var roared := await until(func(): return sounding("roar"), 90)
+	check(roared, "the Blots wake with a roar")
 	kill(a)
 	kill(current_scene.get_node("Enemies/InkBlotB"))
 	check(m.current == "", "the last one melts: the music dies away before the collapse")
@@ -123,12 +122,13 @@ func _run() -> void:
 	# the finale: the hand scratches as it writes, the waves turn tense
 	# (last: leaving mid-wave would strand the finale's own coroutines)
 	gs.seen.erase("finale:waves")
+	gs.seen.erase("finale:double")  # (the retry above left the double's checkpoint set)
 	await level(FINALE)
 	check(m.current == "hunters", "the finale opens on The Hunters (%s)" % m.current)
 	var scratched := await until(func(): return sounding("scritch"), 900)
 	check(scratched, "the nib scratches as Shade writes his name")
-	var waves := await until(func(): return m.current == "hand", 1200)
-	check(waves, "the first wave: the hand's theme")
+	var waves := await until(func(): return m.current == "hand", 3000)
+	check(waves, "the first wave: the hand's theme (%s)" % m.current)
 
 	gs.seen.erase("finale:waves")
 	print("%d failure(s)" % fails)

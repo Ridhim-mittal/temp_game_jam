@@ -74,7 +74,7 @@ func _process(delta: float) -> void:
 			if blot:
 				# the second one wakes a beat later: two roars, not one
 				get_tree().create_timer(0.6 * i).timeout.connect(blot.wake)
-		_music(fight_music, 0.2)
+		_music(fight_music, 0.9)  # crossfades out of the cave's tune as the walls rise
 		SfxSynth.play(get_tree(), "rumble", 0.0, 0.7)
 		get_tree().create_timer(0.5).timeout.connect(func():
 			if is_inside_tree():

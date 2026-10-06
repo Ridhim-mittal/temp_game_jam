@@ -21,6 +21,10 @@ Sources live in audio/music/src/ (a .gdignore keeps Godot from importing them):
                                       from 2:33 on, straight in (no intro), 44 bars looping;
                                       its lead pulled back, darkened, in the cavern reverb,
                                       with the same boss layers as "hunt" on its beat
+  ruin    <- orsted_theme.mp3         Shade's City, the destroyed city: 0:07..0:34, the quiet, tense
+                                      opening that builds towards the theme, its lead eased back
+  inkcave <- orsted_theme.mp3         the Ink Cave: 1:00..2:20, the full epic section, set back in
+                                      the dark cavern reverb with its top rolled off
   duel    <- shade_duel.ogg           the finale's last fight: Shade as Vesper's double
   hunt    <- the_hunters.mp3          the boss fights there (the Ink Blots, Shade): 32 bars
                                       from the driving middle of the same track (its peak,
@@ -93,6 +97,15 @@ TRACKS = {
 	"hand": dict(src="hand_theme.mp3", s=153.03, length=87.99, slack=0.05, lufs=-19.5, start="s", pitch=-1.0,
 				 mid_eq=[(1100.0, -4.0, 0.7), (2600.0, -5.0, 0.8)], eq=[(70.0, 2.0, 0.8), (350.0, -1.5, 0.9)],
 				 top=-6.0, top_fc=3800.0, verb=0.22, grid=(0.49993, 0.0111), tension=True),
+	# the destroyed city: no intro, straight into the loop; the opening's quiet
+	# build (0:07..0:34) comes round on itself (the music matches best there)
+	"ruin": dict(src="orsted_theme.mp3", s=7.00, length=26.85, slack=0.05, lufs=-21.0, start="s",
+				 mid_eq=[(2400.0, -2.5, 0.8)], eq=[(70.0, 1.5, 0.8)], top=-3.0, top_fc=5000.0),
+	# the Ink Cave: the full section (1:00..2:20), darker and further back, so
+	# it reads as a cave and leaves room for the Blots' "hunt"
+	"inkcave": dict(src="orsted_theme.mp3", s=59.8, length=80.52, slack=0.05, lufs=-20.5, start="s",
+					mid_eq=[(1200.0, -2.5, 0.7), (2600.0, -3.0, 0.8)], eq=[(70.0, 2.0, 0.8)],
+					top=-5.0, top_fc=4200.0, verb=0.2),
 	"duel": dict(src="shade_duel.ogg", s=9.69, length=51.28, slack=0.04, lufs=-19.5),
 }
 

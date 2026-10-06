@@ -182,7 +182,7 @@ node("HUD", "Control", "UI", [("layout_mode", "3"), ("anchors_preset", "15"), ("
      ("script", f'ExtResource("{HUD}")')])
 node("BossBar", "Control", "UI", [("layout_mode", "3"), ("anchors_preset", "15"), ("anchor_right", "1.0"),
      ("anchor_bottom", "1.0"), ("mouse_filter", "2"), ("script", f'ExtResource("{BOSSBAR}")')])
-node("LevelMusic", "Node", ".", [("script", f'ExtResource("{MUSIC}")'), ("track", '"hunters"')])  # The Hunters, low (music.gd)
+node("LevelMusic", "Node", ".", [("script", f'ExtResource("{MUSIC}")'), ("track", '"ruin"'), ("fade", "2.5")])  # cut from the Orsted theme (music.gd), crossfaded in
 node("LevelMood", "Node", ".", [("script", f'ExtResource("{MOOD}")')])
 node("ComicFrame", "CanvasLayer", ".", [("script", f'ExtResource("{FRAME}")'), ("page_number", "7"),
      ("live_areas", "Array[Rect2]([Rect2(-660, -2000, 8060, 3200)])")])

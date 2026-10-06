@@ -24,7 +24,7 @@ const TAPE := Color(1.0, 0.85, 0.2)
 @export_file("*.tscn") var next_scene := ""
 ## The fight's music and what comes back once the Blot melts (music.gd).
 @export var fight_music := "hunt"
-@export var after_music := "hunters"
+@export var after_music := "ruin"
 
 enum Phase { WAITING, LOCKED, CLEARED, SPRUNG }
 
@@ -79,7 +79,7 @@ func _process(delta: float) -> void:
 		var blot := get_node_or_null(blot_path)
 		if blot:
 			blot.wake()
-		_music(fight_music, 0.2)
+		_music(fight_music, 0.9)  # crossfades out of the city's tune as the walls rise
 		SfxSynth.play(get_tree(), "rumble", 0.0, 0.7)  # the ink walls heave up...
 		get_tree().create_timer(0.5).timeout.connect(func():
 			if is_inside_tree():

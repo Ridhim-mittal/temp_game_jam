@@ -19,6 +19,8 @@ extends Node
 ## laid over it: gate_arena.gd, cave_arena.gd, shade_finale.gd); the last
 ## fight, Shade as Vesper's double, plays "duel"; the waves Shade's hand draws
 ## before it, "hand".
+## Shade's City walks to "ruin" and the Ink Cave to "inkcave" (both cut from
+## the Orsted theme), their Blot fights still "hunt".
 ## The ending's credits roll to "credits" (Last Page Stomp: our own hard-rock
 ## stomp, tools/make_credits_song.py; plays once).
 
@@ -35,6 +37,8 @@ const TRACKS := {
 	"dread": "res://audio/music/dread.ogg",
 	"hunters": "res://audio/music/hunters.ogg",
 	"hunt": "res://audio/music/hunt.ogg",
+	"ruin": "res://audio/music/ruin.ogg",
+	"inkcave": "res://audio/music/inkcave.ogg",
 	"hand": "res://audio/music/hand.ogg",
 	"duel": "res://audio/music/duel.ogg",
 	"credits": "res://audio/music/credits.ogg",
@@ -50,6 +54,8 @@ const LOOP_FROM := {
 	"dread": 11.89,
 	"hunters": 7.006,
 	"hunt": 0.0,
+	"ruin": 0.0,
+	"inkcave": 0.0,
 	"hand": 0.0,
 	"duel": 9.69,
 }
@@ -64,6 +70,8 @@ const TRIM := {
 	"dread": 2.5,
 	"hunters": 0.0,  # low: it sits under everything
 	"hunt": 1.5,
+	"ruin": 1.5,
+	"inkcave": 1.5,
 	"hand": 1.5,
 	"duel": 1.5,
 }
@@ -73,17 +81,22 @@ const PLAY_ONCE := ["ending", "credits"]
 @export var volume_db := -4.0
 
 var current := ""
-var _player: AudioStreamPlayer
+var _player: AudioStreamPlayer  # the track playing (or fading in)
+var _old: AudioStreamPlayer  # the one it replaced, fading out under it
 var _fade: Tween
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS  # keep playing while cutscenes pause the game
 	_player = AudioStreamPlayer.new()
-	_player.volume_db = -60.0
-	add_child(_player)
+	_old = AudioStreamPlayer.new()
+	for p: AudioStreamPlayer in [_player, _old]:
+		p.volume_db = -80.0
+		add_child(p)
 
 
+## A true crossfade: the old track fades out while the new one fades in, both
+## on an equal-power curve (in amplitude, not dB), so there's no dip or bump.
 func play(track: String, fade := 0.8) -> void:
 	if track == current:
 		return
@@ -101,19 +114,35 @@ func play(track: String, fade := 0.8) -> void:
 	current = track
 	if _fade:
 		_fade.kill()
+	# the playing track becomes the one fading out under the new one
+	var swap := _old
+	_old = _player
+	_player = swap
+	_player.stop()
+	_player.stream = stream
+	_player.volume_db = -80.0
+	_player.play()
+	var from := db_to_linear(_old.volume_db) if _old.playing else 0.0
+	var to := db_to_linear(volume_db + float(TRIM.get(track, 0.0)))
 	_fade = create_tween()
-	if _player.playing:
-		_fade.tween_property(_player, "volume_db", -60.0, fade)
-	_fade.tween_callback(func():
-		_player.stream = stream
-		_player.play())
-	_fade.tween_property(_player, "volume_db", volume_db + float(TRIM.get(track, 0.0)), fade)
+	_fade.tween_method(func(k: float) -> void:
+		_player.volume_db = linear_to_db(maxf(to * sin(k * PI * 0.5), 1e-4))
+		_old.volume_db = linear_to_db(maxf(from * cos(k * PI * 0.5), 1e-4)),
+		0.0, 1.0, maxf(fade, 0.01))
+	_fade.tween_callback(_old.stop)
 
 
 func stop(fade := 0.8) -> void:
 	current = ""
 	if _fade:
 		_fade.kill()
+	var from := db_to_linear(_player.volume_db) if _player.playing else 0.0
+	var from_old := db_to_linear(_old.volume_db) if _old.playing else 0.0
 	_fade = create_tween()
-	_fade.tween_property(_player, "volume_db", -60.0, fade)
-	_fade.tween_callback(_player.stop)
+	_fade.tween_method(func(k: float) -> void:
+		_player.volume_db = linear_to_db(maxf(from * (1.0 - k), 1e-4))
+		_old.volume_db = linear_to_db(maxf(from_old * (1.0 - k), 1e-4)),
+		0.0, 1.0, maxf(fade, 0.01))
+	_fade.tween_callback(func() -> void:
+		_player.stop()
+		_old.stop())

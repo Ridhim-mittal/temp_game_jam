@@ -556,6 +556,12 @@ own tune creeps back over 3 s. test_phase2 checks each room's track. beast_arena
 as the intro starts (only the rumble), "beast" crashes in on the ROAR (or when the fight starts / the
 short intro), silence for the death and Shade's lines, "beast" again on RUN! (eraser_chase.gd `begin()`),
 fading out as he runs out of page; the 2.5D hub's biome takes over after the fall.
+Music changes are true crossfades (music.gd: two players, the old fading out under the new on an
+equal-power curve; `LevelMusic` `fade` sets a level's). Shade's City plays "ruin" and the Ink Cave
+"inkcave" (both cut from the Orsted theme, `orsted_theme.mp3`: the opening's quiet build 0:07..0:34 and the
+full section 1:00..2:20, the cave's darker and in the cavern reverb), crossfading in over 2.5 s; their Blot
+fights crossfade into "hunt" (0.9 s) and the gate's back into "ruin". The finale's waves play "hand" (the
+user's theme from 2:33, lead pulled back, darkened, with hunt's boss layers) and the double "duel".
 Shade's part (Shade's City, the Ink Cave, the finale; their generators set `LevelMusic` `track`):
 "hunters" = The Hunters (`the_hunters.mp3`, 114 BPM, D minor), kept low (-23 LUFS, TRIM 0), its muddy low
 mids eased and a little presence added so it reads under the effects; the intro plays once, then it loops 39
