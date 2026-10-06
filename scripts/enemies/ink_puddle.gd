@@ -11,6 +11,9 @@ const SHEEN := Color(0.44, 0.38, 0.62)
 @export_range(0.1, 1.0) var speed_mult := 0.5
 @export_range(0.1, 1.0) var jump_mult := 0.7
 
+## What it leaves on Vesper's boots (player.gd `_slow_color()`).
+var goo_color := INK.lerp(SHEEN, 0.3)
+
 var _age := 0.0
 var _inside: Array = []
 

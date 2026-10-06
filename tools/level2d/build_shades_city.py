@@ -61,6 +61,7 @@ SPIDER = res("PackedScene", "res://scenes/enemies/paper_spider.tscn")
 BLOT = res("PackedScene", "res://scenes/enemies/ink_blot.tscn")
 BACKDROP = res("Script", "res://scripts/background/city_painting.gd")
 STREETS = res("Script", "res://scripts/world/street_ground.gd")
+WALLS = res("Script", "res://scripts/world/city_block.gd")
 COVER = res("Script", "res://scripts/world/light_cover.gd")
 STACK = res("Script", "res://scripts/world/paper_stack.gd")
 LIGHT = res("Script", "res://scripts/world/author_light.gd")
@@ -84,6 +85,12 @@ node("Coins", "Node2D", ".")
 
 def block(name, x, y, w, h):
     node(name, "StaticBody2D", "World", [("position", v(x, y)), ("script", f'ExtResource("{STREETS}")'), ("size", v(w, h))])
+
+
+def wall(name, x, y, w, h):
+    """An end wall: a tall neon-edged building (city_block.gd, centred), in Shade's pink."""
+    node(name, "StaticBody2D", "World", [("position", v(x + w / 2, y + h / 2)), ("script", f'ExtResource("{WALLS}")'),
+         ("size", v(w, h)), ("trim", "Color(1, 0.36, 0.66, 1)"), ("accent", "Color(0.4, 0.85, 1, 1)")])
 
 
 def stack(x, w, h):
@@ -123,8 +130,8 @@ def narration(text, x):
 
 # the street and its ends
 block("Street", -600, STREET, 8000, 500)
-block("WallLeft", -660, -1400, 60, 2100)
-block("WallRight", 7340, -1400, 60, 2100)
+wall("WallLeft", -660, -1400, 60, 2100)
+wall("WallRight", 7340, -1400, 60, 2100)
 
 # 1. arrival: dropped from the sky, a few stacks to hop
 stack(700, 120, 70)
@@ -175,7 +182,7 @@ node("BossBar", "Control", "UI", [("layout_mode", "3"), ("anchors_preset", "15")
 node("LevelMusic", "Node", ".", [("script", f'ExtResource("{MUSIC}")')])
 node("LevelMood", "Node", ".", [("script", f'ExtResource("{MOOD}")')])
 node("ComicFrame", "CanvasLayer", ".", [("script", f'ExtResource("{FRAME}")'), ("page_number", "7"),
-     ("live_areas", "Array[Rect2]([Rect2(-700, -2000, 8200, 3200)])")])
+     ("live_areas", "Array[Rect2]([Rect2(-660, -2000, 8060, 3200)])")])
 
 narration("VESPER HAS BEEN DRAGGED BACK INTO SHADE'S CORRUPTED COMIC CITY. THE AUTHOR IS TRYING TO DELETE THE METROPOLIS.", -1e9)
 narration("SOMETHING SKITTERS IN THE GUTTERS. SHADE HAS BEEN DRAWING NEW THINGS.", 1500)

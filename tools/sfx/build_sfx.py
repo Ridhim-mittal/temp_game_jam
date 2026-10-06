@@ -2,6 +2,7 @@
 """Synthesises Vesper's movement and sword sounds into assets/sfx (re-running
 overwrites them; deterministic, no dependencies):
   jump.wav             a paper flick: one soft breath of air, 70 ms
+  double_jump.wav      the same flick, lighter and higher, 60 ms
   dash.wav             a pen stroke: a nib dragged fast across paper, rising then easing off
   sword_swing_1..4     a miss: a thin nib swish through the air (four takes)
   sword_hit_1..4       a hit: a crisp nib click, a dull ink thwack and a short wet splat
@@ -109,6 +110,20 @@ def jump(seed=1):
     return finish(out, -9.0)
 
 
+def double_jump(seed=3):
+    """The jump's paper flick again, lighter and higher in the air (1700 -> 3000 Hz,
+    60 ms), so the second jump reads as the same move, not a new sound."""
+    rng = random.Random(seed)
+    dur = 0.06
+    n = int(dur * RATE)
+    bp = BandPass(2.2)
+    out = []
+    for i in range(n):
+        t = i / RATE
+        out.append(bp(rng.uniform(-1, 1), 1700.0 + 1300.0 * (t / dur)) * env(t, 0.004, 0.015))
+    return finish(out, -10.0)
+
+
 def dash(seed=2):
     """A pen stroke: noise through a moving band (700 -> 3400 -> 2300 Hz) with paper
     grain, so it reads as a nib dragged fast across the page."""
@@ -172,6 +187,7 @@ def hit(seed, body_hz, splat_hz):
 
 def main():
     write("jump", jump())
+    write("double_jump", double_jump())
     write("dash", dash())
     takes = [(11, 0.17, 1300, 4800, 2.4), (12, 0.15, 1500, 5400, 2.8), (13, 0.19, 1100, 4200, 2.2), (14, 0.16, 1400, 5000, 2.6)]
     for k, (seed, dur, f0, f1, q) in enumerate(takes, 1):

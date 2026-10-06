@@ -57,6 +57,7 @@ def uniq(base):
 PLAYER = res("PackedScene", "res://scenes/player/player.tscn")
 BACKDROP = res("Script", "res://scripts/background/city_painting.gd")
 STREETS = res("Script", "res://scripts/world/street_ground.gd")
+WALLS = res("Script", "res://scripts/world/city_block.gd")
 COVER = res("Script", "res://scripts/world/light_cover.gd")
 FINALE = res("Script", "res://scripts/world/shade_finale.gd")
 HUD = res("Script", "res://scripts/ui/hud.gd")
@@ -76,14 +77,20 @@ def block(name, x, y, w, h):
     node(name, "StaticBody2D", "World", [("position", v(x, y)), ("script", f'ExtResource("{STREETS}")'), ("size", v(w, h))])
 
 
+def wall(name, x, y, w, h):
+    """An end wall: a tall neon-edged building (city_block.gd, centred), in Shade's pink."""
+    node(name, "StaticBody2D", "World", [("position", v(x + w / 2, y + h / 2)), ("script", f'ExtResource("{WALLS}")'),
+         ("size", v(w, h)), ("trim", "Color(1, 0.36, 0.66, 1)"), ("accent", "Color(0.4, 0.85, 1, 1)")])
+
+
 def bar(x, y, w):
     node(uniq("Bar"), "StaticBody2D", "World", [("position", v(x, y)), ("script", f'ExtResource("{COVER}")'),
          ("kind", "3"), ("size", v(w, 22)), ("post_height", str(STREET - y - 22))])
 
 
 block("Street", LEFT - 700, STREET, RIGHT - LEFT + 1400, 500)
-block("WallLeft", LEFT - 60, -1400, 60, 2100)
-block("WallRight", RIGHT, -1400, 60, 2100)
+wall("WallLeft", LEFT - 60, -1400, 60, 2100)
+wall("WallRight", RIGHT, -1400, 60, 2100)
 # a few bars to get above the shockwaves and the dives
 bar(LEFT + 220, 450, 200)
 bar(RIGHT - 420, 450, 200)

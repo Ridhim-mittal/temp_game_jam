@@ -32,6 +32,7 @@ var on_floor := true
 var dashing := false
 var max_speed := 300.0
 var stuck := false  # wading through goo: boots get gooey
+var goo_color := Color(0.58, 0.95, 0.28)  # what the boots are wading in (player.gd sets it: green goo, ink...)
 var charge := 0.0  # 0..1 charged-attack build-up
 var charge_ready := false
 var crouch := 0.0       # 0..1 crouch-jump coil depth
@@ -138,9 +139,10 @@ func _draw() -> void:
 		draw_colored_polygon(_ellipse(4.5, 3.0), col)  # boot
 		draw_set_transform(Vector2.ZERO)
 		if _goo > 0.0:
-			var goo := Color(0.58, 0.95, 0.28)
+			var goo := goo_color
 			draw_circle(foot + Vector2(1, -1), 4.0 * _goo + 1.0, goo)
 			draw_circle(foot + Vector2(-2, 2.0 + 4.0 * (1.0 - _goo)), 2.0 * _goo, goo)  # drip
+			draw_circle(foot + Vector2(-0.5, -2.5), 1.3 * _goo, goo.lightened(0.55))  # a wet glint
 
 	# upper body leans around the hips
 	_upper = Transform2D(lean, hips)
