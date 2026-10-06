@@ -16,8 +16,8 @@ extends Node2D
 ## checkpoint: a retry starts right at the double fight (GameState.seen
 ## "finale:waves" / "finale:double").
 ## Music (music.gd): The Hunters, low, while the hand writes; its tense cut
-## ("hunt") from the first wave; silence as the light falls; "hunt" crashing back
-## in when the double steps out of it; silence as it cracks apart, then The
+## ("hunt") from the first wave; silence as the light falls; the double's own
+## song ("duel") when it steps out of it; silence as it cracks apart, then The
 ## Hunters again, slowly, for the end.
 
 const Hand = preload("res://scripts/effects/shade_hand.gd")
@@ -274,7 +274,7 @@ func _the_light() -> void:
 	var b := create_tween()
 	b.tween_property(self, "_beam", 0.0, 1.4)
 	await _wait(2.4)
-	_music("hunt", 0.15)  # (from the top: it stopped for the light)
+	_music("duel", 0.15)  # the double's own song (from the top: it stopped for the light)
 	boss.begin()
 
 
@@ -319,7 +319,7 @@ func _checkpoint_double() -> void:
 	create_tween().tween_property(self, "_beam", 0.0, 0.9)
 	_say("BACK FOR MORE?", "shade")
 	await _wait(1.2)
-	_music("hunt", 0.15)
+	_music("duel", 0.15)
 	boss.begin()
 
 

@@ -17,6 +17,7 @@ Sources live in audio/music/src/ (a .gdignore keeps Godot from importing them):
                                       quiet, its muddy low mids eased and a little presence
                                       added so it still reads under the sound effects; loops
                                       39 bars, the breakdown leading back into the build
+  duel    <- shade_duel.ogg           the finale's last fight: Shade as Vesper's double
   hunt    <- the_hunters.mp3          the boss fights there (the Ink Blots, Shade): 32 bars
                                       from the driving middle of the same track (its peak,
                                       breakdown and climb back), 8% faster, brighter,
@@ -76,6 +77,9 @@ TRACKS = {
 	"hunt": dict(src="the_hunters.mp3", s=33.840, length=67.347, slack=0.03, lufs=-20.5, start="s",
 				 tempo=1.08, eq=[(380.0, -2.5, 0.9), (3200.0, 3.5, 0.7), (9000.0, 2.0, 0.7)],
 				 grid=(0.52615, 0.166), tension=True),
+	# ~75 BPM, beat 0 at 0.07 s: 0..9.69 s (three bars) plays once, then 16 bars
+	# loop (beat 12 to 76; the song itself stops dead at ~64.5 s)
+	"duel": dict(src="shade_duel.ogg", s=9.69, length=51.28, slack=0.04, lufs=-19.5),
 }
 
 ## The boss layers' levels (relative to the music's own loudness, dB) and the
