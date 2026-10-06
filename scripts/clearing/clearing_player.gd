@@ -37,6 +37,7 @@ const Fx = preload("res://scripts/clearing/clearing_fx.gd")
 const FlashScript = preload("res://scripts/world25/flash.gd")
 const InkWave = preload("res://scripts/world25/ink_wave_3d.gd")
 const WeaponFx = preload("res://scripts/clearing/weapon_fx_3d.gd")
+const HealFx = preload("res://scripts/clearing/heal_fx.gd")
 const VesperModel = preload("res://scripts/clearing/vesper_3d.gd")
 const CHEVRON_SHADER = preload("res://shaders/clearing/facing_chevron.gdshader")
 const ScreenAnchor = preload("res://scripts/clearing/screen_anchor.gd")
@@ -231,6 +232,7 @@ var _spawn_guard := 0.0  # seconds of spawn protection left (see spawn_protectio
 var _hurt_timer := 0.0
 var _slow_sources := {}  # source -> Vector2(speed_mult, jump_mult)
 var _channel := -1.0  # seconds spent channelling a heal; -1 = not healing
+var _heal_fx: Node3D  # the ring, the motes and the tone (heal_fx.gd)
 var _safe_pos := Vector3.ZERO
 var _safe_timer := 0.0
 # loadout (skills, gear, difficulty), set by _apply_loadout()
@@ -294,6 +296,8 @@ func _ready() -> void:
 	sprite.texture = art_viewport.get_texture()
 	_build_model()
 	_build_chevron()
+	_heal_fx = HealFx.new()
+	add_child(_heal_fx)
 	floor_constant_speed = true
 	floor_snap_length = 0.45
 	floor_max_angle = deg_to_rad(50.0)
@@ -1245,6 +1249,8 @@ func _update_heal(delta: float) -> void:
 		Fx.pop_text(get_tree(), global_position + Vector3(0, 1.8, 0), "+½ INK", Color(1.0, 0.85, 0.45), 32)
 		Fx.burst(get_tree(), global_position + Vector3(0, 0.8, 0), Color(1.0, 0.75, 0.35), 14, 2.5)
 		_squash = Vector2(0.85, 1.2)
+		if _heal_fx:
+			_heal_fx.complete()
 
 
 ## Could hold F right now and heal (the HUD's "F HEAL" tag asks).
@@ -1426,6 +1432,9 @@ func _update_model(delta: float) -> void:
 	_model.combo = _combo
 	_model.hurt = _hurt_timer / 0.2
 	_model.heal = clampf(_channel / heal_time, 0.0, 1.0) if _channel >= 0.0 else 0.0
+	if _heal_fx:
+		var p := clampf(_channel / heal_time, 0.0, 1.0) if _channel >= 0.0 else -1.0
+		_heal_fx.update(p, smooth_position, _model.ember_point(), delta, heal_time)
 	_model.erase = erase
 	var blink_t := maxf(_invuln, _spawn_guard)
 	_model.blink = not dead and blink_t > 0.0 and fmod(blink_t, 0.16) < 0.08
