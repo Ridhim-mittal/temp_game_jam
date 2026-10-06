@@ -58,6 +58,18 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()  # controller: back (e.g. to the pause screen)
 		_back()
 		return
+	# controller: the d-pad or stick chooses (up / down) and changes (left / right), A changes too
+	var nav := InputSetup.pad_nav(event)
+	if nav.y != 0:
+		_row = (_row + nav.y + ROWS.size()) % ROWS.size()
+		_confirm_reset = false
+	elif nav.x != 0:
+		_change(nav.x)
+	elif event is InputEventJoypadButton and event.pressed and event.button_index == JOY_BUTTON_A:
+		_change(1)
+	if event is InputEventJoypadButton or event is InputEventJoypadMotion:
+		get_viewport().set_input_as_handled()
+		return
 	if event is InputEventKey and event.pressed and not event.echo:
 		match event.physical_keycode:
 			KEY_ESCAPE:
@@ -163,4 +175,4 @@ func _draw() -> void:
 				RED.lightened(0.4) if key == "!reset" else GOLD)
 	if desc != "":
 		draw_string(ThemeDB.fallback_font, Vector2(80, size.y - 64), desc, HORIZONTAL_ALIGNMENT_LEFT, -1, 19, Color(PAPER, 0.85))
-	draw_string(TITLE_FONT, Vector2(70, size.y - 26), "W/S  CHOOSE     A/D  CHANGE     ESC  BACK", HORIZONTAL_ALIGNMENT_LEFT, -1, 20, DIM)
+	draw_string(TITLE_FONT, Vector2(70, size.y - 26), ("UP/DOWN  CHOOSE     LEFT/RIGHT / A  CHANGE     B  BACK" if InputSetup.using_pad else "W/S  CHOOSE     A/D  CHANGE     ESC  BACK"), HORIZONTAL_ALIGNMENT_LEFT, -1, 20, DIM)

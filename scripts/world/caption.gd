@@ -21,8 +21,22 @@ const INK := Color(0.05, 0.03, 0.1)
 @export var paper := Color(1.0, 0.9, 0.45)
 
 
+var _pad := false  # drawn for a controller (InputSetup.using_pad)
+
+
+func _process(_delta: float) -> void:
+	if Engine.is_editor_hint() or not ("CLICK" in text):
+		return
+	var ins := get_node_or_null("/root/InputSetup")
+	if ins and ins.using_pad != _pad:
+		_pad = ins.using_pad
+		queue_redraw()  # its mouse buttons become the pad's
+
+
 func _draw() -> void:
-	var lines := text.split("\n")
+	var ins := get_node_or_null("/root/InputSetup") if not Engine.is_editor_hint() else null
+	var shown: String = ins.words(text) if ins else text
+	var lines := shown.split("\n")
 	var w := 0.0
 	for l in lines:
 		w = maxf(w, FONT.get_string_size(l, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x)

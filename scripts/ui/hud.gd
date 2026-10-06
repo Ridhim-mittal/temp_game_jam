@@ -120,12 +120,14 @@ func _draw_ember() -> void:
 			k += third
 		if _player.can_heal():  # F would heal right now: a little key cap at the end of the bar
 			var pulse := 0.6 + 0.4 * sin(_time * 6.0)
-			var kc := Rect2(Vector2(r.end.x + 12, r.position.y - 6), Vector2(22, 22))
+			var cap := InputSetup.key("heal")  # F, or B on a pad
+			var cw := maxf(22.0, FONT.get_string_size(cap, HORIZONTAL_ALIGNMENT_LEFT, -1, 20).x + 12.0)
+			var kc := Rect2(Vector2(r.end.x + 12, r.position.y - 6), Vector2(cw, 22))
 			draw_rect(kc.grow(2.0), Color(INK, pulse))
 			draw_rect(kc, Color(1.0, 0.95, 0.85, pulse))
-			draw_string(FONT, kc.position + Vector2(6, 18), "F", HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color(INK, pulse))
-			draw_string_outline(FONT, kc.position + Vector2(30, 18), "HEAL", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, 5, Color(INK, pulse))
-			draw_string(FONT, kc.position + Vector2(30, 18), "HEAL", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color(1.0, 0.85, 0.45, pulse))
+			draw_string(FONT, kc.position + Vector2(6, 18), cap, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color(INK, pulse))
+			draw_string_outline(FONT, kc.position + Vector2(cw + 8, 18), "HEAL", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, 5, Color(INK, pulse))
+			draw_string(FONT, kc.position + Vector2(cw + 8, 18), "HEAL", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color(1.0, 0.85, 0.45, pulse))
 	# relight mark, only while snuffed (the Ember stays out until it refills past it):
 	# a dashed white tick, so it never reads as one of the heal thirds
 	if snuffed:
@@ -183,12 +185,14 @@ func _draw_coin_counter() -> void:
 	if _can_shop:
 		# a key cap and SHOP under the counter
 		var pulse := 0.75 + 0.25 * sin(_time * 4.0)
-		var at := Vector2(right - 92.0, 74.0)
-		draw_rect(Rect2(at, Vector2(26, 26)), Color(0.98, 0.96, 0.9, pulse))
-		draw_rect(Rect2(at, Vector2(26, 26)), INK, false, 2.0)
-		draw_string(FONT, at + Vector2(7, 21), "B", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, INK)
-		draw_string_outline(FONT, at + Vector2(34, 21), "SHOP", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, 6, INK)
-		draw_string(FONT, at + Vector2(34, 21), "SHOP", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color(1.0, 0.85, 0.3, pulse))
+		var cap := InputSetup.key("shop")  # B, or SELECT on a pad
+		var cw := maxf(26.0, FONT.get_string_size(cap, HORIZONTAL_ALIGNMENT_LEFT, -1, 22).x + 14.0)
+		var at := Vector2(right - 66.0 - cw, 74.0)
+		draw_rect(Rect2(at, Vector2(cw, 26)), Color(0.98, 0.96, 0.9, pulse))
+		draw_rect(Rect2(at, Vector2(cw, 26)), INK, false, 2.0)
+		draw_string(FONT, at + Vector2(7, 21), cap, HORIZONTAL_ALIGNMENT_LEFT, -1, 22, INK)
+		draw_string_outline(FONT, at + Vector2(cw + 8, 21), "SHOP", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, 6, INK)
+		draw_string(FONT, at + Vector2(cw + 8, 21), "SHOP", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color(1.0, 0.85, 0.3, pulse))
 	if _hint > 0.0:
 		_draw_shop_caption()
 
@@ -198,7 +202,7 @@ func _draw_coin_counter() -> void:
 ## have been collected in a run.
 func _draw_shop_caption() -> void:
 	var a := clampf(_hint / 0.5, 0.0, 1.0) * clampf((5.0 - _hint) / 0.25, 0.0, 1.0)
-	var lines := ["ENOUGH COINS!", "PRESS  B  TO OPEN THE SHOP"]
+	var lines := ["ENOUGH COINS!", "PRESS  %s  TO OPEN THE SHOP" % InputSetup.key("shop")]
 	var w := 0.0
 	for l in lines:
 		w = maxf(w, FONT.get_string_size(l, HORIZONTAL_ALIGNMENT_LEFT, -1, 26).x)

@@ -290,7 +290,8 @@ func _draw() -> void:
 		var cy := c.y + 205.0 + row * 80.0
 		_rects.append(Rect2(Vector2(cx, cy) - BUTTON * 0.5, BUTTON))
 		_draw_button(i, Vector2(cx, cy))
-	var hint := "ESC  RESUME      WASD / ARROWS  CHOOSE      ENTER  SELECT"
+	var hint := "B  RESUME      D-PAD / STICK  CHOOSE      A  SELECT" if InputSetup.using_pad \
+		else "ESC  RESUME      WASD / ARROWS  CHOOSE      ENTER  SELECT"
 	var hw := FONT.get_string_size(hint, HORIZONTAL_ALIGNMENT_LEFT, -1, 20).x
 	var ha := clampf(_t / 0.4, 0.0, 1.0)
 	var band := Rect2(size.x * 0.5 - hw * 0.5 - 22, size.y - 50, hw + 44, 34)

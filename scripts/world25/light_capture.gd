@@ -179,7 +179,8 @@ func _input(event: InputEvent) -> void:
 	if _done:
 		return
 	var skip := event.is_action_pressed("pause")
-	if event is InputEventKey and event.pressed and not event.echo and event.keycode in [KEY_ENTER, KEY_KP_ENTER, KEY_ESCAPE]:
+	if (event is InputEventKey and event.pressed and not event.echo and event.keycode in [KEY_ENTER, KEY_KP_ENTER, KEY_ESCAPE]) \
+			or InputSetup.pad_skip(event):  # (a controller: A / Start)
 		skip = true
 	if skip:
 		get_viewport().set_input_as_handled()

@@ -143,27 +143,36 @@ func _process(delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventJoypadButton and event.pressed:
-		# controller: B / Start back out, A buys, the d-pad moves
+	# controller: B / Start / Select back out, A buys, the d-pad or stick moves (LB / RB: tabs)
+	var nav := InputSetup.pad_nav(event)
+	if nav != Vector2i.ZERO or (event is InputEventJoypadButton and event.pressed):
 		var n := maxi(_items().size(), 1)
-		match event.button_index:
-			JOY_BUTTON_B, JOY_BUTTON_START:
-				_close()
-			JOY_BUTTON_A:
-				var items := _items()
-				if _row < items.size():
-					_use(items[_row])
-			JOY_BUTTON_DPAD_UP:
-				_row = (_row - 1 + n) % n
-				_preview()
-			JOY_BUTTON_DPAD_DOWN:
-				_row = (_row + 1) % n
-				_preview()
-			JOY_BUTTON_DPAD_LEFT, JOY_BUTTON_LEFT_SHOULDER:
-				_set_tab((_tab + Catalog.SLOTS.size() - 1) % Catalog.SLOTS.size())
-			JOY_BUTTON_DPAD_RIGHT, JOY_BUTTON_RIGHT_SHOULDER:
-				_set_tab((_tab + 1) % Catalog.SLOTS.size())
+		if nav == Vector2i.UP:
+			_row = (_row - 1 + n) % n
+			_preview()
+		elif nav == Vector2i.DOWN:
+			_row = (_row + 1) % n
+			_preview()
+		elif nav == Vector2i.LEFT:
+			_set_tab((_tab + Catalog.SLOTS.size() - 1) % Catalog.SLOTS.size())
+		elif nav == Vector2i.RIGHT:
+			_set_tab((_tab + 1) % Catalog.SLOTS.size())
+		else:
+			match event.button_index:
+				JOY_BUTTON_B, JOY_BUTTON_START, JOY_BUTTON_BACK:
+					_close()
+				JOY_BUTTON_A:
+					var items := _items()
+					if _row < items.size():
+						_use(items[_row])
+				JOY_BUTTON_LEFT_SHOULDER:
+					_set_tab((_tab + Catalog.SLOTS.size() - 1) % Catalog.SLOTS.size())
+				JOY_BUTTON_RIGHT_SHOULDER:
+					_set_tab((_tab + 1) % Catalog.SLOTS.size())
 		get_viewport().set_input_as_handled()
+		return
+	if event is InputEventJoypadMotion:
+		get_viewport().set_input_as_handled()  # the stick between steps: don't let it reach the game
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
 		var n := maxi(_items().size(), 1)
@@ -335,7 +344,8 @@ func _draw() -> void:
 	draw_polyline(ped + PackedVector2Array([ped[0]]), RED, 3.0)
 	if _row < items.size():
 		_draw_details(items[_row], profile)
-	draw_string(TITLE_FONT, Vector2(60, size.y - 22), "W/S  CHOOSE     A/D  TAB     ENTER  BUY / EQUIP     ESC / B  LEAVE",
+	draw_string(TITLE_FONT, Vector2(60, size.y - 22), ("UP/DOWN  CHOOSE     LB/RB  TAB     A  BUY / EQUIP     B  LEAVE" if InputSetup.using_pad
+		else "W/S  CHOOSE     A/D  TAB     ENTER  BUY / EQUIP     ESC / B  LEAVE"),
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 20, DIM)
 	_draw_sale(items)
 	_draw_pages()
@@ -520,13 +530,13 @@ func _draw_details(id: String, profile: Node) -> void:
 			title += "  -  %s (%d/%d)" % [up.name, lvl + 1, Catalog.UPGRADES.size()]
 			lines.append(up.desc if up.desc != "" else "Masterwork %s: %s" % [item.get("special_name", ""), item.get("master", "")])
 			lines.append("Upgrades: +1 damage, a quicker special, then a masterwork special.")
-			action = "ENTER: UPGRADE"
+			action = "%s: UPGRADE" % InputSetup.key("accept")
 	else:
 		lines.append(item.desc)
 		if item.slot == "weapon":
 			lines.append("HOLD ATTACK - %s: %s" % [item.get("special_name", ""), item.get("special_desc", "")])
 		var owned: bool = profile != null and profile.owned.has(id)
-		action = "ENTER: EQUIP" if owned else "ENTER: BUY"
+		action = ("%s: EQUIP" if owned else "%s: BUY") % InputSetup.key("accept")
 	draw_string(TITLE_FONT, box.position + Vector2(18, 32), title, HORIZONTAL_ALIGNMENT_LEFT, -1, 26, PAPER)
 	var y := box.position.y + 58
 	for line in lines:

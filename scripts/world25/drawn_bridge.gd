@@ -262,7 +262,7 @@ func _update_prompt() -> void:
 			return
 		_anchor = ScreenAnchor.new()
 		var label := Label.new()
-		label.text = "HOLD RIGHT CLICK  INK THE BRIDGE"
+		label.text = _prompt_text()
 		label.add_theme_font_override("font", TITLE_FONT)
 		label.add_theme_font_size_override("font_size", 26)
 		label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
@@ -270,6 +270,10 @@ func _update_prompt() -> void:
 		label.add_theme_constant_override("outline_size", 10)
 		_anchor.add_child(label)
 		ui.add_child(_anchor)
+		label.position = -label.get_minimum_size() * Vector2(0.5, 1.0)
+	elif on and _anchor != null and _anchor.get_child_count() > 0 and _anchor.get_child(0).text != _prompt_text():
+		var label: Label = _anchor.get_child(0)
+		label.text = _prompt_text()  # switched to / from a pad
 		label.position = -label.get_minimum_size() * Vector2(0.5, 1.0)
 	elif not on and _anchor != null:
 		_anchor.queue_free()
@@ -285,3 +289,10 @@ func solid_count() -> int:
 		if p.state != GHOST:
 			c += 1
 	return c
+
+
+## The prompt in the player's own buttons (InputSetup isn't loaded in the editor).
+func _prompt_text() -> String:
+	var ins := get_node_or_null("/root/InputSetup")
+	var text := "HOLD RIGHT CLICK  INK THE BRIDGE"
+	return ins.words(text) if ins else text

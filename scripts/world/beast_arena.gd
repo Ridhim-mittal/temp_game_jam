@@ -298,7 +298,8 @@ func _at(time: float) -> bool:
 
 
 func _input(event: InputEvent) -> void:
-	if not (event is InputEventKey and event.pressed and not event.echo and event.keycode in [KEY_ENTER, KEY_KP_ENTER]):
+	if not (event is InputEventKey and event.pressed and not event.echo and event.keycode in [KEY_ENTER, KEY_KP_ENTER]) \
+			and not InputSetup.pad_skip(event):  # (a controller: A / Start)
 		return
 	if phase == Phase.INTRO and not _short:
 		get_viewport().set_input_as_handled()
@@ -885,8 +886,9 @@ func _draw_ui() -> void:
 		_ui.draw_rect(Rect2(0, size.y - bh, size.x, bh), Color.BLACK)
 	if phase == Phase.INTRO and not _short:
 		var a := clampf(_t - 1.0, 0.0, 1.0) * 0.55
-		var tw := FONT.get_string_size("ENTER  SKIP", HORIZONTAL_ALIGNMENT_LEFT, -1, 20).x
-		_ui.draw_string(FONT, Vector2(size.x - tw - 30, size.y - 28), "ENTER  SKIP", HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color(1, 1, 1, a))
+		var skip_text := "%s  SKIP" % InputSetup.key("skip")
+		var tw := FONT.get_string_size(skip_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 20).x
+		_ui.draw_string(FONT, Vector2(size.x - tw - 30, size.y - 28), skip_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color(1, 1, 1, a))
 	if _shadow > 0.0:
 		# the Eraser's shadow falling over the panel from above
 		var sh := size.y * 0.9 * _shadow

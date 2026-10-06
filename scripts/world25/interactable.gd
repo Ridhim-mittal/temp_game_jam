@@ -42,7 +42,7 @@ func _show_prompt(on: bool) -> void:
 		_anchor = ScreenAnchor.new()
 		_anchor.world_position = global_position + Vector3(0, prompt_height, 0)
 		_label = Label.new()
-		_label.text = "E  %s" % prompt
+		_label.text = "%s  %s" % [InputSetup.key("interact"), prompt]
 		_label.add_theme_font_override("font", TITLE_FONT)
 		_label.add_theme_font_size_override("font_size", 26)
 		_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
@@ -50,6 +50,9 @@ func _show_prompt(on: bool) -> void:
 		_label.add_theme_constant_override("outline_size", 10)
 		_anchor.add_child(_label)
 		ui.add_child(_anchor)
+		_label.position = -_label.get_minimum_size() * Vector2(0.5, 1.0)
+	elif on and _label != null and not _label.text.begins_with(InputSetup.key("interact") + " "):
+		_label.text = "%s  %s" % [InputSetup.key("interact"), prompt]  # switched to / from a pad
 		_label.position = -_label.get_minimum_size() * Vector2(0.5, 1.0)
 	elif not on and _anchor != null:
 		_anchor.queue_free()

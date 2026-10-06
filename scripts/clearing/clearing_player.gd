@@ -1172,7 +1172,7 @@ func _update_q_prompt() -> void:
 			return
 		_q_prompt = ScreenAnchor.new()
 		_q_label = Label.new()
-		_q_label.text = "HOLD RIGHT CLICK TO SEE THEM"
+		_q_label.text = InputSetup.words("HOLD RIGHT CLICK TO SEE THEM")
 		_q_label.add_theme_font_override("font", PROMPT_FONT)
 		_q_label.add_theme_font_size_override("font_size", 26)
 		_q_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
@@ -1180,6 +1180,9 @@ func _update_q_prompt() -> void:
 		_q_label.add_theme_constant_override("outline_size", 10)
 		_q_prompt.add_child(_q_label)
 		ui.add_child(_q_prompt)
+		_q_label.position = -_q_label.get_minimum_size() * Vector2(0.5, 1.0)
+	elif near and _q_label != null and _q_label.text != InputSetup.words("HOLD RIGHT CLICK TO SEE THEM"):
+		_q_label.text = InputSetup.words("HOLD RIGHT CLICK TO SEE THEM")  # switched to / from a pad
 		_q_label.position = -_q_label.get_minimum_size() * Vector2(0.5, 1.0)
 	elif not near and _q_prompt != null:
 		_q_prompt.queue_free()

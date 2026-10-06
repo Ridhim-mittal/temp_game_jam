@@ -150,12 +150,14 @@ func _draw_ember(at: Vector2) -> void:
 	if player != null and player.has_method("can_heal") and player.can_heal():
 		# F would heal right now: a key cap under the bar
 		var pulse := 0.6 + 0.4 * sin(_time * 6.0)
-		var kc := Rect2(Vector2(bar.position.x, bar.end.y + 10), Vector2(22, 22))
+		var cap := InputSetup.key("heal")  # F, or B on a pad
+		var cw := maxf(22.0, TITLE_FONT.get_string_size(cap, HORIZONTAL_ALIGNMENT_LEFT, -1, 20).x + 12.0)
+		var kc := Rect2(Vector2(bar.position.x, bar.end.y + 10), Vector2(cw, 22))
 		draw_rect(kc.grow(2.0), Color(INK, pulse))
 		draw_rect(kc, Color(PAPER, pulse))
-		draw_string(TITLE_FONT, kc.position + Vector2(6, 18), "F", HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color(INK, pulse))
-		draw_string_outline(TITLE_FONT, kc.position + Vector2(30, 18), "HEAL", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, 5, Color(INK, pulse))
-		draw_string(TITLE_FONT, kc.position + Vector2(30, 18), "HEAL", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color(1.0, 0.85, 0.45, pulse))
+		draw_string(TITLE_FONT, kc.position + Vector2(6, 18), cap, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color(INK, pulse))
+		draw_string_outline(TITLE_FONT, kc.position + Vector2(cw + 8, 18), "HEAL", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, 5, Color(INK, pulse))
+		draw_string(TITLE_FONT, kc.position + Vector2(cw + 8, 18), "HEAL", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color(1.0, 0.85, 0.45, pulse))
 	# where a guttered Ember lights again: shown only while it is out (as in 2D)
 	if snuffed:
 		var rx := bar.position.x + bar.size.x * _relight / max_fuel
@@ -163,7 +165,14 @@ func _draw_ember(at: Vector2) -> void:
 		for k in 3:
 			var y0 := bar.position.y - 4.0 + k * 8.0
 			draw_line(Vector2(rx, y0), Vector2(rx, y0 + 4.0), Color(1.0, 1.0, 1.0, a), 2.0)
-	# the button: hold right click to raise it (a mouse, its right button lit)
+	# the button: hold right click to raise it (a mouse, its right button lit),
+	# or on a pad the yellow Y button
+	if InputSetup.using_pad:
+		var yc := bar.end + Vector2(22, -9)
+		draw_circle(yc, 13.0, INK)
+		draw_circle(yc, 11.0, Color(0.95, 0.72, 0.1) if not snuffed else Color(0.95, 0.72, 0.1, 0.35))
+		draw_string(TITLE_FONT, yc + Vector2(-6, 8), "Y", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, INK)
+		return
 	var mc := bar.end + Vector2(22, -9)  # centre of the mouse
 	draw_colored_polygon(_capsule(mc, 10.0, 13.0), INK)
 	draw_colored_polygon(_capsule(mc, 8.0, 11.0), Color(PAPER, 0.85 if not snuffed else 0.35))
