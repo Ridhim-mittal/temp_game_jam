@@ -14,10 +14,12 @@ extends "res://scripts/enemies/enemy_base.gd"
 ##    (lantern.gd), else Vesper's raised Ember, else Vesper. A hit from the
 ##    side the shield faces is blocked ("SCRITCH!"). So: LIGHT A LANTERN.
 ##    It swings its shield round to the light, and its other side is open.
-##  - A lit lantern pins it: it stops where it is (a charge included) and
-##    cowers behind the shield, no walking, no attacks.
-##  - SNUFF: a lantern lit for `snuff_delay` s and it lobs an ink glob at it
-##    (beast_glob.gd). Slash the glob out of the air to keep the light.
+##  - A lit lantern pins it for `snuff_delay` s: it stops where it is (a
+##    charge included) and cowers behind the shield, no walking, no attacks.
+##  - SNUFF: then it lobs an ink glob at the lantern (beast_glob.gd) to put it
+##    out. Slash the glob out of the air and it has to throw again.
+##  - Only its charge and its slam hurt to touch; walking or dashing through
+##    it is safe. Its claw costs `claw_damage` (a bottle).
 ##  - CLAW: close up it rears back (eyes flare) and rakes the floor in front.
 ##  - RUSH: from afar it lowers the shield and charges, all the way across.
 ##    Jump it: it slams into the wall and is DAZED, shield down: hit it from
@@ -25,7 +27,8 @@ extends "res://scripts/enemies/enemy_base.gd"
 ##  - Every `stagger_every` damage it STAGGERS for a moment, shield down.
 ##  - Below half health (phase two) it is faster, its eyes burn red, it LEAPS
 ##    and slams (beast_shockwave.gd: jump the waves) and drags Scribbles up
-##    out of the gutter (scenes/enemies/scribble.tscn, at most `max_spawn`).
+##    out of the gutter it came from (scenes/enemies/scribble.tscn, at most
+##    `max_spawn`; beast_arena.gd crack_gutter()).
 ##  - Dashing through it (dash i-frames) gets you behind the shield before it
 ##    turns: the shield turns at `guard_turn` rad/s.
 ## At 0 health it doesn't fall over like the small monsters: DYING, light
@@ -51,16 +54,17 @@ const VOID := Color(0.006, 0.006, 0.014)
 
 enum State { DORMANT, INTRO, IDLE, CLAW_WINDUP, CLAW, RUSH_WINDUP, RUSH, DAZED, SNUFF, LEAP_WINDUP, LEAP, LAND, SUMMON, STAGGER, DYING, DEAD }
 
-@export var hp := 12
-@export var walk_speed := 80.0
+@export var hp := 16
+@export var walk_speed := 95.0
 @export var rush_speed := 640.0
 ## Radians a second the shield turns towards what it fears.
 @export var guard_turn := 3.0
-## Degrees either side of the shield's aim that it covers.
-@export var guard_arc := 78.0
 @export var claw_range := 240.0
-## Seconds a lantern may burn before it lobs a glob at it.
-@export var snuff_delay := 4.5
+## Seconds a lit lantern pins it (cowering, no walking or attacks) before it
+## lobs an ink glob to put the light out.
+@export var snuff_delay := 1.6
+## What its claw costs (half ink bottles).
+@export var claw_damage := 2.0
 @export var stagger_every := 4
 @export var max_spawn := 3
 ## The gutter's tear in the floor (world x) it climbs out of and drags
@@ -70,7 +74,7 @@ enum State { DORMANT, INTRO, IDLE, CLAW_WINDUP, CLAW, RUSH_WINDUP, RUSH, DAZED, 
 var display_name := "THE SCRIBBLED BEAST"
 
 var state := State.DORMANT
-var max_hp := 12
+var max_hp := 16
 var phase_two := false
 ## World angle the shield faces (from its chest).
 var guard := PI
@@ -137,11 +141,19 @@ func begin_fight() -> void:
 	eyes_open = [1.0, 1.0, 1.0]
 	roar = 0.0
 	_set_body(true)
+	_update_harm()
 	hp_changed.emit(health, max_hp)
 
 
+## Touching it only hurts while it charges or slams down.
+func _update_harm() -> void:
+	set_harmful(state in [State.RUSH, State.LEAP])
+
+
+## Only its charge and its slam hurt to touch (half a bottle); brushing past
+## it, or dashing through it, is safe (_update_harm()).
 func damage_default() -> float:
-	return 1.0  # half a bottle, even mid-rush
+	return 1.0
 
 
 func _physics_process(delta: float) -> void:
@@ -173,8 +185,8 @@ func _tick(delta: float) -> void:
 	match state:
 		State.IDLE:
 			if lamp:
-				# a lit lantern pins it where it stands, cowering behind the shield,
-				# until it can snuff the light: no walking, no attacks
+				# a lit lantern pins it for a moment, cowering behind the shield
+				# (no walking, no attacks); then it lobs ink to put the light out
 				velocity.x = move_toward(velocity.x, 0.0, 1200.0 * delta)
 				if _lamp_time >= snuff_delay / speed_k and is_on_floor():
 					_start_snuff(lamp)
@@ -265,6 +277,7 @@ func _tick(delta: float) -> void:
 				_summon()
 			if _timer <= 0.0:
 				_recover(0.6)
+	_update_harm()
 	move_and_slide()
 
 
@@ -298,7 +311,7 @@ func _recover(cooldown: float) -> void:
 func _start_snuff(lamp: Node2D) -> void:
 	state = State.SNUFF
 	_snuff_lamp = lamp
-	_timer = 1.0 if not phase_two else 0.75
+	_timer = 0.8 if not phase_two else 0.6
 	_thrown = false
 	var dx: float = lamp.lamp_position().x - global_position.x
 	facing = 1 if dx > 0.0 else -1
@@ -330,18 +343,22 @@ func _land() -> void:
 		w.global_position = feet + Vector2(dir * 50.0, 0)
 
 
-## Drags Scribbles up out of the gutter's tear in the floor.
+## Calls Scribbles out of the gutter it came from: beast_arena.gd cracks the
+## gap between the columns open for a moment and they fly out of it.
 func _summon() -> void:
 	_summon_cd = 11.0
-	var at := Vector2(gap_x if gap_x != 0.0 else global_position.x, global_position.y + body_size.y * 0.5)
+	var at := Vector2(gap_x if gap_x != 0.0 else global_position.x, global_position.y + body_size.y * 0.5 - 260.0)
+	var arena := get_tree().get_first_node_in_group("beast_arena")
+	if arena:
+		arena.crack_gutter(1.6)
 	SfxSynth.play(get_tree(), "rip", -2.0)
-	InkBits.burst(get_tree(), at, 26, 380.0, Vector2.UP, 0.4)
+	InkBits.burst(get_tree(), at, 26, 380.0, Vector2.ZERO, 0.4)
 	var scene := load(SCRIBBLE_SCENE) as PackedScene
 	for i in mini(2, max_spawn - _spawn_count()):
 		var s: Node2D = scene.instantiate()
 		s.add_to_group("beast_spawn")
 		get_tree().current_scene.add_child(s)
-		s.global_position = at + Vector2((i - 0.5) * 80.0, -150.0 - i * 40.0)
+		s.global_position = at + Vector2((i - 0.5) * 60.0, -i * 60.0)
 
 
 func _spawn_count() -> int:
@@ -361,7 +378,7 @@ func _claw_hit() -> void:
 		return
 	var rel := _player.global_position - global_position
 	if rel.x * facing > -30.0 and absf(rel.x) < claw_range + 30.0 and rel.y > -170.0 and rel.y < 130.0:
-		_player.take_damage(1.0, global_position)
+		_player.take_damage(claw_damage, global_position)
 
 
 # ------------------------------------------------------------------ the shield
@@ -414,8 +431,7 @@ func _blocks(_hit_dir: Vector2, from_pos: Vector2) -> bool:
 		return true
 	if not _shield_up():
 		return false
-	var to_hitter := (from_pos - _chest_world()).angle()
-	if absf(angle_difference(guard, to_hitter)) > deg_to_rad(guard_arc):
+	if not _covers(from_pos):
 		return false
 	pop(["SCRITCH!", "CLANG!", "SKREE!"].pick_random(), RIM, Vector2(0, -150), 24)
 	SfxSynth.play(get_tree(), "clang", -8.0, randf_range(0.85, 1.1))
@@ -424,6 +440,18 @@ func _blocks(_hit_dir: Vector2, from_pos: Vector2) -> bool:
 	if arena:
 		arena.on_blocked()
 	return true
+
+
+## Does the shield cover a hit from `from_pos`? It covers a side, plainly:
+## facing up it covers what's above its chest; facing left or right it covers
+## everything on that side (so standing inside it, or right behind it, works
+## the same every time).
+func _covers(from_pos: Vector2) -> bool:
+	var g := Vector2.from_angle(guard)
+	var rel := from_pos - _chest_world()
+	if g.y < -0.75:
+		return rel.y < -30.0
+	return rel.x * g.x > 0.0
 
 
 func take_hit(damage: int, hit_dir: Vector2, from_pos: Vector2) -> void:

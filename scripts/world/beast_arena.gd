@@ -1,35 +1,47 @@
 extends Node2D
 ## The Scribbled Beast's arena at the bottom of the Long Drop: runs the
-## intro, the fight and the ending around scribbled_beast.gd. The node sits on
-## the arena floor at the tear the beast climbs out of (the gutter, showing
-## through a rip in the page).
+## intro, the fight and the ending around scribbled_beast.gd, then hands
+## Vesper to the Eraser's chase (eraser_chase.gd). The node sits on the arena
+## floor at the gutter the Beast comes out of.
 ##
-## Intro (about 14 s, once a run; Enter skips): Vesper walks in and the
-## controls are taken (player.gd `cutscene`), letterbox bars, the floor
-## rumbles and the camera pans to the tear; it rips open, the gutter's dark
-## beneath; the SHIELD punches up first, held over its head against the
-## lanterns' light (the light splashes off it); claws grab the lip and the
-## Beast hauls itself out; the lanterns die as its darkness passes them; the
-## camera pushes in, three eyes open one by one, it ROARS, the title card
-## slams in; the Writer: "That wasn't supposed to get out." / "...Fine. You
-## were never meant to leave this page anyway, Vesper." Back to Vesper, a
-## wall of scribble seals the way back, the boss bar fills, fight. On a retry
-## (after dying) a short version plays (about 3 s).
+## The Margins are the gutters of the comic: the gaps between its panels.
+## So the Beast doesn't come up out of the floor, it comes out of the gap
+## between the columns. Intro (about 15 s, once a run; Enter skips):
+## Vesper walks in and the controls are taken (player.gd `cutscene`),
+## letterbox bars; the page rumbles; an ink line splits the panel from top to
+## bottom, and the two halves part on the gutter, the Margins' dark between
+## two inked panel borders; deep in it two eyes open, and the Beast comes up
+## out of the depth, small and dark at first, its SHIELD held over its head
+## against the lanterns' light (the light splashes off it); the lanterns die
+## as its darkness reaches them; its claws grab the panel borders, which
+## crack, and it tears out through them into Vesper's panel; the gap slams
+## shut behind it. Close-up: three eyes open, it ROARS, the title card; the
+## Writer: "That wasn't supposed to get out." / "...Fine. Let it finish the
+## page. This is where your story ends, Vesper." Back to Vesper, a wall of
+## scribble seals the way back, the boss bar fills, fight. On a retry (after
+## dying) a short version plays (about 3 s).
 ##
-## Fight: a boss bar (bottom), and after a few blocked hits with no lantern
-## lit, a "LIGHT IT!" tag over the nearest dark lantern (once a run).
+## Fight: a boss bar (bottom), the gutter cracks open when the Beast calls
+## Scribbles out of it (crack_gutter()), and after a couple of blocked hits
+## with no lantern lit a "LIGHT IT!" tag over the nearest dark lantern (once a
+## run).
 ##
-## Ending: the Beast dying (light through its cracking shield, it unravels)
-## is framed by the camera; then the Writer, furious (a shaking red caption):
-## "No. No, no, no." / "That is NOT how this page ends." The wall comes down
-## and a way on opens (level_exit.gd) until the Eraser's chase is built.
+## Ending (about 24 s; Enter skips to the Eraser): the camera frames the
+## Beast dying; then Shade, the Writer, in his black balloon, breaking out of
+## the narration: "NO." / "Page forty-one: 'The Beast tears Vesper apart.
+## The End.' I wrote it. In ink." Vesper: "...Guess I skipped that page."
+## Shade, furious (red pulse, pen scratches across the panel): "You were
+## supposed to die here, Vesper. That was your ending." / "A hero who won't
+## stay dead ruins the whole book." / "Fine. If ink can't finish you..." His
+## ERASER slams down out of the sky (shade_eraser.gd): "...I'll rub you out
+## myself." The panel's right-hand border rips open: RUN! (eraser_chase.gd).
 
 const InkBits = preload("res://scripts/effects/ink_bits.gd")
 const SfxSynth = preload("res://scripts/effects/sfx_synth.gd")
 const ComicText = preload("res://scripts/effects/comic_text.gd")
 const InkBatch = preload("res://scripts/depth/ink_batch.gd")
 const GameCamera = preload("res://scripts/camera/game_camera.gd")
-const LevelExit = preload("res://scripts/world/level_exit.gd")
+const Eraser = preload("res://scripts/enemies/shade_eraser.gd")
 const FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
 const INK := Color(0.05, 0.03, 0.1)
 const CAPTION := Color(1.0, 0.9, 0.45)
@@ -37,15 +49,26 @@ const FURY := Color(0.95, 0.32, 0.25)
 const PAPER := Color(0.93, 0.9, 0.82)
 const RIM := Color(0.86, 0.92, 1.0)
 const VOID := Color(0.006, 0.006, 0.014)
-const ROCK := Color(0.015, 0.02, 0.045)
 const LIGHT := Color(1.0, 0.92, 0.6)
 const BAR_RED := Color(0.78, 0.12, 0.12)
-const SHAFT_HALF := 150.0
-const SHAFT_DEPTH := 640.0
-const LINES_INTRO := ["THAT WASN'T SUPPOSED TO GET OUT.", "...FINE. YOU WERE NEVER MEANT TO LEAVE THIS PAGE ANYWAY, VESPER."]
-const LINES_END := ["NO. NO, NO, NO.", "THAT IS NOT HOW THIS PAGE ENDS."]
+## Half the width of the gutter between the columns when it's wide open.
+const GUTTER_HALF := 150.0
+const LINES_INTRO := ["THAT WASN'T SUPPOSED TO GET OUT.", "...FINE. LET IT FINISH THE PAGE. THIS IS WHERE YOUR STORY ENDS, VESPER."]
+## The ending: [time, who, line, fury]. "shade" = his black balloon, "vesper" = Vesper's own.
+const DIALOGUE := [
+	[5.2, "shade", "NO.", true],
+	[7.0, "shade", "PAGE FORTY-ONE: \"THE BEAST TEARS VESPER APART. THE END.\" I WROTE IT. IN INK.", false],
+	[10.8, "vesper", "...GUESS I SKIPPED THAT PAGE.", false],
+	[13.4, "shade", "YOU WERE SUPPOSED TO DIE HERE, VESPER. THAT WAS YOUR ENDING.", true],
+	[16.6, "shade", "A HERO WHO WON'T STAY DEAD RUINS THE WHOLE BOOK.", true],
+	[19.6, "shade", "FINE. IF INK CAN'T FINISH YOU...", true],
+	[21.9, "shade", "...I'LL RUB YOU OUT MYSELF.", true],
+]
+const T_ERASER := 21.2
+const T_RIP := 24.4
+const T_RUN := 25.0
 
-enum Phase { WAIT, INTRO, FIGHT, OUTRO, DONE }
+enum Phase { WAIT, INTRO, FIGHT, OUTRO, CHASE, DONE }
 
 @export var beast_path: NodePath
 @export var lantern_paths: Array[NodePath] = []
@@ -53,16 +76,16 @@ enum Phase { WAIT, INTRO, FIGHT, OUTRO, DONE }
 @export var trigger_x := 0.0
 ## Where the wall of scribble seals the way back (world x).
 @export var barrier_x := 0.0
-## How high the room is above the floor (px), for the wall.
+## The arena's right-hand panel border (world x): it rips open for the chase.
+@export var east_x := 0.0
+## How high the room is above the floor (px), for the walls.
 @export var room_height := 1000.0
-@export_file("*.tscn") var exit_target := "res://scenes/ui/main_menu.tscn"
-@export var exit_label := "THE END OF THE DROP"
-## Where the way on opens after the fight (world x on this floor).
-@export var exit_x := 0.0
+## The chase it hands Vesper to (eraser_chase.gd).
+@export var chase_path: NodePath
 
 var phase := Phase.WAIT
-## How far the tear is open: 0.12 a seam in the floor, 1 the shaft the Beast climbs.
-var gap_open := 0.12
+## How far the gutter between the columns is open (0 shut .. 1 wide).
+var gap_open := 0.0
 
 var _t := 0.0
 var _short := false
@@ -70,6 +93,7 @@ var _fired := {}
 var _beast: Node2D
 var _lanterns: Array = []
 var _player: Node2D
+var _eraser: Node2D
 var _cam: Camera2D
 var _cam_goal := Vector2.ZERO
 var _zoom_goal := 1.0
@@ -83,12 +107,23 @@ var _hint: Node2D
 var _barrier: StaticBody2D
 var _barrier_shape: CollisionShape2D
 var _barrier_up := 0.0
+var _east: StaticBody2D
+var _east_shape: CollisionShape2D
+var _east_open := 0.0
 var _bars := 0.0
 var _bars_goal := 0.0
 var _title := -1.0
 var _caption := ""
 var _caption_t := -1.0
 var _caption_fury := false
+var _line := ""
+var _who := ""
+var _line_t := -1.0
+var _line_fury := false
+var _split := 0.0  # the ink line splitting the panel, top to bottom (0..1)
+var _cracks := 0.0  # the panel borders cracking under its claws
+var _shatter := 0.0  # the borders broken as it tears out
+var _crack_t := 0.0  # seconds the gutter stays cracked open in the fight
 var _bar_shown := 0.0
 var _bar_lag := 1.0
 var _blocked := 0
@@ -96,6 +131,7 @@ var _hint_t := -1.0
 var _hint_lamp: Node2D
 var _flash := 0.0
 var _rumble := 0.0
+var _shadow := 0.0  # the Eraser's shadow falling over the panel
 var _time := 0.0
 var _batch := InkBatch.new()
 
@@ -110,19 +146,20 @@ func _ready() -> void:
 	_build()
 	var state := get_node_or_null("/root/GameState")
 	if state and state.seen.has("beast_dead"):
-		# already beaten this run (a retry from the pause menu): the way on is open
+		# already beaten this run (a retry after dying in the chase): the way on is open
 		phase = Phase.DONE
 		if _beast:
 			_beast.queue_free()
 			_beast = null
-		_open_exit()
+		_east_open = 1.0
+		_east_shape.disabled = true
 		return
 	_short = state != null and state.seen.has("beast_intro")
 	if _beast:
 		_beast.gap_x = global_position.x
 		_beast.arena_lanterns = _lanterns
 		_beast.visible = false
-		_place_beast(SHAFT_DEPTH)
+		_place_beast(0.0)
 		if _beast.has_signal("defeated"):
 			_beast.defeated.connect(_on_defeated)
 	if _short:
@@ -149,6 +186,20 @@ func _build() -> void:
 	wall.z_index = 3
 	wall.draw.connect(_draw_barrier.bind(wall))
 	_barrier.add_child(wall)
+	# the right-hand panel border: shut until the chase
+	_east = StaticBody2D.new()
+	_east.collision_layer = 1
+	_east_shape = CollisionShape2D.new()
+	var er := RectangleShape2D.new()
+	er.size = Vector2(40, room_height)
+	_east_shape.shape = er
+	_east.add_child(_east_shape)
+	add_child(_east)
+	_east.global_position = Vector2(east_x if east_x != 0.0 else global_position.x + 1000.0, global_position.y - room_height * 0.5)
+	var border := Node2D.new()
+	border.z_index = 3
+	border.draw.connect(_draw_east.bind(border))
+	_east.add_child(border)
 	_cam = Camera2D.new()
 	_cam.set_script(GameCamera)
 	_cam.framing_offset = Vector2.ZERO
@@ -192,10 +243,13 @@ func _process(delta: float) -> void:
 			if _beast and _beast.state == _beast.State.DYING:
 				_start_outro()
 			_update_hint(delta)
+			# the gutter cracks open while the Beast calls Scribbles out of it
+			_crack_t = maxf(_crack_t - delta, 0.0)
+			gap_open = move_toward(gap_open, 0.45 if _crack_t > 0.0 else 0.0, delta * 1.5)
 		Phase.OUTRO:
 			_t += delta
 			_outro()
-	# smooth camera, letterbox, wall, bar
+	# smooth camera, letterbox, walls, bar
 	if _cam.is_current():
 		var k := 1.0 - exp(-_cam_rate * delta)
 		_cam.global_position = _cam.global_position.lerp(_cam_goal, k)
@@ -223,12 +277,14 @@ func _process(delta: float) -> void:
 			_title = -1.0
 	if _caption_t >= 0.0:
 		_caption_t += delta
+	if _line_t >= 0.0:
+		_line_t += delta
 	_back.queue_redraw()
 	_front.queue_redraw()
 	_beams.queue_redraw()
 	_hint.queue_redraw()
 	_ui.queue_redraw()
-	for c in _barrier.get_children():
+	for c in _barrier.get_children() + _east.get_children():
 		if c is Node2D:
 			c.queue_redraw()
 
@@ -242,11 +298,19 @@ func _at(time: float) -> bool:
 
 
 func _input(event: InputEvent) -> void:
-	if phase != Phase.INTRO or _short:
+	if not (event is InputEventKey and event.pressed and not event.echo and event.keycode in [KEY_ENTER, KEY_KP_ENTER]):
 		return
-	if event is InputEventKey and event.pressed and not event.echo and event.keycode in [KEY_ENTER, KEY_KP_ENTER]:
+	if phase == Phase.INTRO and not _short:
 		get_viewport().set_input_as_handled()
 		_skip_intro()
+	elif phase == Phase.OUTRO and _t < T_ERASER - 0.4:
+		# skip the talk, not the Eraser's entrance
+		get_viewport().set_input_as_handled()
+		for d in DIALOGUE:
+			if d[0] < T_ERASER:
+				_fired[d[0]] = true
+		_line_t = -1.0
+		_t = T_ERASER - 0.4
 
 
 func _start_intro() -> void:
@@ -255,7 +319,7 @@ func _start_intro() -> void:
 	_fired.clear()
 	_player.cutscene = true
 	var pcam := _player.get_node_or_null("Camera2D") as Camera2D
-	_cam.global_position = pcam.get_screen_center_position() if pcam else _player.global_position
+	_cam.global_position = _view_from(pcam)
 	_cam.zoom = Vector2.ONE
 	_cam_goal = _cam.global_position
 	_zoom_goal = 1.0
@@ -264,109 +328,141 @@ func _start_intro() -> void:
 	_bars_goal = 1.0
 
 
+## Puts the Beast at depth `k` in the gutter: 0 = deep in it (small and dark),
+## 1 = out on the floor of the panel, full size.
+func _emerge(k: float) -> void:
+	if _beast == null:
+		return
+	var s := lerpf(0.32, 1.0, k)
+	_beast.outline.scale = Vector2(s, s)
+	var d := lerpf(0.12, 1.0, clampf(k * 1.3, 0.0, 1.0))
+	_beast.modulate = Color(d, d, d * 1.05)
+
+
 func _intro_long() -> void:
 	var fl := global_position.y
 	var gx := global_position.x
 	if _at(0.4):
 		_rumble = 0.35
 		SfxSynth.play(get_tree(), "rumble", -2.0)
-		_say(Vector2(gx - 260, fl - 330), "RMMBL...", RIM, 30)
+		_say(Vector2(gx - 300, fl - 380), "RMMBL...", RIM, 30)
 	if _t > 0.4 and _t < 2.4 and fmod(_t, 0.2) < get_process_delta_time():
 		InkBits.burst(get_tree(), Vector2(gx + randf_range(-500, 500), fl - room_height + 40), 3, 80.0, Vector2.DOWN, 0.6)
 	if _at(0.8):
-		_cam_goal = Vector2(gx, fl - 150)
-		_zoom_goal = 1.0  # wide: the tear and both lanterns in frame
-		_cam_rate = 1.6
-	if _t >= 2.2 and _t < 2.8:
-		gap_open = lerpf(0.12, 1.0, _ease((_t - 2.2) / 0.6))
+		_cam_goal = Vector2(gx, fl - 300)
+		_zoom_goal = 0.92  # wide: the whole height of the panel and both lanterns
+		_cam_rate = 2.2
+	# an ink line splits the panel from top to bottom...
+	if _at(1.6):
+		SfxSynth.play(get_tree(), "scritch", 0.0, 0.5)
+		_say(Vector2(gx + 60, fl - 600), "SKRRRT", PAPER, 34)
+	if _t >= 1.6 and _t < 2.2:
+		_split = _ease((_t - 1.6) / 0.6)
+	# ...and the two halves part on the gutter between them
 	if _at(2.2):
+		_split = 1.0
 		SfxSynth.play(get_tree(), "rip", 0.0)
-		_say(Vector2(gx + 120, fl - 120), "RRRIIIP!", PAPER, 44)
-		InkBits.burst(get_tree(), Vector2(gx, fl), 40, 520.0, Vector2.UP, 0.8)
+		_say(Vector2(gx + 170, fl - 460), "RRRIIIP!", PAPER, 44)
 		_cam.add_trauma(0.5)
-	# the shield first, held up over its head against the light
-	if _at(2.85):
+		for i in 6:
+			InkBits.burst(get_tree(), Vector2(gx, fl - room_height * (i + 0.5) / 6.0), 8, 380.0, Vector2.ZERO, 0.9)
+	if _t >= 2.2 and _t < 3.0:
+		gap_open = _ease((_t - 2.2) / 0.8)
+	# deep in the dark, something comes: small and far, the shield held up over its head
+	if _at(3.0):
 		_beast.visible = true
 		_beast.shield_lift = 1.0
 		_beast.eyes_open = [0.0, 0.0, 0.0]
 		_beast.facing = -1 if _player.global_position.x < gx else 1
-	if _t >= 2.85 and _t < 3.25:
-		_place_beast(lerpf(SHAFT_DEPTH, 300.0, _ease((_t - 2.85) / 0.4)))
+		_place_beast(0.0)
+		_emerge(0.0)
+	if _t >= 3.0 and _t < 4.8:
+		# it comes up out of the depth in heaving steps
+		var k := (_t - 3.0) / 1.8
+		var step := (floorf(k * 4.0) + _ease(fmod(k * 4.0, 1.0))) / 4.0
+		_emerge(step * 0.82)
 		_beast.light_on_shield = 1.0 if _any_lit() else 0.0
-	if _at(3.1):
-		_rumble = 0.0
-		_cam.add_trauma(0.7)
-		SfxSynth.play(get_tree(), "thud", 0.0, 0.7)
-		_say(Vector2(gx - 150, fl - 260), "KRAKK!", RIM, 40)
-		InkBits.burst(get_tree(), Vector2(gx, fl - 20), 30, 600.0, Vector2.UP, 0.6)
-	# claws on the lip, then it hauls itself up in three heaves
-	if _t >= 3.4 and _t < 4.9:
-		var k := (_t - 3.4) / 1.5
-		var heave := (floorf(k * 3.0) + _ease(fmod(k * 3.0, 1.0))) / 3.0
-		_place_beast(lerpf(300.0, 30.0, heave))
-		_beast.grip = clampf((_t - 3.4) / 0.2, 0.0, 1.0) * (1.0 - clampf((_t - 4.6) / 0.3, 0.0, 1.0))
-		_beast.grip_point = Vector2(gx - 160.0 * _beast.facing * -1.0, fl - 6.0)
-	if _at(3.4) or _at(3.9) or _at(4.4):
-		SfxSynth.play(get_tree(), "scritch", -4.0, randf_range(0.6, 0.8))
-		_cam.add_trauma(0.25)
-	# its darkness puts the lanterns out as it rises
+	if _at(3.2) or _at(3.65) or _at(4.1) or _at(4.55):
+		SfxSynth.play(get_tree(), "thud", -6.0, 0.6)
+		_cam.add_trauma(0.2)
+	# its darkness puts the lanterns out as it comes
 	if _at(4.0):
 		_snuff(0)
-	if _at(4.45):
+	if _at(4.4):
 		_snuff(1)
-	if _t >= 4.0:
-		_beast.light_on_shield = move_toward(_beast.light_on_shield, 1.0 if _any_lit() else 0.0, 0.1)
-	# out onto the floor
-	if _t >= 4.9 and _t < 5.35:
-		var k := (_t - 4.9) / 0.45
-		_place_beast(lerpf(30.0, 0.0, k) - sin(k * PI) * 46.0)
-	if _at(5.35):
-		_place_beast(0.0)
+	# claws on the panel borders, which crack
+	if _at(4.8):
+		_beast.grip = 1.0
+		_beast.grip_point = Vector2(gx - GUTTER_HALF * _beast.facing * -1.0, fl - 190.0)
+		SfxSynth.play(get_tree(), "scritch", -2.0, 0.6)
+		_say(Vector2(gx - 220, fl - 300), "KRAKK!", RIM, 40)
+	if _t >= 4.8 and _t < 5.3:
+		_cracks = _ease((_t - 4.8) / 0.4)
+		_emerge(lerpf(0.82, 0.9, (_t - 4.8) / 0.5))
+	# it tears out through them into Vesper's panel, and the gap slams shut
+	if _at(5.3):
+		_shatter = 1.0
+		_beast.grip = 0.0
+		SfxSynth.play(get_tree(), "shatter", 0.0, 0.8)
+		SfxSynth.play(get_tree(), "roar", -6.0, 1.3)
+		_cam.add_trauma(0.8)
+		for i in 10:
+			for side: float in [-1.0, 1.0]:
+				InkBits.burst(get_tree(), Vector2(gx + side * GUTTER_HALF, fl - room_height * (i + 0.5) / 10.0), 4, 520.0, Vector2(side, 0), 0.6)
+	if _t >= 5.3 and _t < 5.75:
+		var k := (_t - 5.3) / 0.45
+		_emerge(lerpf(0.9, 1.0, k))
+		_place_beast(-sin(k * PI) * 50.0, _beast.facing * 150.0 * _ease(k))
+		gap_open = 1.0 - _ease(k)
+	if _at(5.75):
+		_emerge(1.0)
+		_place_beast(0.0, _beast.facing * 150.0)
+		gap_open = 0.0
+		_split = 0.0
 		SfxSynth.play(get_tree(), "thud", 2.0)
-		_cam.add_trauma(0.6)
-		InkBits.burst(get_tree(), Vector2(gx, fl), 20, 380.0, Vector2.UP, 0.3)
-	if _t >= 5.35 and _t < 6.3:
-		gap_open = lerpf(1.0, 0.12, _ease((_t - 5.35) / 0.95))
+		_say(Vector2(gx + 40, fl - 520), "WHAM!", PAPER, 52)
+		_flash = 0.35
+		InkBits.burst(get_tree(), _beast.global_position + Vector2(0, 100), 20, 380.0, Vector2.UP, 0.3)
 	# push in on it; the eyes open one at a time
-	if _at(5.6):
+	if _at(6.0):
 		_cam_goal = _beast_head()
 		_zoom_goal = 1.75
 		_cam_rate = 2.4
 	for i in 3:
-		var t0: float = [6.0, 6.3, 6.6][i]
+		var t0: float = [6.4, 6.7, 7.0][i]
 		if _t >= t0:
 			_beast.eyes_open[i] = clampf((_t - t0) / 0.12, 0.0, 1.0)
 		if _at(t0):
 			SfxSynth.play(get_tree(), "scritch", -10.0, 1.6 + i * 0.2)
 	# the shield comes down, and it roars
-	if _t >= 6.9 and _t < 7.2:
-		_beast.shield_lift = 1.0 - _ease((_t - 6.9) / 0.3)
-	if _at(7.05):
+	if _t >= 7.3 and _t < 7.6:
+		_beast.shield_lift = 1.0 - _ease((_t - 7.3) / 0.3)
+	if _at(7.45):
 		SfxSynth.play(get_tree(), "roar", 2.0)
 		_rumble = 0.9
 		_say(_beast_head() + Vector2(-_beast.facing * 40.0, -40.0), "GRRRAAAAHHH!!", Color(1.0, 0.25, 0.18), 54)
-	if _t >= 7.05 and _t < 8.6:
-		_beast.roar = clampf((_t - 7.05) / 0.2, 0.0, 1.0) * (1.0 - clampf((_t - 8.3) / 0.3, 0.0, 1.0))
+	if _t >= 7.45 and _t < 9.0:
+		_beast.roar = clampf((_t - 7.45) / 0.2, 0.0, 1.0) * (1.0 - clampf((_t - 8.7) / 0.3, 0.0, 1.0))
 		if fmod(_t, 0.1) < get_process_delta_time():
 			InkBits.burst(get_tree(), _beast_head() + Vector2(_beast.facing * 30, 10), 3, 420.0, Vector2(_beast.facing, 0.2), 0.0)
-	if _at(7.4):
+	if _at(7.8):
 		_title = 0.0
 		Sfx.play("boss_intro")
 		_cam_goal = _beast_head() + Vector2(0, 60)
 		_zoom_goal = 1.35
 		_cam_rate = 1.4
-	if _at(8.6):
+	if _at(9.0):
 		_rumble = 0.0
 		_beast.roar = 0.0
-	if _at(9.2):
+	if _at(9.6):
 		_show_caption(LINES_INTRO[0], false)
-	if _at(11.1):
+	if _at(11.5):
 		_show_caption(LINES_INTRO[1], false)
-	if _at(13.9):
+	if _at(14.6):
 		_cam_goal = _player_view()
 		_zoom_goal = 1.0
 		_cam_rate = 2.4
-	if _at(14.8):
+	if _at(15.5):
 		_start_fight()
 
 
@@ -374,30 +470,35 @@ func _intro_short() -> void:
 	var fl := global_position.y
 	var gx := global_position.x
 	if _at(0.0):
-		_cam_goal = Vector2(gx, fl - 150)
-		_zoom_goal = 1.0
+		_cam_goal = Vector2(gx, fl - 250)
+		_zoom_goal = 0.95
 		_cam_rate = 3.0
-	if _t < 0.4:
-		gap_open = lerpf(0.12, 1.0, _ease(_t / 0.4))
-	if _at(0.2):
 		SfxSynth.play(get_tree(), "rip", -2.0)
+	_split = _ease(_t / 0.25)
+	if _t < 0.55:
+		gap_open = _ease((_t - 0.15) / 0.4)
+	if _at(0.3):
 		_beast.visible = true
 		_beast.shield_lift = 1.0
 		_beast.facing = -1 if _player.global_position.x < gx else 1
-	if _t >= 0.3 and _t < 1.1:
-		var k := (_t - 0.3) / 0.8
-		_place_beast(lerpf(SHAFT_DEPTH, 0.0, _ease(k)) - sin(k * PI) * 40.0)
-	if _at(1.1):
 		_place_beast(0.0)
+	if _t >= 0.3 and _t < 1.2:
+		_emerge(_ease((_t - 0.3) / 0.9) * 0.9)
+	if _t >= 1.2 and _t < 1.6:
+		var k := (_t - 1.2) / 0.4
+		_emerge(lerpf(0.9, 1.0, k))
+		_place_beast(-sin(k * PI) * 40.0, _beast.facing * 120.0 * _ease(k))
+		gap_open = 1.0 - _ease(k)
+		_beast.shield_lift = 1.0 - k
+	if _at(1.6):
+		_emerge(1.0)
+		_place_beast(0.0, _beast.facing * 120.0)
+		gap_open = 0.0
+		_split = 0.0
 		SfxSynth.play(get_tree(), "thud", 2.0)
-		_cam.add_trauma(0.6)
-	if _t >= 1.1 and _t < 1.6:
-		gap_open = lerpf(1.0, 0.12, (_t - 1.1) / 0.5)
-		_beast.shield_lift = 1.0 - (_t - 1.1) / 0.5
-	if _at(1.4):
 		SfxSynth.play(get_tree(), "roar", -2.0, 1.1)
 		_cam.add_trauma(0.7)
-	if _t >= 1.4 and _t < 2.4:
+	if _t >= 1.6 and _t < 2.4:
 		_beast.roar = 1.0 - clampf((_t - 2.1) / 0.3, 0.0, 1.0)
 	if _at(2.2):
 		_cam_goal = _player_view()
@@ -409,10 +510,12 @@ func _intro_short() -> void:
 func _skip_intro() -> void:
 	for l in _lanterns:
 		l.lit = false
-	gap_open = 0.12
+	gap_open = 0.0
+	_split = 0.0
 	_beast.visible = true
 	_beast.facing = -1 if _player.global_position.x < global_position.x else 1
-	_place_beast(0.0)
+	_place_beast(0.0, _beast.facing * 150.0)
+	_emerge(1.0)
 	_beast.grip = 0.0
 	_beast.light_on_shield = 0.0
 	_title = -1.0
@@ -423,9 +526,11 @@ func _skip_intro() -> void:
 
 func _start_fight() -> void:
 	phase = Phase.FIGHT
-	gap_open = 0.12  # the page knits shut behind it
+	gap_open = 0.0
+	_split = 0.0
 	_bars_goal = 0.0
 	_rumble = 0.0
+	_emerge(1.0)
 	_player.cutscene = false
 	var pcam := _player.get_node_or_null("Camera2D") as Camera2D
 	if pcam:
@@ -438,14 +543,23 @@ func _start_fight() -> void:
 	SfxSynth.play(get_tree(), "scritch", -4.0, 0.5)
 
 
+## beast.gd: Scribbles come out of the gutter; it cracks open for a moment.
+func crack_gutter(seconds: float) -> void:
+	_crack_t = seconds
+	_split = 1.0
+	_cracks = 0.0
+	_shatter = 0.0
+
+
 func _start_outro() -> void:
 	phase = Phase.OUTRO
 	_t = 0.0
 	_fired.clear()
+	_crack_t = 0.0
 	if _player and not _player.dead:
 		_player.cutscene = true
 	var pcam := _player.get_node_or_null("Camera2D") as Camera2D if _player else null
-	_cam.global_position = pcam.get_screen_center_position() if pcam else _beast.global_position
+	_cam.global_position = _view_from(pcam)
 	_cam.zoom = Vector2.ONE
 	_cam_goal = _beast.global_position + Vector2(0, -60)
 	_zoom_goal = 1.35
@@ -455,22 +569,69 @@ func _start_outro() -> void:
 
 
 func _outro() -> void:
+	var fl := global_position.y
 	if _at(0.2):
 		_rumble = 0.25
 	if _t > 3.6 and _t < 3.8:
 		_rumble = 0.0
-	if _at(6.0):
-		_cam.add_trauma(0.9)
-		_show_caption(LINES_END[0], true)
-		SfxSynth.play(get_tree(), "rumble", 0.0, 0.8)
-	if _at(8.2):
+	# quiet: Vesper alone in the panel where his story was meant to end
+	if _at(4.4):
+		_cam_goal = _player_view() + Vector2(0, -20)
+		_zoom_goal = 1.25
+		_cam_rate = 1.2
+	for d in DIALOGUE:
+		if _at(d[0]):
+			_speak(d[1], d[2], d[3])
+			if d[3]:
+				_cam.add_trauma(0.5)
+				SfxSynth.play(get_tree(), "rumble", -8.0, 1.3)
+	# a shadow falls over the panel...
+	if _t >= 19.6 and _t < T_ERASER:
+		_shadow = _ease((_t - 19.6) / 1.6)
+		_rumble = 0.4
+	# ...and the Eraser slams down out of the sky
+	if _at(T_ERASER):
+		_eraser = Eraser.new()
+		get_parent().add_child(_eraser)
+		var ex := _player.global_position.x - 560.0 if _player else global_position.x
+		ex = maxf(ex, barrier_x + 200.0)
+		_eraser.global_position = Vector2(ex, fl - 1300.0)
+		_eraser.set_harmful(false)
+		_eraser.heading = 1.0
+		_cam_goal = Vector2((ex + _player.global_position.x) * 0.5, fl - 240.0)
+		_zoom_goal = 0.95
+		SfxSynth.play(get_tree(), "whoosh", 0.0, 0.5)
+	if _eraser and _t >= T_ERASER and _t < T_ERASER + 0.35:
+		_eraser.global_position.y = lerpf(fl - 1300.0, fl, _ease((_t - T_ERASER) / 0.35))
+	if _at(T_ERASER + 0.35):
+		_eraser.global_position.y = fl
+		_rumble = 0.0
+		_shadow = 0.0
 		_cam.add_trauma(1.0)
-		_show_caption(LINES_END[1], true)
-	if _at(11.0):
-		_cam_goal = _player_view()
-		_zoom_goal = 1.0
-	if _at(11.8):
-		phase = Phase.DONE
+		SfxSynth.play(get_tree(), "thud", 3.0, 0.6)
+		_say(_eraser.global_position + Vector2(0, -380), "WHAM!!", PAPER, 64)
+		var dust := InkBits.burst(get_tree(), _eraser.global_position, 40, 520.0, Vector2.UP, 1.0)
+		if dust:
+			dust.modulate = Color(0.75, 0.75, 0.78)
+	if _at(T_ERASER + 0.8):
+		_eraser.roar = 1.0
+		SfxSynth.play(get_tree(), "roar", 0.0, 1.5)
+		_say(_eraser.global_position + Vector2(60, -360), "SKRRRRK!", Color(0.95, 0.5, 0.55), 48)
+	if _eraser and _t >= T_ERASER + 0.8 and _t < T_RIP:
+		_eraser.rubbing = 1.0 if _t < T_ERASER + 2.2 else 0.0
+		_eraser.roar = maxf(_eraser.roar - get_process_delta_time() * 0.5, 0.0)
+	# the panel's right-hand border rips open: the way out
+	if _at(T_RIP):
+		SfxSynth.play(get_tree(), "rip", 0.0, 0.9)
+		_say(_east.global_position + Vector2(-40, -200), "RRRIP!", PAPER, 46)
+		for i in 8:
+			InkBits.burst(get_tree(), _east.global_position + Vector2(0, room_height * ((i + 0.5) / 8.0 - 0.5)), 6, 420.0, Vector2.RIGHT, 0.9)
+	if _t >= T_RIP:
+		_east_open = _ease((_t - T_RIP) / 0.5)
+		_east_shape.disabled = _east_open > 0.3
+	if _at(T_RUN):
+		_say(_player.global_position + Vector2(0, -110), "RUN!", Color(1.0, 0.28, 0.22), 72)
+		phase = Phase.CHASE
 		_bars_goal = 0.0
 		if _player and not _player.dead:
 			_player.cutscene = false
@@ -478,7 +639,9 @@ func _outro() -> void:
 			if pcam:
 				pcam.make_current()
 				pcam.reset_smoothing()
-		_open_exit()
+		var chase := get_node_or_null(chase_path)
+		if chase:
+			chase.begin(_eraser)
 
 
 func _on_defeated() -> void:
@@ -487,15 +650,6 @@ func _on_defeated() -> void:
 	var state := get_node_or_null("/root/GameState")
 	if state:
 		state.seen["beast_dead"] = true
-
-
-func _open_exit() -> void:
-	var ex: Area2D = LevelExit.new()
-	ex.target_scene = exit_target
-	ex.label = exit_label
-	get_parent().add_child(ex)
-	ex.global_position = Vector2(exit_x if exit_x != 0.0 else global_position.x + 500.0, global_position.y)
-	InkBits.burst(get_tree(), ex.global_position + Vector2(0, -60), 24, 300.0, Vector2.ZERO, 0.8)
 
 
 ## beast.gd: a hit bounced off the shield.
@@ -524,9 +678,10 @@ func _update_hint(delta: float) -> void:
 
 # ------------------------------------------------------------------ helpers
 
-func _place_beast(depth: float) -> void:
+## Stands the Beast on the floor at the gutter (`dx` along, `up` px off the floor: negative = higher).
+func _place_beast(up: float, dx := 0.0) -> void:
 	if _beast:
-		_beast.global_position = Vector2(global_position.x, global_position.y + depth - _beast.body_size.y * 0.5)
+		_beast.global_position = Vector2(global_position.x + dx, global_position.y + up - _beast.body_size.y * 0.5)
 
 
 func _beast_head() -> Vector2:
@@ -569,6 +724,14 @@ func _show_caption(text: String, fury: bool) -> void:
 	_caption_fury = fury
 
 
+## A line of the ending's dialogue: "shade" (his black balloon) or "vesper".
+func _speak(who: String, text: String, fury: bool) -> void:
+	_who = who
+	_line = text
+	_line_t = 0.0
+	_line_fury = fury
+
+
 func _ease(x: float) -> float:
 	x = clampf(x, 0.0, 1.0)
 	return x * x * (3.0 - 2.0 * x)
@@ -576,89 +739,70 @@ func _ease(x: float) -> float:
 
 # ------------------------------------------------------------------ drawing
 
-## The shaft under the tear: the gutter's dark, white panel lines falling
-## away into it, a cold glow from far below. Behind the Beast.
+func _gutter_rect() -> Rect2:
+	var hw := GUTTER_HALF * gap_open
+	return Rect2(-hw, -room_height - 300.0, hw * 2.0, room_height + 900.0)
+
+
+## The gutter between the columns: the Margins' dark, dead panels drifting
+## up through it, a cold glow from far back. Behind the Beast.
 func _draw_back(n: Node2D) -> void:
-	var rng := RandomNumberGenerator.new()
-	rng.seed = int(_time * 12.0)
-	if gap_open <= 0.14:
-		_draw_seam(n, rng)
+	if gap_open <= 0.01:
 		return
-	var hw := lerpf(10.0, SHAFT_HALF, gap_open)
-	var pts := PackedVector2Array([Vector2(-hw, 0)])
-	for i in 8:
-		var y := SHAFT_DEPTH * (i + 1) / 8.0
-		pts.append(Vector2(-hw + rng.randf_range(-8, 8) * gap_open - y * 0.04, y))
-	for i in range(8, 0, -1):
-		var y := SHAFT_DEPTH * i / 8.0
-		pts.append(Vector2(hw + rng.randf_range(-8, 8) * gap_open + y * 0.04, y))
-	pts.append(Vector2(hw, 0))
-	_batch.draw_colored_polygon(pts, VOID)
-	# cold glow welling up from the deep
+	var r := _gutter_rect()
+	_batch.draw_rect(r, VOID)
 	for k in 5:
-		var w := hw * (1.0 - k * 0.15)
-		_batch.draw_rect(Rect2(-w, 40 + k * 90, w * 2, SHAFT_DEPTH - 40 - k * 90), Color(0.5, 0.65, 1.0, 0.035 * gap_open))
-	# the Margins: panel borders falling away down there
-	if gap_open > 0.3:
-		var a := (gap_open - 0.3) / 0.7
-		for i in 4:
-			var y := 80.0 + i * 130.0 + fmod(_time * 30.0, 130.0)
-			var w := hw * (0.9 - i * 0.12)
-			_batch.draw_rect(Rect2(-w, y, w * 2.0, 90), Color(RIM, 0.0), false)
-			var r := PackedVector2Array([Vector2(-w, y), Vector2(w, y), Vector2(w, y + 90), Vector2(-w, y + 90), Vector2(-w, y)])
-			_batch.draw_polyline(r, Color(RIM, 0.18 * a * (1.0 - i * 0.2)), 1.5)
+		var w := r.size.x * (0.9 - k * 0.15) * 0.5
+		_batch.draw_rect(Rect2(-w, r.position.y, w * 2.0, r.size.y), Color(0.45, 0.6, 1.0, 0.03 * gap_open))
+	# dead panels, far back in the dark, drifting up
+	for i in 9:
+		var y := r.position.y + fposmod(i * 160.0 - _time * 50.0, r.size.y)
+		var w := r.size.x * (0.35 + 0.4 * fposmod(sin(i * 3.7) * 9.1, 1.0))
+		var pr := Rect2(-w * 0.5 + sin(i * 2.1) * r.size.x * 0.15, y, w, 70.0 + 40.0 * fposmod(sin(i * 5.3) * 7.7, 1.0))
+		_batch.draw_rect(pr, Color(0.55, 0.58, 0.68, 0.12 * gap_open), false, 1.5)
 	_batch.flush(n)
 
 
-## Closed, the tear is only a seam in the page: a jagged crack along the floor
-## with a cold light breathing out of it (the floor stays solid).
-func _draw_seam(n: Node2D, rng: RandomNumberGenerator) -> void:
-	var glow := 0.3 + 0.15 * sin(_time * 2.5)
-	var pts := PackedVector2Array()
-	var steps := 10
-	for i in steps + 1:
-		var x := -90.0 + 180.0 * i / steps
-		pts.append(Vector2(x, 3.0 + (rng.randf_range(0, 3) if i % 2 else 0.0)))
-	for i in range(steps, -1, -1):
-		var x := -90.0 + 180.0 * i / steps
-		var depth := 9.0 * (1.0 - absf(x) / 90.0)
-		pts.append(Vector2(x, 4.0 + depth))
-	_batch.draw_colored_polygon(pts, VOID)
-	_batch.draw_polyline(pts.slice(0, steps + 1), Color(0.6, 0.75, 1.0, glow), 1.6)
-	for k in 3:
-		_batch.draw_circle(Vector2(0, 2), 40.0 + k * 30.0, Color(0.5, 0.65, 1.0, 0.02 * glow))
-	_batch.flush(n)
-
-
-## The rock either side of the shaft, in front of the Beast (it hides what of
-## it is still underground), and the torn edges of the page curling down into
-## the tear. Only while the tear is open; closed, it is just a seam.
+## The panel borders either side of the gutter (in front of the Beast while
+## it's still in there), the ink line that splits the panel, cracks where its
+## claws grab, and the borders breaking as it tears out.
 func _draw_front(n: Node2D) -> void:
-	if gap_open <= 0.14:
+	var top := -room_height - 300.0
+	var bottom := 600.0
+	if _split > 0.0 and gap_open <= 0.02:
+		var y1 := lerpf(top, bottom, _split)
+		_batch.draw_line(Vector2(0, top), Vector2(0, y1), INK, 7.0)
+		_batch.draw_line(Vector2(2, top), Vector2(2, y1), Color(RIM, 0.6), 1.5)
+		_batch.flush(n)
 		return
-	var hw := lerpf(10.0, SHAFT_HALF, gap_open)
+	if gap_open <= 0.01:
+		return
+	var hw := GUTTER_HALF * gap_open
 	var rng := RandomNumberGenerator.new()
 	rng.seed = int(_time * 12.0)
 	for side: float in [-1.0, 1.0]:
-		var inner := PackedVector2Array()
-		inner.append(Vector2(side * hw, 10))
-		for i in 8:
-			var y := SHAFT_DEPTH * (i + 1) / 8.0
-			inner.append(Vector2(side * (hw + y * 0.04 + rng.randf_range(-8, 8) * gap_open), y))
-		inner.append(Vector2(side * (SHAFT_HALF + 170.0), SHAFT_DEPTH + 40.0))
-		inner.append(Vector2(side * (SHAFT_HALF + 170.0), 10))
-		_batch.draw_colored_polygon(inner, ROCK)
-		# the page's torn edge: a ragged paper lip hanging down into the tear
-		var lip := PackedVector2Array()
-		var steps := 7
-		for i in steps + 1:
-			var x := side * (hw + 40.0 - 40.0 * i / steps)
-			lip.append(Vector2(x, 1.0 + (rng.randf_range(0, 5) if i % 2 else 0.0)))
-		for i in range(steps, -1, -1):
-			var x := side * (hw + 40.0 - 40.0 * i / steps)
-			lip.append(Vector2(x, 4.0 + (i / float(steps)) * 14.0 * gap_open + rng.randf_range(-2, 4)))
-		_batch.draw_colored_polygon(lip, Color(PAPER, 0.55))
-		_batch.draw_polyline(lip, Color(INK, 0.9), 1.2)
+		var x := side * hw
+		var broken := _shatter > 0.0
+		var y := top
+		while y < bottom:
+			var seg := 90.0
+			var gap := (rng.randf() < 0.45) if broken else false
+			if not gap:
+				# the white paper edge right at the gutter, the panel's ink border outside it
+				_batch.draw_line(Vector2(x, y), Vector2(x, y + seg), Color(RIM, 0.95), 3.0)
+				_batch.draw_rect(Rect2(Vector2(x + side * 1.5 - (0.0 if side > 0.0 else 9.0), y), Vector2(9, seg)), INK)
+			y += seg
+		# cracks spreading from where the claws hold
+		if _cracks > 0.0:
+			for i in 5:
+				var p := Vector2(x, -190.0 + rng.randf_range(-60, 60))
+				var line := PackedVector2Array([p])
+				var d := Vector2(side, rng.randf_range(-1.0, 1.0)).normalized()
+				for k in 4:
+					d = d.rotated(rng.randf_range(-0.6, 0.6))
+					p += d * 20.0 * _cracks
+					line.append(p)
+				_batch.draw_polyline(line, Color(RIM, _cracks), 2.0)
 	_batch.flush(n)
 
 
@@ -666,14 +810,15 @@ func _draw_front(n: Node2D) -> void:
 func _draw_beams(n: Node2D) -> void:
 	if phase != Phase.INTRO or _beast == null or not _beast.visible or _beast.shield_lift < 0.5:
 		return
-	var shield := _beast.global_position + Vector2(_beast.facing * 10.0, _beast.body_size.y * 0.5 - 325.0)
+	var s: float = _beast.outline.scale.x
+	var shield := _beast.global_position + Vector2(_beast.facing * 10.0 * s, _beast.body_size.y * 0.5 - 325.0 * s)
 	for l in _lanterns:
 		if not l.lit:
 			continue
 		var from: Vector2 = l.lamp_position() - n.global_position
 		var to := shield - n.global_position
 		var side := (to - from).orthogonal().normalized()
-		_batch.draw_colored_polygon(PackedVector2Array([from - side * 6.0, to - side * 60.0, to + side * 60.0, from + side * 6.0]),
+		_batch.draw_colored_polygon(PackedVector2Array([from - side * 6.0, to - side * 60.0 * s, to + side * 60.0 * s, from + side * 6.0]),
 			Color(LIGHT, 0.12 + 0.05 * sin(_time * 20.0)))
 	_batch.flush(n)
 
@@ -726,21 +871,26 @@ func _draw_ui() -> void:
 		var a := clampf(_t - 1.0, 0.0, 1.0) * 0.55
 		var tw := FONT.get_string_size("ENTER  SKIP", HORIZONTAL_ALIGNMENT_LEFT, -1, 20).x
 		_ui.draw_string(FONT, Vector2(size.x - tw - 30, size.y - 28), "ENTER  SKIP", HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color(1, 1, 1, a))
+	if _shadow > 0.0:
+		# the Eraser's shadow falling over the panel from above
+		var sh := size.y * 0.9 * _shadow
+		_ui.draw_rect(Rect2(0, 0, size.x, sh), Color(0, 0, 0, 0.45 * _shadow))
 	_draw_fury(size)
 	_draw_title(size)
 	_draw_caption(size)
+	_draw_line(size)
 	_draw_boss_bar(size)
 	if _flash > 0.0:
 		_ui.draw_rect(Rect2(Vector2.ZERO, size), Color(1, 1, 1, _flash * 0.85))
 
 
-## The Writer, furious (the ending): the panel pulses red and his pen slashes
+## Shade, furious (the ending): the panel pulses red and his pen slashes
 ## angry scratches across it, a few at a time at 12 fps.
 func _draw_fury(size: Vector2) -> void:
-	if not _caption_fury or _caption_t < 0.0:
+	if not _line_fury or _line_t < 0.0 or _who != "shade":
 		return
-	var total := _caption.length() / 30.0 + 2.2
-	var a := clampf(_caption_t / 0.3, 0.0, 1.0) * clampf((total - _caption_t) / 0.5, 0.0, 1.0)
+	var total := _line_dur()
+	var a := clampf(_line_t / 0.3, 0.0, 1.0) * clampf((total - _line_t) / 0.5, 0.0, 1.0)
 	if a <= 0.0:
 		return
 	var pulse := 0.5 + 0.5 * sin(_time * 9.0)
@@ -870,3 +1020,87 @@ func _draw_boss_bar(size: Vector2) -> void:
 		x += 9.0
 	if _beast.phase_two:
 		_ui.draw_rect(Rect2(r.position.x + r.size.x * 0.5 - 1, r.position.y - 3, 2, r.size.y + 6), Color(INK, a))
+
+
+## The arena's right-hand panel border: a thick ink frame line; for the chase
+## it rips open, its pieces falling away.
+func _draw_east(n: Node2D) -> void:
+	var h := room_height
+	if _east_open >= 1.0:
+		return
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 5
+	var a := 1.0 - _east_open
+	var pieces := 9
+	for i in pieces:
+		var y0 := -h * 0.5 + h * i / pieces
+		var y1 := y0 + h / pieces
+		var fall := _east_open * (200.0 + 500.0 * rng.randf())
+		var drift := _east_open * rng.randf_range(20, 120)
+		var off := Vector2(drift, fall)
+		var rot := _east_open * rng.randf_range(-0.6, 0.6)
+		var c := Vector2(0, (y0 + y1) * 0.5) + off
+		var pts := PackedVector2Array([Vector2(-10, y0), Vector2(10, y0 + rng.randf_range(-8, 8)), Vector2(10, y1), Vector2(-10, y1 + rng.randf_range(-8, 8))])
+		var moved := PackedVector2Array()
+		for p in pts:
+			moved.append(c + (p - Vector2(0, (y0 + y1) * 0.5)).rotated(rot))
+		_batch.draw_colored_polygon(moved, Color(INK, a))
+		_batch.draw_line(moved[0] + Vector2(-2, 0), moved[3] + Vector2(-2, 0), Color(RIM, 0.8 * a), 2.0)
+	_batch.flush(n)
+
+
+func _line_dur() -> float:
+	return 1.2 + _line.length() / 30.0
+
+
+## The ending's dialogue: Shade's black balloon (top centre, red letters,
+## shaking when he's furious) or Vesper's own white balloon over his head.
+func _draw_line(size: Vector2) -> void:
+	if _line_t < 0.0 or _line == "":
+		return
+	var dur := _line_dur()
+	var a := clampf(_line_t / 0.2, 0.0, 1.0) * clampf((dur - _line_t) / 0.3, 0.0, 1.0)
+	if a <= 0.0:
+		return
+	var shown := _line.substr(0, int(_line_t * 32.0))
+	if _who == "shade":
+		var fs := 34 if _line_fury else 30
+		var lines := _wrap(_line, fs, 820.0)
+		var widest := 0.0
+		for l in lines:
+			widest = maxf(widest, FONT.get_string_size(l, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x)
+		var lh := fs * 1.2
+		var box := Rect2(size.x * 0.5 - widest * 0.5 - 30.0, 96.0, widest + 60.0, lh * lines.size() + 26.0)
+		if _line_fury:
+			box.position += Vector2(randf_range(-3, 3), randf_range(-3, 3))
+		_ui.draw_rect(box.grow(4.0), Color(0.85, 0.2, 0.25, a))
+		_ui.draw_rect(box, Color(0.02, 0.01, 0.04, a))
+		var left := shown.length()
+		for i in lines.size():
+			var line: String = lines[i]
+			var part := line.substr(0, clampi(left, 0, line.length()))
+			var jig := Vector2(randf_range(-1.5, 1.5), randf_range(-1.5, 1.5)) if _line_fury else Vector2.ZERO
+			_ui.draw_string(FONT, box.position + Vector2(30, 14 + lh * (i + 0.8)) + jig, part, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(1.0, 0.86, 0.88, a))
+			left -= line.length() + 1
+		_ui.draw_string(FONT, box.position + Vector2(box.size.x - 92, box.size.y + 24), "- SHADE", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color(1.0, 0.35, 0.4, a))
+	elif _player:
+		var fs := 28
+		var w := FONT.get_string_size(_line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		var head := get_viewport().get_canvas_transform() * (_player.global_position + Vector2(0, -60))
+		var box := Rect2(head + Vector2(-w * 0.5 - 20 + 40, -110), Vector2(w + 40, 50))
+		_ui.draw_colored_polygon(PackedVector2Array([Vector2(box.position.x + 30, box.end.y - 2), Vector2(box.position.x + 58, box.end.y - 2),
+			head + Vector2(6, -14)]), Color(1, 1, 1, a))
+		_ui.draw_rect(box.grow(3.0), Color(INK, a))
+		_ui.draw_rect(box, Color(1, 1, 1, a))
+		_ui.draw_string(FONT, box.position + Vector2(20, 35), shown, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(INK, a))
+
+
+## Where the cutscene camera takes over from the player's: what it was showing,
+## unless that's stale (far from Vesper, e.g. just after a respawn).
+func _view_from(pcam: Camera2D) -> Vector2:
+	var p := get_tree().get_first_node_in_group("player") as Node2D
+	var here := p.global_position + Vector2(0, -60) if p else global_position
+	if pcam == null:
+		return here
+	var c := pcam.get_screen_center_position()
+	return c if c.distance_to(here) < 600.0 else here
