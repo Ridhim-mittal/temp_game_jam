@@ -82,8 +82,8 @@ func _physics_process(delta: float) -> void:
 		if l.lit and l.reaches(global_position):
 			in_lantern = true
 			break
-	var cine: bool = _player != null and _player.get("cinematic") == true
-	var want := Input.is_action_pressed("ember") and not dead and not snuffed and not cine
+	var locked: bool = _player != null and "cutscene" in _player and _player.cutscene
+	var want := Input.is_action_pressed("ember") and not dead and not snuffed and not locked
 	raised = want
 	if raised:
 		_since_raised = 0.0

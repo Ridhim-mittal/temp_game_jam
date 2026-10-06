@@ -3,7 +3,7 @@ extends Area2D
 ## Drop: shaft 2 into the Shadow Gallery, ~1200 px, past the fall-damage
 ## height). Falling into this area: the HUD fades out, black letterbox bars
 ## slide in, the camera leans in a little and Vesper is out of the player's
-## hands (player.gd `cinematic`: no input, and the hard landing kneels but
+## hands (player.gd `cutscene`: no input, and the hard landing kneels but
 ## never hurts). A beat after he lands it all comes back. Origin = centre of
 ## the trigger, `size` its extent.
 
@@ -40,7 +40,7 @@ func _ready() -> void:
 
 
 func _on_body_entered(body: Node2D) -> void:
-	if _playing or not body.is_in_group("player") or not ("cinematic" in body):
+	if _playing or not body.is_in_group("player") or not ("cutscene" in body):
 		return
 	var p := body as CharacterBody2D
 	if p.dead or p.velocity.y <= 0.0:
@@ -53,7 +53,7 @@ func _start(p: CharacterBody2D) -> void:
 	_playing = true
 	_t = 0.0
 	_landed = -1.0
-	p.cinematic = true
+	p.cutscene = true
 	_set_hud(0.0)
 	_cam = p.get_node_or_null("Camera2D") as Camera2D
 	if _cam:
@@ -80,7 +80,7 @@ func _process(delta: float) -> void:
 func _finish() -> void:
 	_playing = false
 	if is_instance_valid(_player):
-		_player.cinematic = false
+		_player.cutscene = false
 	if is_instance_valid(_cam):
 		create_tween().tween_property(_cam, "zoom", _base_zoom, 0.6) \
 			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)

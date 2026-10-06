@@ -183,14 +183,15 @@ const HAZARD_DAMAGE := 2.0  # one ink bottle
 @export var hurt_stun_time := 0.22
 
 var facing := 1
+## True while a cutscene has the controls (beast_arena.gd, fall_cutscene.gd): no
+## input, pause or shop, no damage; Vesper comes to a stop, and a long fall
+## still ends in the hard-landing kneel (without the fall damage).
+var cutscene := false
 var health := 0.0
 var coins := 0
 var can_dash := true
 var is_jumping := false
 var dead := false
-## A cutscene has the controls (fall_cutscene.gd): no input, no pause or
-## shop, the Ember stays lowered, and a hard landing never hurts.
-var cinematic := false
 
 var _coyote_timer := 0.0
 var _jump_buffer_timer := 0.0
@@ -281,7 +282,7 @@ func _ready() -> void:
 
 ## Esc / Start: the pause screen (the same one as in 2.5D rooms).
 func _unhandled_input(event: InputEvent) -> void:
-	if cinematic:
+	if cutscene:
 		return
 	if event.is_action_pressed("pause") and not dead and not get_tree().paused:
 		get_viewport().set_input_as_handled()  # pause, don't leave for the menu (mood.gd)
@@ -298,12 +299,18 @@ func _physics_process(delta: float) -> void:
 		return
 
 	_tick_timers(delta)
-	if cinematic:
-		# a cutscene: just fall (drifting to a stop sideways) and land
-		velocity.x = move_toward(velocity.x, 0.0, max_speed * 2.0 * delta)
+	if cutscene:
+		_cancel_charge_for_cutscene()
+		velocity.x = move_toward(velocity.x, 0.0, ground_decel * delta)
 		_apply_gravity(delta)
 		move_and_slide()
-		_post_move(delta)
+		var on_floor := is_on_floor()
+		if on_floor and not _was_on_floor and hard_land_height > 0.0 and global_position.y - _fall_top >= hard_land_height:
+			_hard_land(global_position.y - _fall_top)  # the kneel; no fall damage in a cutscene
+		if on_floor or velocity.y <= 0.0:
+			_fall_top = global_position.y
+		_was_on_floor = on_floor
+		_update_visuals(delta)
 		return
 	var input_x := Input.get_axis("move_left", "move_right")
 	if Input.is_action_just_pressed("jump"):
@@ -681,6 +688,19 @@ func _start_dash(input_x: float) -> void:
 	_squash = Vector2(1.3, 0.75)
 
 
+## A cutscene takes the controls: drop a held charge, dash or heal.
+func _cancel_charge_for_cutscene() -> void:
+	_charge = -1.0
+	_charge_ready = false
+	_heal_t = -1.0
+	_dash_timer = 0.0
+	_attack_timer = 0.0
+	_attack_buffer_timer = 0.0
+	_jump_buffer_timer = 0.0
+	_stop_drill()
+	_stop_whirl()
+
+
 func _post_move(delta: float) -> void:
 	var on_floor := is_on_floor()
 	if on_floor and not _was_on_floor:
@@ -717,7 +737,7 @@ func _post_move(delta: float) -> void:
 ## kneel that locks control; past `fall_damage_height` it also hurts.
 func _hard_land(drop: float) -> void:
 	Sfx.play("fall_land", 2.0 if drop >= fall_damage_height else 0.0)
-	var hurts := not cinematic and fall_damage_height > 0.0 and drop >= fall_damage_height
+	var hurts := not cutscene and fall_damage_height > 0.0 and drop >= fall_damage_height
 	_land_length = hard_land_time * (1.6 if hurts else 1.0)
 	_land_timer = _land_length
 	_crouch = -1.0
@@ -1284,7 +1304,7 @@ func _update_visuals(delta: float) -> void:
 	var drop := global_position.y - _fall_top if not is_on_floor() and velocity.y > 0.0 else 0.0
 	_streaks.amount = clampf((drop - hard_land_height * 0.6) / (hard_land_height * 0.4), 0.0, 1.0) \
 		if hard_land_height > 0.0 else 0.0
-	_streaks.danger = not cinematic and fall_damage_height > 0.0 and drop >= fall_damage_height
+	_streaks.danger = not cutscene and fall_damage_height > 0.0 and drop >= fall_damage_height
 	sword.charge = art.charge
 	sword.charge_ready = _charge_ready
 	var col := Color.WHITE
