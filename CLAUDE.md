@@ -54,6 +54,10 @@ the game; CONTINUE (`continue_run()`) loads it back, at the checkpoint as after 
 it ("THE LONG DROP", "THE MARGINS"); greyed out ("NO GAME TO CONTINUE") with none. NEW GAME, a chapter,
 Settings -> Reset progress and the end of the story (shade_finale.gd `_the_end()`) `clear_run()`.
 test_continue checks it.
+In a browser the main menu reads WebGL's real renderer (`_browser_gl_is_software()`, logged to the console):
+on a software one (SwiftShader, llvmpipe, Basic Render Driver: hardware acceleration off or the GPU blocklisted)
+every frame is drawn by the CPU (~8 fps, crackling sound), so a red banner tells the player to turn hardware
+acceleration on or try Chrome / Edge.
 The main menu's CHAPTERS are locked (greyed, a padlock, "FINISH THE STORY TO UNLOCK") until the story
 has been played to its end once: `Profile.finished`, saved in user://profile.cfg, set by shade_finale.gd
 `_the_end()` (`Profile.mark_finished()`), cleared by Settings -> Reset progress; main_menu.gd `_locked()`.
