@@ -241,7 +241,7 @@ come from the painting's bright, saturated colours), plus embers, ink drips off 
 Rock: `cave_rock.gd` (`ground` = floor, `one_way` ledges, fire-lit pink lip). Flow: Vesper falls in ->
 ink bats under the overhangs (`ink_bat.gd`: roost, wake together, orbit, flare wings (tell) and swoop 1 (half a bottle),
 pull up at his feet, 2 hp, light scatters them; fly through rock) -> 3 paper spiders -> checkpoint + heart
--> the pit (`cave_arena.gd`): walls rise, two Ink Blots (hp 12 each) wake; each drops its big heart, and when both melt the
+-> the pit (`cave_arena.gd`): walls rise, two Ink Blots (hp 10 each, hits 25% lighter than the gate's: swipe 1.5, slam 2.25 half bottles) wake together; each drops its big heart, and when both melt the
 cave collapses (shake, cracks, falling rocks, white flash, "THE CAVE GIVES WAY..."); `next_scene` = the
 finale below (with none: SHADE AWAITS / TO BE CONTINUED and the main menu).
 
@@ -257,20 +257,25 @@ Shade's black speech balloon):
 2. `WAVES`: the hand `draw_monster()`s one at a time (the nib traces the outline in ink, the sketch flares
    with light, `drawn` fires and the monster pops out: `materialize()`): paper spiders, ink bats, diving
    pens (`pen_diver.gd`: the Red Pen's art, hovers, shakes to aim, dives nib-first and sticks in the street),
-   erasers (hp 6) and now and then one weakened Ink Blot (`blot_hp` 10; never two Blots at once). Only the
-   Blot keeps a boss bar. Kills drop half a bottle at `drop_chance`; a cleared wave always drops a bottle.
+   erasers (hp 6) and weakened Ink Blots (`blot_hp` 10). Six short waves, never more than 3 monsters a
+   wave, each Blot alone (3 spiders, 4 bats, 2 pens, 1 eraser, 2 Blots in all). Only the Blot keeps a boss bar. Kills drop half a bottle at `drop_chance`; a cleared wave always drops a bottle.
    No drop (kills, waves, an Ink Blot's big heart) is made while Vesper's ink is full (health_heart.gd
    `player_full()`), and a seeking heart that reaches him full fades away instead of sitting on him.
 3. The light: a pillar of light falls on the street, Vesper is healed to full, the hand plunges into it and
-   steps out as Vesper's double (`scripts/enemies/shade_double.gd`, "SHADE", hp 30): Vesper's own
+   steps out as Vesper's double (`scripts/enemies/shade_double.gd`, "SHADE", hp 34, a little taller,
+   with a longer sword: `body_scale`, `blade_length`): Vesper's own
    player_visual.gd + sword inked black, blood-red scarf, burning red eyes (player_visual `eye_color`). It
-   slashes in lunging combos (the blade glints first), dashes through him with afterimages, leaps and
-   plunges (shockwaves both ways), sends ink waves along the street, sidesteps swings ("TOO SLOW."); below
-   half health it rages (faster, 3-hit combos, double waves, dash back). Light doubles the damage it takes;
+   slashes in lunging combos of alternating overhead / rising cuts (3, 4 when raging; the blade glints
+   first), rushes in from mid range into the combo, dash-thrusts through him with afterimages and finishes
+   with a cut, jumps up at him with a rising cut when he's above it, leaps and plunges (shockwaves both
+   ways), sends ink waves along the street, sidesteps swings ("TOO SLOW."); below half health it rages
+   (faster, double waves, dash back). Light doubles the damage it takes;
    it's only staggered when not attacking. All its hits cost a bottle.
 4. The end: the double cracks apart with light, the name in the sky fades, the city brightens, captions,
    THE END card, then the main menu. Dying restarts the level; once the waves are beaten in a run
-   (GameState.seen "finale:waves") a retry skips straight to the light.
+   (GameState.seen "finale:waves") a retry skips straight to the light, and once the double has stepped out
+   ("finale:double") the double fight is a checkpoint: a retry puts Vesper on the street with the name already
+   in the sky, a flash heals him, "BACK FOR MORE?" and the fight is on in ~2 s (`_checkpoint_double()`).
 
 ## 2.5D framework
 - Rooms are scenes whose root uses `scripts/world25/room.gd`; it builds environment, light,
