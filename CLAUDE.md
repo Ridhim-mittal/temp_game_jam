@@ -141,7 +141,9 @@ chipped crown, a torn tan sleeve with a blue "SHADE'S ERASER" band and a skull f
 a jagged maw, thin scribbled clawed arms, thick outlines, a 24 fps vibration; `rubbing` scrubs it side to
 side throwing pink shavings and dust; touching it costs half a bottle) follows, rubber-banded (catches
 up when far, eases off right behind him), and everything behind it is rubbed back to blank paper.
-Every Eraser in the game is drawn by `scripts/enemies/eraser_art.gd` (from the team's model sheet; draw in sheet
+Every Eraser in the game is drawn by `scripts/enemies/eraser_art.gd` (from the team's model sheet: the block three-
+quarters on, the crown's top face and two big bites, the blue band on the left side face, a skull filling the
+sleeve, pen hatching and doubled sketchy outlines, long arms with five spidery claws; draw in sheet
 units W 210 x H 330, `EraserArt.draw(ci, xf, pose)` or `draw_into(batch, ...)` inside another batch): front
 view (idle, `rubbing`, `roar`, `windup` (leans back, arms up, eyes lit), `tired` (dizzy spiral eyes, tongue out,
 stars and a weak-spot marker), `rage` (red eyes)) and the sheet's side / attack view (`side`, the charge: crown

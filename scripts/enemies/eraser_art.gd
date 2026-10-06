@@ -103,6 +103,16 @@ static func draw_into(batch: InkBatch, xf: Transform2D, p := {}, tint := Callabl
 
 # --------------------------------------------------------------- front view
 
+## The block seen three-quarters on (as on the sheet): the front face carries
+## the skull, the left side face is the blue band, the crown's top face shows.
+## Front face x from FX0 to FX1; the side face reaches DEPTH further left and
+## RISE higher (perspective).
+const FX0 := -0.3 * W
+const FX1 := 0.5 * W
+const DEPTH := 0.2 * W
+const RISE := 16.0
+
+
 ## Returns where the brand is lettered.
 static func _front(xf: Transform2D, p: Dictionary) -> Transform2D:
 	var rubbing := float(p.get("rubbing", 0.0))
@@ -111,7 +121,6 @@ static func _front(xf: Transform2D, p: Dictionary) -> Transform2D:
 	var tired := float(p.get("tired", 0.0))
 	var heading := float(p.get("heading", 1.0))
 	_j = float(p.get("jitter", 1.0)) * (1.0 + rubbing * 1.5 + windup * 1.2) * (1.0 - tired * 0.6)
-	var w := W
 	var h := H
 	# the rub: a fast scrub side to side with a tilt; a lunge leans it in, a windup back
 	var scrub := sin(_time * 22.0) * rubbing
@@ -123,186 +132,227 @@ static func _front(xf: Transform2D, p: Dictionary) -> Transform2D:
 	var sy := 1.0 - windup * 0.08 - tired * (0.1 + 0.03 * sin(_time * 7.0)) + breathe
 	var sx := 1.0 + windup * 0.05 + tired * 0.06 - breathe * 0.5
 	var body := xf * Transform2D(tilt, Vector2(sx, sy), 0.0, shift + shake)
+	var back := Vector2(-DEPTH, -RISE)
+	# ink spatters on the paper round its base (they stay put, it's its mess)
+	_out.draw_set_transform_matrix(xf)
+	for i in 5:
+		var c := Vector2((_chip(i + 400) - 0.5) * W * 1.25, -2.0 - _chip(i + 410) * 6.0)
+		_fill(_ellipse(c, 3.0 + _chip(i + 420) * 9.0, 2.0 + _chip(i + 430) * 4.0, 9), Color(INK, 0.75))
 	_out.draw_set_transform_matrix(body)
-	# arms behind the block, reaching
-	for side: float in [-1.0, 1.0]:
-		_arm(side, w, h, p)
-	# bottom rubber
-	var bot := _box(Rect2(-w * 0.42, -h * 0.24, w * 0.84, h * 0.24))
+	# the arm on the far side, behind the block
+	_arm(-1.0, h, p)
+	# bottom rubber: its left side face, then the front
+	var by0 := -h * 0.23
+	var bot_side := PackedVector2Array([Vector2(FX0 + 6, by0), Vector2(FX0 + 6, 0), Vector2(FX0 + 6, 0) + back, Vector2(FX0 + 6, by0) + back])
+	_fill(bot_side, PINK_DARK)
+	_hatch(bot_side[0], bot_side[3], bot_side[1], bot_side[2], 5, 2.0)
+	_outline2(bot_side, 4.0)
+	var bot := _box(Rect2(FX0 + 6, by0, FX1 - FX0 - 12, -by0))
 	_fill(bot, PINK)
-	_fill(_box(Rect2(w * 0.18, -h * 0.24, w * 0.24, h * 0.24)), PINK_DARK)
-	_outline(bot, 5.0)
-	# top rubber: a worn crown with a chipped top edge
-	var top := PackedVector2Array()
-	var ty := -h
-	var crown := 8
-	top.append(Vector2(-w * 0.44, -h * 0.66))
+	_fill(_box(Rect2(FX1 - 46, by0, 40, -by0)), Color(PINK_DARK, 0.7))
+	_outline2(bot, 5.0)
+	# top rubber: a worn crown with two big bites taken out of its edge
+	var ty := -h + RISE
+	var cy1 := -h * 0.66
+	var edge := PackedVector2Array()
+	var crown := 9
 	for i in crown + 1:
-		var x := -w * 0.44 + w * 0.88 * i / crown
-		var dip := (_chip(i) * 14.0 if i > 0 and i < crown else 0.0)
-		top.append(Vector2(x + _rng.randf_range(-1, 1) * _j, ty + 10.0 + dip + absf(x) * 0.06))
-	top.append(Vector2(w * 0.44, -h * 0.66))
-	_fill(top, PINK)
-	# its shaded right face and a pale worn patch
-	_fill(PackedVector2Array([Vector2(w * 0.2, ty + 16), Vector2(w * 0.44, ty + 22), Vector2(w * 0.44, -h * 0.66), Vector2(w * 0.2, -h * 0.66)]), PINK_DARK)
-	_fill(PackedVector2Array([Vector2(-w * 0.3, ty + 22), Vector2(-w * 0.08, ty + 18), Vector2(-w * 0.12, ty + 36), Vector2(-w * 0.32, ty + 40)]), PINK_LIGHT)
-	# scuffs rubbed into the rubber
-	for i in 3:
-		var a := Vector2(-w * 0.3 + _chip(i + 140) * w * 0.5, ty + 44 + _chip(i + 150) * 30.0)
-		_out.draw_line(a, a + Vector2(18, -4), _c(PINK_DARK), 2.0)
-	_outline(top, 5.0)
-	# the cardboard sleeve, torn along its top edge
-	var sleeve := PackedVector2Array()
-	var sy0 := -h * 0.74
+		var x := lerpf(FX0 + 4, FX1 - 4, float(i) / crown)
+		var dip := 0.0
+		if i > 0 and i < crown:
+			dip = _chip(i) * 12.0 + (34.0 if i == 2 or i == 6 else 0.0)
+		edge.append(Vector2(x + _rng.randf_range(-1, 1) * _j, ty + 6.0 + dip))
+	# the crown's top face (lighter), seen from a little above
+	var top_face := PackedVector2Array()
+	for q in edge:
+		top_face.append(q)
+	for i in range(edge.size() - 1, -1, -1):
+		top_face.append(edge[i] + back * Vector2(1.0, 1.0))
+	_fill(top_face, PINK_LIGHT)
+	_outline2(top_face, 4.0)
+	# its left side face, in shadow and hatched
+	var crown_side := PackedVector2Array([edge[0], Vector2(FX0 + 4, cy1), Vector2(FX0 + 4, cy1) + back, edge[0] + back])
+	_fill(crown_side, PINK_DARK)
+	_hatch(crown_side[3], crown_side[0], crown_side[2], crown_side[1], 5, 2.0)
+	_outline2(crown_side, 4.0)
+	# its front face
+	var crown_front := edge.duplicate()
+	crown_front.append(Vector2(FX1 - 4, cy1))
+	crown_front.append(Vector2(FX0 + 4, cy1))
+	_fill(crown_front, PINK)
+	_fill(PackedVector2Array([Vector2(FX1 - 44, ty + 20), Vector2(FX1 - 4, ty + 14), Vector2(FX1 - 4, cy1), Vector2(FX1 - 44, cy1)]), Color(PINK_DARK, 0.75))
+	_fill(PackedVector2Array([Vector2(FX0 + 22, ty + 30), Vector2(FX0 + 70, ty + 24), Vector2(FX0 + 64, ty + 44), Vector2(FX0 + 20, ty + 50)]), PINK_LIGHT)
+	for i in 4:  # scuffs rubbed into the rubber
+		var a := Vector2(FX0 + 30 + _chip(i + 140) * 110.0, ty + 40 + _chip(i + 150) * 34.0)
+		_out.draw_line(a, a + Vector2(20, -5), _c(PINK_DARK), 2.5)
+	_outline2(crown_front, 5.0)
+	# the cardboard sleeve, torn along its top and bottom edges
+	var sy0 := -h * 0.75
 	var sy1 := -h * 0.2
-	sleeve.append(Vector2(-w * 0.5, sy1))
 	var tears := 10
+	var s_top := PackedVector2Array()
+	var s_bot := PackedVector2Array()
 	for i in tears + 1:
-		var x := -w * 0.5 + w * i / tears
-		var tear := (_chip(i + 20) * 26.0 if i % 2 == 1 else _chip(i + 40) * 6.0)
-		sleeve.append(Vector2(x + _rng.randf_range(-1, 1) * _j, sy0 + tear))
-	sleeve.append(Vector2(w * 0.5, sy1))
-	# the bottom edge torn too, with a flap hanging at the right
-	for i in range(tears, -1, -1):
-		var x := -w * 0.5 + w * i / tears
-		var rip := _chip(i + 160) * 12.0 + (16.0 if i == 7 else 0.0)
-		sleeve.append(Vector2(x + _rng.randf_range(-1, 1) * _j, sy1 + rip))
-	_fill(sleeve, TAN)
-	# shading on the sleeve's right
-	_fill(PackedVector2Array([Vector2(w * 0.3, sy0 + 20), Vector2(w * 0.5, sy0 + 10), Vector2(w * 0.5, sy1), Vector2(w * 0.3, sy1 + 10)]), Color(TAN_DARK, 0.55))
-	# the blue band down the left with the brand on it
-	var band := PackedVector2Array([Vector2(-w * 0.5, sy0 + 8), Vector2(-w * 0.26, sy0 + 26), Vector2(-w * 0.24, sy1 - 6), Vector2(-w * 0.5, sy1)])
+		var x := lerpf(FX0, FX1, float(i) / tears)
+		var tear := (_chip(i + 20) * 28.0 if i % 2 == 1 else _chip(i + 40) * 7.0)
+		s_top.append(Vector2(x + _rng.randf_range(-1, 1) * _j, sy0 + tear))
+		var rip := _chip(i + 160) * 13.0 + (20.0 if i == 7 else 0.0)
+		s_bot.append(Vector2(x + _rng.randf_range(-1, 1) * _j, sy1 + rip))
+	# the blue band wraps the left side face, torn with the rest
+	var band := PackedVector2Array([s_top[0], s_bot[0], s_bot[0] + back, s_top[0] + back + Vector2(0, 10)])
 	_fill(band, BLUE)
-	_fill(PackedVector2Array([Vector2(-w * 0.31, sy0 + 22), Vector2(-w * 0.26, sy0 + 26), Vector2(-w * 0.24, sy1 - 6), Vector2(-w * 0.3, sy1 - 4)]), BLUE_DARK)
-	_outline(band, 3.0)
-	_outline(sleeve, 5.0)
-	# the face, printed on the sleeve: a skull
-	_face(w, h, p)
+	_fill(PackedVector2Array([s_top[0] + Vector2(-8, 4), s_bot[0] + Vector2(-8, 0), s_bot[0], s_top[0]]), BLUE_DARK)
+	_hatch(band[3], band[0], band[2], band[1], 3, 1.5)
+	_outline2(band, 4.0)
+	var sleeve := PackedVector2Array()
+	for q in s_top:
+		sleeve.append(q)
+	for i in range(s_bot.size() - 1, -1, -1):
+		sleeve.append(s_bot[i])
+	_fill(sleeve, TAN)
+	# the sleeve's right edge in shadow, hatched like the sheet
+	var shade := PackedVector2Array([Vector2(FX1 - 40, sy0 + 18), Vector2(FX1, sy0 + 8), Vector2(FX1, sy1), Vector2(FX1 - 40, sy1 + 8)])
+	_fill(shade, Color(TAN_DARK, 0.6))
+	_hatch(shade[0], shade[1], shade[3], shade[2], 6, 2.0)
+	_outline2(sleeve, 5.5)
+	# the face, printed on the sleeve: a skull filling it
+	_face(p)
+	# the arm on the near side, in front
+	_arm(1.0, h, p)
 	# tired: the weak spot shows (a pulsing marker over the crown) and stars circle it
 	if tired > 0.0:
 		var bob := sin(_time * 6.0) * 6.0
-		_out.draw_circle(Vector2(0, ty - 34 + bob), 15.0, _c(Color(INK, tired)))
-		_out.draw_circle(Vector2(0, ty - 34 + bob), 11.0, _c(Color(DANGER, tired)))
+		_out.draw_circle(Vector2(20, -h - 34 + bob), 15.0, _c(Color(INK, tired)))
+		_out.draw_circle(Vector2(20, -h - 34 + bob), 11.0, _c(Color(DANGER, tired)))
 		for k in 3:
 			var a := _time * 3.0 + TAU * k / 3.0
-			_star(Vector2(cos(a) * w * 0.42, ty - 8 + sin(a) * 16.0), 9.0, tired)
-	return body * Transform2D(-PI * 0.5, Vector2(-w * 0.36, sy1 - 14))
+			_star(Vector2(20 + cos(a) * W * 0.42, -h - 6 + sin(a) * 16.0), 9.0, tired)
+	# the brand runs down the band
+	return body * Transform2D(-PI * 0.5 + 0.06, s_bot[0] + Vector2(-DEPTH * 0.82, -16))
 
 
-static func _face(w: float, h: float, p: Dictionary) -> void:
+static func _face(p: Dictionary) -> void:
 	var tired := float(p.get("tired", 0.0))
 	var rage := clampf(float(p.get("rage", 0.0)) + float(p.get("windup", 0.0)) * 0.8, 0.0, 1.0)
 	var roar := clampf(float(p.get("roar", 0.0)) + float(p.get("windup", 0.0)) * 0.6, 0.0, 1.0)
-	var cy := -h * 0.47
-	# deep sockets, then angry eyes under heavy brows
+	var fx := (FX0 + FX1) * 0.5 + 4.0  # the middle of the front face
+	var cy := -H * 0.56
+	# deep hatched sockets, cheek hollows, then wild eyes under heavy brows
 	for side: float in [-1.0, 1.0]:
-		var ex := side * w * 0.17 + w * 0.03
+		var ex := fx + side * 40.0
 		var socket := PackedVector2Array()
-		for i in 10:
-			var a := TAU * i / 10.0
-			socket.append(Vector2(ex, cy - 32) + Vector2(cos(a) * 36.0, sin(a) * 29.0) + _wob(1.5))
-		_fill(socket, Color(TAN_DARK, 0.9))
-		# the skull's cheek hollow under the eye
-		_fill(PackedVector2Array([Vector2(ex - side * 6.0, cy - 2), Vector2(ex + side * 30.0, cy - 8), Vector2(ex + side * 24.0, cy + 18), Vector2(ex + side * 4.0, cy + 10)]), Color(TAN_DARK, 0.6))
+		for i in 12:
+			var a := TAU * i / 12.0
+			socket.append(Vector2(ex, cy) + Vector2(cos(a) * 40.0, sin(a) * 32.0) + _wob(1.5))
+		_fill(socket, Color(TAN_DARK, 0.95))
+		_hatch(Vector2(ex - 34, cy - 20), Vector2(ex + 34, cy - 20), Vector2(ex - 30, cy + 26), Vector2(ex + 30, cy + 26), 6, 1.5)
+		_fill(PackedVector2Array([Vector2(ex - side * 4.0, cy + 34), Vector2(ex + side * 36.0, cy + 26), Vector2(ex + side * 30.0, cy + 54), Vector2(ex + side * 6.0, cy + 46)]), Color(TAN_DARK, 0.65))
 		if tired > 0.5:
 			# dizzy: spirals for eyes, the brows gone slack
 			var sp := PackedVector2Array()
-			for i in 22:
-				var t := i / 21.0
+			for i in 24:
+				var t := i / 23.0
 				var a := _time * 8.0 * side + t * TAU * 2.2
-				sp.append(Vector2(ex, cy - 32) + Vector2(cos(a), sin(a) * 0.8) * (3.0 + 15.0 * t))
-			_fill(_ellipse(Vector2(ex, cy - 32), 20.0, 16.0), BONE)
-			_out.draw_polyline(sp, _c(INK), 3.0)
-			_out.draw_line(Vector2(ex - 18, cy - 54), Vector2(ex + 18, cy - 56), _c(INK), 4.0)
+				sp.append(Vector2(ex, cy + 2) + Vector2(cos(a), sin(a) * 0.8) * (3.0 + 19.0 * t))
+			_fill(_ellipse(Vector2(ex, cy + 2), 26.0, 20.0), BONE)
+			_out.draw_polyline(sp, _c(INK), 3.5)
+			_out.draw_line(Vector2(ex - 24, cy - 26), Vector2(ex + 24, cy - 28), _c(INK), 5.0)
 			continue
-		# the eye: an almond cut off by a brow slanting down to the nose
+		# the eye: a big almond cut off by a brow slanting down to the nose
 		var eye := PackedVector2Array()
-		for i in 9:
-			var a := PI + PI * i / 8.0
-			eye.append(Vector2(ex, cy - 30) + Vector2(cos(a) * 26.0, sin(a) * 19.0))
-		eye.append(Vector2(ex + 26.0, cy - 30))
-		var brow_in := Vector2(ex - side * 27.0, cy - 30 - 4.0 + rage * 4.0)
-		var brow_out := Vector2(ex + side * 27.0, cy - 30 - 27.0)
+		for i in 11:
+			var a := PI + PI * i / 10.0
+			eye.append(Vector2(ex, cy + 4) + Vector2(cos(a) * 30.0, sin(a) * 24.0))
+		var brow_in := Vector2(ex - side * 32.0, cy - 4.0 + rage * 4.0)
+		var brow_out := Vector2(ex + side * 30.0, cy - 30.0)
 		var cut := PackedVector2Array()
 		for q in eye:
 			var t := (q.x - brow_in.x) / (brow_out.x - brow_in.x)
-			var limit := lerpf(brow_in.y, brow_out.y, clampf(t, 0.0, 1.0))
-			cut.append(Vector2(q.x, maxf(q.y, limit)))
-		cut.append(Vector2(ex + 22.0, cy - 19))
-		cut.append(Vector2(ex - 22.0, cy - 19))
+			cut.append(Vector2(q.x, maxf(q.y, lerpf(brow_in.y, brow_out.y, clampf(t, 0.0, 1.0)))))
+		cut.append(Vector2(ex + 26.0, cy + 14))
+		cut.append(Vector2(ex - 26.0, cy + 14))
 		if rage > 0.0:  # a red glow round a burning eye
-			_out.draw_circle(Vector2(ex, cy - 28), 30.0, _c(Color(RED, 0.25 * rage)))
+			_out.draw_circle(Vector2(ex, cy + 4), 34.0, _c(Color(RED, 0.28 * rage)))
 		_fill(cut, BONE.lerp(Color(1.0, 0.5, 0.4), rage * 0.7))
-		_outline(cut, 3.0)
-		var pupil := Vector2(ex - side * 3.0, cy - 26) + Vector2(_rng.randf_range(-1, 1), 0)
-		_out.draw_circle(pupil, 5.5 - rage * 1.5, _c(INK.lerp(RED, rage)))
+		_outline2(cut, 3.5)
+		var pupil := Vector2(ex - side * 4.0, cy + 6) + Vector2(_rng.randf_range(-1, 1), 0)
+		_out.draw_circle(pupil, 5.0 - rage * 1.2, _c(INK.lerp(RED, rage)))
 		_out.draw_circle(pupil + Vector2(-1.5, -2.0), 1.6, _c(BONE))
-		_out.draw_line(brow_in + Vector2(0, -2), brow_out + Vector2(0, -2), _c(INK), 7.0)
-	# nose hole
-	_fill(PackedVector2Array([Vector2(w * 0.03, cy - 10), Vector2(w * 0.03 - 9, cy + 6), Vector2(w * 0.03 + 9, cy + 6)]), INK)
-	# the maw: wide, gaping, jagged teeth top and bottom (sags open when tired)
-	var open := 0.55 + 0.45 * roar + 0.08 * sin(_time * 9.0) + tired * 0.2
-	var mw := w * (0.7 - tired * 0.1)
-	var mh := 54.0 + 44.0 * open
-	var mc := Vector2(w * 0.03, cy + 30 + mh * 0.5)
+		_out.draw_line(brow_in + Vector2(0, -3), brow_out + Vector2(0, -3), _c(INK), 8.0)
+		_out.draw_line(brow_in + Vector2(side * 6, -9), brow_out + Vector2(-side * 4, -12), _c(INK), 3.0)
+	# nose: two dark slits in a notch
+	_fill(PackedVector2Array([Vector2(fx, cy + 26), Vector2(fx - 12, cy + 50), Vector2(fx, cy + 44), Vector2(fx + 12, cy + 50)]), INK)
+	# the maw: wide, gaping, long jagged teeth top and bottom (sags open when tired)
+	var open := 0.6 + 0.4 * roar + 0.08 * sin(_time * 9.0) + tired * 0.2
+	var mw := FX1 - FX0 - 24.0 - tired * 16.0
+	var mh := 64.0 + 46.0 * open
+	var mc := Vector2(fx, cy + 60 + mh * 0.5)
 	var maw := PackedVector2Array()
-	for i in 16:
-		var a := TAU * i / 16.0
-		maw.append(mc + Vector2(cos(a) * mw * 0.5, sin(a) * mh * 0.5) + _wob(1.5))
+	for i in 18:
+		var a := TAU * i / 18.0
+		var r := Vector2(cos(a) * mw * 0.5, sin(a) * mh * 0.5)
+		if sin(a) < 0.0:
+			r.y *= 0.8  # the upper lip flatter, like a skull's
+		maw.append(mc + r + _wob(1.5))
 	_fill(maw, MAW)
-	var n := 9
+	var n := 10
 	for i in n:
-		var x := mc.x - mw * 0.42 + mw * 0.84 * (i + 0.5) / n
-		var edge := sqrt(maxf(1.0 - pow((x - mc.x) / (mw * 0.5), 2.0), 0.0)) * mh * 0.5
-		var tw := mw * 0.84 / n * 0.5
-		var tl := mh * (0.4 + 0.2 * _chip(i + 60))
-		var top := PackedVector2Array([Vector2(x - tw, mc.y - edge + 2), Vector2(x + tw, mc.y - edge + 2), Vector2(x + _rng.randf_range(-1, 1), mc.y - edge + tl)])
+		var x := mc.x - mw * 0.43 + mw * 0.86 * (i + 0.5) / n
+		var e := sqrt(maxf(1.0 - pow((x - mc.x) / (mw * 0.5), 2.0), 0.0)) * mh * 0.5
+		var tw := mw * 0.86 / n * 0.52
+		var tl := mh * (0.42 + 0.22 * _chip(i + 60))
+		var top := PackedVector2Array([Vector2(x - tw, mc.y - e * 0.8 + 2), Vector2(x + tw, mc.y - e * 0.8 + 2), Vector2(x + _rng.randf_range(-1, 1) + tw * 0.2, mc.y - e * 0.8 + tl)])
 		_fill(top, BONE)
-		_out.draw_polyline(PackedVector2Array([top[0], top[2], top[1]]), _c(INK), 1.5)
-		var bl := mh * (0.3 + 0.18 * _chip(i + 80))
-		var bot := PackedVector2Array([Vector2(x - tw, mc.y + edge - 2), Vector2(x + tw, mc.y + edge - 2), Vector2(x + _rng.randf_range(-1, 1), mc.y + edge - bl)])
+		_out.draw_polyline(PackedVector2Array([top[0], top[2], top[1]]), _c(INK), 1.8)
+		var bl := mh * (0.32 + 0.2 * _chip(i + 80))
+		var bot := PackedVector2Array([Vector2(x - tw, mc.y + e - 2), Vector2(x + tw, mc.y + e - 2), Vector2(x + _rng.randf_range(-1, 1) - tw * 0.2, mc.y + e - bl)])
 		_fill(bot, BONE)
-		_out.draw_polyline(PackedVector2Array([bot[0], bot[2], bot[1]]), _c(INK), 1.5)
+		_out.draw_polyline(PackedVector2Array([bot[0], bot[2], bot[1]]), _c(INK), 1.8)
 	if tired > 0.5:  # panting, the tongue lolling out
-		var tg := mc + Vector2(10, mh * 0.3)
-		_fill(_ellipse(tg + Vector2(0, 10 + 4.0 * sin(_time * 7.0)), 16.0, 14.0), Color(0.86, 0.32, 0.4))
-		_out.draw_line(tg + Vector2(0, 2), tg + Vector2(0, 18), _c(Color(0.55, 0.12, 0.2)), 2.0)
-	_outline(maw, 4.0)
+		var tg := mc + Vector2(10, mh * 0.28)
+		_fill(_ellipse(tg + Vector2(0, 12 + 4.0 * sin(_time * 7.0)), 18.0, 16.0), Color(0.86, 0.32, 0.4))
+		_out.draw_line(tg + Vector2(0, 2), tg + Vector2(0, 22), _c(Color(0.55, 0.12, 0.2)), 2.0)
+	_outline2(maw, 5.0)
 	# cracks and creases in the cardboard round the face
-	for i in 4:
-		var a := Vector2(_chip(i + 100) * w * 0.8 - w * 0.4, cy - 60 + _chip(i + 110) * 90.0)
-		_out.draw_polyline(PackedVector2Array([a, a + Vector2(12, 10), a + Vector2(6, 24)]), _c(Color(TAN_DARK, 0.9)), 2.0)
+	for i in 5:
+		var a := Vector2(FX0 + 14 + _chip(i + 100) * (FX1 - FX0 - 28), cy - 70 + _chip(i + 110) * 150.0)
+		_out.draw_polyline(PackedVector2Array([a, a + Vector2(12, 10), a + Vector2(6, 26)]), _c(Color(TAN_DARK, 0.95)), 2.2)
 
 
-## A thin scribbled arm out of the sleeve's side, ending in a clawed hand.
-static func _arm(side: float, w: float, h: float, p: Dictionary) -> void:
+## A long, thin, scribbled arm out of the block's side, hanging down, ending
+## in a hand of five long hooked fingers (the sheet's spidery claws).
+static func _arm(side: float, h: float, p: Dictionary) -> void:
 	var lunge := float(p.get("lunge", 0.0))
 	var rubbing := float(p.get("rubbing", 0.0))
 	var windup := float(p.get("windup", 0.0))
 	var tired := float(p.get("tired", 0.0))
-	var shoulder := Vector2(side * w * 0.46, -h * 0.5)
-	var reach := 0.5 + 0.5 * sin(_time * 3.0 + side)
+	var sx := FX1 - 6.0 if side > 0.0 else FX0 - DEPTH * 0.6
+	var shoulder := Vector2(sx, -h * 0.5)
+	var sway := sin(_time * 3.0 + side * 1.3)
 	var grab := lunge + rubbing * 0.5
-	var elbow := shoulder + Vector2(side * (46.0 + 10.0 * reach), 30.0 - 20.0 * grab - 70.0 * windup + 30.0 * tired)
-	var hand := elbow + Vector2(side * (24.0 + 30.0 * grab - 10.0 * windup), 46.0 - 50.0 * grab - 90.0 * windup + 40.0 * tired + 6.0 * sin(_time * 7.0 + side))
-	for k in 3:  # scribbled: a few overlapping strokes
+	var elbow := shoulder + Vector2(side * (62.0 + 10.0 * sway), 22.0 - 30.0 * grab - 96.0 * windup + 34.0 * tired)
+	var hand := elbow + Vector2(side * (26.0 + 46.0 * grab - 18.0 * windup), 78.0 - 70.0 * grab - 120.0 * windup + 40.0 * tired + 8.0 * sin(_time * 7.0 + side))
+	var wrist := hand - (hand - elbow).normalized() * 12.0
+	for k in 3:  # scribbled: a few overlapping strokes, the elbow a sharp knob
 		var o := _wob(2.5)
-		_out.draw_polyline(PackedVector2Array([shoulder + o, elbow + o * 1.5, hand + o]), _c(INK), 7.0 - k * 2.0)
-	_out.draw_circle(hand, 6.0, _c(INK))  # the knuckles
-	_claws(hand, Vector2(side, 0.4 - windup * 1.2 + tired * 0.8).normalized(), side, 1.0 - tired * 0.5)
+		_out.draw_polyline(PackedVector2Array([shoulder + o, elbow + o * 1.5, wrist + o]), _c(INK), 7.5 - k * 2.0)
+	_out.draw_circle(elbow, 5.0, _c(INK))
+	_out.draw_circle(hand, 7.0, _c(INK))
+	var down := (hand - elbow).normalized()
+	_claws(hand, down.rotated(-side * (0.5 + windup * 0.6)), side, 1.0 - tired * 0.4, 5)
 
 
-## Four hooked claws fanning out of a hand along `d`.
-static func _claws(hand: Vector2, d0: Vector2, side: float, spread: float) -> void:
-	for i in 4:
-		var d := d0.rotated((i - 1.5) * 0.45 * side * spread)
+## Long hooked claws fanning out of a hand along `d`.
+static func _claws(hand: Vector2, d0: Vector2, side: float, spread: float, count := 4) -> void:
+	for i in count:
+		var d := d0.rotated((i - (count - 1) * 0.5) * 0.4 * side * spread)
 		var q := hand
 		var line := PackedVector2Array([q])
-		for s in 3:
-			d = d.rotated(0.35 * side)
-			q += d * 15.0
+		for s in 4:
+			d = d.rotated(0.32 * side)
+			q += d * (16.0 - s * 2.0)
 			line.append(q + _wob(1.0))
-		_out.draw_polyline(line, _c(INK), 4.0)
+		_out.draw_polyline(line, _c(INK), 4.0 - 0.0)
 
 
 # ---------------------------------------------------------------- side view
@@ -354,11 +404,12 @@ static func _side(xf: Transform2D, p: Dictionary) -> Transform2D:
 		sleeve.append(Vector2(front + tear + _rng.randf_range(-1, 1) * _j, y))
 	_fill(sleeve, TAN)
 	_fill(PackedVector2Array([Vector2(x0, T * 0.18), Vector2(front, T * 0.18), Vector2(front, T * 0.5), Vector2(x0, T * 0.5)]), Color(TAN_DARK, 0.5))
+	_hatch(Vector2(x0 + L * 0.2, T * 0.2), Vector2(front - 6, T * 0.2), Vector2(x0 + L * 0.2, T * 0.48), Vector2(front - 6, T * 0.48), 9, 2.0)
 	var band := PackedVector2Array([Vector2(x0, -T * 0.5), Vector2(x0 + L * 0.2, -T * 0.5), Vector2(x0 + L * 0.17, T * 0.5), Vector2(x0, T * 0.5)])
 	_fill(band, BLUE)
 	_fill(PackedVector2Array([Vector2(x0 + L * 0.15, -T * 0.5), Vector2(x0 + L * 0.2, -T * 0.5), Vector2(x0 + L * 0.17, T * 0.5), Vector2(x0 + L * 0.13, T * 0.5)]), BLUE_DARK)
-	_outline(band, 3.0)
-	_outline(sleeve, 5.0)
+	_outline2(band, 3.5)
+	_outline2(sleeve, 5.5)
 	# the pink rubber nose, chipped, a pale scuff where it rubs
 	var nose := PackedVector2Array([Vector2(front, -T * 0.5)])
 	for i in 7:
@@ -368,22 +419,24 @@ static func _side(xf: Transform2D, p: Dictionary) -> Transform2D:
 	nose.append(Vector2(front, T * 0.5))
 	_fill(nose, PINK)
 	_fill(PackedVector2Array([Vector2(front, T * 0.2), Vector2(x1 - 10, T * 0.2), Vector2(x1 - 10, T * 0.5), Vector2(front, T * 0.5)]), PINK_DARK)
+	_hatch(Vector2(front + 4, T * 0.22), Vector2(x1 - 14, T * 0.22), Vector2(front + 4, T * 0.48), Vector2(x1 - 14, T * 0.48), 5, 2.0)
 	_fill(PackedVector2Array([Vector2(front + 14, -T * 0.4), Vector2(x1 - 30, -T * 0.42), Vector2(x1 - 34, -T * 0.25), Vector2(front + 18, -T * 0.22)]), PINK_LIGHT)
-	_outline(nose, 5.0)
+	_outline2(nose, 5.5)
 	# the face on the sleeve's leading end: one eye under a brow, the maw with teeth
 	var ec := Vector2(front - 54, -T * 0.2)
 	if rage > 0.0:
 		_out.draw_circle(ec, 30.0, _c(Color(RED, 0.25 * rage)))
+	_fill(_ellipse(ec + Vector2(0, -2), 34.0, 24.0), Color(TAN_DARK, 0.9))
 	var eye := PackedVector2Array()
 	for i in 10:
 		var a := PI + PI * i / 9.0
-		eye.append(ec + Vector2(cos(a) * 22.0, sin(a) * 13.0))
+		eye.append(ec + Vector2(cos(a) * 26.0, sin(a) * 16.0))
 	eye.append(ec + Vector2(18, 8))
 	eye.append(ec + Vector2(-18, 8))
 	_fill(eye, BONE.lerp(Color(1.0, 0.5, 0.4), rage * 0.7))
-	_outline(eye, 3.0)
+	_outline2(eye, 3.5)
 	_out.draw_circle(ec + Vector2(8, 0), 4.5, _c(INK.lerp(RED, rage)))
-	_out.draw_line(ec + Vector2(-26, -22), ec + Vector2(24, -6), _c(INK), 6.0)
+	_out.draw_line(ec + Vector2(-30, -24), ec + Vector2(28, -6), _c(INK), 8.0)
 	var mc := Vector2(front - 40, T * 0.18)
 	var mw := 92.0
 	var mh := 60.0 + 10.0 * sin(_time * 14.0)
@@ -397,7 +450,7 @@ static func _side(xf: Transform2D, p: Dictionary) -> Transform2D:
 		var edge := sqrt(maxf(1.0 - pow((x - mc.x) / (mw * 0.5), 2.0), 0.0)) * mh * 0.5
 		_fill(PackedVector2Array([Vector2(x - 7, mc.y - edge + 2), Vector2(x + 7, mc.y - edge + 2), Vector2(x, mc.y - edge + mh * 0.42)]), BONE)
 		_fill(PackedVector2Array([Vector2(x - 7, mc.y + edge - 2), Vector2(x + 7, mc.y + edge - 2), Vector2(x, mc.y + edge - mh * 0.34)]), BONE)
-	_outline(maw, 4.0)
+	_outline2(maw, 4.5)
 	# the leading arm, reaching ahead under the nose, claws open
 	var sh := Vector2(front - 10, T * 0.5)
 	var el := sh + Vector2(46, 50) + _wob(3.0)
@@ -433,6 +486,24 @@ static func _outline(pts: PackedVector2Array, width: float) -> void:
 	var loop := pts.duplicate()
 	loop.append(pts[0])
 	_out.draw_polyline(loop, _c(INK), width)
+
+
+## A thick ink outline and a thin second pass a little off it: a pen line, not a vector edge.
+static func _outline2(pts: PackedVector2Array, width: float) -> void:
+	_outline(pts, width)
+	var loop := PackedVector2Array()
+	var o := _wob(2.5) + Vector2(1.5, -1.0)
+	for q in pts:
+		loop.append(q + o)
+	loop.append(pts[0] + o)
+	_out.draw_polyline(loop, _c(Color(INK, 0.7)), maxf(width * 0.3, 1.2))
+
+
+## Pen hatching across a quad: lines from the edge a0-a1 to the edge b0-b1.
+static func _hatch(a0: Vector2, a1: Vector2, b0: Vector2, b1: Vector2, n: int, width: float) -> void:
+	for i in n:
+		var t := (i + 0.5) / n
+		_out.draw_line(a0.lerp(a1, t), b0.lerp(b1, clampf(t - 0.2, 0.0, 1.0)), _c(Color(INK, 0.55)), width)
 
 
 ## A fixed "random" size per index (the shape doesn't boil, only the jitter).
