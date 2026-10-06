@@ -39,6 +39,7 @@ func _rebuild() -> void:
 	if not is_inside_tree():
 		return
 	var root := Toon.fresh_root(self)
+	Toon.merge_when_built(root)  # one mesh per material: far fewer draw calls
 	for i in steps:
 		var top := (i + 1) * step_height
 		var h := top + base_depth

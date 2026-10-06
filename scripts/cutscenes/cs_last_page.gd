@@ -193,7 +193,7 @@ func _ready() -> void:
 	_draft.render_target_update_mode = SubViewport.UPDATE_ALWAYS  # he writes on it
 	var over_no := Node2D.new()
 	over_no.set_meta("live", true)
-	over_no.draw.connect(_paint_ink.bind(over_no, "draft"))
+	over_no.draw.connect(_batched.bind(over_no, _paint_ink.bind("draft")))
 	_draft.get_child(0).add_child(over_no)
 	# the photo is live here: his brother fades out of it, down to a pencil outline
 	_photo.render_target_update_mode = SubViewport.UPDATE_ALWAYS
@@ -202,17 +202,16 @@ func _ready() -> void:
 			_brother = n
 	var ghost := Node2D.new()
 	ghost.set_meta("live", true)
-	ghost.draw.connect(_paint_gone.bind(ghost))
+	ghost.draw.connect(_batched.bind(ghost, _paint_gone))
 	_photo.get_child(0).add_child(ghost)
 
 
 ## A page of the book that the pen can write on (`name`: the pen jobs' page).
 func _page(paint: Callable, page: String) -> SubViewport:
-	var vp := _make_vp(TEX, paint, true)
-	vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	var vp := _make_live_vp(TEX, paint)
 	var ink := Node2D.new()
 	ink.set_meta("live", true)
-	ink.draw.connect(_paint_ink.bind(ink, page))
+	ink.draw.connect(_batched.bind(ink, _paint_ink.bind(page)))
 	vp.get_child(0).add_child(ink)
 	return vp
 
@@ -531,7 +530,7 @@ func _gone(e: float) -> float:
 ## Where his brother stood in the photo, once he has faded: his outline in
 ## dashed pencil, the way the unfinished are drawn in this book. (The photo's
 ## own pixels: see _photo_brother().)
-func _paint_gone(c: Node2D) -> void:
+func _paint_gone(c) -> void:
 	var a := _gone(_t - T0)
 	if a <= 0.0:
 		return
@@ -549,7 +548,7 @@ func _paint_gone(c: Node2D) -> void:
 
 ## The book's last page: the finale, as its top panel; under it THE END as
 ## the Writer stamped it; room below for what he writes instead.
-func _paint_last(c: Control) -> void:
+func _paint_last(c) -> void:
 	var s := Vector2(TEX)
 	_paper(c, s)
 	c.draw_string(FONT, Vector2(26, 54), "VESPER", HORIZONTAL_ALIGNMENT_LEFT, -1, 40, RED)
@@ -569,7 +568,7 @@ func _paint_last(c: Control) -> void:
 
 ## The page before it: everything the Writer threw at him, each crossed out,
 ## because each time he got up. (FOR MY BROTHER is written under them.)
-func _paint_left(c: Control) -> void:
+func _paint_left(c) -> void:
 	var s := Vector2(TEX)
 	_paper(c, s, Color(0.93, 0.89, 0.8))
 	c.draw_string(HAND, Vector2(40, 52), "he keeps getting up.", HORIZONTAL_ALIGNMENT_LEFT, -1, 30, Color(BLOOD, 0.85))

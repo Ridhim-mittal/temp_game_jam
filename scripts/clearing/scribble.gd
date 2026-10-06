@@ -73,6 +73,7 @@ var state := State.LURK
 ## Seconds before any Scribble may start the next claw (they take turns).
 static var _next_claw_ms := 0
 static var _shriek_wav: AudioStreamWAV
+const SfxSynthBaked = preload("res://scripts/effects/sfx_synth.gd")
 static var _swipe_wav: AudioStreamWAV
 
 var _home := Vector3.ZERO
@@ -565,31 +566,45 @@ func _play(stream: AudioStream, db: float, pitch: float) -> void:
 ## A pen scratching hard across paper, rising into a screech.
 static func _shriek() -> AudioStreamWAV:
 	if _shriek_wav == null:
-		var rng := RandomNumberGenerator.new()
-		rng.seed = 77
-		var f := func(t: float) -> float:
-			var env := minf(t / 0.02, 1.0) * exp(-t * 5.0)
-			var scratch := rng.randf_range(-1.0, 1.0) * (0.55 + 0.45 * sin(TAU * 38.0 * t))
-			var screech := sin(TAU * (900.0 + 1400.0 * t) * t + 3.0 * sin(TAU * 61.0 * t))
-			return (scratch * 0.55 + screech * 0.3) * env
-		_shriek_wav = _wav(0.42, f)
+		_shriek_wav = SfxSynthBaked.baked("scribble_shriek")
+	if _shriek_wav == null:
+		_shriek_wav = _make_shriek()
 	return _shriek_wav
+
+
+## Made in code (tools/sfx/bake_synth.gd bakes it).
+static func _make_shriek() -> AudioStreamWAV:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 77
+	var f := func(t: float) -> float:
+		var env := minf(t / 0.02, 1.0) * exp(-t * 5.0)
+		var scratch := rng.randf_range(-1.0, 1.0) * (0.55 + 0.45 * sin(TAU * 38.0 * t))
+		var screech := sin(TAU * (900.0 + 1400.0 * t) * t + 3.0 * sin(TAU * 61.0 * t))
+		return (scratch * 0.55 + screech * 0.3) * env
+	return _wav(0.42, f)
 
 
 ## The claw: a fast tearing swish.
 static func _swipe() -> AudioStreamWAV:
 	if _swipe_wav == null:
-		var rng := RandomNumberGenerator.new()
-		rng.seed = 91
-		var last := [0.0]
-		var f := func(t: float) -> float:
-			var env := minf(t / 0.01, 1.0) * exp(-t * 16.0)
-			# noise through a rising one-pole filter: shhhk
-			var k := clampf(0.15 + t * 3.5, 0.0, 0.9)
-			last[0] = lerpf(last[0], rng.randf_range(-1.0, 1.0), k)
-			return last[0] * env * 0.9
-		_swipe_wav = _wav(0.22, f)
+		_swipe_wav = SfxSynthBaked.baked("scribble_swipe")
+	if _swipe_wav == null:
+		_swipe_wav = _make_swipe()
 	return _swipe_wav
+
+
+## Made in code (tools/sfx/bake_synth.gd bakes it).
+static func _make_swipe() -> AudioStreamWAV:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 91
+	var last := [0.0]
+	var f := func(t: float) -> float:
+		var env := minf(t / 0.01, 1.0) * exp(-t * 16.0)
+		# noise through a rising one-pole filter: shhhk
+		var k := clampf(0.15 + t * 3.5, 0.0, 0.9)
+		last[0] = lerpf(last[0], rng.randf_range(-1.0, 1.0), k)
+		return last[0] * env * 0.9
+	return _wav(0.22, f)
 
 
 static func _wav(length: float, sample: Callable) -> AudioStreamWAV:

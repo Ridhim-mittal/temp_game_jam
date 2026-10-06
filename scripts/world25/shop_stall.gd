@@ -106,6 +106,9 @@ func _build() -> void:
 	_quire.scale = Vector3.ONE * QUIRE_SCALE
 	root.add_child(_quire)
 	_build_quire(_quire)
+	# one mesh per material for the still parts (far fewer draw calls); what
+	# _process() moves stays as it is
+	Toon.merge_when_built(root, [_quire, _ledger, _quill, _ribbon] + _fan + _loose + _lanterns + _flames)
 	if Engine.is_editor_hint():
 		return
 	for at: Vector3 in [Vector3(0, 3.0, 1.8), Vector3(-2.6, 2.6, 0.6), Vector3(2.6, 2.6, 0.6)]:

@@ -43,6 +43,8 @@ const PlayerArt = preload("res://scripts/player/player_visual.gd")
 const EraserArt = preload("res://scripts/enemies/eraser_art.gd")
 const CrawlerArt = preload("res://scripts/enemies/crawler_visual.gd")
 const ShadeHand = preload("res://scripts/effects/shade_hand.gd")
+const SfxSynth = preload("res://scripts/effects/sfx_synth.gd")
+const InkProxy = preload("res://scripts/depth/ink_proxy.gd")
 const FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
 const HAND = preload("res://assets/fonts/Chewy-Regular.ttf")
 const NEXT := "res://scenes/levels/test_level.tscn"
@@ -261,38 +263,34 @@ func _ready() -> void:
 	_cover = _make_vp(TEX, _paint_cover, true)
 	_cover_hero(_cover)
 	_build_jobs()
-	_inside = _make_vp(TEX, _paint_inside, true)
-	_inside.render_target_update_mode = SubViewport.UPDATE_ALWAYS  # the Writer sketches on it
+	_inside = _make_live_vp(TEX, _paint_inside)  # the Writer sketches on it
 	var sketch := Node2D.new()
 	sketch.set_meta("live", true)
-	sketch.draw.connect(_paint_ink.bind(sketch, "in"))
+	sketch.draw.connect(_batched.bind(sketch, _paint_ink.bind("in")))
 	_inside.get_child(0).add_child(sketch)
 	_sheet = _make_vp(Vector2i(400, 300), _paint_sheet, true)
 	_draft = _make_vp(Vector2i(420, 300), _paint_draft, true)
 	_photo = _make_vp(Vector2i(300, 380), _paint_photo, true)
 	_photo_brother(_photo)
-	_p2 = _make_vp(TEX, _paint_p2, true)
-	_p2.render_target_update_mode = SubViewport.UPDATE_ALWAYS  # its pencil Vesper blinks
+	_p2 = _make_live_vp(TEX, _paint_p2)  # its pencil Vesper blinks
 	var waiting := Node2D.new()
 	waiting.set_meta("live", true)
-	waiting.draw.connect(_paint_p2_live.bind(waiting))
+	waiting.draw.connect(_batched.bind(waiting, _paint_p2_live))
 	_p2.get_child(0).add_child(waiting)
-	_p1 = _make_vp(TEX, _paint_p1_static, true)
-	_p1.render_target_update_mode = SubViewport.UPDATE_ALWAYS  # its panels and captions move
+	_p1 = _make_live_vp(TEX, _paint_p1_static)  # its panels and captions move
 	_build_p1_panels()
 	var cap := Node2D.new()
-	cap.draw.connect(_paint_p1_captions.bind(cap))
+	cap.draw.connect(_batched.bind(cap, _paint_p1_captions))
 	cap.set_meta("live", true)
 	_p1.get_child(0).add_child(cap)
 	var ink := Node2D.new()
 	ink.set_meta("live", true)
-	ink.draw.connect(_paint_ink.bind(ink, "p1"))
+	ink.draw.connect(_batched.bind(ink, _paint_ink.bind("p1")))
 	_p1.get_child(0).add_child(ink)
-	_p1b =_make_vp(TEX, func(c: Control): _paper(c, Vector2(TEX), Color(0.93, 0.9, 0.81)), true)
-	_p1b.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	_p1b = _make_live_vp(TEX, func(c: Control): _paper(c, Vector2(TEX), Color(0.93, 0.9, 0.81)))
 	var through := Node2D.new()
 	through.set_meta("live", true)
-	through.draw.connect(_paint_p1_back.bind(through))
+	through.draw.connect(_batched.bind(through, _paint_p1_back))
 	_p1b.get_child(0).add_child(through)
 	# the stage: the whole desk scene, drawn into a texture we show (and later cut a hole in)
 	_stage = SubViewport.new()
@@ -357,6 +355,42 @@ func _make_vp(px: Vector2i, paint: Callable, is_static: bool) -> SubViewport:
 	if paint.is_valid():
 		root.draw.connect(paint.bind(root))
 		root.set_meta("live", not is_static)
+	return vp
+
+
+## Paints `node` through an InkProxy (its shapes in one draw call): `paint`
+## is called with the proxy (plus its own bound arguments).
+func _batched(node: CanvasItem, paint: Callable) -> void:
+	var p := InkProxy.new(node)
+	paint.call(p)
+	p.done()
+
+
+## EraserArt onto a canvas or into a batch (an InkProxy).
+func _eraser_art(c, xf: Transform2D, pose: Dictionary) -> void:
+	if c is InkProxy:
+		EraserArt.draw_into(c, xf, pose)
+	else:
+		EraserArt.draw(c, xf, pose)
+
+
+## A page that changes while it's shown: `paint` (what never changes on it) is
+## drawn once into a static viewport, and this one, redrawn every frame, shows
+## that as a single texture under its live children (the pen's ink, captions,
+## panels). Redrawing a whole page every frame (thousands of fibres and halftone
+## dots, four pages at once) was what made the opening crawl in a browser.
+func _make_live_vp(px: Vector2i, paint: Callable) -> SubViewport:
+	var base := _make_vp(px, paint, true)
+	var vp := SubViewport.new()
+	vp.size = px
+	vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	vp.transparent_bg = false
+	add_child(vp)
+	var root := Control.new()
+	root.size = Vector2(px)
+	vp.add_child(root)
+	var tex := base.get_texture()
+	root.draw.connect(func(): root.draw_texture(tex, Vector2.ZERO))
 	return vp
 
 
@@ -639,7 +673,7 @@ func _lit(p: Vector3, k := 1.0) -> Color:
 
 ## A grid of world points [i][j] (u along i, v along j) textured with `tex`
 ## (texture x = u, or 1 - u when `flip`), lit per vertex, as one draw call.
-func _grid_surface(ci: CanvasItem, tex: Texture2D, grid: Array, flip := false, shade := 1.0, normals: Array = []) -> void:
+func _grid_surface(ci, tex: Texture2D, grid: Array, flip := false, shade := 1.0, normals: Array = []) -> void:
 	var nu: int = grid.size() - 1
 	var nv: int = grid[0].size() - 1
 	var pts := PackedVector2Array()
@@ -725,7 +759,7 @@ func _strip_light(grid: Array) -> Array:
 
 
 ## Draw a turning sheet: front strips with `front`, back strips with `back`.
-func _sheet_surface(ci: CanvasItem, grid: Array, front: Texture2D, back: Texture2D) -> void:
+func _sheet_surface(ci, grid: Array, front: Texture2D, back: Texture2D) -> void:
 	var facing := _strip_facing(grid)
 	var light := _strip_light(grid)
 	for side in 2:
@@ -744,7 +778,7 @@ func _sheet_surface(ci: CanvasItem, grid: Array, front: Texture2D, back: Texture
 
 
 ## Part of a grid (columns start..), keeping the texture coordinates of the whole.
-func _grid_surface_part(ci: CanvasItem, tex: Texture2D, sub: Array, first: int, total: int, flip: bool, light: Array) -> void:
+func _grid_surface_part(ci, tex: Texture2D, sub: Array, first: int, total: int, flip: bool, light: Array) -> void:
 	var nv: int = sub[0].size() - 1
 	var pts := PackedVector2Array()
 	var uvs := PackedVector2Array()
@@ -767,7 +801,7 @@ func _grid_surface_part(ci: CanvasItem, tex: Texture2D, sub: Array, first: int, 
 
 
 ## A flat polygon in world space, one colour per vertex (projected).
-func _poly3(ci: CanvasItem, pts3: Array, col: Color) -> void:
+func _poly3(ci, pts3: Array, col: Color) -> void:
 	var p := PackedVector2Array()
 	for q in pts3:
 		p.append(_proj(q))
@@ -776,7 +810,7 @@ func _poly3(ci: CanvasItem, pts3: Array, col: Color) -> void:
 
 
 ## Shadow of a book-space grid on the plane z = `on_z` along SHADOW, clamped to x in [x0, x1].
-func _grid_shadow(ci: CanvasItem, grid: Array, on_z: float, x0: float, x1: float, alpha: float) -> void:
+func _grid_shadow(ci, grid: Array, on_z: float, x0: float, x1: float, alpha: float) -> void:
 	var pts := PackedVector2Array()
 	var cols := PackedColorArray()
 	var idx := PackedInt32Array()
@@ -944,7 +978,7 @@ func _build_jobs() -> void:
 
 
 ## His ink on a page, as far as the pen has got.
-func _paint_ink(c: Node2D, page: String) -> void:
+func _paint_ink(c, page: String) -> void:
 	var frame := int(_t * 12.0)
 	for ji in _jobs.size():
 		var job: Dictionary = _jobs[ji]
@@ -975,7 +1009,7 @@ func _paint_ink(c: Node2D, page: String) -> void:
 
 ## One stroke as far as it is drawn (`drawn` of its `full` pixels), pressed
 ## as NIB says, and still wet and shining just behind the nib.
-func _stroke(c: Node2D, pts: PackedVector2Array, drawn: float, full: float, width: float, col: Color) -> void:
+func _stroke(c, pts: PackedVector2Array, drawn: float, full: float, width: float, col: Color) -> void:
 	var bands: Array = NIB if full > 36.0 else [[0.0, 1.0, 1.0]]  # (a short one is one touch)
 	var tip := pts[0]
 	for band: Array in bands:
@@ -1220,7 +1254,7 @@ func _draw_hand_shadow() -> void:
 # ------------------------------------------------------------------ world
 
 func _draw_world() -> void:
-	var w := _world
+	var w := InkProxy.new(_world)  # one draw call for its shapes
 	w.draw_rect(Rect2(0, 0, 1280, 720), Color(0.03, 0.02, 0.025))
 	# the desk
 	var desk := []
@@ -1265,11 +1299,12 @@ func _draw_world() -> void:
 	_stub(w, Vector3(430, -470, 5), Vector3(500, -520, 5), true)
 	# the book
 	_book(w)
+	w.done()
 
 
 ## Ink that flew and landed on the desk: each a blot and the smaller drops it
 ## threw on ahead of itself. One draw call for all of them.
-func _draw_splats(w: Node2D) -> void:
+func _draw_splats(w) -> void:
 	if _splats.is_empty():
 		return
 	var pts := PackedVector2Array()
@@ -1288,7 +1323,7 @@ func _draw_splats(w: Node2D) -> void:
 	RenderingServer.canvas_item_add_triangle_array(w.get_canvas_item(), idx, pts, PackedColorArray([Color(0.03, 0.02, 0.05, 0.9)]))
 
 
-func _soft_shadow(ci: CanvasItem, pts3: Array, lift: float, alpha: float) -> void:
+func _soft_shadow(ci, pts3: Array, lift: float, alpha: float) -> void:
 	var c := Vector3.ZERO
 	for p in pts3:
 		c += p
@@ -1302,7 +1337,7 @@ func _soft_shadow(ci: CanvasItem, pts3: Array, lift: float, alpha: float) -> voi
 		_poly3(ci, pp, Color(0.0, 0.0, 0.0, alpha * 0.32))
 
 
-func _book(w: Node2D) -> void:
+func _book(w) -> void:
 	var ca := _cover_angle()
 	var s := _turn()
 	var open := ca / PI
@@ -1329,7 +1364,7 @@ func _book(w: Node2D) -> void:
 		_cover_edges(w, cover)
 
 
-func _block_sides(w: Node2D) -> void:
+func _block_sides(w) -> void:
 	# near side (y = -BH/2) and fore edge (x = BW): stacked paper
 	var faces := [
 		[Vector3(0, -BH * 0.5, 0), Vector3(BW, -BH * 0.5, 0), Vector3(BW, -BH * 0.5, THICK), Vector3(0, -BH * 0.5, THICK)],
@@ -1351,7 +1386,7 @@ func _block_sides(w: Node2D) -> void:
 		w.draw_polyline(p + PackedVector2Array([p[0]]), Color(INK, 0.8), 1.5)
 
 
-func _cover_edges(w: Node2D, cover: Array) -> void:
+func _cover_edges(w, cover: Array) -> void:
 	# a dark board edge round the cover so it reads as a cover
 	var nv: int = cover[0].size() - 1
 	var line := PackedVector2Array()
@@ -1362,7 +1397,7 @@ func _cover_edges(w: Node2D, cover: Array) -> void:
 	w.draw_polyline(line, Color(INK, 0.85), 2.0)
 
 
-func _rod(w: Node2D, a: Vector3, b: Vector3, r: float, col: Color, kind: String) -> void:
+func _rod(w, a: Vector3, b: Vector3, r: float, col: Color, kind: String) -> void:
 	var off := Vector3(SHADOW.x, SHADOW.y, 0) * a.z * 1.4
 	var pa := _proj(a)
 	var pb := _proj(b)
@@ -1394,7 +1429,7 @@ func _rod(w: Node2D, a: Vector3, b: Vector3, r: float, col: Color, kind: String)
 
 ## The framed photo standing at the back of the desk, in the lamp's light,
 ## leaning on its strut and looking at the chair: the biggest thing on it.
-func _frame(w: Node2D, base: Vector3) -> void:
+func _frame(w, base: Vector3) -> void:
 	var size := Vector2(236, 298)
 	var face := Vector3(-0.56, -0.83, 0.0).normalized()
 	var right := Vector3(-face.y, face.x, 0.0)
@@ -1429,7 +1464,7 @@ func _frame(w: Node2D, base: Vector3) -> void:
 
 
 ## A candle burning down beside the photo (its flame and glow are in _draw_glow()).
-func _candle(w: Node2D) -> void:
+func _candle(w) -> void:
 	var c := _cyl_screen(CANDLE, 19, 56)
 	var b: Vector2 = c[0]
 	var t: Vector2 = c[1]
@@ -1450,7 +1485,7 @@ func _candle(w: Node2D) -> void:
 
 ## His brother's red scarf, laid in front of the photo: a long soft strip,
 ## its folds catching the lamp, frayed at the end.
-func _scarf(w: Node2D) -> void:
+func _scarf(w) -> void:
 	var red := Color(0.86, 0.13, 0.1)
 	var mids := []
 	for i in 15:
@@ -1481,7 +1516,7 @@ func _scarf(w: Node2D) -> void:
 
 ## A page torn in two, its halves lying apart: `tex` runs across both, split
 ## down a ragged line.
-func _torn(w: Node2D, tex: Texture2D, c: Vector3, turn: float, size: Vector2) -> void:
+func _torn(w, tex: Texture2D, c: Vector3, turn: float, size: Vector2) -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 23
 	var rows := 9
@@ -1520,7 +1555,7 @@ func _torn(w: Node2D, tex: Texture2D, c: Vector3, turn: float, size: Vector2) ->
 
 
 ## A draft crushed into a ball and thrown down.
-func _crumple(w: Node2D, c: Vector3, r: float, seed_n: int) -> void:
+func _crumple(w, c: Vector3, r: float, seed_n: int) -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = seed_n
 	var mid := c + Vector3(0, 0, r * 0.75)
@@ -1544,7 +1579,7 @@ func _crumple(w: Node2D, c: Vector3, r: float, seed_n: int) -> void:
 
 
 ## Half of a pencil he snapped (`point`: the half with its point on).
-func _stub(w: Node2D, a: Vector3, b: Vector3, point: bool) -> void:
+func _stub(w, a: Vector3, b: Vector3, point: bool) -> void:
 	var off := Vector3(SHADOW.x, SHADOW.y, 0) * a.z * 1.4
 	var pa := _proj(a)
 	var pb := _proj(b)
@@ -1570,7 +1605,7 @@ func _stub(w: Node2D, a: Vector3, b: Vector3, point: bool) -> void:
 
 ## Earlier issues of the comic in a loose pile (he has written it for years).
 ## `_issues` of them; the newest may still be coming down onto the pile.
-func _stack(w: Node2D, c: Vector3) -> void:
+func _stack(w, c: Vector3) -> void:
 	for i in ceili(_issues):
 		var a: float = 0.5 + sin(i * 2.3) * 0.15
 		var ex := Vector3(cos(a), sin(a), 0)
@@ -1590,7 +1625,7 @@ func _stack(w: Node2D, c: Vector3) -> void:
 
 
 ## A pocket watch lying open, its chain trailing off: the ticking.
-func _watch(w: Node2D, c: Vector3) -> void:
+func _watch(w, c: Vector3) -> void:
 	var k: float = FOCAL / maxf((c - _cam).dot(_cf), 1.0)
 	var flat := clampf(absf(_cf.z), 0.25, 1.0)
 	var at := _proj(c + Vector3(0, 0, 4))
@@ -1609,7 +1644,7 @@ func _watch(w: Node2D, c: Vector3) -> void:
 		w.draw_line(at, at + Vector2(sin(hand[0]), -cos(hand[0]) * flat) * hand[1] * k, Color(0.75, 0.1, 0.1) if hand[2] == 1.0 else INK, maxf(hand[2] * k, 1.0))
 
 
-func _eraser(w: Node2D, c: Vector3) -> void:
+func _eraser(w, c: Vector3) -> void:
 	# the pink eraser (the Eraser's little cousin): a box, a cross brow drawn on it
 	var size := Vector3(84, 40, 26)
 	var a := 0.55
@@ -1648,7 +1683,7 @@ func _cyl_screen(base: Vector3, r: float, h: float) -> Array:
 	return [b, t, rx, ry]
 
 
-func _ink_bottle(w: Node2D, base: Vector3) -> void:
+func _ink_bottle(w, base: Vector3) -> void:
 	var c := _cyl_screen(base, 34, 70)
 	var b: Vector2 = c[0]
 	var t: Vector2 = c[1]
@@ -1669,7 +1704,7 @@ func _ink_bottle(w: Node2D, base: Vector3) -> void:
 	w.draw_polyline(body + PackedVector2Array([body[0]]), Color(INK, 0.9), 1.5)
 
 
-func _mug(w: Node2D, base: Vector3) -> void:
+func _mug(w, base: Vector3) -> void:
 	var c := _cyl_screen(base, 52, 90)
 	var b: Vector2 = c[0]
 	var t: Vector2 = c[1]
@@ -1692,7 +1727,7 @@ func _mug(w: Node2D, base: Vector3) -> void:
 		w.draw_polyline(pts, Color(1, 1, 1, 0.12 * lit), maxf(rx * 0.08, 1.0), true)
 
 
-func _shavings(w: Node2D) -> void:
+func _shavings(w) -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 5
 	for i in 9:
@@ -1707,7 +1742,7 @@ func _shavings(w: Node2D) -> void:
 ## Skips shapes seen edge-on (no area to triangulate: a book side, a shadow)
 ## and ones the view has folded over themselves (the ink bottle's shoulders
 ## from straight above), which can't be triangulated either.
-func _fill(ci: CanvasItem, pts: PackedVector2Array, col: Color) -> void:
+func _fill(ci, pts: PackedVector2Array, col: Color) -> void:
 	var area := 0.0
 	for i in pts.size():
 		area += pts[i].cross(pts[(i + 1) % pts.size()])
@@ -1770,7 +1805,7 @@ func _lightning() -> float:
 
 
 func _draw_glow() -> void:
-	var g := _glow
+	var g := InkProxy.new(_glow)  # one draw call for its shapes
 	# the window: its four panes lie cold across the near right of the desk,
 	# rain running down them; lightning fills them, and the room
 	var flash := _lightning()
@@ -1836,9 +1871,10 @@ func _draw_glow() -> void:
 		p.y = fposmod(p.y, 720.0)
 		var lit := clampf(1.0 - p.distance_to(pool) / 900.0, 0.0, 1.0)
 		g.draw_circle(p, m[1], Color(1.0, 0.85, 0.6, 0.35 * lit))
+	g.done()
 
 
-func _radial(ci: CanvasItem, c: Vector2, r: float, col: Color) -> void:
+func _radial(ci, c: Vector2, r: float, col: Color) -> void:
 	var pts := PackedVector2Array([c])
 	var cols := PackedColorArray([col])
 	var idx := PackedInt32Array()
@@ -1850,7 +1886,7 @@ func _radial(ci: CanvasItem, c: Vector2, r: float, col: Color) -> void:
 
 
 func _draw_top() -> void:
-	var c := _top
+	var c := InkProxy.new(_top)  # one draw call for its shapes
 	# ink drops thrown out of the book
 	for s in _sparks:
 		if s[4] != 1:
@@ -1881,6 +1917,7 @@ func _draw_top() -> void:
 		c.draw_string_outline(FONT, Vector2(-tw * 0.5, px * 0.35), text, HORIZONTAL_ALIGNMENT_LEFT, -1, px, 16, Color(INK, a))
 		c.draw_string(FONT, Vector2(-tw * 0.5, px * 0.35), text, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Color(wd[4], a))
 		c.draw_set_transform(Vector2.ZERO)
+	c.done()
 
 
 func _pop_ease(x: float) -> float:
@@ -1946,7 +1983,7 @@ func _draw() -> void:
 
 # ------------------------------------------------------------------ pages
 
-func _paper(c: CanvasItem, size: Vector2, col := PAPER) -> void:
+func _paper(c, size: Vector2, col := PAPER) -> void:
 	c.draw_rect(Rect2(Vector2.ZERO, size), col)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 3
@@ -1962,7 +1999,7 @@ func _paper(c: CanvasItem, size: Vector2, col := PAPER) -> void:
 		x += 10.0
 
 
-func _paint_cover(c: Control) -> void:
+func _paint_cover(c) -> void:
 	var s := Vector2(TEX)
 	# night sky, a huge moon, the city skyline, Vesper on a roof
 	c.draw_polygon(PackedVector2Array([Vector2.ZERO, Vector2(s.x, 0), Vector2(s.x, s.y), Vector2(0, s.y)]),
@@ -2027,7 +2064,7 @@ func _cover_hero(vp: SubViewport) -> void:
 	vp.get_child(0).add_child(hero)
 
 
-func _paint_inside(c: Control) -> void:
+func _paint_inside(c) -> void:
 	var s := Vector2(TEX)
 	_paper(c, s, Color(0.94, 0.9, 0.8))
 	c.draw_rect(Rect2(40, 60, s.x - 80, 150), Color(INK, 0.85), false, 3.0)
@@ -2056,7 +2093,7 @@ func _paint_inside(c: Control) -> void:
 ## The small one holds a sketchbook; the tall one (_photo_brother()) wears
 ## Vesper's hat and scarf, the only colour left in it. A black ribbon is tied
 ## over the corner, and "brothers." is written under it in the Writer's hand.
-func _paint_photo(c: Control) -> void:
+func _paint_photo(c) -> void:
 	var s := Vector2(300, 380)
 	c.draw_rect(Rect2(Vector2.ZERO, s), Color(0.15, 0.07, 0.03))
 	c.draw_rect(Rect2(6, 6, s.x - 12, s.y - 12), Color(0.44, 0.24, 0.1), false, 7.0)
@@ -2132,7 +2169,7 @@ func _photo_brother(vp: SubViewport) -> void:
 
 ## The page he tore in two (_torn()): the ending he first wrote, where
 ## Vesper comes home, and his red NO across it.
-func _paint_draft(c: Control) -> void:
+func _paint_draft(c) -> void:
 	var s := Vector2(420, 300)
 	_paper(c, s, Color(0.95, 0.93, 0.86))
 	c.draw_rect(Rect2(12, 12, s.x - 24, s.y - 24), Color(PENCIL, 0.7), false, 2.0)
@@ -2161,7 +2198,7 @@ func _paint_draft(c: Control) -> void:
 	c.draw_polyline(PackedVector2Array([Vector2(40, 96), Vector2(380, 128), Vector2(60, 150), Vector2(372, 190), Vector2(80, 214)]), red, 4.0)
 
 
-func _paint_sheet(c: Control) -> void:
+func _paint_sheet(c) -> void:
 	var s := Vector2(400, 300)
 	_paper(c, s, Color(0.95, 0.94, 0.9))
 	for k in 12:  # ruled lines
@@ -2178,7 +2215,7 @@ func _paint_sheet(c: Control) -> void:
 	c.draw_string(HAND, Vector2(70, 270), "scarf: RED. always.", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color(INK, 0.6))
 
 
-func _paint_p2(c: Control) -> void:
+func _paint_p2(c) -> void:
 	var s := Vector2(TEX)
 	_paper(c, s)
 	c.draw_string(FONT, Vector2(26, 54), "VESPER", HORIZONTAL_ALIGNMENT_LEFT, -1, 40, RED)
@@ -2205,7 +2242,7 @@ func _paint_p2(c: Control) -> void:
 
 ## Page two, live: the pencil Vesper in the first panel. He blinks while he
 ## waits to be inked (twice in the held beat before the ink comes).
-func _paint_p2_live(c: Node2D) -> void:
+func _paint_p2_live(c) -> void:
 	var shut := false
 	for b: float in [T_TURN.y - 0.35, T_TOP + 0.35, T_TOP + 0.8]:
 		shut = shut or (_t > b and _t < b + 0.13)
@@ -2215,7 +2252,7 @@ func _paint_p2_live(c: Node2D) -> void:
 ## A pencil stick-figure Vesper: hat, round head, a red scarf (as on the
 ## sketch sheet). `at` = his feet, `k` his size; `eyes` 0 none, 1 open, 2 shut;
 ## `wave` moves his scarf.
-func _stick(c: CanvasItem, at: Vector2, k: float, lean := 0.0, eyes := 0, wave := 0.0) -> void:
+func _stick(c, at: Vector2, k: float, lean := 0.0, eyes := 0, wave := 0.0) -> void:
 	var pc := Color(PENCIL, 0.85)
 	c.draw_set_transform(at, lean, Vector2(k, k))
 	c.draw_line(Vector2(0, -10), Vector2(-5, 0), pc, 1.5)
@@ -2236,7 +2273,7 @@ func _stick(c: CanvasItem, at: Vector2, k: float, lean := 0.0, eyes := 0, wave :
 
 ## A rough panel on page two: blank paper in a pencil box, the diagonals an
 ## artist rules in blue to find its middle, its number circled in the corner.
-func _rough_box(c: CanvasItem, r: Rect2, number: String) -> void:
+func _rough_box(c, r: Rect2, number: String) -> void:
 	c.draw_rect(r, Color(0.98, 0.96, 0.9))
 	c.draw_line(r.position, r.end, Color(0.4, 0.6, 0.95, 0.14), 1.0)
 	c.draw_line(Vector2(r.end.x, r.position.y), Vector2(r.position.x, r.end.y), Color(0.4, 0.6, 0.95, 0.14), 1.0)
@@ -2247,7 +2284,7 @@ func _rough_box(c: CanvasItem, r: Rect2, number: String) -> void:
 
 ## Page two, panel 2: the Sketchbook. A bridge that is only sketched, real
 ## where his light falls, over spikes.
-func _rough_sketchbook(c: CanvasItem, r: Rect2) -> void:
+func _rough_sketchbook(c, r: Rect2) -> void:
 	_rough_box(c, r, "2")
 	var o := r.position
 	var pc := Color(PENCIL, 0.55)
@@ -2281,7 +2318,7 @@ func _rough_sketchbook(c: CanvasItem, r: Rect2) -> void:
 
 ## Page two, panel 3: the Long Drop. A shaft, ledges stepping down it, and
 ## him falling.
-func _rough_long_drop(c: CanvasItem, r: Rect2) -> void:
+func _rough_long_drop(c, r: Rect2) -> void:
 	_rough_box(c, r, "3")
 	var o := r.position
 	var pc := Color(PENCIL, 0.55)
@@ -2309,7 +2346,7 @@ func _rough_long_drop(c: CanvasItem, r: Rect2) -> void:
 ## Page two, panel 4: the Beast, as a shape only: a hulk with two heads gone
 ## over and over in pencil, its eyes left empty for the ink, and him very
 ## small in front of it.
-func _rough_beast(c: CanvasItem, r: Rect2) -> void:
+func _rough_beast(c, r: Rect2) -> void:
 	_rough_box(c, r, "4")
 	var o := r.position
 	var pc := Color(PENCIL, 0.5)
@@ -2337,11 +2374,11 @@ func _rough_beast(c: CanvasItem, r: Rect2) -> void:
 	c.draw_string(HAND, o + Vector2(36, 36), "the big one", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(PENCIL, 0.8))
 
 
-func _border(c: CanvasItem, r: Rect2, w: float, a := 1.0) -> void:
+func _border(c, r: Rect2, w: float, a := 1.0) -> void:
 	c.draw_rect(r, Color(INK, a), false, w)
 
 
-func _paint_p1_static(c: Control) -> void:
+func _paint_p1_static(c) -> void:
 	var s := Vector2(TEX)
 	_paper(c, s)
 	c.draw_string(FONT, Vector2(s.x * 0.5 - 6, s.y - 16), "i", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color(INK, 0.5))
@@ -2349,7 +2386,7 @@ func _paint_p1_static(c: Control) -> void:
 		c.draw_rect(P1_PANELS[i], Color(PENCIL, 0.35), false, 1.0)
 
 
-func _paint_p1_back(c: Node2D) -> void:
+func _paint_p1_back(c) -> void:
 	var s := Vector2(TEX)
 	# page one showing through the paper, mirrored
 	c.draw_set_transform(Vector2(s.x, 0), 0.0, Vector2(-1, 1))
@@ -2365,7 +2402,7 @@ func _shown(line: int) -> int:
 	return clampi(int((_t - t0) * cps), 0, text.length())
 
 
-func _paint_p1_captions(c: Node2D) -> void:
+func _paint_p1_captions(c) -> void:
 	for line in 2:
 		var shown := _shown(line)
 		var t0: float = T_CAP1 if line == 0 else T_CAP2
@@ -2404,7 +2441,7 @@ func _build_p1_panels() -> void:
 		root.add_child(clip)
 		var bg := Node2D.new()
 		bg.set_meta("live", true)
-		bg.draw.connect(_paint_panel_bg.bind(bg, i))
+		bg.draw.connect(_batched.bind(bg, _paint_panel_bg.bind(i)))
 		clip.add_child(bg)
 		var art := []
 		match i:
@@ -2431,20 +2468,20 @@ func _build_p1_panels() -> void:
 				art = [v3]
 		var fx := Node2D.new()
 		fx.set_meta("live", true)
-		fx.draw.connect(_paint_panel_fx.bind(fx, i))
+		fx.draw.connect(_batched.bind(fx, _paint_panel_fx.bind(i)))
 		clip.add_child(fx)
 		var mask := Node2D.new()
 		mask.set_meta("live", true)
-		mask.draw.connect(_paint_panel_mask.bind(mask, i))
+		mask.draw.connect(_batched.bind(mask, _paint_panel_mask.bind(i)))
 		clip.add_child(mask)
 		_p1_nodes.append([clip] + art)
 		var frame := Node2D.new()
 		frame.set_meta("live", true)
-		frame.draw.connect(_paint_panel_frame.bind(frame, i))
+		frame.draw.connect(_batched.bind(frame, _paint_panel_frame.bind(i)))
 		root.add_child(frame)
 	var out := Node2D.new()  # over the borders
 	out.set_meta("live", true)
-	out.draw.connect(_paint_breakout.bind(out))
+	out.draw.connect(_batched.bind(out, _paint_breakout))
 	root.add_child(out)
 
 
@@ -2456,12 +2493,12 @@ func _eraser_x(t: float) -> float:
 
 ## Over the panels' borders: once its panel is inked the Eraser won't stay in
 ## it. It swells, and its scrubbing carries its claws out across the gutter.
-func _paint_breakout(c: Node2D) -> void:
+func _paint_breakout(c) -> void:
 	var t := _panel_t(3)
 	if t < T_PANEL_INK:
 		return
 	var grow := _ease((t - T_PANEL_INK) / 0.6)
-	EraserArt.draw(c, Transform2D(0.0, Vector2.ONE * (0.38 + 0.08 * grow), 0.0, P1_PANELS[3].position + Vector2(_eraser_x(t), 190.0 + 3.0 * grow)),
+	_eraser_art(c, Transform2D(0.0, Vector2.ONE * (0.38 + 0.08 * grow), 0.0, P1_PANELS[3].position + Vector2(_eraser_x(t), 190.0 + 3.0 * grow)),
 		{"time": _t, "rubbing": 1.0, "roar": 0.7})
 
 
@@ -2469,7 +2506,7 @@ func _panel_t(i: int) -> float:
 	return _t - T_PANELS[i]
 
 
-func _paint_panel_bg(c: Node2D, i: int) -> void:
+func _paint_panel_bg(c, i: int) -> void:
 	var r: Rect2 = P1_PANELS[i]
 	var s := r.size
 	var t := _panel_t(i)
@@ -2563,7 +2600,7 @@ func _iso(x: float, y: float, s: Vector2) -> Vector2:
 	return Vector2(s.x * 0.5 + x * 150.0 / depth, s.y * 0.62 + y * 70.0 / depth)
 
 
-func _paint_panel_fx(c: Node2D, i: int) -> void:
+func _paint_panel_fx(c, i: int) -> void:
 	var r: Rect2 = P1_PANELS[i]
 	var s := r.size
 	var t := _panel_t(i)
@@ -2619,7 +2656,7 @@ func _paint_panel_fx(c: Node2D, i: int) -> void:
 			# SHADE'S ERASER (eraser_art.gd, the same as in the game), scrubbing the panel out
 			c.draw_colored_polygon(PackedVector2Array([Vector2(ex - 60, 186), Vector2(ex + 60, 186), Vector2(ex + 50, 192), Vector2(ex - 50, 192)]), Color(INK, 0.25))
 			if t < T_PANEL_INK:  # (once its panel is inked it is drawn over the border: _paint_breakout())
-				EraserArt.draw(c, Transform2D(0.0, Vector2.ONE * 0.38, 0.0, Vector2(ex, 190)), {"time": _t, "rubbing": 1.0, "roar": 0.7})
+				_eraser_art(c, Transform2D(0.0, Vector2.ONE * 0.38, 0.0, Vector2(ex, 190)), {"time": _t, "rubbing": 1.0, "roar": 0.7})
 			for k in 7:  # crumbs
 				var cp := Vector2(ex + sin(_t * 9.0 + k) * 70.0, 160 + fmod(_t * 60.0 + k * 13.0, 40.0))
 				c.draw_circle(cp, 2.5, Color(0.9, 0.5, 0.55))
@@ -2631,7 +2668,7 @@ func _paint_panel_fx(c: Node2D, i: int) -> void:
 
 
 ## Each panel inks itself in: paper with a pencil rough until the ink front passes.
-func _paint_panel_mask(c: Node2D, i: int) -> void:
+func _paint_panel_mask(c, i: int) -> void:
 	var r: Rect2 = P1_PANELS[i]
 	var s := r.size
 	var k := _smoother(clampf(_panel_t(i) / T_PANEL_INK, 0.0, 1.0))
@@ -2651,7 +2688,7 @@ func _paint_panel_mask(c: Node2D, i: int) -> void:
 			c.draw_rect(Rect2(x, y2 - 2.5, l, 5), INK)
 
 
-func _paint_panel_frame(c: Node2D, i: int) -> void:
+func _paint_panel_frame(c, i: int) -> void:
 	var r: Rect2 = P1_PANELS[i]
 	var k := clampf(_panel_t(i) / T_PANEL_INK, 0.0, 1.0)
 	if k <= 0.0:
@@ -2667,8 +2704,26 @@ func _paint_panel_frame(c: Node2D, i: int) -> void:
 
 # ------------------------------------------------------------------ sound
 
+const SOUNDS := ["tick", "thump", "whoosh", "chime", "scratch", "type", "flip", "dive", "pop", "dread",
+	"rain", "hum", "thunder", "toll", "growl", "lament"]
+const LOOPING := ["rain", "hum"]
+
+
+## The baked sounds (SfxSynth.baked(): "cs_" + name), or, if any is missing,
+## all of them made here.
 func _make_sounds() -> void:
-	_sounds = {
+	_sounds = {}
+	for k: String in SOUNDS:
+		var w := SfxSynth.baked("cs_" + k, k in LOOPING)
+		if w == null:
+			_sounds = _synth_sounds()
+			return
+		_sounds[k] = w
+
+
+## Makes every sound of the opening in code (tools/sfx/bake_synth.gd bakes these).
+func _synth_sounds() -> Dictionary:
+	return {
 		"tick": _wav(_tick()), "thump": _wav(_thump()), "whoosh": _wav(_whoosh(0.9, 400.0, 2400.0)),
 		"chime": _wav(_chime()), "scratch": _wav(_scratch()), "type": _wav(_type_click()),
 		"flip": _wav(_flip()), "dive": _wav(_whoosh(1.3, 300.0, 5000.0)), "pop": _wav(_pop_snd()),

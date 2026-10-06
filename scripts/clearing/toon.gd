@@ -41,6 +41,19 @@ static func material(color: Color, opts := {}) -> ShaderMaterial:
 	return m
 
 
+## Merges a prop's parts once its build is done (merge(), deferred).
+static func merge_when_built(root: Node3D, keep: Array = []) -> void:
+	merge.call_deferred(root, keep)
+
+
+static func _under(n: Node, root: Node, keep: Array) -> bool:
+	while n != null and n != root:
+		if n in keep:
+			return true
+		n = n.get_parent()
+	return false
+
+
 ## Frees the previous build and returns an empty "Generated" node.
 static func fresh_root(owner_node: Node3D) -> Node3D:
 	var old := owner_node.get_node_or_null("Generated")
@@ -66,6 +79,56 @@ static func part(parent: Node3D, mesh: Mesh, color: Color, pos := Vector3.ZERO,
 	mi.rotation_degrees = rot_deg
 	parent.add_child(mi)
 	return mi
+
+
+## Merges `root`'s static parts that share a Toon material into one mesh each,
+## their transforms baked in. Every part is its own draw calls (colour, ink
+## outline, shadow), so a dead tree of ~50 parts was ~150 a frame, and the
+## browser build crawled in the Margins. Call it at the end of a prop's build,
+## for props that never move a part afterwards. Left alone: parts with any
+## other material (billboards, flames), box-like parts (their outline pushes
+## out from each part's own centre, `from_center`), parts with a script or
+## children, hidden ones, and anything under a node in `keep` (the parts a
+## prop moves later). At runtime only, so the editor keeps the parts.
+static func merge(root_v: Variant, keep: Array = []) -> void:
+	if not is_instance_valid(root_v) or Engine.is_editor_hint():
+		return
+	var root := root_v as Node3D
+	if root == null or not root.is_inside_tree():
+		return
+	var inv := root.global_transform.affine_inverse()
+	var groups := {}
+	for n in root.find_children("*", "MeshInstance3D", true, false):
+		var mi := n as MeshInstance3D
+		if mi.get_script() != null or mi.get_child_count() > 0 or not mi.is_visible_in_tree():
+			continue
+		if not keep.is_empty() and _under(mi, root, keep):
+			continue
+		var mat := mi.material_override as ShaderMaterial
+		if mat == null or mat.shader != TOON_SHADER or mi.mesh == null or mi.mesh.get_surface_count() != 1:
+			continue
+		var outline := mat.next_pass as ShaderMaterial
+		if outline and float(outline.get_shader_parameter("from_center")) > 0.5:
+			continue
+		var key := "%d|%d" % [mat.get_instance_id(), mi.cast_shadow]
+		if not groups.has(key):
+			groups[key] = []
+		groups[key].append(mi)
+	for key in groups:
+		var parts: Array = groups[key]
+		if parts.size() < 2:
+			continue
+		var st := SurfaceTool.new()
+		for mi: MeshInstance3D in parts:
+			st.append_from(mi.mesh, 0, inv * mi.global_transform)
+		var merged := MeshInstance3D.new()
+		merged.mesh = st.commit()
+		merged.material_override = parts[0].material_override
+		merged.cast_shadow = parts[0].cast_shadow
+		root.add_child(merged)
+		for mi: MeshInstance3D in parts:
+			mi.get_parent().remove_child(mi)
+			mi.free()
 
 
 static func box(size: Vector3) -> BoxMesh:

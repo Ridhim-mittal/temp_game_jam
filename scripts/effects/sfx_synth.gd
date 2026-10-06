@@ -6,10 +6,32 @@ extends RefCounted
 ##
 ## Names: roar, rumble, rip, clang, scritch, splut, thud, screech, whoosh,
 ## shatter, and the Margins' heal (heal_fx.gd): heal_rise, heal_chime, heal_fizzle.
+##
+## Every sound made in code (here, cs_book.gd, scribble.gd, gate.gd) is baked
+## into a .wav in `BAKED` by tools/sfx/bake_synth.gd, and `baked()` loads it:
+## building one sample by sample costs 10..500 ms, several times that in a
+## browser (the opening froze and its audio broke up). The code is the
+## fallback when a file is missing; re-run the tool after changing a sound.
 
 const RATE := 22050
 
+const BAKED := "res://assets/sfx/synth/"
+
 static var _cache := {}
+
+
+## The baked file for `name` (BAKED + name + ".wav"), or null. `loops`: it
+## repeats forever (a room sound).
+static func baked(name: String, loops := false) -> AudioStreamWAV:
+	var path := BAKED + name + ".wav"
+	if not ResourceLoader.exists(path):
+		return null
+	var w := load(path) as AudioStreamWAV
+	if w and loops and w.loop_mode == AudioStreamWAV.LOOP_DISABLED:
+		w.loop_mode = AudioStreamWAV.LOOP_FORWARD
+		w.loop_begin = 0
+		w.loop_end = int(round(w.get_length() * w.mix_rate))
+	return w
 
 
 static func play(tree: SceneTree, sound: String, db := 0.0, pitch := 1.0) -> void:
@@ -31,7 +53,8 @@ static func play(tree: SceneTree, sound: String, db := 0.0, pitch := 1.0) -> voi
 
 static func get_stream(sound: String) -> AudioStreamWAV:
 	if not _cache.has(sound):
-		_cache[sound] = _make(sound)
+		var w := baked(sound)
+		_cache[sound] = w if w else _make(sound)
 	return _cache[sound]
 
 

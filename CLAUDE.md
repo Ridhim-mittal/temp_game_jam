@@ -259,6 +259,16 @@ Drawing cost: in gl_compatibility every draw_colored_polygon / polyline / arc / 
 draw call, so the depth scenery, trims, ledges, overlay and lanterns draw through
 `scripts/depth/ink_batch.gd` (same draw_* method names, `flush(self)` at the end of `_draw()` =
 one triangle-array draw call). Use it for any new procedural art that draws many shapes.
+`scripts/depth/ink_proxy.gd` (InkProxy.new(node) ... done()) is an InkBatch that also takes text, textures
+and raw RenderingServer calls (flushing first, so the order holds): cs_book.gd's live painters go through it
+(`_batched()`), the street (`street_ground.gd`) and the comic frame's page batch too. 3D props: `Toon.merge()`
+(`merge_when_built(root, keep)` after `fresh_root`) bakes a static prop's Toon parts into one mesh per material
+(trees, trunks, fences, biome props, scatter, islands, stairs, bridges, the shrine, the shop's still parts);
+box-like parts (outline `from_center`) and anything under `keep` stay apart. The ink outline pass
+(toon_outline.gdshader) draws in the transparent pass so it stays out of the shadow map. Every sound made in
+code is baked into `assets/sfx/synth/` by `tools/sfx/bake_synth.gd` (SfxSynth.baked(); re-run after changing
+one): building them at runtime froze the opening for seconds in a browser. The opening's changing pages are
+`_make_live_vp()`: the static page drawn once, the live bits over it.
 The 2D player has a double jump (`air_jumps`, `air_jump_velocity` in player.gd; set 0 to turn off).
 Falls of `hard_land_height` (400 px) or more end in a Hollow Knight-style hard landing (kneel that
 locks control, `land_impact.gd` burst, speed lines from `fall_streaks.gd` while falling); falls of

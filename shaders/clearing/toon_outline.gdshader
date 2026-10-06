@@ -3,7 +3,10 @@ shader_type spatial;
 // little and only its back faces are drawn, leaving a dark rim around the
 // silhouette. from_center = 1 pushes along the direction from the mesh
 // centre, which keeps box corners closed; 0 uses the normals (smooth meshes).
-render_mode unshaded, cull_front, specular_disabled;
+// Drawn in the transparent pass (fully opaque ink, no depth write) so it stays
+// out of the sun's shadow map: as an opaque pass every outline was drawn into
+// the shadows too, ~440 wasted draw calls a frame in the hub; it looks the same.
+render_mode unshaded, cull_front, specular_disabled, blend_mix, depth_draw_never;
 
 uniform vec4 ink : source_color = vec4(0.06, 0.04, 0.09, 1.0);
 uniform float width = 0.04;
@@ -18,4 +21,5 @@ void vertex() {
 
 void fragment() {
 	ALBEDO = ink.rgb;
+	ALPHA = 1.0;
 }

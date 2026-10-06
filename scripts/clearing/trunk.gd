@@ -32,6 +32,7 @@ func _rebuild() -> void:
 	if not is_inside_tree():
 		return
 	var root := Toon.fresh_root(self)
+	Toon.merge_when_built(root)  # one mesh per material: far fewer draw calls
 	var opts := {"bark": 1.0, "line": color.darkened(0.55), "outline": 0.07}
 	Toon.part(root, Toon.cylinder(radius * 0.85, radius, height, 14), color, Vector3(0, height * 0.5, 0), Vector3.ZERO, opts)
 	for i in roots:

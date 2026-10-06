@@ -35,6 +35,7 @@ func _rebuild() -> void:
 	if not is_inside_tree():
 		return
 	var root := Toon.fresh_root(self)
+	Toon.merge_when_built(root)  # one mesh per material: far fewer draw calls
 	var rng := RandomNumberGenerator.new()
 	rng.seed = absi(hash(Vector2i(roundi(position.x * 10.0), roundi(position.z * 10.0))))
 	var bark := color.lightened(0.08)
