@@ -314,6 +314,8 @@ func _player() -> Node2D:
 
 
 func _heart(at: Vector2, amount: float) -> void:
+	if Heart.player_full(get_tree()):
+		return  # full ink: no heart to fly in and sit on him
 	var h := Area2D.new()
 	h.set_script(Heart)
 	h.amount = amount
