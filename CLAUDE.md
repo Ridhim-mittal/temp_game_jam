@@ -291,7 +291,7 @@ from the painting's moon roams round Vesper between `zone_from`/`zone_to`; in it
 full = 3 half bottles; nodes in group `light_cover` block it and cast a visible shadow) -> hideout + checkpoint
 -> the gate (`gate_arena.gd`: ink walls rise, the sleeping Ink Blot `ink_blot.gd` wakes: claw swipe
 `ink_claw.gd`, slam + floor shockwaves `ink_shockwave.gd`, ink globs `ink_glob.gd` that leave slowing
-puddles `ink_puddle.gd`; 15 hp, never staggered by hits, swipe 2 / slam 3, globs 1 (half bottles); below half health it
+puddles `ink_puddle.gd`; 20 hp (the toughest Blot), never staggered by hits, swipe 2.5 / slam 3.75, globs 1 (half bottles); below half health it
 enrages (red eye, 1.3x speed, double slams, 5 globs); light doubles damage to it; on death it melts and always drops a big heart (+6 half bottles = three ink bottles) that flies to Vesper (`drop_heal`, health_heart.gd `seek`),
 the tape burns off) -> through the gate Shade's trap (`scripts/effects/shade_trap.gd`: glitch, ink
 flood, "DID YOU REALLY THINK I'D LET YOU LEAVE?"; `next_scene` = the Ink Cave; with none, TO BE CONTINUED).

@@ -189,6 +189,9 @@ script = ExtResource("12_health_heart")
 
 [node name="InkBlot" parent="Enemies" instance=ExtResource("3_ink_blot")]
 position = Vector2(6450, 525)
+hp = 20
+swipe_damage = 2.5
+slam_damage = 3.75
 
 [node name="GateArena" type="Node2D" parent="World"]
 script = ExtResource("10_gate_arena")
