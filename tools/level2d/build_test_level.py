@@ -224,7 +224,7 @@ def write(path, root, player_pos, page=1, story=(), live=(), tutorial=()):
             '[node name="HUD" type="Control" parent="UI"]', "layout_mode = 3", "anchors_preset = 15",
             "anchor_right = 1.0", "anchor_bottom = 1.0", "grow_horizontal = 2", "grow_vertical = 2",
             "mouse_filter = 2", 'script = ExtResource("5_hud")', "",
-            '[node name="LevelMusic" type="Node" parent="."]', 'script = ExtResource("8_music")', "",
+            '[node name="LevelMusic" type="Node" parent="."]', 'script = ExtResource("8_music")', 'track = "city"', "",
             '[node name="LevelMood" type="Node" parent="."]', 'script = ExtResource("30_mood")', "",
             '[node name="ComicFrame" type="CanvasLayer" parent="."]', 'script = ExtResource("45_frame")', f"page_number = {page}",
             f"live_areas = {rects(live)}", ""]

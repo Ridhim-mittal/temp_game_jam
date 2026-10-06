@@ -318,7 +318,7 @@ func _cues() -> void:
 	_once_at(T_OPEN.x + 0.5, "music", func():
 		var music := get_node_or_null("/root/Music")
 		if music:
-			music.play("lit", 1.5))
+			music.play("city", 2.5))
 	_once_at(T_OPEN.y - 0.25, "land", func():
 		_play("thump", -10.0)
 		_play("chime", -9.0))

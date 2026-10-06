@@ -170,5 +170,6 @@ def ending():         # the opening tune again, slow, on piano: a goodbye
         tr.add(box, 64 + 4 + i * 1.5, 4, deg(d), 0.3, pan=-0.3 + 0.2 * i, send=0.8)
     tr.render('ending', reverb=3.4, fade_out=5.0)
 
-for f in (lit_pages, margins, shade_boss, ending):
+if __name__ == '__main__':
+  for f in (lit_pages, margins, shade_boss, ending):
     if len(sys.argv) < 2 or f.__name__ in sys.argv: f()

@@ -54,6 +54,8 @@ func _run() -> void:
 	var player = current_scene.get_node("Player")
 	var lw = current_scene.get_node("World/ArenaLanternW")
 	var le = current_scene.get_node("World/ArenaLanternE")
+	var music = root.get_node("Music")
+	check(music.current == "deep", "the Long Drop plays its own quiet tune (%s)" % music.current)
 	check(arena.phase == arena.Phase.WAIT and not beast.visible and beast.collision_layer == 0,
 		"before Vesper comes in: the Beast is down in the gutter, out of sight and not solid")
 	player.global_position = Vector2(arena.trigger_x + 60, arena.global_position.y - 30)
@@ -68,6 +70,7 @@ func _run() -> void:
 	press_enter()
 	await pframes(6)
 	check(arena.phase == arena.Phase.FIGHT and not player.cutscene, "Enter skips the rest: fight")
+	check(music.current == "beast", "and the fight has its music")
 	check(beast.state == beast.State.IDLE and beast.collision_layer == 4 and beast.outline.scale.x == 1.0, "the Beast is out, full size and solid")
 	check(not lw.lit and not le.lit and arena.gap_open == 0.0, "its darkness put both lanterns out, and the gutter shut behind it")
 	await seconds(1.0)
@@ -153,7 +156,7 @@ func _run() -> void:
 	check(beast.state == beast.State.DYING and not beast.dead, "at 0 it doesn't tumble away: it dies slowly")
 	for i in 4:
 		await process_frame  # the arena notices on its own (render) frame
-	check(arena.phase == arena.Phase.OUTRO and player.cutscene, "the ending takes the controls")
+	check(arena.phase == arena.Phase.OUTRO and player.cutscene and music.current == "", "the ending takes the controls (and the music dies with it)")
 	await seconds(4.0)
 	check(beast.dead and gs.seen.has("beast_dead"), "the Beast unravels and is gone")
 	check(get_nodes_in_group("beast_spawn").all(func(sc): return sc.dead), "its Scribbles die with it")
@@ -179,6 +182,7 @@ func _run() -> void:
 	var chase = current_scene.get_node("World/EraserChase")
 	check(arena._east_shape.disabled and not player.cutscene and chase.phase == chase.Phase.CHASE and chase.eraser == eraser,
 		"the panel's border rips open: RUN! (the chase starts, Vesper has the controls)")
+	check(music.current == "beast", "the fight's music comes back under the chase")
 	# the chase: keep running, hop the bumps
 	player._invuln_timer = 0.0
 	Input.action_press("move_right")

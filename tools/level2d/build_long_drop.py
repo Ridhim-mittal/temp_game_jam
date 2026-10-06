@@ -420,7 +420,7 @@ out += ['[node name="Enemies" type="Node2D" parent="."]', "", "\n\n".join(enemie
         '[node name="HUD" type="Control" parent="UI"]', "layout_mode = 3", "anchors_preset = 15",
         "anchor_right = 1.0", "anchor_bottom = 1.0", "grow_horizontal = 2", "grow_vertical = 2",
         "mouse_filter = 2", 'script = ExtResource("5_hud")', "",
-        '[node name="LevelMusic" type="Node" parent="."]', 'script = ExtResource("8_music")', 'track = "margins"', "",
+        '[node name="LevelMusic" type="Node" parent="."]', 'script = ExtResource("8_music")', 'track = "deep"', "",
         '[node name="LevelMood" type="Node" parent="."]', 'script = ExtResource("30_mood")', ""]
 open(os.path.join(ROOT, "scenes/levels/long_drop.tscn"), "w").write("\n".join(out))
 print(f"{len(world)} world nodes, {len(trims)} trims, {len(enemies)} enemies, {len(coins)} coins; start {START}")

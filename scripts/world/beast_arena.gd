@@ -326,6 +326,7 @@ func _start_intro() -> void:
 	_cam_rate = 2.2
 	_cam.make_current()
 	_bars_goal = 1.0
+	_music("", 2.5)  # the Long Drop's tune fades: only the rumble as the page splits
 
 
 ## Puts the Beast at depth `k` in the gutter: 0 = deep in it (small and dark),
@@ -439,6 +440,7 @@ func _intro_long() -> void:
 		_beast.shield_lift = 1.0 - _ease((_t - 7.3) / 0.3)
 	if _at(7.45):
 		SfxSynth.play(get_tree(), "roar", 2.0)
+		_music("beast", 0.15)  # the fight's music crashes in on the roar
 		_rumble = 0.9
 		_say(_beast_head() + Vector2(-_beast.facing * 40.0, -40.0), "GRRRAAAAHHH!!", Color(1.0, 0.25, 0.18), 54)
 	if _t >= 7.45 and _t < 9.0:
@@ -497,6 +499,7 @@ func _intro_short() -> void:
 		_split = 0.0
 		SfxSynth.play(get_tree(), "thud", 2.0)
 		SfxSynth.play(get_tree(), "roar", -2.0, 1.1)
+		_music("beast", 0.3)
 		_cam.add_trauma(0.7)
 	if _t >= 1.6 and _t < 2.4:
 		_beast.roar = 1.0 - clampf((_t - 2.1) / 0.3, 0.0, 1.0)
@@ -526,6 +529,7 @@ func _skip_intro() -> void:
 
 func _start_fight() -> void:
 	phase = Phase.FIGHT
+	_music("beast", 0.3)  # Enter may have skipped past the roar
 	gap_open = 0.0
 	_split = 0.0
 	_bars_goal = 0.0
@@ -543,6 +547,17 @@ func _start_fight() -> void:
 	SfxSynth.play(get_tree(), "scritch", -4.0, 0.5)
 
 
+## Music autoload: a track ("" = fade out).
+func _music(track: String, fade: float) -> void:
+	var m := get_node_or_null("/root/Music")
+	if m == null:
+		return
+	if track == "":
+		m.stop(fade)
+	else:
+		m.play(track, fade)
+
+
 ## beast.gd: Scribbles come out of the gutter; it cracks open for a moment.
 func crack_gutter(seconds: float) -> void:
 	_crack_t = seconds
@@ -555,6 +570,7 @@ func _start_outro() -> void:
 	phase = Phase.OUTRO
 	_t = 0.0
 	_fired.clear()
+	_music("", 3.0)  # it dies in silence: Shade's lines land on nothing
 	_crack_t = 0.0
 	if _player and not _player.dead:
 		_player.cutscene = true

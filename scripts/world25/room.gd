@@ -73,6 +73,9 @@ enum BackdropStyle { SIGIL, COMIC }
 ## A monster under "Enemies" shown with a big health bar (boss fights).
 @export var boss_path: NodePath
 @export var boss_name := ""
+## Music while the boss lives (tense, dark: the Margins' boss track); the room's
+## biome music comes back, slowly, once the room is cleared.
+@export var boss_music := "dread"
 
 @export_group("The Writer's lamp")
 ## Spawn the Haunting Lamp(s) from the biome's HauntProfile.
@@ -123,12 +126,14 @@ func _ready() -> void:
 	_spawn_player(world)
 	_build_camera()
 	_spawn_haunt()
-	_play_music(b.music)
 	_prepare_enemies(world)
 	ui.title_card((title if title != "" else b.display_name).to_upper(), subtitle)
 	var boss := get_node_or_null(boss_path)
 	if boss and not (world and world.is_cleared(room_id)):
 		ui.set_boss(boss, boss_name)
+		_play_music(boss_music if boss_music != "" else b.music)
+	else:
+		_play_music(b.music)
 	if enter_captions != "" and (world == null or world.once(room_id + ":enter")):
 		_captions(enter_captions)
 	# no controls tutorial here: the keys are the same as in 2D, where it plays
@@ -667,10 +672,10 @@ func _build_camera() -> void:
 	add_child(cam)
 
 
-func _play_music(track: String) -> void:
+func _play_music(track: String, fade := 0.8) -> void:
 	var music := get_node_or_null("/root/Music")
 	if music and track != "":
-		music.play(track)
+		music.play(track, fade)
 
 
 func _prepare_enemies(world: Node) -> void:
@@ -834,6 +839,8 @@ func _on_cleared() -> void:
 	for g in _gates():
 		get_tree().create_timer(0.25 * i).timeout.connect(g.open)
 		i += 1
+	if not boss_path.is_empty():
+		_play_music(_biome().music, 3.0)  # the fight's over: the room's own tune creeps back
 	if clear_captions != "":
 		_captions(clear_captions)
 	if ending_on_clear != "":

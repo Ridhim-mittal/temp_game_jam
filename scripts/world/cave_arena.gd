@@ -1,7 +1,10 @@
 extends Node2D
 ## The end of the Ink Cave: two Ink Blots at once. When Vesper passes
 ## `trigger_x`, ink walls rise at `left_x` and `right_x` and both Blots
-## (`blot_paths`) wake. Each drops its +50 heart (ink_blot.gd); when the last
+## (`blot_paths`) wake. They take turns: one fights while the other hangs back
+## dimmed and harmless (ink_blot.gd `waiting`), swapping after `turn_attacks`
+## attacks or `turn_time` seconds; when one melts the other gets a breather
+## (`breather`) before it comes on alone. Each drops its +50 heart (ink_blot.gd); when the last
 ## one melts the cave breaks apart (cave_backdrop.gd `collapse`: the screen
 ## shakes, cracks race across it, rocks rain, a white flash) and he is thrown
 ## back into Shade's city: `next_scene`, or "TO BE CONTINUED" and the main
@@ -19,6 +22,11 @@ const RIM := Color(1.0, 0.27, 0.66)
 @export var left_x := 2700.0
 @export var right_x := 4100.0
 @export var floor_y := 600.0
+## A turn ends after this many attacks, or this many seconds.
+@export var turn_attacks := 3
+@export var turn_time := 7.0
+## Seconds the last Blot waits after its twin melts.
+@export var breather := 3.0
 ## Where the collapse throws Vesper ("" = TO BE CONTINUED, then the main menu).
 @export_file("*.tscn") var next_scene := ""
 
@@ -29,6 +37,8 @@ var _walls: Array = []
 var _rise := 0.0
 var _time := 0.0
 var _left := 0
+var _turn := 0  # index into blot_paths of the Blot whose turn it is
+var _turn_t := 0.0
 var _overlay: CanvasLayer
 var _view: Control
 var _t := 0.0  # time since the collapse began
@@ -67,18 +77,59 @@ func _process(delta: float) -> void:
 		for i in blot_paths.size():
 			var blot := get_node_or_null(blot_paths[i])
 			if blot:
-				# the second one wakes a beat later: two roars, not one
+				# the second one wakes a beat later: two roars, not one; it waits its turn
+				blot.waiting = i != _turn
 				get_tree().create_timer(0.6 * i).timeout.connect(blot.wake)
+	if phase == Phase.LOCKED:
+		_turns(delta)
 	_rise = move_toward(_rise, 1.0 if phase == Phase.LOCKED else 0.0, delta * 2.0)
 	if phase == Phase.COLLAPSE:
 		_collapse_tick(delta)
 	queue_redraw()
 
 
+## Hand the fight from one Blot to the other once it has had its go (only
+## when it's between attacks, so a swing never stops halfway).
+func _turns(delta: float) -> void:
+	var blots := _living()
+	if blots.size() < 2:
+		return
+	_turn_t += delta
+	var active = get_node_or_null(blot_paths[_turn])
+	if active == null or active.dead:
+		return
+	var between: bool = active.state == active.State.WALK or active.state == active.State.REST
+	if between and (active.attacks_done >= turn_attacks or _turn_t >= turn_time):
+		active.waiting = true
+		_turn = (_turn + 1) % blot_paths.size()
+		_turn_t = 0.0
+		var next = get_node_or_null(blot_paths[_turn])
+		if next and not next.dead:
+			next.take_turn()
+
+
+func _living() -> Array:
+	var out: Array = []
+	for path in blot_paths:
+		var b := get_node_or_null(path)
+		if b and not b.dead:
+			out.append(b)
+	return out
+
+
 func _on_defeated() -> void:
 	_left -= 1
 	if _left > 0:
 		_pop("ONE MORE!", Color(1.0, 0.85, 0.3))
+		# the last one stops to stare at what's left of its twin, then comes on alone
+		for i in blot_paths.size():
+			var b := get_node_or_null(blot_paths[i])
+			if b and not b.dead:
+				_turn = i
+				b.waiting = true
+				get_tree().create_timer(breather).timeout.connect(func():
+					if is_instance_valid(b) and not b.dead:
+						b.take_turn())
 		return
 	await get_tree().create_timer(2.4).timeout  # time for its heart to reach Vesper
 	_start_collapse()

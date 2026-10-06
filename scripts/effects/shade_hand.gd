@@ -36,6 +36,7 @@ const BARREL := Color(0.55, 0.38, 0.2)
 const BARREL_LIGHT := Color(0.82, 0.62, 0.36)
 const GLOW := Color(1.0, 0.86, 0.45)
 const RIM_DARK := Color(0.24, 0.17, 0.4)
+const NAME_RIM := Color(0.86, 0.06, 0.12)  # blood red round the name in the sky (Shade's scarf and eyes)
 const PAPER := Color(0.93, 0.89, 0.78)
 const U := Vector2(0.6, -0.8)  # pen axis, nib -> cap (hand space)
 const N := Vector2(0.8, 0.6)  # across the pen, towards the back of the hand
@@ -324,9 +325,22 @@ static func _name_strokes(size: float) -> Array:
 
 ## The name in the sky: thick dry-brush ink that swells and tapers, scratchy
 ## bristle streaks along it, splatters flung off the strokes, and ink running
-## down from the letters in long drips.
+## down from the letters in long drips. So it never melts into the busy
+## painting behind it, every stroke is drawn in passes: a soft blood-red glow
+## that slowly pulses, a crisp blood-red rim, then the black ink on top.
 func _paint_names() -> void:
 	var b := InkBatch.new()
+	var pulse := 0.8 + 0.2 * sin(Time.get_ticks_msec() * 0.0025)
+	_name_pass(b, 30.0, Color(NAME_RIM, 0.16 * pulse))
+	_name_pass(b, 16.0, Color(NAME_RIM, 0.32 * pulse))
+	_name_pass(b, 7.0, NAME_RIM)
+	_name_pass(b, 0.0, INK)
+	b.flush(_name_layer)
+
+
+## One pass over every name: the strokes `grow` px wider, in `col` (only the
+## ink pass, grow 0, gets the dry-brush bristles).
+func _name_pass(b, grow: float, col: Color) -> void:
 	for nm in _names:
 		var age: float = nm.age
 		for i in nm.strokes.size():
@@ -341,31 +355,32 @@ func _paint_names() -> void:
 				var c := st[k + 1] if k + 1 < n or done >= st.size() - 1 else st[k].lerp(st[k + 1], done - int(done))
 				# fat in the middle, sharp at the ends, uneven like a loaded brush
 				var wide := 30.0 * pow(sin(PI * clampf(t * 0.96 + 0.02, 0.0, 1.0)), 0.6) * (0.75 + 0.35 * sin(k * 1.7 + i))
-				b.draw_line(a, c, INK, wide)
-				b.draw_circle(c, wide * 0.42, INK)
+				b.draw_line(a, c, col, wide + grow)
+				b.draw_circle(c, wide * 0.42 + grow * 0.5, col)
+				if grow > 0.0:
+					continue  # the rim and glow passes skip the bristles
 				# dry-brush bristle streaks, broken here and there
 				var d := (c - a).normalized()
 				var nrm := d.orthogonal()
 				for j in 3:
 					if sin(k * (1.3 + j) + i * 2.0 + j) > -0.2:
 						var off := nrm * (wide * 0.5 + 4.0 + j * 5.0) * (1.0 if j % 2 == 0 else -1.0)
-						b.draw_line(a + off, c + off, INK, 2.0 - j * 0.4)
+						b.draw_line(a + off, c + off, col, 2.0 - j * 0.4)
 			# splatters flung off the stroke
 			for k in 4:
 				var q := st[int(fmod(k * 7.3 + i * 3.0, st.size()))]
 				if (int(fmod(k * 7.3 + i * 3.0, st.size()))) > int(done):
 					continue
 				var fling := Vector2(sin(k * 2.7 + i), cos(k * 1.9 + i * 1.3)) * (30.0 + k * 9.0)
-				b.draw_circle(q + fling, 3.0 + 3.0 * absf(sin(k + i)), INK)
-				b.draw_line(q + fling * 0.6, q + fling, INK, 2.0)
+				b.draw_circle(q + fling, 3.0 + 3.0 * absf(sin(k + i)) + grow * 0.5, col)
+				b.draw_line(q + fling * 0.6, q + fling, col, 2.0 + grow)
 			# drips running down from the lowest points, growing longer
 			if done >= st.size() - 1:
 				for k in [0, st.size() - 1, st.size() / 2]:
 					var q: Vector2 = st[k]
-					var grow := minf(age * 22.0, 40.0 + 70.0 * absf(sin(k + i * 1.7)))
-					b.draw_line(q, q + Vector2(0, grow), INK, 5.0)
-					b.draw_circle(q + Vector2(0, grow), 5.5, INK)
-	b.flush(_name_layer)
+					var drip := minf(age * 22.0, 40.0 + 70.0 * absf(sin(k + i * 1.7)))
+					b.draw_line(q, q + Vector2(0, drip), col, 5.0 + grow)
+					b.draw_circle(q + Vector2(0, drip), 5.5 + grow * 0.5, col)
 
 
 # --- drawing ------------------------------------------------------------------------

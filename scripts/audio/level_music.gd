@@ -1,7 +1,7 @@
 extends Node
 ## Drop this node into a level to choose its background track.
 
-@export_enum("lit", "margins", "boss", "ending") var track := "lit"
+@export_enum("lit", "margins", "boss", "ending", "city", "deep", "beast", "repose", "silk", "dread") var track := "lit"
 
 
 func _ready() -> void:
