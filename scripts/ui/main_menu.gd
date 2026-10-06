@@ -259,7 +259,7 @@ func _process(delta: float) -> void:
 	_scene.position = -_parallax * Vector2(8, 3)
 	_title.position = TITLE_BASE - _parallax * Vector2(14, 6) + Vector2(0, sin(_time * 1.1) * 3.0)
 	_hero.position = Vector2(640, 586) - _parallax * Vector2(22, 4)
-	_update_focus()
+	_update_focus(delta)
 	_update_arc(delta, mouse)
 	_update_weather(delta)
 	_sky_mat.set_shader_parameter("time", _time)
@@ -278,7 +278,7 @@ func _input(event: InputEvent) -> void:
 		_mouse_seen = _time
 
 
-func _update_focus() -> void:
+func _update_focus(delta: float) -> void:
 	var focused := get_viewport().gui_get_focus_owner()
 	for it in _items:
 		var on: bool = it.button == focused
@@ -286,15 +286,9 @@ func _update_focus() -> void:
 			it.focused = on
 			if on and _time > 0.3:
 				Sfx.play("menu_hover")
-			# one fade per item: a new one stops the old, so a quick sweep of the mouse
-			# can't leave a stale "light up" finishing after the "fade out" (2-3 lit at once)
-			var old: Tween = it.get("tween")
-			if old and old.is_valid():
-				old.kill()
-			var t := create_tween()
-			t.tween_method(func(v: float): it.hover = v, it.hover, 1.0 if on else 0.0, 0.28 if on else 0.18) \
-				.set_trans(Tween.TRANS_BACK if on else Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-			it["tween"] = t
+		# each frame every item eases toward lit (the one focused) or unlit (all the
+		# others): only one can ever be lit, however fast the mouse sweeps across
+		it.hover = move_toward(it.hover, 1.0 if on else 0.0, delta * (5.0 if on else 7.0))
 
 
 func _update_arc(delta: float, mouse: Vector2) -> void:
