@@ -64,7 +64,7 @@ func kill(blot: Node) -> void:
 
 func _run() -> void:
 	var m := music()
-	for track in ["hunters", "hunt"]:
+	for track in ["hunters", "hunt", "hand", "duel"]:
 		var stream = load(m.TRACKS[track])
 		check(stream != null and stream.get_length() > 50.0, "%s.ogg loads (%.1f s)" % [track, stream.get_length() if stream else 0.0])
 	check(m.TRIM["hunters"] < m.TRIM["repose"] and m.TRIM["hunters"] <= 0.0, "The Hunters sits lower than the other tracks")
@@ -115,7 +115,7 @@ func _run() -> void:
 	var quiet := await until(func(): return m.current == "", 1200)
 	check(quiet, "the light falls in silence")
 	var fight := await until(func(): return fin.boss != null and fin.boss.state != fin.boss.State.INTRO, 1200)
-	check(fight and m.current == "hunt", "the double steps out: the tense cut crashes back in (%s)" % m.current)
+	check(fight and m.current == "duel", "the double steps out: its own song crashes in (%s)" % m.current)
 	fin.boss._impact()
 	check(sounding("thud") and sounding("rumble"), "its plunge booms")
 	fin.boss._slash()
@@ -127,8 +127,8 @@ func _run() -> void:
 	check(m.current == "hunters", "the finale opens on The Hunters (%s)" % m.current)
 	var scratched := await until(func(): return sounding("scritch"), 900)
 	check(scratched, "the nib scratches as Shade writes his name")
-	var waves := await until(func(): return m.current == "hunt", 1200)
-	check(waves, "the first wave: tense")
+	var waves := await until(func(): return m.current == "hand", 1200)
+	check(waves, "the first wave: the hand's theme")
 
 	gs.seen.erase("finale:waves")
 	print("%d failure(s)" % fails)
