@@ -30,13 +30,13 @@ const SCENES := {
 	"eraser": "res://scenes/enemies/eraser.tscn",
 	"pen": "res://scenes/enemies/pen_diver.tscn",
 }
+## At most 3 a wave; in all: 3 spiders, 6 bats, 2 pens, 1 eraser, 1 Blot.
 const WAVES := [
 	["spider", "bat", "bat"],
-	["pen", "spider", "eraser"],
+	["pen", "bat", "bat"],
 	["blot"],
-	["bat", "pen", "spider", "pen"],
-	["eraser", "bat", "spider"],
-	["blot", "bat", "bat"],
+	["spider", "eraser", "bat"],
+	["spider", "pen", "bat"],
 ]
 
 @export var arena_left := 0.0
