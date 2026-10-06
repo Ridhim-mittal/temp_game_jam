@@ -3,6 +3,7 @@
 [ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="1_player"]
 [ext_resource type="Script" path="res://scripts/world/big_coin.gd" id="49_bigcoin"]
 [ext_resource type="Script" path="res://scripts/effects/fall_cutscene.gd" id="48_fallcine"]
+[ext_resource type="Script" path="res://scripts/ui/narration.gd" id="46_narration"]
 [ext_resource type="PackedScene" path="res://scenes/enemies/crawler.tscn" id="2_crawler"]
 [ext_resource type="Script" path="res://scripts/ui/hud.gd" id="5_hud"]
 [ext_resource type="Script" path="res://scripts/audio/level_music.gd" id="8_music"]
@@ -179,10 +180,6 @@ radius = 260
 chain = 120
 casts_shadows = false
 
-[node name="Heart1" type="Area2D" parent="World"]
-position = Vector2(820, 990)
-script = ExtResource("19_heart")
-
 [node name="Ledge1" type="StaticBody2D" parent="World"]
 position = Vector2(560, 939)
 script = ExtResource("53_ledge")
@@ -314,7 +311,7 @@ script = ExtResource("43_caption")
 text = "HIT THE LANTERN.\nA SHADOW IS INK TOO."
 tilt = -0.03
 
-[node name="Heart2" type="Area2D" parent="World"]
+[node name="Heart1" type="Area2D" parent="World"]
 position = Vector2(1750, 1840)
 script = ExtResource("19_heart")
 
@@ -439,7 +436,7 @@ radius = 300
 chain = 200
 casts_shadows = false
 
-[node name="Heart3" type="Area2D" parent="World"]
+[node name="Heart2" type="Area2D" parent="World"]
 position = Vector2(4300, 3690)
 script = ExtResource("19_heart")
 
@@ -968,3 +965,9 @@ track = "deep"
 
 [node name="LevelMood" type="Node" parent="."]
 script = ExtResource("30_mood")
+
+[node name="Narration1" type="CanvasLayer" parent="."]
+script = ExtResource("46_narration")
+text = "WAIT... THIS IS A WEIRD PANEL. I SHOULD EXPLORE."
+trigger_x = -1e+09
+speaker = "vesper"

@@ -45,7 +45,7 @@ const Eraser = preload("res://scripts/enemies/shade_eraser.gd")
 const FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
 const INK := Color(0.05, 0.03, 0.1)
 const CAPTION := Color(1.0, 0.9, 0.45)
-const FURY := Color(0.95, 0.32, 0.25)
+const CaptionStyle = preload("res://scripts/ui/caption_style.gd")
 const PAPER := Color(0.93, 0.9, 0.82)
 const RIM := Color(0.86, 0.92, 1.0)
 const VOID := Color(0.006, 0.006, 0.014)
@@ -53,11 +53,11 @@ const LIGHT := Color(1.0, 0.92, 0.6)
 const BAR_RED := Color(0.78, 0.12, 0.12)
 ## Half the width of the gutter between the columns when it's wide open.
 const GUTTER_HALF := 150.0
-const LINES_INTRO := ["THAT WASN'T SUPPOSED TO GET OUT.", "...FINE. LET IT FINISH THE PAGE. THIS IS WHERE YOUR STORY ENDS, VESPER."]
+const LINES_INTRO := ["SO YOU FOUND IT. THE PANEL I DREW FOR YOUR DEATH.", "GO ON, BEAST. FINISH THE PAGE. THIS IS WHERE YOUR STORY ENDS, VESPER."]
 ## The ending: [time, who, line, fury]. "shade" = his black balloon, "vesper" = Vesper's own.
 const DIALOGUE := [
 	[5.2, "shade", "NO.", true],
-	[7.0, "shade", "PAGE FORTY-ONE: \"THE BEAST TEARS VESPER APART. THE END.\" I WROTE IT. IN INK.", false],
+	[7.0, "shade", "I AM SHADE. YOUR WRITER. PAGE FORTY-ONE: \"THE BEAST TEARS VESPER APART. THE END.\" I WROTE IT. IN INK.", false],
 	[10.8, "vesper", "...GUESS I SKIPPED THAT PAGE.", false],
 	[13.4, "shade", "YOU WERE SUPPOSED TO DIE HERE, VESPER. THAT WAS YOUR ENDING.", true],
 	[16.6, "shade", "A HERO WHO WON'T STAY DEAD RUINS THE WHOLE BOOK.", true],
@@ -959,8 +959,8 @@ func _draw_title(size: Vector2) -> void:
 	_ui.draw_set_transform(Vector2.ZERO)
 
 
-## The Writer's caption (narration.gd's yellow box); furious, it turns red
-## and shakes.
+## Shade, the Writer, captioning: his red caption panel (caption_style.gd);
+## furious, it shakes.
 func _draw_caption(_size: Vector2) -> void:
 	if _caption_t < 0.0:
 		return
@@ -976,21 +976,19 @@ func _draw_caption(_size: Vector2) -> void:
 	for l in lines:
 		widest = maxf(widest, FONT.get_string_size(l, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x)
 	var lh := fs * 1.2
-	var box := Rect2(48, 104, widest + 34, lh * lines.size() + 22)
+	var box := Rect2(48, 124, widest + 34, lh * lines.size() + 22)
 	var shake := Vector2.ZERO
 	if _caption_fury:
 		shake = Vector2(randf_range(-3, 3), randf_range(-3, 3))
 	_ui.draw_set_transform(shake, -0.015 if not _caption_fury else -0.03)
-	_ui.draw_rect(Rect2(box.position + Vector2(6, 6), box.size), Color(INK, 0.35 * a))
-	_ui.draw_rect(box.grow(3.0), Color(INK, a))
-	_ui.draw_rect(box, Color(FURY if _caption_fury else CAPTION, a))
+	CaptionStyle.panel(_ui, box, "shade", a)  # Shade, the Writer: his red caption panel
 	var left := shown
 	for i in lines.size():
 		var line: String = lines[i]
 		var part := line.substr(0, clampi(left, 0, line.length()))
 		var jig := Vector2(randf_range(-1.5, 1.5), randf_range(-1.5, 1.5)) if _caption_fury else Vector2.ZERO
 		_ui.draw_string(FONT, box.position + Vector2(16, 12 + lh * (i + 0.8)) + jig, part, HORIZONTAL_ALIGNMENT_LEFT, -1, fs,
-			Color(PAPER if _caption_fury else INK, a))
+			CaptionStyle.text_color("shade", a))
 		left -= line.length() + 1
 	_ui.draw_set_transform(Vector2.ZERO)
 
@@ -1069,8 +1067,8 @@ func _line_dur() -> float:
 	return 1.2 + _line.length() / 30.0
 
 
-## The ending's dialogue: Shade's black balloon (top centre, red letters,
-## shaking when he's furious) or Vesper's own white balloon over his head.
+## The ending's dialogue: Shade's red caption panel (top centre, shaking when
+## he's furious) or Vesper's yellow one over his head (caption_style.gd).
 func _draw_line(size: Vector2) -> void:
 	if _line_t < 0.0 or _line == "":
 		return
@@ -1089,26 +1087,23 @@ func _draw_line(size: Vector2) -> void:
 		var box := Rect2(size.x * 0.5 - widest * 0.5 - 30.0, 96.0, widest + 60.0, lh * lines.size() + 26.0)
 		if _line_fury:
 			box.position += Vector2(randf_range(-3, 3), randf_range(-3, 3))
-		_ui.draw_rect(box.grow(4.0), Color(0.85, 0.2, 0.25, a))
-		_ui.draw_rect(box, Color(0.02, 0.01, 0.04, a))
+		CaptionStyle.panel(_ui, box, "shade", a)
 		var left := shown.length()
 		for i in lines.size():
 			var line: String = lines[i]
 			var part := line.substr(0, clampi(left, 0, line.length()))
 			var jig := Vector2(randf_range(-1.5, 1.5), randf_range(-1.5, 1.5)) if _line_fury else Vector2.ZERO
-			_ui.draw_string(FONT, box.position + Vector2(30, 14 + lh * (i + 0.8)) + jig, part, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(1.0, 0.86, 0.88, a))
+			_ui.draw_string(FONT, box.position + Vector2(30, 14 + lh * (i + 0.8)) + jig, part, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, CaptionStyle.text_color("shade", a))
 			left -= line.length() + 1
-		_ui.draw_string(FONT, box.position + Vector2(box.size.x - 92, box.size.y + 24), "- SHADE", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color(1.0, 0.35, 0.4, a))
 	elif _player:
 		var fs := 28
 		var w := FONT.get_string_size(_line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 		var head := get_viewport().get_canvas_transform() * (_player.global_position + Vector2(0, -60))
 		var box := Rect2(head + Vector2(-w * 0.5 - 20 + 40, -110), Vector2(w + 40, 50))
 		_ui.draw_colored_polygon(PackedVector2Array([Vector2(box.position.x + 30, box.end.y - 2), Vector2(box.position.x + 58, box.end.y - 2),
-			head + Vector2(6, -14)]), Color(1, 1, 1, a))
-		_ui.draw_rect(box.grow(3.0), Color(INK, a))
-		_ui.draw_rect(box, Color(1, 1, 1, a))
-		_ui.draw_string(FONT, box.position + Vector2(20, 35), shown, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(INK, a))
+			head + Vector2(6, -14)]), Color(CaptionStyle.YELLOW, a))
+		CaptionStyle.panel(_ui, box, "vesper", a)  # Vesper: the yellow caption panel with his tab
+		_ui.draw_string(FONT, box.position + Vector2(20, 35), shown, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, CaptionStyle.text_color("vesper", a))
 
 
 ## Where the cutscene camera takes over from the player's: what it was showing,

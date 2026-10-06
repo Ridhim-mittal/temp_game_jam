@@ -30,6 +30,7 @@ var _lunge_dir := Vector3.RIGHT
 
 
 func _ready() -> void:
+	light_immune = true  # the Writer's lamps never burn his own eraser
 	lumens = 45  # the hardest fight in the Gutter
 	hp = maxi(hp, 10)  # a scene can make it tougher (the arena does)
 	sight = 11.0

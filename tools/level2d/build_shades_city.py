@@ -123,9 +123,12 @@ def heart(x, y):
     node(uniq("Heart"), "Area2D", "World", [("position", v(x, y)), ("script", f'ExtResource("{HEART}")')])
 
 
-def narration(text, x):
-    node(uniq("Narration"), "CanvasLayer", ".", [("script", f'ExtResource("{NARR}")'), ("text", f'"{text}"'),
-         ("trigger_x", str(x))])
+def narration(text, x, speaker="narrator"):
+    """A caption panel (narration.gd): the comic's narration, or "vesper" (yellow) / "shade" (red) talking."""
+    props = [("script", f'ExtResource("{NARR}")'), ("text", f'"{text}"'), ("trigger_x", str(x))]
+    if speaker != "narrator":
+        props.append(("speaker", f'"{speaker}"'))
+    node(uniq("Narration"), "CanvasLayer", ".", props)
 
 
 # the street and its ends
@@ -184,9 +187,12 @@ node("LevelMood", "Node", ".", [("script", f'ExtResource("{MOOD}")')])
 node("ComicFrame", "CanvasLayer", ".", [("script", f'ExtResource("{FRAME}")'), ("page_number", "7"),
      ("live_areas", "Array[Rect2]([Rect2(-660, -2000, 8060, 3200)])")])
 
-narration("VESPER HAS BEEN DRAGGED BACK INTO SHADE'S CORRUPTED COMIC CITY. THE AUTHOR IS TRYING TO DELETE THE METROPOLIS.", -1e9)
+# the story (narration.gd caption panels: the comic's narration, Vesper in yellow, Shade in red)
+narration("SHADE, THE WRITER, DRAGGED VESPER BACK ONTO THE PAGE. BUT THE CITY HE KNEW WAS GONE.", -1e9)
+narration("MY CITY... WHAT DID HE DO TO IT? EVERYTHING'S CORRUPTED.", -1e9, "vesper")
+narration("I'M ENDING YOU, VESPER. ONCE AND FOR ALL. THIS ONE IS PERSONAL.", 900, "shade")
 narration("SOMETHING SKITTERS IN THE GUTTERS. SHADE HAS BEEN DRAWING NEW THINGS.", 1500)
-narration("THE AUTHOR IS LOOKING FOR YOU. STAY OUT OF THE LIGHT.", 3200)
+narration("I SEE YOU, VESPER. STEP INTO MY LIGHT.", 3200, "shade")
 narration("A GATE OUT OF THE CITY. AND SOMETHING GUARDING IT.", 5700)
 
 with open(OUT, "w") as f:
