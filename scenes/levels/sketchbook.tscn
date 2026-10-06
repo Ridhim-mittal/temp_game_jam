@@ -75,6 +75,13 @@ size = Vector2(520, 20)
 inkable = true
 drinks_light = false
 
+[node name="Caption1" type="Node2D" parent="World"]
+z_index = 5
+position = Vector2(8330, 410)
+script = ExtResource("43_caption")
+text = "USE YOUR EMBER (HOLD RIGHT CLICK) TO MAKE THE BRIDGE.\nSTAY STILL TO MAKE THE BRIDGE PERMANENT."
+tilt = -0.03
+
 [node name="Ground2" type="StaticBody2D" parent="World"]
 position = Vector2(9100, 850)
 script = ExtResource("47_cityblock")
@@ -150,7 +157,7 @@ size = Vector2(63, 22)
 trim = Color(1, 0.78, 0.36, 1)
 accent = Color(0.55, 0.9, 1, 1)
 
-[node name="Caption1" type="Node2D" parent="World"]
+[node name="Caption2" type="Node2D" parent="World"]
 z_index = 5
 position = Vector2(11510, 385)
 script = ExtResource("43_caption")

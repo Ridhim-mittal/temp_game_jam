@@ -63,7 +63,8 @@ Both levels come from `tools/level2d/build_test_level.py`. Their ground, rooftop
 planks are `city_ledge.gd` hover decks with thrusters (one-way); both draw through InkBatch. The City's
 trim is cyan, the Sketchbook's warm gold (generator `trim_props`) so solid ground never reads as blue pencil.
 Text is kept light: two story captions a level, and the only signs in the world (`caption.gd`) are
-"HIT THE LANTERN" at the shadow-ink ramps (the Sketchbook and the Long Drop's Shadow Gallery); every
+"HIT THE LANTERN" at the shadow-ink ramps (the Sketchbook and the Long Drop's Shadow Gallery) and the
+Sketchbook's opening Ember note by its first sketch bridge ("USE YOUR EMBER (HOLD RIGHT CLICK)..."); every
 other rule is taught by the tutorial's keys. The trapdoor
 (`trapdoor.gd` + `gutter_fall.gd`) is kept for a later level but no longer placed.
 

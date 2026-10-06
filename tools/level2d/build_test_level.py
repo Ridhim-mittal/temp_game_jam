@@ -299,6 +299,7 @@ block(8420, 8940, 800, BOTTOM, name="PitFloor")
 spikes(8420, 8940, 800)
 sketch(8420, 8940, GROUND)
 coin_row(8500, 8860, 560, 5)
+caption(8330, 410, "USE YOUR EMBER (HOLD RIGHT CLICK) TO MAKE THE BRIDGE.\nSTAY STILL TO MAKE THE BRIDGE PERMANENT.")
 block(8940, 9260, GROUND, BOTTOM, name="Ground")
 # 9b. the Blue Gap: grey pencil (inkable), an open gap, then non-photo blue
 # that drinks the light (the Ember drains 2x over it, ember.gd). Straight
@@ -321,7 +322,8 @@ sketch(10940, 11480, GROUND)
 lantern(11200, 220, 400, chain=120)                      # lamp at (11200, 340)
 block(11255, 11318, 440, 462, name="Sign")                # shadows x 11340-11480 of the bridge
 # 9d. shadow ink: hit the lantern, the cut-out star's shadow is a ramp over the wall
-# (the level's only sign: every other rule is taught by the tutorial or by trying)
+# (with the Ember note at the start, the level's only signs: every other rule is
+# taught by the tutorial or by trying)
 caption(11510, 385, "HIT THE LANTERN.\nA SHADOW IS INK TOO.")
 block(11480, 12540, GROUND, BOTTOM, name="Ground")
 lantern(11590, 520, 220, chain=0, post=80, lit=False)
