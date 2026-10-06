@@ -52,9 +52,7 @@ func _on_body_entered(body: Node2D) -> void:
 	var state := get_node_or_null("/root/GameState")
 	if state:
 		state.collected[state.id_of(self)] = true
-	body.add_coins(value)
-	if has_node("/root/Sfx"):
-		get_node("/root/Sfx").play("coin_collect")
+	body.add_coins(value)  # silent: no pickup sound
 	var pop := ComicText.new()
 	pop.text = pop_text
 	pop.color = GOLD

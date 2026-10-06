@@ -553,6 +553,7 @@ func _exit_tree() -> void:
 func _play(stream: AudioStream, db: float, pitch: float) -> void:
 	var p := AudioStreamPlayer3D.new()
 	p.stream = stream
+	p.bus = "SFX"  # Sfx.BUS: every sound effect shares one, quieter than the music
 	p.volume_db = db
 	p.pitch_scale = pitch
 	p.unit_size = 8.0

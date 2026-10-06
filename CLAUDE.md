@@ -491,6 +491,11 @@ hisses in light, screams when it rages and shatters when it dies; the light's pi
 test_shade_music checks the tracks, the switches and the sounds.
 
 ## Sound effects
+Every sound effect plays through one "SFX" bus (made by sfx.gd: `BUS`, `LEVEL_DB` -8 dB, sending to Master so
+Settings' volume still applies; music stays on Master): the Sfx autoload's players and the ones sfx_synth.gd,
+scribble.gd, gate.gd, cs_book.gd and page_climb.gd make (`p.bus = "SFX"`). Picking up a coin and Vesper's
+landings (2D, hard landings and 2.5D) make no sound; `fall_land` is still the Ink Blot's slam, Shade's plunge
+and a pen's dive.
 Autoload `Sfx` (`scripts/audio/sfx.gd`) plays the team's SFX pack in `assets/sfx/` by name:
 `Sfx.play("jump")`, optional dB offset and pitch. Numbered files (`sword_swing_1..4`,
 `sword_hit_1..4`) are variants picked at random by their base name; every play gets a slight random
