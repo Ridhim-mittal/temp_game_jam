@@ -88,9 +88,9 @@ TRACKS = {
 	# made to sit in the game rather than sound like the anime it's from: the lead
 	# melody in the middle pulled back (mid_eq), the bright top rolled off, a bit
 	# more weight down low, set back in the dark cavern, and the boss layers of
-	# "hunt" on its own grid (120.0 BPM, beat 0 at 0.011 s; it's in D minor too,
-	# so the D / E-flat cluster fits)
-	"hand": dict(src="hand_theme.mp3", s=153.03, length=87.99, slack=0.05, lufs=-19.5, start="s",
+	# "hunt" on its own grid (120.0 BPM, beat 0 at 0.011 s; a semitone down, in
+	# C-sharp minor, and the D / E-flat cluster comes down with it)
+	"hand": dict(src="hand_theme.mp3", s=153.03, length=87.99, slack=0.05, lufs=-19.5, start="s", pitch=-1.0,
 				 mid_eq=[(1100.0, -4.0, 0.7), (2600.0, -5.0, 0.8)], eq=[(70.0, 2.0, 0.8), (350.0, -1.5, 0.9)],
 				 top=-6.0, top_fc=3800.0, verb=0.22, grid=(0.49993, 0.0111), tension=True),
 	"duel": dict(src="shade_duel.ogg", s=9.69, length=51.28, slack=0.04, lufs=-19.5),
@@ -129,7 +129,7 @@ def band(sig, lo, hi):
 	return sosfilt(butter(2, [lo, hi], "band", fs=SR, output="sos"), sig)
 
 
-def tension(x, period, phase, s_smp, e_smp):
+def tension(x, period, phase, s_smp, e_smp, pitch=0.0):
 	"""The boss layers, on the (stretched) track's beat grid, from the loop start
 	S on (none in the intro, if there is one); phrases are counted from S, so
 	the loop's end and its start agree. Levels are set against the music's own
@@ -186,6 +186,7 @@ def tension(x, period, phase, s_smp, e_smp):
 	# phrase swelling from a whisper to full and breaking off at the next
 	tt = np.arange(n) / SR
 	for f0 in t["notes"]:
+		f0 *= 2 ** (pitch / 12)  # the cluster follows the track when it's pitched
 		for det in (-0.12, 0.0, 0.12):
 			fr = f0 * 2 ** (det / 12)
 			strings += 2 * ((tt * fr + rng.random()) % 1.0) - 1
@@ -287,7 +288,7 @@ def master(name):
 		x = cavern(x, t["verb"])
 	if t.get("tension"):
 		period, phase = t["grid"]
-		x = tension(x, period / tempo, phase / tempo, s_smp, e_smp)
+		x = tension(x, period / tempo, phase / tempo, s_smp, e_smp, t.get("pitch", 0.0))
 	lufs = t["lufs"]
 	# "start": "s" = no intro, the file starts on the loop (no fade-in: the loop
 	# comes back to its first sample; music.gd's fade covers the first start)
