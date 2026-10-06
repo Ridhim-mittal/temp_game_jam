@@ -18,7 +18,9 @@ Sources live in audio/music/src/ (a .gdignore keeps Godot from importing them):
                                       added so it still reads under the sound effects; loops
                                       39 bars, the breakdown leading back into the build
   hand    <- hand_theme.mp3           the finale's waves, while Shade's hand draws the monsters:
-                                      from 2:33 on, straight in (no intro), 44 bars looping
+                                      from 2:33 on, straight in (no intro), 44 bars looping;
+                                      its lead pulled back, darkened, in the cavern reverb,
+                                      with the same boss layers as "hunt" on its beat
   duel    <- shade_duel.ogg           the finale's last fight: Shade as Vesper's double
   hunt    <- the_hunters.mp3          the boss fights there (the Ink Blots, Shade): 32 bars
                                       from the driving middle of the same track (its peak,
@@ -83,7 +85,14 @@ TRACKS = {
 	# loop (beat 12 to 76; the song itself stops dead at ~64.5 s)
 	# 120 BPM: from 2:33 (153.03 s, the user's pick), no intro; 44 bars come round
 	# to it at 241.02 s (the music matches best there, well before the fade at ~4:25)
-	"hand": dict(src="hand_theme.mp3", s=153.03, length=87.99, slack=0.05, lufs=-19.5, start="s"),
+	# made to sit in the game rather than sound like the anime it's from: the lead
+	# melody in the middle pulled back (mid_eq), the bright top rolled off, a bit
+	# more weight down low, set back in the dark cavern, and the boss layers of
+	# "hunt" on its own grid (120.0 BPM, beat 0 at 0.011 s; it's in D minor too,
+	# so the D / E-flat cluster fits)
+	"hand": dict(src="hand_theme.mp3", s=153.03, length=87.99, slack=0.05, lufs=-19.5, start="s",
+				 mid_eq=[(1100.0, -4.0, 0.7), (2600.0, -5.0, 0.8)], eq=[(70.0, 2.0, 0.8), (350.0, -1.5, 0.9)],
+				 top=-6.0, top_fc=3800.0, verb=0.22, grid=(0.49993, 0.0111), tension=True),
 	"duel": dict(src="shade_duel.ogg", s=9.69, length=51.28, slack=0.04, lufs=-19.5),
 }
 
@@ -269,6 +278,11 @@ def master(name):
 	x = shelf_cut(x, t.get("top", 0.0), t.get("top_fc", 7000.0))
 	for f0, g, q in t.get("eq", []):
 		x = peak_eq(x, f0, g, q)
+	if t.get("mid_eq"):  # EQ on the middle only (where a lead melody sits), the sides untouched
+		mid, side = (x[0] + x[1]) * 0.5, (x[0] - x[1]) * 0.5
+		for f0, g, q in t["mid_eq"]:
+			mid = peak_eq(mid, f0, g, q)
+		x = np.stack([mid + side, mid - side])
 	if t.get("verb", 0.0):
 		x = cavern(x, t["verb"])
 	if t.get("tension"):
