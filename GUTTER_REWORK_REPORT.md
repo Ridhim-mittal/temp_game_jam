@@ -362,6 +362,44 @@ are untouched.
       - Rocks are grimy and chipped.
       - The comic page under level 1 has faded to a yellowed grey.
 
+18. **The capture: from the Gutter back into Shade's City** (your next note: the lights all
+    round the Eraser's arena, one catches Vesper, Shade's hand pulls him up into the 2D comic,
+    and Shade's City plays next). About 16 s; Enter or Esc skips it.
+    - **Where:** beating the Eraser no longer cuts to `cs_reveal`. Once the Rubbing Room's
+      clear captions are done, the room spawns `scenes/world25/light_capture.tscn`
+      (room.gd `ending_on_clear`, set by the generator).
+    - **Lights out (3D, `scripts/world25/light_capture.gd`):** black bars come in and the
+      HUD goes. The Haunting Lamps sputter out and the two braziers are snuffed one by one.
+      Only Vesper's Ember is left, and Shade's black balloon says "ENOUGH HIDING IN MY
+      MARGINS."
+    - **Lights on:** nine of the Writer's lamps slam down round the arena, KLAK, KLAK,
+      faster and faster. Vesper turns to each one. They use the Haunting Lamp's own column and
+      ring, which now take a colour.
+    - **The hunt:** they sweep in. He runs, one swings at him and he dashes clear, then they
+      ring him and turn. A brighter lamp slams down on him from straight above (KA-CHUNK!),
+      the others pour into it, and the dark burns off: "FOUND YOU."
+    - **Taken:** the beam lifts him off the floor, with paper, ink flakes and light rising
+      round him. The camera drops low, looking up the beam, which warms to gold. Shade's
+      hand from the final fight (the skeletal hand with the golden pen) comes down it, a flat
+      drawing in the 3D room, and hooks him by the collar with the nib (SHNK!). "BACK TO MY
+      PAGE." One yank and he's gone up the light, which flares to white.
+    - **The climb (2D, `scripts/effects/page_climb.gd`):** out of the white, that last frame
+      shrinks into a dead panel at the foot of a comic page. The hand tears up through its
+      top border (RRRIP!) with Vesper hanging off the nib, flat and drawn again. It hauls him
+      up the gutter between two columns of panels, the beam trailing after him. The panels
+      are crops of the city painting: dead, crooked, torn and crossed out in red at the
+      bottom, then pencil roughs, then inked, then the city in full colour. Each one comes a
+      little more alive as he passes. "YOU DON'T GET TO DIE OFF THE PAGE."
+    - **Shade's City:** the hand rips through the bottom of the big top panel (SKRRRIP!).
+      That panel is a window onto the real level, which loaded in the background. It opens
+      out to fill the screen while the hand holds him over the city: "NOW WATCH ME DELETE
+      IT." The claws open and he drops. From there it's the level's own opening: the fall,
+      THUD! and its narration.
+    - **Under the hood:** the 3D player has cutscene hooks (`cutscene`, `cutscene_dir`,
+      `cutscene_dash()`, `cutscene_hold` / `cutscene_point`; no damage meanwhile), and
+      `shade_hand.gd` has a puppet mode. The low camera hides any tall prop, and any of the
+      void's heaps and statues, that would block the shot.
+
 ## Tuning knobs
 
 | What | Where |
@@ -462,6 +500,20 @@ These ran with Godot 4.7-stable under Xvfb with software OpenGL.
     - Let go and it comes back.
     - Run dry, it gutters out and won't rise until it has refilled.
 
+- **`tests/gutter/test_capture.gd` (new, round 18): 21/21 checks.** It clears the Rubbing
+  Room and plays the real thing:
+  - The ending starts once the captions are done. It takes the controls, holds off
+    pause and the shop, and no damage gets through.
+  - The Haunting Lamps blink out, the braziers go out, and all nine lamps land.
+  - He runs and dashes, and the catching beam lands on him.
+  - The light lifts him 2.4 units, the hand reaches his collar, and the yank takes him up.
+  - Then the page runs over the paused room, Shade's City is swapped in, and its panel is a
+    paused window with its Vesper hidden. World25 is reset.
+  - The drop gives the level back (unpaused, Vesper shown), the page goes, the canvas
+    transform is back to normal, and he lands on the street.
+  - Enter skips the lot and lands in Shade's City the same way.
+- Round 18 reruns: test_phase1 35/35, test_phase2 20/20, test_phase5 17/17,
+  test_levels 67/67, test_shop 57/57, test_beast 40/40.
 - **`tests/gutter/test_shop.gd` (new): 57/57 checks.** It puts your saved progress back
   afterwards.
   - The purse:
@@ -499,6 +551,10 @@ These ran with Godot 4.7-stable under Xvfb with software OpenGL.
     They fly to Vesper and fill the purse, and the HUD counter shows it.
 
 ## Not verified
+
+- **The capture at full speed and with sound:** it was checked frame by frame in
+  screenshots, at a fixed 30 fps. This machine has no audio device, so the clanks, rips
+  and whooshes (synthesised in code) haven't been heard.
 
 - **The gutter-to-gutter trip at full speed:** it is timed to take about 2.5 s plus
   loading. Here it took about 12 s, because every frame is drawn on the CPU and the

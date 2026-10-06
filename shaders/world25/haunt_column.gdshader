@@ -11,6 +11,8 @@ render_mode unshaded, blend_add, depth_draw_never, cull_back, shadows_disabled, 
 uniform float height = 1.0;
 uniform float intensity : hint_range(0.0, 2.0) = 0.4;
 uniform float flicker : hint_range(0.0, 0.3) = 0.06;
+// White by default; the capture cutscene's beam warms to the nib's gold.
+uniform vec3 tint : source_color = vec3(1.0);
 
 varying float h01;
 
@@ -26,6 +28,6 @@ void fragment() {
 	float foot = smoothstep(0.0, 0.03, h01);
 	float streak = 0.7 + 0.6 * noise(vec2(UV.x * 14.0, h01 * 7.0 - TIME * 0.7));
 	float fl = 1.0 - flicker + flicker * sin(TIME * 23.0) * sin(TIME * 7.3 + 1.0);
-	ALBEDO = vec3(1.0);
+	ALBEDO = tint;
 	ALPHA = clamp((core + soft) * top * foot * streak * fl * intensity, 0.0, 1.0);
 }

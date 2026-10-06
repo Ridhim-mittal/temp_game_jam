@@ -11,6 +11,7 @@ uniform float intensity : hint_range(0.0, 2.0) = 0.6;
 uniform float fill : hint_range(0.0, 1.0) = 0.0;
 uniform float pool : hint_range(0.0, 1.0) = 0.18;
 uniform float spin = 0.12;
+uniform vec3 tint : source_color = vec3(1.0);
 
 const float INNER = 0.74;
 const float OUTER = 1.0;
@@ -74,6 +75,6 @@ void fragment() {
 	float ang = fract(atan(p.x, -p.y) / TAU + 1.0);
 	float arc = step(ang, fill) * (1.0 - smoothstep(0.03, 0.06, abs(r - OUTER)));
 	float inside = (1.0 - smoothstep(0.55, OUTER, r)) * pool;
-	ALBEDO = vec3(1.0);
+	ALBEDO = tint;
 	ALPHA = clamp((rings * 0.85 + marks * 0.8 + inside) * intensity + arc * 1.2, 0.0, 1.0);
 }

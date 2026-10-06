@@ -66,6 +66,10 @@ enum BackdropStyle { SIGIL, COMIC }
 @export_multiline var clear_captions := ""
 ## Played after the room is cleared (e.g. the ending); "" = nothing.
 @export_file("*.tscn") var cutscene_on_clear := ""
+## Spawned in the room once it's cleared and its clear captions are done,
+## instead of cutting to `cutscene_on_clear`: the Gutter's ending
+## (scenes/world25/light_capture.tscn, played out in the room itself).
+@export_file("*.tscn") var ending_on_clear := ""
 ## A monster under "Enemies" shown with a big health bar (boss fights).
 @export var boss_path: NodePath
 @export var boss_name := ""
@@ -832,6 +836,14 @@ func _on_cleared() -> void:
 		i += 1
 	if clear_captions != "":
 		_captions(clear_captions)
-	if cutscene_on_clear != "" and world:
+	if ending_on_clear != "":
+		await get_tree().create_timer(1.2).timeout
+		var wait := 0.0
+		while ui and ui.busy() and wait < 8.0:  # let the captions finish
+			await get_tree().process_frame
+			wait += get_process_delta_time()
+		if player and not player.dead and is_inside_tree():
+			add_child(load(ending_on_clear).instantiate())
+	elif cutscene_on_clear != "" and world:
 		await get_tree().create_timer(4.5).timeout
 		world.play_cutscene(cutscene_on_clear)

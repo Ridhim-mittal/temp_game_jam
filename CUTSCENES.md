@@ -6,7 +6,7 @@ Four comic-page cutscenes for Godot 4, drawn entirely in code (no assets).
 |---|---|
 | `scenes/cutscenes/cs_opening.tscn` | The Lit Pages: the Writer, the lamp, the gutters |
 | `scenes/cutscenes/cs_page3.tscn` | Page 3: the Shade, "THE END", Vesper is crossed out |
-| `scenes/cutscenes/cs_reveal.tscn` | The Margins: the Shade was saving him; the monsters are old drafts |
+| `scenes/cutscenes/cs_reveal.tscn` | The Margins: the Shade was saving him; the monsters are old drafts (no longer played after the Rubbing Room: the capture, `scripts/world25/light_capture.gd`, takes Vesper to Shade's City instead) |
 | `scenes/cutscenes/cs_ending.tscn` | The Desk: the Writer's loss, the goodbye |
 
 ## Install
