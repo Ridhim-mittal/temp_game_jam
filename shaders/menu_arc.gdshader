@@ -3,7 +3,9 @@ shader_type canvas_item;
 // square halftone dots along a curve, breathing with two crossed waves and
 // bent toward the pointer (or the focused menu item). Coordinates are px of
 // the rect, y down. Transparent where there are no dots, so the scene shows
-// through. main_menu.gd drives every uniform (tweens the intro).
+// through. main_menu.gd drives every uniform (tweens the intro). `flip` turns
+// it 180 degrees (the band hangs along the top; `mouse` stays in screen px),
+// `round_dots` draws round comic halftone dots instead of squares.
 
 uniform vec2 rect_size = vec2(1280.0, 720.0);
 uniform float time = 0.0;
@@ -20,9 +22,16 @@ uniform vec2 mouse = vec2(640.0, 700.0);
 uniform float mouse_radius = 236.0;
 uniform float mouse_strength = 0.0; // 0..1 (eased by the script)
 uniform float intro = 1.0;          // 0..1: the band rises in
+uniform bool flip = false;
+uniform bool round_dots = false;
 
 void fragment() {
 	vec2 px = UV * rect_size;
+	vec2 m = mouse;
+	if (flip) {
+		px = rect_size - px;
+		m = rect_size - mouse;
+	}
 	float cs = max(cell, 2.0);
 	vec2 cc = (floor(px / cs) + 0.5) * cs;
 	float x = cc.x;
@@ -32,9 +41,9 @@ void fragment() {
 
 	float nx = (x - w * 0.5) / (w * 0.75);
 	float curve_y = h * peak + nx * nx * (h * arch_height);
-	float mdx = x - mouse.x;
+	float mdx = x - m.x;
 	float influence = mouse_strength * exp(-(mdx * mdx) / (2.0 * mouse_radius * mouse_radius + 1.0));
-	curve_y = mix(curve_y, mouse.y, influence);
+	curve_y = mix(curve_y, m.y, influence);
 
 	float dist = abs(y - curve_y);
 	float th = (140.0 + (1.0 - abs(nx)) * 80.0) * thick * intro;
@@ -48,7 +57,8 @@ void fragment() {
 		if (i > 0.02) {
 			float side = dot_size * i;
 			vec2 d = abs(px - cc);
-			float cov = 1.0 - smoothstep(side * 0.5 - 1.0, side * 0.5 + 1.0, max(d.x, d.y));
+			float r = round_dots ? length(d) * 0.88 : max(d.x, d.y);
+			float cov = 1.0 - smoothstep(side * 0.5 - 1.0, side * 0.5 + 1.0, r);
 			vec3 ink = mix(base_col, accent_col, clamp(pow(i, 1.1), 0.0, 1.0));
 			ink = mix(ink, high_col, smoothstep(0.72, 1.0, i));
 			col = vec4(ink, cov * clamp(i * 1.6, 0.0, 1.0));
