@@ -72,7 +72,7 @@ var squash := Vector2.ONE
 var swing := -1.0
 var combo := 1
 var hurt := 0.0  # 1 just hit, eases to 0
-var heal := 0.0  # 0..1 heal channel
+var heal := 0.0  # 0..1 heal channel (he kneels and cups the Ember while it runs)
 var inking := false  # holding the Ember up to ink a drawn bridge
 var erase := 0.0  # 0..1 Writer's light erasing him
 var blink := false
@@ -100,6 +100,7 @@ var _mats: Array[ShaderMaterial] = []
 var _mat_glow: Array[float] = []  # each material's own emission
 var _shown := {"whiten": -1.0, "tint": -1.0, "emission": -1.0}
 
+var _kneel := 0.0  # eased heal pose
 var _body: Node3D
 var _torso: Node3D
 var _cloak: Node3D
@@ -456,6 +457,7 @@ func _process(delta: float) -> void:
 	_dash = move_toward(_dash, 1.0 if dashing else 0.0, delta * (14.0 if dashing else 5.0))
 	if on_floor and not dashing:
 		_phase += speed * delta * stride * 5.5
+	_kneel = move_toward(_kneel, 1.0 if heal > 0.0 and not dead else 0.0, delta * (7.0 if heal > 0.0 else 4.5))
 	_update_dash_fx(delta)
 	_pose_body(delta)
 	_pose_limbs(delta)
@@ -534,15 +536,18 @@ func _pose_body(delta: float) -> void:
 	var fall := clampf(_death * 1.6, 0.0, 1.0)
 	var melt := clampf(_death * 1.6 - 0.6, 0.0, 1.0)
 	lean = lerpf(lean, 1.45, fall)
-	_body.position = Vector3(0.0, bob - melt * 0.25 - 0.06 * _dash, 0.0)
+	lean -= 0.22 * _kneel  # bowed over the Ember
+	_body.position = Vector3(0.0, bob - melt * 0.25 - 0.06 * _dash - 0.15 * _kneel, 0.0)
 	_body.rotation = Vector3(lean, 0.0, 0.0)
 	_body.scale = Vector3(sq.x * (1.0 - 0.12 * _dash), sq.y * (1.0 - 0.12 * _dash), sq.x * stretch) * (1.0 - melt * 0.95)
 	visible = melt < 0.99
 	# the cloak flares out behind a run and streams back in a dash
 	var flare := -0.22 * _run - sin(_time * 14.0) * 0.04 * _run + clampf(vertical * 0.03, -0.3, 0.2) * (0.0 if on_floor else 1.0)
 	_cloak.rotation.x = lerpf(flare, -0.85, _dash)
-	var open := 1.0 + 0.12 * _run + 0.18 * _dash
-	_cloak.scale = Vector3(open, 1.0 - 0.1 * _dash, open)
+	# kneeling to heal, the cloak spreads on the ground and stirs as if in a draft
+	_cloak.rotation.x += _kneel * (0.12 + 0.06 * sin(_time * 5.0))
+	var open := 1.0 + 0.12 * _run + 0.18 * _dash + 0.22 * _kneel
+	_cloak.scale = Vector3(open, 1.0 - 0.1 * _dash - 0.12 * _kneel, open)
 
 
 func _swing_t() -> float:
@@ -558,6 +563,7 @@ func _pose_limbs(delta: float) -> void:
 		if not on_floor and not dashing:
 			x = -0.55 if k == 0 else 0.25
 		x = lerpf(x, -0.75 if k == 0 else 0.95, _dash)
+		x = lerpf(x, -1.0 if k == 0 else 1.25, _kneel)  # one knee down
 		_legs[k].rotation.x = lerp_angle(_legs[k].rotation.x, x, 1.0 - exp(-22.0 * delta))
 	# swing tracking: a new swing starts when the progress jumps back
 	if swing >= 0.0:
@@ -572,7 +578,8 @@ func _pose_limbs(delta: float) -> void:
 		_drawn_t = maxf(_drawn_t - delta, 0.0)
 	# the sword is in hand while swinging and a moment after; otherwise on his back
 	var drawn := _drawn_t > 0.0 and show_sword
-	_arm_r.visible = drawn
+	_arm_r.visible = drawn or _kneel > 0.05  # his hand comes out to cup the Ember
+	_sword.visible = drawn
 	_back_sword.visible = show_sword and not drawn
 	var rest_arm := Vector3(0.45 - 0.6 * _run, 0.0, 0.3)
 	var rest_sword := Vector3(0.9 + 0.3 * _run, 0.0, 0.0)
@@ -598,12 +605,18 @@ func _pose_limbs(delta: float) -> void:
 		arm = rest_arm.lerp(sa, _swing_w)
 		sword = rest_sword.lerp(ss, _swing_w)
 		twist *= _swing_w
+	arm = arm.lerp(Vector3(1.05, 0.55, -0.35), _kneel)
 	_arm_r.rotation = arm
 	_sword.rotation = sword
 	_torso.rotation.y = twist
 	var e := 0.55 + 0.45 * fuel
 	_ink_w = move_toward(_ink_w, 1.0 if inking else 0.0, delta * 6.0)
 	_ember.scale = Vector3.ONE * e * (1.0 + 0.12 * sin(_time * 9.0) + heal * 0.8 + _ink_w * (1.4 + 0.3 * sin(_time * 14.0)))
+
+
+## Where the Ember glows (heal_fx.gd pours its motes into it).
+func ember_point() -> Vector3:
+	return _ember.global_position if _ember else global_position + Vector3(0, 0.9, 0)
 
 
 func _pose_face(delta: float) -> void:
@@ -615,7 +628,7 @@ func _pose_face(delta: float) -> void:
 	var squint := 0.4 if hurt > 0.3 or dead else 1.0
 	for eye in _eyes:
 		eye.scale = Vector3(1.0, _eyes_open * squint, 1.0)
-	_head.rotation = Vector3(-0.15 * hurt + 0.05 * _run, 0.0, 0.0)
+	_head.rotation = Vector3(-0.15 * hurt + 0.05 * _run + 0.3 * _kneel, 0.0, 0.0)
 	# the hat lifts a little on a jump and is pressed back in a dash
 	var lift := clampf(vertical * 0.004, -0.02, 0.03) if not on_floor else 0.0
 	# (tipped back a little, so the face shows from the high camera)

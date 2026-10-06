@@ -5,7 +5,7 @@ extends RefCounted
 ##   SfxSynth.play(tree, "roar", -2.0)
 ##
 ## Names: roar, rumble, rip, clang, scritch, splut, thud, screech, whoosh,
-## shatter.
+## shatter, and the Margins' heal (heal_fx.gd): heal_rise, heal_chime, heal_fizzle.
 
 const RATE := 22050
 
@@ -39,7 +39,8 @@ static func _make(sound: String) -> AudioStreamWAV:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = sound.hash()
 	var dur := {"roar": 2.2, "rumble": 2.6, "rip": 0.7, "clang": 0.5, "scritch": 0.35, "splut": 0.3,
-		"thud": 0.6, "screech": 1.6, "whoosh": 0.45, "shatter": 1.2}.get(sound, 0.5) as float
+		"thud": 0.6, "screech": 1.6, "whoosh": 0.45, "shatter": 1.2,
+		"heal_rise": 1.0, "heal_chime": 1.6, "heal_fizzle": 0.3}.get(sound, 0.5) as float
 	var n := int(RATE * dur)
 	var out := PackedFloat32Array()
 	out.resize(n)
@@ -99,6 +100,24 @@ static func _make(sound: String) -> AudioStreamWAV:
 				lp = lerpf(lp, noise, 0.8)
 				var tink := sin(TAU * (2400.0 + 900.0 * sin(t * 23.0)) * t) * (1.0 if rng.randf() < 0.08 else 0.0)
 				v = (lp * exp(-t * 5.0) + tink * exp(-t * 2.0)) * 0.9
+			"heal_rise":
+				# a soft, shimmering tone climbing a fifth as the light pours in, a breath of air under it
+				var f := 330.0 * pow(1.5, k)
+				phase += f / RATE
+				phase2 += f * 2.003 / RATE
+				lp = lerpf(lp, noise, 0.04)
+				var env := smoothstep(0.0, 0.35, k) * (0.55 + 0.45 * k) * (1.0 - smoothstep(0.93, 1.0, k))
+				v = (sin(TAU * phase) * 0.5 + sin(TAU * phase2) * 0.18 + lp * 0.5) * env * (0.85 + 0.15 * sin(t * 38.0)) * 0.6
+			"heal_chime":
+				# a warm bell (bright partials dying fast, the low ones ringing on) and a drip of ink
+				var bell := sin(TAU * 660.0 * t) * exp(-t * 2.2) + 0.5 * sin(TAU * 990.0 * t) * exp(-t * 3.0) \
+					+ 0.3 * sin(TAU * 1650.0 * t) * exp(-t * 6.0) + 0.2 * sin(TAU * 2640.0 * t) * exp(-t * 9.0)
+				var drip := sin(TAU * (900.0 + 1400.0 * exp(-t * 40.0)) * t) * exp(-t * 30.0)
+				v = (bell * 0.45 + drip * 0.5) * 0.8
+			"heal_fizzle":
+				# the light guttering out: a short hiss falling away
+				lp = lerpf(lp, noise, 0.35 * (1.0 - k) + 0.05)
+				v = lp * (1.0 - k) * (1.0 - k) * 0.7
 		out[i] = clampf(v * minf(t / 0.003, 1.0), -1.0, 1.0)
 	var data := PackedByteArray()
 	data.resize(n * 2)

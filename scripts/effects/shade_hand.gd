@@ -51,6 +51,12 @@ var puppet := false
 var puppet_nib := Vector2.ZERO
 var puppet_flex := 0.0
 var puppet_turn := 0.0
+## Off: no ink drips off the claws and the nib (cs_book.gd looks down at a
+## desk, where "down" isn't down the screen).
+var drips := true
+## Off: no dark halo round the hand (over pale paper its discs show as rings;
+## cs_book.gd gives the hand a shadow of its own).
+var aura := true
 var _nib := Vector2.ZERO  # world position of the nib tip
 var _vel := Vector2.ZERO
 var _tilt := 0.0
@@ -129,7 +135,7 @@ func _process(delta: float) -> void:
 	_vel = _vel.lerp((_nib - before) / maxf(delta, 0.001), 1.0 - exp(-delta * 10.0))
 	_tilt = lerpf(_tilt, clampf(_vel.x * 0.00035 - _vel.y * 0.0002, -0.25, 0.25), 1.0 - exp(-delta * 6.0))
 	_drip_t -= delta
-	if _drip_t <= 0.0:
+	if drips and _drip_t <= 0.0:
 		# ink drips off a claw now and then, and off the nib while it writes
 		_drip_t = randf_range(0.18, 0.45)
 		var from: Vector2 = _xf * (_tips[randi() % _tips.size()] if randf() < 0.6 or _job.is_empty() else Vector2.ZERO)
@@ -472,7 +478,8 @@ func _draw() -> void:
 	var xf := Transform2D(_tilt + sin(_time * 1.3) * 0.02 + turn, Vector2.ONE * hand_scale, 0.0, _nib)
 	_xf = xf
 	b.draw_set_transform_matrix(xf)
-	_draw_aura(b)
+	if aura:
+		_draw_aura(b)
 	_draw_smoke(b)
 	# nib glow
 	var g := _glow * (0.85 + 0.15 * sin(_time * 18.0))

@@ -46,8 +46,35 @@ paintings of Shade's City and the Ink Cave (`assets/backgrounds/shades_city.webp
   chars the planks, edges glowing, until they crumble (`_shield`). Strokes boil at 12 fps, one InkBatch.
 
 ## 2D story start (main menu PLAY)
-`cs_book` (scripts/cutscenes/cs_book.gd: ~20 s animated opening, a comic book on a desk opens,
-page one says "I JUST HAD THE CRAZIEST ADVENTURE...", the page turns and the camera dives into the
+The main menu's CHAPTERS are locked (greyed, a padlock, "FINISH THE STORY TO UNLOCK") until the story
+has been played to its end once: `Profile.finished`, saved in user://profile.cfg, set by shade_finale.gd
+`_the_end()` (`Profile.mark_finished()`), cleared by Settings -> Reset progress; main_menu.gd `_locked()`.
+For the team: F9 on the main menu unlocks them, in debug builds only (not in an exported game).
+`cs_book` (scripts/cutscenes/cs_book.gd: ~28 s animated opening. It sounds like grief and anger: the
+"margins" track (the game's tune, minor and slow: the menu's) plays all through it, the City's own
+LevelMusic bringing "city" in when the level loads; under it rain on the window, the lamp's hum and a
+pen scratching that stops (`_update_room()`), thunder after each lightning flash (`_lightning()`), and
+while the Writer changes the book a growl, a heartbeat that hardens and a bell tolled for the dead
+(`_cues()`). The Writer's desk, a comic book on it, and things that say what he has lost: a big framed
+photo of two brothers (one in Vesper's hat and red scarf, "brothers." under it, a black ribbon over the
+corner: the ending's answer, never explained here), a candle burning by it, the brother's red scarf, the
+ending he tore in two ("AND VESPER CAME HOME.", a red NO across it), drafts crushed into balls, a
+snapped pencil, a pile of earlier issues, a pocket watch, the window's cold light with rain running
+down it. The Writer's hand (shade_hand.gd as a puppet, `drips`
+and `aura` off; he is not named, that stays for the Long Drop) taps the cover, lifts its corner and
+the light throws it back; page one says "I JUST HAD THE CRAZIEST ADVENTURE..." (Vesper); the hand
+comes back with its pen (`_build_jobs()`: timed ink strokes on a page; the nib follows the line and
+hops, lifted, between strokes, the wrist trailing so the hand turns about its pen, its shadow parting
+from it as it lifts: `_update_writer()`, `_pen_state()`; strokes are pressed thin-thick-thin (`NIB`)
+and shine wet behind the nib), reads along the caption, blots out CRAZIEST and writes LAST over it,
+then sketches the Scribbled Beast on the inside of the cover (its lines boil at 12 fps once its red
+eyes are in) and writes THE END beside it, stabbing the full stop in; ink flung off the pen when the
+light throws it back, and out of the book as its cover bursts open, stays on the desk (`_splats`).
+Page one's four panels have a far layer each (sliding towers, pencilled pillars real in the Ember's
+light and a gleam along the spikes, Scribble eyes in the Gutter's dark that shut at the lamp, a
+pencilled city being rubbed out) and the Eraser breaks out over its border (`_paint_breakout()`);
+page two's lower panels are pencil roughs of the Sketchbook, the Long Drop and the Beast. It flicks
+the page over, the camera holds a beat on the pencil city (its stick Vesper blinks) and dives into the
 first panel, which becomes the live City; all drawn in code, sounds synthesised; Esc/Enter skips;
 the old click-through cs_opening is unused) → THE CITY (`scenes/levels/test_level.tscn`, a ~1 min controls tutorial) → glowing
 `panel_door.gd` ("MOVE TO THE NEXT PANEL") → THE SKETCHBOOK (`sketchbook.tscn`, light tutorial) →
@@ -79,7 +106,31 @@ at the Rubbing Room's end the light finds him ("FOUND YOU." / "The light... it's
 the pull back into 2D is a cutscene a teammate is drawing). Shade's City: everything corrupted,
 Shade: "I'M ENDING YOU... THIS ONE IS PERSONAL." The Ink Cave, then the finale: Shade draws the
 monsters live, then fights as Vesper's double; after it Vesper asks "WHY, SHADE? WHY DID YOU WANT ME
-DEAD?" (the answer, his brother who died fighting a city of monsters, is the ending cutscene to come).
+DEAD?" and the ending answers him: THE LAST PAGE (`scripts/cutscenes/cs_last_page.gd`, ~51 s, Enter / Esc
+skips, played by shade_finale.gd `_the_end()` with the screen as it is, ends at the main menu). The
+Writer began the comic with his brother as its hero; his brother died (in life, not in the book; he is
+never named), and in his grief he kept trying to write the hero's death, and the hero kept getting up.
+It is the opening run the other way and extends cs_book.gd for its desk, book, hand and pen (the base
+clock starts at `T0`, past the opening's own timeline; its times are `_t - T0`; the book lies open at
+its last page: `_p1` / `_inside` are pointed at two new pages): the finale's last frame is a panel on
+the book's last page, under it THE END as he stamped it; the camera pulls up out of it onto the desk
+in the rain ("YOU WANT TO KNOW WHY."); the photo, the candle, the scarf ("I DID NOT MAKE YOU UP,
+VESPER."), the ending he tore up; then what the desk remembers, in three of its things: the photo up
+close ("HE ASKED ME TO MAKE HIM THE HERO."), the pile of earlier issues, more landing on it (`_issues`:
+"SO I DID. EVERY PAGE WAS HIS."), and the photo again as his brother fades out of it to a dashed pencil
+outline (`_gone()`, `_paint_gone()`) and the candle goes out (`_flame`: "THEN HE WAS GONE."); the page of his
+attempts, each crossed out ("EVERY PAGE YOU WON WAS A PAGE HE DIDN'T GET." / Vesper: "THEN LET ME WIN
+THEM FOR HIM."); then the hand takes back what it did in the opening: it strikes THE END and writes TO
+BE CONTINUED, puts the torn ending back together (`_mend`) and blacks out its NO, and writes FOR MY
+BROTHER; the rain stops, the window warms; "AND VESPER CAME HOME."; the title, "to be continued"; then
+the credits roll (`CREDITS` at the top of the script: names, music, fonts) and the main menu. It is also
+the last of the main menu's CHAPTERS, THE ENDING (`scenes/cutscenes/cs_last_page.tscn`:
+cs_last_page_start.gd stands up a frame of the finale's street, Vesper asking his question, for it to
+climb out of). Music: the "ending" track, then for the credits "credits" (Last Page Stomp: our own
+hard-rock stomp, synthesised by `tools/make_credits_song.py`; plays once). "EVERY PAGE YOU WON..." is
+the one spoken line in the game: the team's own recording (`assets/voice/src/`, kept out of Godot by a
+.gdignore; `tools/voice/build_shade_voice.py` trims and levels it into
+`assets/voice/shade_every_page.wav`; played on Master, not the SFX bus).
 Every story line is a caption panel (`scripts/ui/caption_style.gd`): the comic's narration = the yellow
 box, Vesper = yellow with a VESPER tab, Shade = blood red with a SHADE tab. 2D: narration.gd `speaker`
 ("narrator" / "vesper" / "shade"; the generators' `narration(text, x, speaker)`); the Margins:
@@ -98,7 +149,12 @@ Ember lowered for `heal_time` (1 s) to pour `heal_cost` (a third of the Ember) i
 moving, jumping, attacking or a hit stops it (nothing spent). The Ember refills on its own and fast in
 lantern light. 2D: player.gd `_update_heal()`, `can_heal()`; ember.gd draws the sparks going in; the
 HUD marks the Ember bar in thirds and shows "F HEAL" when it would work. 2.5D: clearing_player.gd
-`_update_heal()`. Taught by the tutorial's "heal" step (City and Sketchbook, the first time you're hurt
+`_update_heal()`; it looks and sounds like `scripts/clearing/heal_fx.gd`: a ring of light inks itself in
+clockwise round his feet with eight marks lighting as it passes them (`heal_ring.gdshader`), gold motes
+spiral up off it into the Ember (vesper_3d.gd `ember_point()`), a soft tone rises with it and a chime +
+drip land it (SfxSynth heal_rise / heal_chime), the circle flares; broken off, the ring cracks apart, the
+motes scatter, a fizzle. Meanwhile vesper_3d.gd's `heal` kneels him: one knee down, bowed, his hand out
+cupping the Ember, the cloak spread and stirring. Taught by the tutorial's "heal" step (City and Sketchbook, the first time you're hurt
 with no monster near). The level is generated by
 `tools/level2d/build_test_level.py` (re-running overwrites hand edits to sketchbook.tscn).
 
@@ -242,7 +298,7 @@ come from the painting's bright, saturated colours), plus embers, ink drips off 
 Rock: `cave_rock.gd` (`ground` = floor, `one_way` ledges, fire-lit pink lip). Flow: Vesper falls in ->
 ink bats under the overhangs (`ink_bat.gd`: roost, wake together, orbit, flare wings (tell) and swoop 1 (half a bottle),
 pull up at his feet, 2 hp, light scatters them; fly through rock) -> 3 paper spiders -> checkpoint + heart
--> the pit (`cave_arena.gd`): walls rise, two Ink Blots (hp 12 each) wake; each drops its big heart, and when both melt the
+-> the pit (`cave_arena.gd`): walls rise, two Ink Blots (hp 10 each, hits 25% lighter than the gate's: swipe 1.5, slam 2.25 half bottles) wake together; each drops its big heart, and when both melt the
 cave collapses (shake, cracks, falling rocks, white flash, "THE CAVE GIVES WAY..."); `next_scene` = the
 finale below (with none: SHADE AWAITS / TO BE CONTINUED and the main menu).
 
@@ -258,20 +314,25 @@ Shade's black speech balloon):
 2. `WAVES`: the hand `draw_monster()`s one at a time (the nib traces the outline in ink, the sketch flares
    with light, `drawn` fires and the monster pops out: `materialize()`): paper spiders, ink bats, diving
    pens (`pen_diver.gd`: the Red Pen's art, hovers, shakes to aim, dives nib-first and sticks in the street),
-   erasers (hp 6) and now and then one weakened Ink Blot (`blot_hp` 10; never two Blots at once). Only the
-   Blot keeps a boss bar. Kills drop half a bottle at `drop_chance`; a cleared wave always drops a bottle.
+   erasers (hp 6) and weakened Ink Blots (`blot_hp` 10). Six short waves, never more than 3 monsters a
+   wave, each Blot alone (3 spiders, 4 bats, 2 pens, 1 eraser, 2 Blots in all). Only the Blot keeps a boss bar. Kills drop half a bottle at `drop_chance`; a cleared wave always drops a bottle.
    No drop (kills, waves, an Ink Blot's big heart) is made while Vesper's ink is full (health_heart.gd
    `player_full()`), and a seeking heart that reaches him full fades away instead of sitting on him.
 3. The light: a pillar of light falls on the street, Vesper is healed to full, the hand plunges into it and
-   steps out as Vesper's double (`scripts/enemies/shade_double.gd`, "SHADE", hp 30): Vesper's own
+   steps out as Vesper's double (`scripts/enemies/shade_double.gd`, "SHADE", hp 34, a little taller,
+   with a longer sword: `body_scale`, `blade_length`): Vesper's own
    player_visual.gd + sword inked black, blood-red scarf, burning red eyes (player_visual `eye_color`). It
-   slashes in lunging combos (the blade glints first), dashes through him with afterimages, leaps and
-   plunges (shockwaves both ways), sends ink waves along the street, sidesteps swings ("TOO SLOW."); below
-   half health it rages (faster, 3-hit combos, double waves, dash back). Light doubles the damage it takes;
+   slashes in lunging combos of alternating overhead / rising cuts (3, 4 when raging; the blade glints
+   first), rushes in from mid range into the combo, dash-thrusts through him with afterimages and finishes
+   with a cut, jumps up at him with a rising cut when he's above it, leaps and plunges (shockwaves both
+   ways), sends ink waves along the street, sidesteps swings ("TOO SLOW."); below half health it rages
+   (faster, double waves, dash back). Light doubles the damage it takes;
    it's only staggered when not attacking. All its hits cost a bottle.
 4. The end: the double cracks apart with light, the name in the sky fades, the city brightens, captions,
    THE END card, then the main menu. Dying restarts the level; once the waves are beaten in a run
-   (GameState.seen "finale:waves") a retry skips straight to the light.
+   (GameState.seen "finale:waves") a retry skips straight to the light, and once the double has stepped out
+   ("finale:double") the double fight is a checkpoint: a retry puts Vesper on the street with the name already
+   in the sky, a flash heals him, "BACK FOR MORE?" and the fight is on in ~2 s (`_checkpoint_double()`).
 
 ## 2.5D framework
 - Rooms are scenes whose root uses `scripts/world25/room.gd`; it builds environment, light,
@@ -328,9 +389,22 @@ Shade's black speech balloon):
   grey stone: only the lower half of his statue stands (broken off at the chest, built from
   primitives, not vesper_3d), his head, hat, an arm and the snapped blade lie in the rubble; a worn
   "VESPER" plaque, old offerings (faded scarf, tipped ink pots, quills, yellowed pages, a few
-  candles) and a dim ring of the Writer's marks. Quire's shop stall (`shop_stall.gd`, where Patch
-  the dog used to sit; `patch_npc.gd` is unhooked): a carved navy counter
-  (`shop_carving.gdshader`), Quire on it; E opens the shop. The hub's way on (CaveGate) stands
+  candles) and a dim ring of the Writer's marks. Quire's shop (`shop_stall.gd`, where Patch
+  the dog used to sit; `patch_npc.gd` is unhooked) is the biggest, brightest thing in the hub: a giant
+  book standing open on its end (`COVER`, 7 m across and 4.6 m tall: its covers are the walls, the page
+  blocks inside them have shelves of wares cut into them, its pages fan up out of the top like a crown
+  under the gold QUIRE'S CURIOS sign, a red ribbon hangs down its gutter, lanterns off the covers, loose
+  pages wheeling round it; a little gloomy: dark boards, tarnished gilt, yellowed pages ink has run
+  down, lanterns burning low), the carved navy counter (`shop_carving.gdshader`) in its gutter and,
+  hovering over it at `QUIRE_SCALE` (2.3), Quire (`quire_ghost.gd`, which extends unfinished_model.gd for
+  its strokes and helpers): the ghost of a character the Writer never finished, his left half inked over
+  a pale see-through fill, his right half only dashed pencil guides (one eye glowing, the other a pencil
+  ring; a writing arm and a stub; a tail that ends in pencil), a soft glow round him. `shown` fades him,
+  his lines coming and going, while he is alone and inks him in when Vesper is near; now and then he
+  skips a frame. His `head` follows Vesper; his quill scribbles in a real ledger floating at his
+  side. It is in group "camera_frame": clearing_camera.gd slides its focus towards such a thing's
+  `frame_point` (by `frame_pull`) and backs off (`frame_zoom`) as Vesper comes within `frame_radius`, so
+  the whole shop is in view. E opens the shop. The hub's way on (CaveGate) stands
   at the back of the terrace, where the skill tree was (the archway by the stairs is gone).
 - HUD (clearing_hud.gd, sized to the screen with set_anchors_and_offsets_preset): ink bottles
   (ink_bottles.gd, as in 2D), the Ember bar with its button (a mouse, right button lit), marked in
@@ -422,7 +496,10 @@ unhooked, Catalog.SKILLS unread, no Ink Points).
   "cosmetic"), cloaks; `UPGRADES` (3 per weapon, in order: SHARPENED +1 damage, QUICK HAND special
   charges 40% faster, MASTERWORK the weapon's `master`). `retired` items (Compass Edge) aren't sold.
 - Shop overlay `scripts/ui/shop.gd` ("Quire's Curios"; tabs WEAPONS / UPGRADES / HATS / SCARVES /
-  CLOAKS / ARMOR, 2D-art preview): B anywhere ("shop" action; 2D: player.gd `Shop.open(tree)`;
+  CLOAKS / ARMOR, 2D-art preview; it opens like a book, two navy covers and the pages under them
+  swinging away from the middle: `_draw_pages()`; a sale is a moment, `_bought()`: coins fly from the
+  purse to the item, a red SOLD! / UPGRADED! stamp lands on its row, the purse counts down and Vesper
+  hops in a gold ring): B anywhere ("shop" action; 2D: player.gd `Shop.open(tree)`;
   2.5D: room.gd `open_overlay("shop")`), the pause screen (pause_menu.gd, 2D and 2.5D: SHOP
   is its fifth button), Quire's stall. In 2D, B is read in player.gd `_unhandled_input()` (not
   polled, so the B that closes the shop can't reopen it). Quire's replies show under the sign (red

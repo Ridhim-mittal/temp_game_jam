@@ -17,6 +17,8 @@ extends Node
 ## Hunters, kept low) and, in its boss fights, "hunt" (its driving middle,
 ## faster, with a heartbeat, ticking, a trembling string cluster and risers
 ## laid over it: gate_arena.gd, cave_arena.gd, shade_finale.gd).
+## The ending's credits roll to "credits" (Last Page Stomp: our own hard-rock
+## stomp, tools/make_credits_song.py; plays once).
 
 const TRACKS := {
 	"lit": "res://audio/music/lit_pages.ogg",
@@ -31,6 +33,7 @@ const TRACKS := {
 	"dread": "res://audio/music/dread.ogg",
 	"hunters": "res://audio/music/hunters.ogg",
 	"hunt": "res://audio/music/hunt.ogg",
+	"credits": "res://audio/music/credits.ogg",
 }
 ## Where a track loops back to (seconds; master_music.py prints these): the part
 ## before it is an intro, heard once.
@@ -56,7 +59,7 @@ const TRIM := {
 	"hunters": 0.0,  # low: it sits under everything
 	"hunt": 1.5,
 }
-const PLAY_ONCE := ["ending"]
+const PLAY_ONCE := ["ending", "credits"]
 
 @export var volume_db := -8.0
 

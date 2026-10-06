@@ -12,13 +12,16 @@ extends Node2D
 ##  4. The end: the double cracks apart with light, the name in the sky runs
 ##     away, the city brightens, THE END, and back to the main menu.
 ## Dying restarts the level; after the waves have been beaten once in this run
-## it goes straight to the light (GameState.seen).
+## it goes straight to the light, and once the double has been met it's a
+## checkpoint: a retry starts right at the double fight (GameState.seen
+## "finale:waves" / "finale:double").
 ## Music (music.gd): The Hunters, low, while the hand writes; its tense cut
 ## ("hunt") from the first wave; silence as the light falls; "hunt" crashing back
 ## in when the double steps out of it; silence as it cracks apart, then The
 ## Hunters again, slowly, for the end.
 
 const Hand = preload("res://scripts/effects/shade_hand.gd")
+const CsLastPage = preload("res://scripts/cutscenes/cs_last_page.gd")
 const SfxSynth = preload("res://scripts/effects/sfx_synth.gd")
 const Heart = preload("res://scripts/world/health_heart.gd")
 const FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
@@ -35,13 +38,14 @@ const SCENES := {
 	"eraser": "res://scenes/enemies/eraser.tscn",
 	"pen": "res://scenes/enemies/pen_diver.tscn",
 }
+## At most 3 a wave, each Blot alone; in all: 3 spiders, 4 bats, 2 pens, 1 eraser, 2 Blots.
 const WAVES := [
 	["spider", "bat", "bat"],
-	["pen", "spider", "eraser"],
+	["pen", "bat"],
 	["blot"],
-	["bat", "pen", "spider", "pen"],
-	["eraser", "bat", "spider"],
-	["blot", "bat", "bat"],
+	["spider", "eraser", "bat"],
+	["spider", "pen"],
+	["blot"],
 ]
 
 @export var arena_left := 0.0
@@ -51,7 +55,7 @@ const WAVES := [
 @export var hand_rest := Vector2(1180, 230)
 @export var name_at := Vector2(330, 30)
 @export var blot_hp := 10
-@export var double_hp := 30
+@export var double_hp := 34
 ## Chance a killed monster drops half a bottle.
 @export var drop_chance := 0.35
 
@@ -128,6 +132,11 @@ func _process(delta: float) -> void:
 func _run() -> void:
 	var gs := get_node_or_null("/root/GameState")
 	var retry: bool = gs != null and gs.seen.has("finale:waves")
+	if gs != null and gs.seen.has("finale:double"):
+		await _checkpoint_double()
+		await boss.defeated
+		await _the_end()
+		return
 	await _wait(1.6)  # Vesper lands
 	if retry:
 		hand.write_name(name_at, 0.75)
@@ -257,14 +266,7 @@ func _the_light() -> void:
 	if cam:
 		cam.add_trauma(0.8)
 	# ...and steps out of it as Vesper
-	boss = load("res://scenes/enemies/shade_double.tscn").instantiate()
-	boss.hp = double_hp
-	boss.position = Vector2(_beam_x, floor_y - 26.0)
-	boss.modulate = Color(6, 6, 6, 0)
-	get_parent().add_child(boss)
-	var p2 := _player()
-	if p2:
-		boss.facing = -1 if p2.global_position.x < _beam_x else 1
+	_spawn_double()
 	var e := create_tween()
 	e.tween_property(boss, "modulate", Color(6, 6, 6, 1), 0.5)
 	e.tween_property(boss, "modulate", Color.WHITE, 1.2)
@@ -277,7 +279,55 @@ func _the_light() -> void:
 	boss.begin()
 
 
+func _spawn_double() -> void:
+	boss = load("res://scenes/enemies/shade_double.tscn").instantiate()
+	boss.hp = double_hp
+	boss.position = Vector2(_beam_x, floor_y - 26.0)
+	boss.modulate = Color(6, 6, 6, 0)
+	get_parent().add_child(boss)
+	var p := _player()
+	if p:
+		boss.facing = -1 if p.global_position.x < _beam_x else 1
+	# from here on a death is a checkpoint: the retry starts at this fight
+	var gs := get_node_or_null("/root/GameState")
+	if gs:
+		gs.seen["finale:double"] = true
+
+
+## The retry after dying to the double: Vesper stands on the street, the name
+## is already in the sky, a flash of light heals him and the double steps out.
+func _checkpoint_double() -> void:
+	var p := _player()
+	if p:
+		p.global_position = Vector2(_beam_x - 360.0, floor_y - 26.0)
+		p.velocity = Vector2.ZERO
+		if "_fall_top" in p:
+			p._fall_top = p.global_position.y  # no hard landing
+	hand.draw_speed = 60000.0
+	hand.lift_speed = 60000.0
+	hand.self_modulate.a = 0.0  # the hand is already gone into the light
+	hand.write_name(name_at, 0.75)
+	await hand.wrote_name
+	_beam = 1.0
+	_flash = 1.0
+	Sfx.play("teleport", 0.0, 0.7)
+	if p:
+		p.health = p.max_health
+		p.health_changed.emit(p.health, p.max_health)
+	_spawn_double()
+	var e := create_tween()
+	e.tween_property(boss, "modulate", Color.WHITE, 0.6)
+	create_tween().tween_property(self, "_beam", 0.0, 0.9)
+	_say("BACK FOR MORE?", "shade")
+	await _wait(1.2)
+	_music("hunt", 0.15)
+	boss.begin()
+
+
 func _the_end() -> void:
+	var profile := get_node_or_null("/root/Profile")
+	if profile:
+		profile.mark_finished()  # the story is done: CHAPTERS unlock on the main menu
 	var p := _player()
 	if p:
 		p.set_physics_process(false)
@@ -311,16 +361,11 @@ func _the_end() -> void:
 	_say("FOR THE FIRST TIME, VESPER WRITES HIS OWN NEXT PAGE.", "writer")
 	await _wait(4.5)
 	_say("WHY, SHADE? WHY DID YOU WANT ME DEAD?", "vesper")  # the answer is the ending cutscene
-	await _wait(4.0)
-	var e := create_tween()
-	e.tween_property(self, "_end_card", 1.0, 1.5)
-	await e.finished
-	await _wait(2.0)
-	var waited := 0.0
-	while waited < 8.0 and not Input.is_anything_pressed():
-		await get_tree().process_frame
-		waited += get_process_delta_time()
-	get_tree().change_scene_to_file(MENU)
+	await _wait(4.6)
+	# the answer: the ending (cs_last_page.gd) climbs out of this very frame
+	# onto the Writer's desk, and ends at the main menu
+	await get_tree().process_frame
+	CsLastPage.play(get_tree(), get_viewport().get_texture().get_image())
 
 
 # --- helpers --------------------------------------------------------------------

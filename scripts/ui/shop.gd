@@ -8,6 +8,10 @@ extends Control
 ## highlighted weapon). W/S pick, A/D switch tab, Enter / click buys (or
 ## equips what you own), Esc or B closes; on a controller the d-pad and
 ## shoulders move, A buys, B / Start close.
+## It opens like a book: two navy covers and the pages under them swing away
+## from the middle (_draw_pages()). Buying is a moment (_bought()): the coins
+## fly from the purse to the item, a red SOLD! stamp comes down on it, the
+## purse counts down and Vesper hops and shows the new thing off.
 ## Items live in scripts/core/catalog.gd; money and ownership in Profile.
 ##
 ##   Shop.open(tree)   # 2D levels (player.gd); the 2.5D rooms use
@@ -45,6 +49,12 @@ var _message := ""
 var _message_t := 0.0
 var _message_good := true  # gold for a sale, red for "not enough coins"
 var _quip := ""
+var _group: CanvasGroup     # Vesper on his pedestal
+var _open_t := 0.0          # seconds since the shop opened (its pages are swinging away)
+var _coins: Array = []      # coins in flight to what was bought: [from, to, leaves at, seconds]
+var _sold := {}             # the stamp on it: {id, at, word, struck}
+var _flourish := 10.0       # seconds since the last purchase (Vesper shows it off)
+var _shown_money := -1.0    # the purse as drawn: it counts down to the real one
 
 
 ## Opens the shop over a 2D level and pauses it; `on_closed` runs after.
@@ -87,6 +97,8 @@ func _ready() -> void:
 	group.add_child(_art)
 	_sword = SwordScene.instantiate()
 	group.add_child(_sword)
+	_group = group
+	_group.modulate.a = 0.0  # (he comes in once the pages have swung clear)
 	_preview()
 
 
@@ -112,6 +124,21 @@ func _items() -> Array:
 func _process(delta: float) -> void:
 	_time += delta
 	_message_t = maxf(_message_t - delta, 0.0)
+	_open_t += delta
+	_flourish += delta
+	_coins = _coins.filter(func(c): return _time < c[2] + c[3])
+	var profile := get_node_or_null("/root/Profile")
+	if profile:
+		var real := float(profile.lumens)
+		_shown_money = real if _shown_money < 0.0 else move_toward(_shown_money, real, maxf(absf(real - _shown_money) * 5.0, 12.0) * delta)
+	if not _sold.is_empty() and not _sold.struck and _time - _sold.at >= 0.34:
+		_sold.struck = true  # the stamp lands
+		Sfx.play("checkpoint", -4.0)
+	# Vesper: in once the pages are clear; a hop and a swell when something is bought
+	var hop := sin(clampf(_flourish / 0.45, 0.0, 1.0) * PI)
+	_group.modulate.a = clampf((_open_t - 0.55) / 0.2, 0.0, 1.0)
+	_group.scale = Vector2.ONE * 4.0 * (1.0 + 0.14 * hop)
+	_group.position = Vector2(960, 470 - 30.0 * hop)
 	queue_redraw()
 
 
@@ -197,8 +224,11 @@ func _use(id: String) -> void:
 		var lvl: int = profile.upgrade_level(id)
 		if lvl >= Catalog.UPGRADES.size():
 			_say("%s is as good as it gets." % item.name)
-		elif profile.buy_upgrade(id):
-			_say("%s: %s!" % [item.name, Catalog.UPGRADES[lvl].name])
+		elif profile.next_upgrade_price(id) <= profile.lumens:
+			var cost: int = profile.next_upgrade_price(id)
+			if profile.buy_upgrade(id):
+				_say("%s: %s!" % [item.name, Catalog.UPGRADES[lvl].name])
+				_bought(id, cost, "UPGRADED!")
 		else:
 			_short(profile.next_upgrade_price(id) - profile.lumens)
 	elif profile.owned.has(id):
@@ -206,9 +236,27 @@ func _use(id: String) -> void:
 		_say("Equipped %s." % item.name)
 	elif profile.buy(id):
 		_say("Bought %s! Pleasure doing business." % item.name)
+		_bought(id, int(item.price), "SOLD!")
 	else:
 		_short(int(item.price) - profile.lumens)
 	_preview()
+
+
+## The moment of a sale: coins leave the purse for the thing bought, a stamp
+## comes down on its row, and Vesper shows it off.
+func _bought(id: String, price: int, word: String) -> void:
+	_sold = {"id": id, "at": _time, "word": word, "struck": false}
+	_flourish = 0.0
+	var row := maxi(_items().find(id), 0)
+	var to := Vector2(60 + 560 - 150, 190 + row * ROW_STEP + (ROW_STEP - 6) * 0.5)
+	var from := Vector2(size.x - 130, 64)
+	for k in clampi(price / 3, 5, 14):
+		_coins.append([from + Vector2(randf_range(-12, 12), randf_range(-8, 8)), to + Vector2(randf_range(-26, 26), randf_range(-8, 8)),
+			_time + k * 0.03, 0.34 + randf_range(0.0, 0.08)])
+	Sfx.play("coin_collect", -2.0)
+	Sfx.play("menu_select")
+	if _sword.has_method("swing"):
+		_sword.swing(Vector2.RIGHT)
 
 
 ## Not enough coins: say how many more.
@@ -256,7 +304,7 @@ func _draw() -> void:
 	else:
 		draw_string(ThemeDB.fallback_font, Vector2(64, 108), "Quire: \"%s\"" % _quip, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color(PAPER, 0.7))
 	# money
-	var money := "%d" % (profile.lumens if profile else 0)
+	var money := "%d" % roundi(maxf(_shown_money, 0.0))
 	var mw := TITLE_FONT.get_string_size(money, HORIZONTAL_ALIGNMENT_LEFT, -1, 40).x
 	Coin.draw_coin(self, Vector2(size.x - mw - 92, 64), 17.0, _time * 2.0)
 	draw_string(TITLE_FONT, Vector2(size.x - mw - 60, 78), money, HORIZONTAL_ALIGNMENT_LEFT, -1, 40, GOLD)
@@ -289,6 +337,82 @@ func _draw() -> void:
 		_draw_details(items[_row], profile)
 	draw_string(TITLE_FONT, Vector2(60, size.y - 22), "W/S  CHOOSE     A/D  TAB     ENTER  BUY / EQUIP     ESC / B  LEAVE",
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 20, DIM)
+	_draw_sale(items)
+	_draw_pages()
+
+
+## A sale, over everything: the ring and sparks round Vesper, the coins in
+## the air, the stamp on the row.
+func _draw_sale(items: Array) -> void:
+	if _flourish < 0.9:
+		var k := _flourish / 0.9
+		draw_arc(Vector2(960, 474), 130.0 + 90.0 * k, 0, TAU, 48, Color(GOLD, 0.8 * (1.0 - k)), 5.0 * (1.0 - k) + 1.0)
+		for i in 10:
+			var d := Vector2.from_angle(TAU * i / 10.0 + 0.3)
+			var at := Vector2(960, 360) + d * Vector2(150.0, 190.0) * (0.45 + 0.75 * k)
+			var r := 12.0 * sin(k * PI)
+			draw_line(at - Vector2(r, 0), at + Vector2(r, 0), Color(GOLD, 1.0 - k), 3.0)
+			draw_line(at - Vector2(0, r), at + Vector2(0, r), Color(GOLD, 1.0 - k), 3.0)
+	for c in _coins:
+		var k := clampf((_time - c[2]) / c[3], 0.0, 1.0)
+		if k <= 0.0:
+			continue
+		var e := k * k * (3.0 - 2.0 * k)
+		var from: Vector2 = c[0]
+		var to: Vector2 = c[1]
+		Coin.draw_coin(self, from.lerp(to, e) + Vector2(0, -110.0 * sin(e * PI)), 13.0 - 4.0 * e, _time * 9.0 + c[2] * 40.0)
+	if _sold.is_empty():
+		return
+	var age: float = _time - _sold.at - 0.34
+	var row := items.find(_sold.id)
+	if age < 0.0 or age > 1.7 or row < 0:
+		return
+	var land := clampf(age / 0.12, 0.0, 1.0)
+	var a := 1.0 - clampf((age - 1.3) / 0.4, 0.0, 1.0)
+	var word: String = _sold.word
+	var w := TITLE_FONT.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, 34).x
+	var shake := Vector2(sin(_time * 80.0), cos(_time * 67.0)) * 4.0 * maxf(1.0 - age / 0.25, 0.0) * land
+	draw_set_transform(Vector2(60 + 560 - 150, 190 + row * ROW_STEP + (ROW_STEP - 6) * 0.5) + shake, -0.16, Vector2.ONE * lerpf(2.6, 1.0, land * land))
+	var box := Rect2(-w * 0.5 - 14, -24, w + 28, 48)
+	draw_rect(box, Color(0.98, 0.95, 0.88, 0.94 * a * land))
+	draw_rect(box, Color(RED, a * land), false, 5.0)
+	draw_rect(box.grow(-6.0), Color(RED, a * land), false, 2.0)
+	draw_string(TITLE_FONT, Vector2(-w * 0.5, 13), word, HORIZONTAL_ALIGNMENT_LEFT, -1, 34, Color(RED, a * land))
+	draw_set_transform(Vector2.ZERO)
+
+
+## The shop opens like a book: its two covers part at the middle and swing
+## away to the sides, and three pages under each follow them, one after the
+## other, until what's inside is clear.
+func _draw_pages() -> void:
+	if _open_t > 0.8:
+		return
+	var half := size.x * 0.5 + 6.0
+	for k in [3, 2, 1, 0]:  # (the covers last: they lie on top)
+		var p := clampf((_open_t - k * 0.09) / 0.42, 0.0, 1.0)
+		if p >= 1.0:
+			continue
+		var swing := p * p * (3.0 - 2.0 * p) * PI * 0.5
+		for side: float in [-1.0, 1.0]:
+			var hinge := 0.0 if side < 0.0 else size.x
+			var free := hinge - side * half * cos(swing)
+			var lift := sin(swing) * 70.0
+			var leaf := PackedVector2Array([Vector2(hinge, 0), Vector2(free, -lift), Vector2(free, size.y + lift), Vector2(hinge, size.y)])
+			var shade := 1.0 - 0.4 * sin(swing)
+			if k == 0:
+				draw_colored_polygon(leaf, Color(NAVY.r * shade, NAVY.g * shade, NAVY.b * shade))
+				var inset := PackedVector2Array()
+				for q in leaf:  # a gilt frame tooled into the cover
+					inset.append(q.lerp(Vector2((hinge + free) * 0.5, size.y * 0.5), 0.1))
+				draw_polyline(inset + PackedVector2Array([inset[0]]), Color(GOLD, 0.9), 4.0)
+				Coin.draw_coin(self, Vector2(free + side * 70.0 * cos(swing), size.y * 0.5), 26.0 * cos(swing) + 4.0, 0.0)
+			else:
+				draw_colored_polygon(leaf, Color(PAPER.r * shade, PAPER.g * shade, PAPER.b * shade * 0.96))
+				for line in 9:  # ruled, as its pages are
+					var y := (line + 1.0) / 10.0
+					draw_line(Vector2(hinge, size.y * y).lerp(Vector2(free, lerpf(-lift, size.y + lift, y)), 0.08),
+						Vector2(hinge, size.y * y).lerp(Vector2(free, lerpf(-lift, size.y + lift, y)), 0.92), Color(INK, 0.12), 2.0)
+			draw_line(leaf[1], leaf[2], Color(INK, 0.8), 3.0)
 
 
 ## Quire's reply in a little ink box under the sign: gold for a sale, red
