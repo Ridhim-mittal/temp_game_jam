@@ -303,7 +303,6 @@ l2, t2, r2, f2 = px("hall2")
 START = (l2 + 150, f2 - 26)
 nl, nt, nr, nf = px("nook")
 lamp(nl + 220, nt, 260, 120)
-heart(nl + 520, nf - 60)
 ledge(nl + 260, nf - 120, 180)                  # the nook's secret: up on a ledge in the dark corner
 big_coin(nl + 110, nf - 330)
 ledge(l2 + 900, f2 - 110, 240)

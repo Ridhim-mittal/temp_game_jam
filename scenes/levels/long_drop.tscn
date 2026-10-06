@@ -180,10 +180,6 @@ radius = 260
 chain = 120
 casts_shadows = false
 
-[node name="Heart1" type="Area2D" parent="World"]
-position = Vector2(820, 990)
-script = ExtResource("19_heart")
-
 [node name="Ledge1" type="StaticBody2D" parent="World"]
 position = Vector2(560, 939)
 script = ExtResource("53_ledge")
@@ -315,7 +311,7 @@ script = ExtResource("43_caption")
 text = "HIT THE LANTERN.\nA SHADOW IS INK TOO."
 tilt = -0.03
 
-[node name="Heart2" type="Area2D" parent="World"]
+[node name="Heart1" type="Area2D" parent="World"]
 position = Vector2(1750, 1840)
 script = ExtResource("19_heart")
 
@@ -440,7 +436,7 @@ radius = 300
 chain = 200
 casts_shadows = false
 
-[node name="Heart3" type="Area2D" parent="World"]
+[node name="Heart2" type="Area2D" parent="World"]
 position = Vector2(4300, 3690)
 script = ExtResource("19_heart")
 
