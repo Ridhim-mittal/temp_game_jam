@@ -376,7 +376,7 @@ group "boss": story_ui `set_boss()` and the 2D Eraser / Red Pen / Ink Blot join 
 globs `ink_splat`), pickups (coin, checkpoint, heart), gates (`gate_unlock`), transitions (`teleport`:
 panel turns, World25.go, Shade's trap), boss intros and the menus (hover on row change, select,
 open / close, pause). In `@tool` scripts call it through `get_node("/root/Sfx")` (no autoload in the editor).
-`jump`, `dash`, `sword_swing_1..4` (a miss) and `sword_hit_1..4` are our own, synthesised by
+`jump`, `double_jump`, `dash`, `sword_swing_1..4` (a miss) and `sword_hit_1..4` are our own, synthesised by
 `tools/sfx/build_sfx.py` to fit the ink-and-paper theme, minimal and dry (a paper flick, a pen stroke, a
 nib swish, a nib click + ink thwack + splat); re-running overwrites them (`--out DIR` to listen first).
 
