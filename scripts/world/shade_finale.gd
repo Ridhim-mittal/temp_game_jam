@@ -21,6 +21,7 @@ extends Node2D
 ## Hunters again, slowly, for the end.
 
 const Hand = preload("res://scripts/effects/shade_hand.gd")
+const CsDedication = preload("res://scripts/cutscenes/cs_dedication.gd")
 const SfxSynth = preload("res://scripts/effects/sfx_synth.gd")
 const Heart = preload("res://scripts/world/health_heart.gd")
 const FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
@@ -356,8 +357,13 @@ func _the_end() -> void:
 	await _wait(4.5)
 	_say("FOR THE FIRST TIME, VESPER WRITES HIS OWN NEXT PAGE.", "writer")
 	await _wait(4.5)
-	_say("WHY, SHADE? WHY DID YOU WANT ME DEAD?", "vesper")  # the answer is the ending cutscene
-	await _wait(4.0)
+	_say("WHY, SHADE? WHY DID YOU WANT ME DEAD?", "vesper")
+	while _line != "" or not _lines.is_empty():  # let him finish asking
+		await get_tree().process_frame
+	# Shade's answer: the dedication (cs_dedication.gd)
+	var cs := CsDedication.start(get_tree(), hand, _player())
+	await cs.finished
+	await _wait(0.6)
 	var e := create_tween()
 	e.tween_property(self, "_end_card", 1.0, 1.5)
 	await e.finished
