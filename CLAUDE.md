@@ -257,17 +257,19 @@ Shade's black speech balloon):
 2. `WAVES`: the hand `draw_monster()`s one at a time (the nib traces the outline in ink, the sketch flares
    with light, `drawn` fires and the monster pops out: `materialize()`): paper spiders, ink bats, diving
    pens (`pen_diver.gd`: the Red Pen's art, hovers, shakes to aim, dives nib-first and sticks in the street),
-   erasers (hp 6) and now and then one weakened Ink Blot (`blot_hp` 10; never two Blots at once). Only the
+   erasers (hp 6) and one weakened Ink Blot (`blot_hp` 8), in three short waves (8 monsters drawn in all). Only the
    Blot keeps a boss bar. Kills drop half a bottle at `drop_chance`; a cleared wave always drops a bottle.
    No drop (kills, waves, an Ink Blot's big heart) is made while Vesper's ink is full (health_heart.gd
    `player_full()`), and a seeking heart that reaches him full fades away instead of sitting on him.
 3. The light: a pillar of light falls on the street, Vesper is healed to full, the hand plunges into it and
-   steps out as Vesper's double (`scripts/enemies/shade_double.gd`, "SHADE", hp 30): Vesper's own
+   steps out as Vesper's double (`scripts/enemies/shade_double.gd`, "SHADE", hp 36): Vesper's own
    player_visual.gd + sword inked black, blood-red scarf, burning red eyes (player_visual `eye_color`). It
    slashes in lunging combos (the blade glints first), dashes through him with afterimages, leaps and
    plunges (shockwaves both ways), sends ink waves along the street, sidesteps swings ("TOO SLOW."); below
    half health it rages (faster, 3-hit combos, double waves, dash back). Light doubles the damage it takes;
-   it's only staggered when not attacking. All its hits cost a bottle.
+   it's only staggered when not attacking and at most once per `poise_time` (no stunlock), barely knocked
+   back, answers two quick hits at once (`_counter()`), rests only 0.1..0.35 s between moves and often chains
+   them (`chain_chance`); combos 2-3 (rage 3-4). All its hits cost a bottle.
 4. The end: the double cracks apart with light, the name in the sky fades, the city brightens, captions,
    THE END card, then the main menu. Dying restarts the level; once the waves are beaten in a run
    (GameState.seen "finale:waves") a retry skips straight to the light.
