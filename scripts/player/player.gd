@@ -188,6 +188,9 @@ var coins := 0
 var can_dash := true
 var is_jumping := false
 var dead := false
+## A cutscene has the controls (fall_cutscene.gd): no input, no pause or
+## shop, the Ember stays lowered, and a hard landing never hurts.
+var cinematic := false
 
 var _coyote_timer := 0.0
 var _jump_buffer_timer := 0.0
@@ -278,6 +281,8 @@ func _ready() -> void:
 
 ## Esc / Start: the pause screen (the same one as in 2.5D rooms).
 func _unhandled_input(event: InputEvent) -> void:
+	if cinematic:
+		return
 	if event.is_action_pressed("pause") and not dead and not get_tree().paused:
 		get_viewport().set_input_as_handled()  # pause, don't leave for the menu (mood.gd)
 		PauseMenu.open_2d(self)
@@ -293,6 +298,13 @@ func _physics_process(delta: float) -> void:
 		return
 
 	_tick_timers(delta)
+	if cinematic:
+		# a cutscene: just fall (drifting to a stop sideways) and land
+		velocity.x = move_toward(velocity.x, 0.0, max_speed * 2.0 * delta)
+		_apply_gravity(delta)
+		move_and_slide()
+		_post_move(delta)
+		return
 	var input_x := Input.get_axis("move_left", "move_right")
 	if Input.is_action_just_pressed("jump"):
 		if is_on_floor() and absf(input_x) < 0.2 and _hurt_timer <= 0.0 and _dash_timer <= 0.0:
@@ -705,7 +717,7 @@ func _post_move(delta: float) -> void:
 ## kneel that locks control; past `fall_damage_height` it also hurts.
 func _hard_land(drop: float) -> void:
 	Sfx.play("fall_land", 2.0 if drop >= fall_damage_height else 0.0)
-	var hurts := fall_damage_height > 0.0 and drop >= fall_damage_height
+	var hurts := not cinematic and fall_damage_height > 0.0 and drop >= fall_damage_height
 	_land_length = hard_land_time * (1.6 if hurts else 1.0)
 	_land_timer = _land_length
 	_crouch = -1.0
@@ -1272,7 +1284,7 @@ func _update_visuals(delta: float) -> void:
 	var drop := global_position.y - _fall_top if not is_on_floor() and velocity.y > 0.0 else 0.0
 	_streaks.amount = clampf((drop - hard_land_height * 0.6) / (hard_land_height * 0.4), 0.0, 1.0) \
 		if hard_land_height > 0.0 else 0.0
-	_streaks.danger = fall_damage_height > 0.0 and drop >= fall_damage_height
+	_streaks.danger = not cinematic and fall_damage_height > 0.0 and drop >= fall_damage_height
 	sword.charge = art.charge
 	sword.charge_ready = _charge_ready
 	var col := Color.WHITE

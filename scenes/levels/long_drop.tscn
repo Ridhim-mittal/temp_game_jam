@@ -2,6 +2,7 @@
 
 [ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="1_player"]
 [ext_resource type="Script" path="res://scripts/world/big_coin.gd" id="49_bigcoin"]
+[ext_resource type="Script" path="res://scripts/effects/fall_cutscene.gd" id="48_fallcine"]
 [ext_resource type="PackedScene" path="res://scenes/enemies/crawler.tscn" id="2_crawler"]
 [ext_resource type="Script" path="res://scripts/ui/hud.gd" id="5_hud"]
 [ext_resource type="Script" path="res://scripts/audio/level_music.gd" id="8_music"]
@@ -437,6 +438,11 @@ script = ExtResource("53_ledge")
 size = Vector2(170, 18)
 theme = 2
 one_way = true
+
+[node name="DropCutscene" type="Area2D" parent="World"]
+position = Vector2(4075, 2870)
+script = ExtResource("48_fallcine")
+size = Vector2(450, 120)
 
 [node name="Checkpoint2" type="Area2D" parent="World"]
 position = Vector2(4350, 3950)
