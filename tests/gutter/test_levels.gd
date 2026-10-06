@@ -98,8 +98,8 @@ func roster_test() -> void:
 	var hub := enemy_kinds(HUB)
 	check(hub.keys() == ["scribble"] and hub.scribble >= 6, "level 1, the hub: Scribbles all over it %s" % hub)
 	var l1 := enemy_kinds(LEVELS[0])
-	check(l1.size() == 2 and l1.get("half_drawn", 0) >= 3 and l1.get("half_drawn", 0) <= 5 and l1.get("scribble", 0) >= 3,
-		"level 1, second room: a few Half-Drawn and a pack of Scribbles %s" % l1)
+	check(l1.size() == 2 and l1.get("half_drawn", 0) >= 3 and l1.get("half_drawn", 0) <= 5 and l1.get("scribble", 0) <= 2,
+		"level 1, second room: a few Half-Drawn and no more than two Scribbles %s" % l1)
 	var l2 := enemy_kinds(LEVELS[1])
 	check(l2.keys() == ["red_pen"], "level 2: the Red Pen alone %s" % l2)
 	var l3 := enemy_kinds(LEVELS[2])

@@ -22,7 +22,8 @@ All art is drawn in code (`_draw()`, shaders, primitive meshes); no texture asse
   that flare orange on a windup, ink motes, short flickering pieces of line: `glimpse`) and a sword
   passes through ("NOT DRAWN YET"); hold right click and inside the light it inks in and can be cut
   (`revealed`, player `ember_reveals()`; group "needs_ember" drives a "HOLD RIGHT CLICK TO SEE THEM"
-  prompt over Vesper; the Prism Saber's blade and the Lantern Flail's whirl count as light too).
+  prompt over Vesper; only the raised Ember counts: no weapon, not even the Prism Saber or the
+  Lantern Flail's whirl, cuts one unseen; `_blocks()` re-checks the light at the moment of the hit).
   Quick windup, arc slash, only the blade hurts, hp 5 (half_drawn.tscn). (The earlier toon-shaded
   model, `half_drawn_model.gd` + `half_drawn.gdshader`, is kept but unused.)
   The 2.5D Scribble (`scripts/clearing/scribble.gd`, `scenes/clearing/scribble.tscn`; not a
@@ -194,7 +195,7 @@ ground, it falls back to the last checkpoint pen / level start (`_respawn_point(
 Zones (display names; code names stay): hub = The Spine, darkwood_* = The Inkwood, shallows_* =
 The Drowned Margin, wastes_* = The Torn Wastes, arena = The Rubbing Room.
 Hub `scenes/clearing/clearing.tscn` (hand-made, not generated) → its terrace's way on → four levels in
-`scenes/world25/rooms/`, a row running west: 1 the hub (9 Scribbles, two up on the shrine terrace) + darkwood_1 (a few Half-Drawn and 4 Scribbles;
+`scenes/world25/rooms/`, a row running west: 1 the hub (9 Scribbles, two up on the shrine terrace) + darkwood_1 (a few Half-Drawn and 2 Scribbles;
 both with the COMIC backdrop) →
 2 shallows_pen (Red Pen boss, `scripts/clearing/red_pen_3d.gd`: wet-ink circles dry in light; two
 lamps) → 3 wastes_gap (a sketched bridge inked with right click; one slow lamp) → 4 arena (the Eraser, hard:
@@ -237,8 +238,8 @@ unhooked, Catalog.SKILLS unread, no Ink Points).
   ink wave; quill Quill Rapier = QUILL VOLLEY (piercing quills); brush Brush Maul = INK SLAM (a ring);
   corkscrew Corkscrew Nib = PEN-DRILL (spin while held, drags monsters in and grinds them, bursts on
   release); prism Prism Saber = BLINDING SWEEP (rainbow arc, long stun, `dazzle()`s a Haunting Lamp
-  to LOST; its normal hits stun and cut unseen Half-Drawn); lantern Lantern Flail = LANTERN WHIRL
-  (orbits while held, burns Ember, is light: 2D drawn_light / light, 2.5D reveals and monster_light).
+  to LOST; its normal hits stun); lantern Lantern Flail = LANTERN WHIRL
+  (orbits while held, burns Ember, is light: 2D drawn_light / light, 2.5D monster_light).
   Tunables in each player's "Weapon Specials" export group. Effects: `scripts/effects/weapon_fx.gd`
   (2D) and `scripts/clearing/weapon_fx_3d.gd` (+ `prism_sweep`, `shock_ring` shaders). Weapon art:
   sword.gd `style` (2D), vesper_3d.gd `weapon_style` (3D). Monsters answer `stun_for(seconds)`
