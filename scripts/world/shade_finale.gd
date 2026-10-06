@@ -47,7 +47,7 @@ const WAVES := [
 @export var hand_rest := Vector2(1180, 230)
 @export var name_at := Vector2(330, 30)
 @export var blot_hp := 10
-@export var double_hp := 30
+@export var double_hp := 34
 ## Chance a killed monster drops half a bottle.
 @export var drop_chance := 0.35
 

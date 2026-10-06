@@ -252,11 +252,14 @@ Shade's black speech balloon):
    No drop (kills, waves, an Ink Blot's big heart) is made while Vesper's ink is full (health_heart.gd
    `player_full()`), and a seeking heart that reaches him full fades away instead of sitting on him.
 3. The light: a pillar of light falls on the street, Vesper is healed to full, the hand plunges into it and
-   steps out as Vesper's double (`scripts/enemies/shade_double.gd`, "SHADE", hp 30): Vesper's own
+   steps out as Vesper's double (`scripts/enemies/shade_double.gd`, "SHADE", hp 34, a little taller,
+   with a longer sword: `body_scale`, `blade_length`): Vesper's own
    player_visual.gd + sword inked black, blood-red scarf, burning red eyes (player_visual `eye_color`). It
-   slashes in lunging combos (the blade glints first), dashes through him with afterimages, leaps and
-   plunges (shockwaves both ways), sends ink waves along the street, sidesteps swings ("TOO SLOW."); below
-   half health it rages (faster, 3-hit combos, double waves, dash back). Light doubles the damage it takes;
+   slashes in lunging combos of alternating overhead / rising cuts (3, 4 when raging; the blade glints
+   first), rushes in from mid range into the combo, dash-thrusts through him with afterimages and finishes
+   with a cut, jumps up at him with a rising cut when he's above it, leaps and plunges (shockwaves both
+   ways), sends ink waves along the street, sidesteps swings ("TOO SLOW."); below half health it rages
+   (faster, double waves, dash back). Light doubles the damage it takes;
    it's only staggered when not attacking. All its hits cost a bottle.
 4. The end: the double cracks apart with light, the name in the sky fades, the city brightens, captions,
    THE END card, then the main menu. Dying restarts the level; once the waves are beaten in a run
