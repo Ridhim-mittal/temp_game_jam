@@ -98,6 +98,9 @@ func begin(with: Node2D) -> void:
 		var p := get_tree().get_first_node_in_group("player") as Node2D
 		eraser.global_position = Vector2((p.global_position.x if p else global_position.x) - 650.0, global_position.y)
 	eraser.heading = 1.0
+	var m := get_node_or_null("/root/Music")
+	if m:
+		m.play("beast", 0.2)  # RUN: the fight's music again, under the chase
 	eraser.rubbing = 1.0
 	eraser.set_harmful(true)
 	_erase_x = eraser.global_position.x - 40.0
@@ -168,6 +171,9 @@ func _chase(delta: float) -> void:
 func _start_finale() -> void:
 	phase = Phase.FINALE
 	_t = 0.0
+	var m := get_node_or_null("/root/Music")
+	if m:
+		m.stop(2.5)  # it drains away as he runs out of page
 	_player.cutscene = true
 	_player.cutscene_run = 1.0
 	var pcam := _player.get_node_or_null("Camera2D") as Camera2D

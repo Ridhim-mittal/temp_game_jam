@@ -3,7 +3,9 @@ extends Area2D
 ## Health pickup: a cute little heart with a face and tiny flapping wings,
 ## bobbing in the air. Touch it to heal `amount` half bottles (2 = one ink bottle). It stays put while
 ## you are at full health, so you can come back for it. `seek` makes it fly
-## to Vesper (the Ink Blot's big drop), so it can't be left behind.
+## to Vesper (the Ink Blot's big drop), so it can't be left behind. Dropped
+## hearts aren't made at all while Vesper's ink is full (`player_full()`), and
+## a seeking one that reaches him full fades away instead of sitting on him.
 
 const INK := Color(0.05, 0.03, 0.1)
 const ComicText = preload("res://scripts/effects/comic_text.gd")
@@ -18,6 +20,12 @@ const OnScreen = preload("res://scripts/core/on_screen.gd")
 var _time := 0.0
 var _taken := false
 var _player: Node2D
+
+
+## True while the 2D player is alive with full health: drops skip the heart then.
+static func player_full(tree: SceneTree) -> bool:
+	var p := tree.get_first_node_in_group("player")
+	return p != null and "health" in p and "max_health" in p and p.health >= p.max_health
 
 
 func _ready() -> void:
@@ -48,6 +56,19 @@ func _physics_process(delta: float) -> void:
 		if body.has_method("heal") and body.heal(amount):
 			_collect()
 			return
+		if seek and body.is_in_group("player") and body.has_method("heal"):
+			_fade()  # came to him, but his ink is full: nothing to give, don't sit on him
+			return
+
+
+## A seeking heart that isn't needed: it just fades out (no heal, no "+INK").
+func _fade() -> void:
+	_taken = true
+	set_deferred("monitoring", false)
+	var t := create_tween().set_parallel()
+	t.tween_property(self, "scale", Vector2(0.4, 0.4), 0.3).set_ease(Tween.EASE_IN)
+	t.tween_property(self, "modulate:a", 0.0, 0.3)
+	t.chain().tween_callback(queue_free)
 
 
 func _collect() -> void:

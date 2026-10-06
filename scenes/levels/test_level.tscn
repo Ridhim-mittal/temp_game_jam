@@ -273,6 +273,7 @@ script = ExtResource("5_hud")
 
 [node name="LevelMusic" type="Node" parent="."]
 script = ExtResource("8_music")
+track = "city"
 
 [node name="LevelMood" type="Node" parent="."]
 script = ExtResource("30_mood")

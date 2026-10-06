@@ -225,6 +225,8 @@ Shade's black speech balloon):
    pens (`pen_diver.gd`: the Red Pen's art, hovers, shakes to aim, dives nib-first and sticks in the street),
    erasers (hp 6) and now and then one weakened Ink Blot (`blot_hp` 10; never two Blots at once). Only the
    Blot keeps a boss bar. Kills drop half a bottle at `drop_chance`; a cleared wave always drops a bottle.
+   No drop (kills, waves, an Ink Blot's big heart) is made while Vesper's ink is full (health_heart.gd
+   `player_full()`), and a seeking heart that reaches him full fades away instead of sitting on him.
 3. The light: a pillar of light falls on the street, Vesper is healed to full, the hand plunges into it and
    steps out as Vesper's double (`scripts/enemies/shade_double.gd`, "SHADE", hp 30): Vesper's own
    player_visual.gd + sword inked black, blood-red scarf, burning red eyes (player_visual `eye_color`). It
@@ -395,6 +397,19 @@ are remembered in Profile; Enter / controller Back skips; shows controller butto
 PLAY replays them; in 2D the key shows low, under Vesper's feet (`center_y`), so it never covers
 monsters or captions; the Settings menu no longer has Tutorials, Difficulty, Scribbles or Aim assist:
 those stay at their defaults, settings.gd FIXED).
+
+## Music
+Autoload `Music` (`scripts/audio/music.gd`): `Music.play(track, fade)` cross-fades (nothing if it's
+already on), `Music.stop(fade)`; a level picks its track with a `LevelMusic` node (`level_music.gd`).
+Old synth tracks (`tools/make_music.py`): lit, margins (2.5D rooms), boss, ending. The 2D story's own
+loops (`tools/make_music_2d.py`, original, written after the team's references; deterministic, seamless,
+mastered quiet, `TRIM` in music.gd sets each one's level; run it from `audio/music/`): "city" (THE CITY +
+the Sketchbook, cs_book starts it as the book opens: slow warm groove, electric piano 9ths, round bass,
+brushes, vibes tune), "deep" (THE LONG DROP: kalimba in the dark, cold pad, distant drips, a soft pulse
+later), "beast" (E phrygian, 160 bpm: string ostinato, taiko, brass). beast_arena.gd: the deep tune fades
+as the intro starts (only the rumble), "beast" crashes in on the ROAR (or when the fight starts / the
+short intro), silence for the death and Shade's lines, "beast" again on RUN! (eraser_chase.gd `begin()`),
+fading out as he runs out of page; the 2.5D hub's biome takes over after the fall.
 
 ## Sound effects
 Autoload `Sfx` (`scripts/audio/sfx.gd`) plays the team's SFX pack in `assets/sfx/` by name:

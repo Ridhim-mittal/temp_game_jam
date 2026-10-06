@@ -259,12 +259,14 @@ func _die(_kx: float) -> void:
 	pop("BLORRP...", Color(0.7, 0.62, 0.9), Vector2(0, -150), 34)
 	Sfx.play("ink_splat", 4.0, 0.7)
 	defeated.emit()
-	var heart := Area2D.new()
-	heart.set_script(load("res://scripts/world/health_heart.gd"))
-	heart.amount = drop_heal
-	heart.seek = true
-	heart.position = global_position + Vector2(0, -90)
-	get_parent().add_child(heart)
+	var heart_script = load("res://scripts/world/health_heart.gd")  # untyped: calls its static player_full()
+	if not heart_script.player_full(get_tree()):  # full ink: no heart to fly in and sit on him
+		var heart := Area2D.new()
+		heart.set_script(heart_script)
+		heart.amount = drop_heal
+		heart.seek = true
+		heart.position = global_position + Vector2(0, -90)
+		get_parent().add_child(heart)
 	await get_tree().create_timer(1.6).timeout
 	create_tween().tween_property(self, "modulate:a", 0.0, 0.8).finished.connect(queue_free)
 

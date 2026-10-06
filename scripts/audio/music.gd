@@ -6,12 +6,25 @@ extends Node
 ##
 ## Tracks share one melody: "lit" is the warm version, "margins" the slow
 ## minor one, "boss" the fast minor one, "ending" the goodbye (plays once).
+## The 2D story has its own loops (tools/make_music_2d.py): "city" (THE CITY and
+## the Sketchbook: a slow warm groove), "deep" (THE LONG DROP: quiet, far down)
+## and "beast" (the Scribbled Beast's fight and the Eraser's chase).
 
 const TRACKS := {
 	"lit": "res://audio/music/lit_pages.ogg",
 	"margins": "res://audio/music/margins.ogg",
 	"boss": "res://audio/music/shade_boss.ogg",
 	"ending": "res://audio/music/ending.ogg",
+	"city": "res://audio/music/city.ogg",
+	"deep": "res://audio/music/deep.ogg",
+	"beast": "res://audio/music/beast.ogg",
+}
+## Per-track level (dB on top of volume_db): the 2D loops are mastered quiet,
+## and kept a little under the old tracks so they sit behind the sound effects.
+const TRIM := {
+	"city": 2.0,
+	"deep": 3.0,
+	"beast": 2.0,
 }
 const PLAY_ONCE := ["ending"]
 
@@ -50,7 +63,7 @@ func play(track: String, fade := 0.8) -> void:
 	_fade.tween_callback(func():
 		_player.stream = stream
 		_player.play())
-	_fade.tween_property(_player, "volume_db", volume_db, fade)
+	_fade.tween_property(_player, "volume_db", volume_db + float(TRIM.get(track, 0.0)), fade)
 
 
 func stop(fade := 0.8) -> void:
