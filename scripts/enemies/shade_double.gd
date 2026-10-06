@@ -10,10 +10,7 @@ extends "res://scripts/enemies/enemy_base.gd"
 ##  - WAVE   sweeps an ink wave along the street (two in the second half)
 ## It sidesteps Vesper's swings now and then. Below half health it rages:
 ## faster tells, longer combos, more dodges. Light (the Ember) doubles the
-## damage it takes. It barely rests between moves and often chains one into
-## the next. Hits only stagger it while it's not attacking, and at most once
-## per `poise_time` (no stunlocking it); hit it twice in quick succession and
-## it answers at once (a backstep into a dash or a wave, or a slash up close).
+## damage it takes. Hits only stagger it while it's not attacking.
 ## `begin()` starts the fight (the director calls it after the emerge).
 ## Sounds: a ring on the blade's glint, the whoosh of every cut and dive, the
 ## boom and rumble of its plunge, the slosh of its ink waves, a hiss when the
@@ -38,11 +35,7 @@ enum State { INTRO, STALK, SLASH_WIND, SLASH, DASH_WIND, DASH, LEAP, PLUNGE, WAV
 @export var dash_damage := 2.0
 @export var wave_damage := 2.0
 @export var touch_damage := 1.0
-@export var dodge_chance := 0.35
-## Seconds after a stagger before hits can stagger it again.
-@export var poise_time := 1.4
-## Chance it chains a finished combo / dash / plunge straight into another move.
-@export var chain_chance := 0.35
+@export var dodge_chance := 0.25
 
 var state := State.INTRO
 var _timer := 0.0
@@ -56,9 +49,6 @@ var _ghosts: Array = []  # dash afterimages {p, facing, age}
 var _ghost_t := 0.0
 var _waves_left := 0
 var _crumble := 0.0  # 0..1 cracking apart when beaten (shade_finale.gd)
-var _poise := 0.0  # > 0: hits don't stagger it
-var _hits := 0  # hits taken in a row, quickly (mashing gets punished)
-var _hit_window := 0.0
 
 var _vis: CanvasGroup
 var _art: Node2D
@@ -123,7 +113,7 @@ func _ready() -> void:
 ## The fight starts (after the emerge from the light).
 func begin() -> void:
 	state = State.STALK
-	_cooldown = 0.5
+	_cooldown = 0.8
 	set_harmful(true)
 	Sfx.play("boss_intro", 0.0, 0.85)
 	_snd("whoosh", 0.0, 0.5)
@@ -153,45 +143,13 @@ func take_hit(damage: int, hit_dir: Vector2, from_pos: Vector2) -> void:
 	if lit and not dead:
 		pop("BURNS!", Color(1.0, 0.92, 0.6), Vector2(0, -70), 22)
 		_snd("scritch", -5.0, 0.65)
-	# only staggered when it isn't mid-attack, and not again for a while
-	if state in [State.STALK, State.RECOVER] and _poise <= 0.0:
-		stun = 0.12
-		_poise = poise_time
-	else:
-		stun = 0.0
-	velocity.x *= 0.4  # barely knocked back: it stays in his face
-	_hits = _hits + 1 if _hit_window > 0.0 else 1
-	_hit_window = 1.0
-	if _hits >= 2 and not dead and state in [State.STALK, State.RECOVER]:
-		_hits = 0
-		_counter()
+	# only staggered when it isn't mid-attack
+	stun = 0.12 if state in [State.STALK, State.RECOVER] else 0.0
 	_vis.modulate = Color(3, 3, 3)
 	create_tween().tween_property(_vis, "modulate", Color.WHITE, 0.15)
 
 
-## Weapon stuns (the specials) are capped and respect its poise too.
-func stun_for(seconds: float) -> void:
-	if dead or _poise > 0.0:
-		return
-	stun = maxf(stun, minf(seconds, 0.35))
-	_poise = poise_time
-
-
-func _counter() -> void:
-	pop("!", EYE, Vector2(0, -70), 30)
-	if absf(to_player().x) < 110.0 and randf() < 0.5:
-		face_player()
-		state = State.SLASH_WIND
-		_timer = 0.14
-		_combo = 2
-		_snd("clang", -10.0, 1.9)
-	else:
-		_backstep()
-
-
 func _tick(delta: float) -> void:
-	_poise -= delta
-	_hit_window -= delta
 	if state == State.INTRO or state == State.DEFEATED:
 		velocity.x = 0.0
 		_fall(delta)
@@ -257,7 +215,7 @@ func _tick(delta: float) -> void:
 					state = State.SLASH_WIND
 					_timer = 0.16
 				else:
-					_recover(0.4)
+					_recover(0.55)
 		State.DASH_WIND:
 			face_player()
 			velocity.x = move_toward(velocity.x, 0.0, 2000.0 * delta)
@@ -283,7 +241,7 @@ func _tick(delta: float) -> void:
 					Sfx.play("dash", 0.0, 0.9)
 				else:
 					velocity.x = facing * 200.0
-					_recover(0.35)
+					_recover(0.5)
 		State.LEAP:
 			_fall(delta)
 			if velocity.y > 0.0 and _player and global_position.y < _player.global_position.y - 60.0:
@@ -293,13 +251,13 @@ func _tick(delta: float) -> void:
 				Sfx.play("sword_swing", 0.0, 0.7)
 				_snd("whoosh", 0.0, 0.6)  # diving
 			elif is_on_floor() and velocity.y >= 0.0 and _timer <= 0.0:
-				_recover(0.3)
+				_recover(0.4)
 		State.PLUNGE:
 			velocity.x = 0.0
 			velocity.y = 1250.0
 			if is_on_floor():
 				_impact()
-				_recover(0.45)
+				_recover(0.6)
 		State.WAVE_WIND:
 			face_player()
 			velocity.x = move_toward(velocity.x, 0.0, 2000.0 * delta)
@@ -312,7 +270,7 @@ func _tick(delta: float) -> void:
 				if _waves_left > 0:
 					_timer = 0.35
 				else:
-					_recover(0.35)
+					_recover(0.45)
 		State.BACKSTEP:
 			_fall(delta)
 			velocity.x = move_toward(velocity.x, 0.0, 900.0 * delta)
@@ -331,9 +289,7 @@ func _tick(delta: float) -> void:
 			_fall(delta)
 			if _timer <= 0.0:
 				state = State.STALK
-				_cooldown = randf_range(0.05, 0.2) if _rage else randf_range(0.12, 0.35)
-				if randf() < chain_chance:
-					_cooldown = 0.0  # straight into the next move
+				_cooldown = randf_range(0.15, 0.45) if _rage else randf_range(0.3, 0.7)
 	move_and_slide()
 
 
@@ -351,10 +307,10 @@ func _choose(dist: float) -> void:
 			_dash()
 		elif r < 0.6:
 			_leap()
-		elif r < 0.85:
+		elif r < 0.8:
 			_wave_wind()
 		else:
-			_cooldown = 0.15  # walk in
+			_cooldown = 0.3  # walk in
 	else:
 		if r < 0.5:
 			_dash()
@@ -365,7 +321,7 @@ func _choose(dist: float) -> void:
 func _slash() -> void:
 	state = State.SLASH_WIND
 	_timer = 0.22 if _rage else 0.3
-	_combo = randi_range(3, 4) if _rage else randi_range(2, 3)
+	_combo = 3 if _rage else 2
 	pop("!", EYE, Vector2(0, -70), 30)
 	_snd("clang", -10.0, 1.9)  # the glint rings on the blade
 

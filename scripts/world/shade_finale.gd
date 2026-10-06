@@ -35,11 +35,13 @@ const SCENES := {
 	"eraser": "res://scenes/enemies/eraser.tscn",
 	"pen": "res://scenes/enemies/pen_diver.tscn",
 }
-## Kept short: the double is the real fight.
 const WAVES := [
-	["spider", "bat", "pen"],
-	["eraser", "bat"],
+	["spider", "bat", "bat"],
+	["pen", "spider", "eraser"],
 	["blot"],
+	["bat", "pen", "spider", "pen"],
+	["eraser", "bat", "spider"],
+	["blot", "bat", "bat"],
 ]
 
 @export var arena_left := 0.0
@@ -48,8 +50,8 @@ const WAVES := [
 ## Where the hand hovers between drawings, and where it writes its name.
 @export var hand_rest := Vector2(1180, 230)
 @export var name_at := Vector2(330, 30)
-@export var blot_hp := 8
-@export var double_hp := 36
+@export var blot_hp := 10
+@export var double_hp := 30
 ## Chance a killed monster drops half a bottle.
 @export var drop_chance := 0.35
 
