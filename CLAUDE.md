@@ -651,3 +651,7 @@ nib swish, a nib click + ink thwack + splat); re-running overwrites them (`--out
 - The web build draws at the screen's own resolution, like desktop (no `stretch/mode.web` override).
   Settings RESOLUTION: AUTO (default; settings.gd `_watch_speed()` drops to 1280x720, the root's
   CONTENT_SCALE_MODE_VIEWPORT, after 4 s under 40 fps, and back to sharp if that didn't help), SHARP, FAST.
+- Export the web build with Variant -> Thread Support ON, and tick itch.io's "SharedArrayBuffer support"
+  (it needs cross-origin isolation). Single-threaded, Godot mixes the sound between frames, so any frame
+  longer than the audio buffer (`output_latency.web`, 80 ms) crackles the music (fine while the tab is
+  minimised); threaded, a mixer thread fills it (a load test: 66% of audio blocks dropped vs none).
