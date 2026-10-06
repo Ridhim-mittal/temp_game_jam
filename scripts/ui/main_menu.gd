@@ -85,6 +85,7 @@ var _wipe_from := Vector2.ZERO
 var _windows: Array = []
 var _rng := RandomNumberGenerator.new()
 var _place := ""          # where the saved run is (_saved_place()), "" = none
+var _software_gl := false # (browser build) WebGL is drawn without the graphics card
 
 
 func _ready() -> void:
@@ -97,6 +98,7 @@ func _ready() -> void:
 		state.leave_run()  # the run that was going is saved for CONTINUE...
 		state.reset()  # ...and the menu starts afresh: no checkpoint, no banked coins
 	_place = _saved_place()
+	_software_gl = _browser_gl_is_software()
 	_sky_mat = _shader_rect(NightShader)
 	_scene = Node2D.new()
 	_scene.draw.connect(_draw_street)
@@ -399,6 +401,25 @@ func _why_not(it: Dictionary) -> String:
 	return ""
 
 
+## In a browser: is WebGL running without the graphics card (Chrome's SwiftShader,
+## Mesa's llvmpipe, Windows' Basic Render Driver)? Then every frame is drawn by
+## the CPU and the game crawls at ~8 fps with crackling sound, however light it
+## is: hardware acceleration is off in the browser, or the GPU is blocklisted.
+## The real renderer's name is logged to the browser console either way.
+func _browser_gl_is_software() -> bool:
+	if not OS.has_feature("web"):
+		return false
+	var js := "(function(){try{var c=document.createElement('canvas');var gl=c.getContext('webgl2')||c.getContext('webgl');" \
+		+ "if(!gl)return 'no webgl';var e=gl.getExtension('WEBGL_debug_renderer_info');" \
+		+ "return String(gl.getParameter(e?e.UNMASKED_RENDERER_WEBGL:gl.RENDERER));}catch(x){return '';}})()"
+	var name := str(JavaScriptBridge.eval(js)).to_lower()
+	print("Vesper: WebGL renderer: ", name)
+	for mark in ["swiftshader", "llvmpipe", "softpipe", "software", "basic render"]:
+		if name.contains(mark):
+			return true
+	return false
+
+
 ## Where the saved run is, by its chapter's name ("" = no saved run).
 func _saved_place() -> String:
 	var state := get_node_or_null("/root/GameState")
@@ -638,5 +659,19 @@ func _draw_menu() -> void:
 				var tri := PackedVector2Array([Vector2(cx, -px * 0.45 - 9), Vector2(cx, -px * 0.45 + 9), Vector2(cx + side * -11, -px * 0.45)])
 				m.draw_colored_polygon(tri, Color(GOLD, a * h))
 		m.draw_set_transform(Vector2.ZERO)
+	if _software_gl:
+		_draw_gl_warning(m)
 	if _wipe >= 0.0:
 		m.draw_circle(_wipe_from, _wipe * 1500.0, INK)
+
+
+## The browser is drawing without the graphics card: say so, and how to fix it.
+func _draw_gl_warning(m: Node2D) -> void:
+	var lines := ["YOUR BROWSER IS RUNNING THE GAME WITHOUT YOUR GRAPHICS CARD, SO IT WILL LAG.",
+		"TURN ON HARDWARE ACCELERATION IN THE BROWSER'S SETTINGS (OR TRY CHROME / EDGE), THEN RELOAD."]
+	var box := Rect2(150, 12, 980, 64)
+	m.draw_rect(box.grow(3.0), INK)
+	m.draw_rect(box, RED.darkened(0.25))
+	for i in lines.size():
+		var w := FONT.get_string_size(lines[i], HORIZONTAL_ALIGNMENT_LEFT, -1, 21).x
+		m.draw_string(FONT, Vector2(640 - w * 0.5, box.position.y + 27 + i * 26), lines[i], HORIZONTAL_ALIGNMENT_LEFT, -1, 21, CREAM)
