@@ -396,6 +396,19 @@ PLAY replays them; in 2D the key shows low, under Vesper's feet (`center_y`), so
 monsters or captions; the Settings menu no longer has Tutorials, Difficulty, Scribbles or Aim assist:
 those stay at their defaults, settings.gd FIXED).
 
+## Music
+Autoload `Music` (`scripts/audio/music.gd`): `Music.play(track, fade)` cross-fades (nothing if it's
+already on), `Music.stop(fade)`; a level picks its track with a `LevelMusic` node (`level_music.gd`).
+Old synth tracks (`tools/make_music.py`): lit, margins (2.5D rooms), boss, ending. The 2D story's own
+loops (`tools/make_music_2d.py`, original, written after the team's references; deterministic, seamless,
+mastered quiet, `TRIM` in music.gd sets each one's level; run it from `audio/music/`): "city" (THE CITY +
+the Sketchbook, cs_book starts it as the book opens: slow warm groove, electric piano 9ths, round bass,
+brushes, vibes tune), "deep" (THE LONG DROP: kalimba in the dark, cold pad, distant drips, a soft pulse
+later), "beast" (E phrygian, 160 bpm: string ostinato, taiko, brass). beast_arena.gd: the deep tune fades
+as the intro starts (only the rumble), "beast" crashes in on the ROAR (or when the fight starts / the
+short intro), silence for the death and Shade's lines, "beast" again on RUN! (eraser_chase.gd `begin()`),
+fading out as he runs out of page; the 2.5D hub's biome takes over after the fall.
+
 ## Sound effects
 Autoload `Sfx` (`scripts/audio/sfx.gd`) plays the team's SFX pack in `assets/sfx/` by name:
 `Sfx.play("jump")`, optional dB offset and pitch. Numbered files (`sword_swing_1..4`,
