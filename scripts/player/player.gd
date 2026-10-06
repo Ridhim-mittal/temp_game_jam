@@ -1339,6 +1339,18 @@ func _hitstop(duration: float, time_scale := 0.05) -> void:
 	Engine.time_scale = 1.0
 
 
+## Thrown off something solid that won't let him through (the chase's Eraser,
+## eraser_chase.gd): no damage, a short stun with no control, any dash cut off.
+func shove(vel: Vector2, stun := 0.3) -> void:
+	if dead:
+		return
+	velocity = vel
+	_hurt_timer = maxf(_hurt_timer, stun)
+	_dash_timer = 0.0
+	is_jumping = false
+	_shake(0.35)
+
+
 func _shake(amount: float) -> void:
 	var cam := get_tree().get_first_node_in_group("camera")
 	if cam:
