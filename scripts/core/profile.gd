@@ -14,7 +14,7 @@ extends Node
 ##   Profile.tutorial_seen("2d.jump") / Profile.mark_tutorial("2d.jump")
 ##   Profile.finished / Profile.mark_finished()    # the whole game beaten once:
 ##                                                 # unlocks CHAPTERS on the main menu
-##   Profile.unlock_all()                          # cheat (F8 anywhere): every item
+##   Profile.unlock_all()                          # cheat (Shift+9 anywhere): every item
 ##                                                 # owned, every weapon fully upgraded
 ## Items are defined in scripts/core/catalog.gd. (The skill tree is retired:
 ## `skills` / `skill_points` are kept in the save but give nothing.)
@@ -38,16 +38,16 @@ var finished := false
 
 
 func _ready() -> void:
-	process_mode = Node.PROCESS_MODE_ALWAYS  # (F8 works in the shop and when paused too)
+	process_mode = Node.PROCESS_MODE_ALWAYS  # (Shift+9 works in the shop and when paused too)
 	for id in Catalog.STARTING.values():
 		owned[id] = true
 	_load()
 
 
 # Cheat (for the jam's judges, in the submission notes, never shown in the
-# game): F8 unlocks every weapon, upgrade and outfit.
+# game): Shift+9 unlocks every weapon, upgrade and outfit.
 func _input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_F8:
+	if event is InputEventKey and event.pressed and not event.echo and event.shift_pressed and event.physical_keycode == KEY_9:
 		unlock_all()
 		_toast("ALL ITEMS UNLOCKED")
 		var sfx := get_node_or_null("/root/Sfx")

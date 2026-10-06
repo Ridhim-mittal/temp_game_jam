@@ -61,8 +61,8 @@ acceleration on or try Chrome / Edge.
 The main menu's CHAPTERS are locked (greyed, a padlock, "FINISH THE STORY TO UNLOCK") until the story
 has been played to its end once: `Profile.finished`, saved in user://profile.cfg, set by shade_finale.gd
 `_the_end()` (`Profile.mark_finished()`), cleared by Settings -> Reset progress; main_menu.gd `_locked()`.
-Cheats for the jam's judges (in the submission notes only, never shown in the game): F9 on the main menu unlocks
-CHAPTERS; F8 anywhere unlocks every weapon, upgrade and outfit (Profile `unlock_all()`, "ALL ITEMS UNLOCKED" at the top).
+Cheats for the jam's judges (in the submission notes only, never shown in the game): Shift+0 on the main menu unlocks
+CHAPTERS; Shift+9 anywhere unlocks every weapon, upgrade and outfit (Profile `unlock_all()`, "ALL ITEMS UNLOCKED" at the top).
 `cs_book` (scripts/cutscenes/cs_book.gd: ~28 s animated opening. It sounds like grief and anger: the
 "margins" track (the game's tune, minor and slow: the menu's) plays all through it, the City's own
 LevelMusic bringing "city" in when the level loads; under it rain on the window, the lamp's hum and a
