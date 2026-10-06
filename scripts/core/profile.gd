@@ -4,6 +4,7 @@ extends Node
 ##
 ##   Profile.lumens / Profile.add_lumens(5)       # the shop's money: the Lumen
 ##                                                 # coins picked up in 2D levels
+##   Profile.new_run()                             # the purse back to 0 (PLAY)
 ##   Profile.buy("quill") -> bool / Profile.equip("quill")
 ##   Profile.weapon() -> "nib"                     # the equipped weapon's id
 ##   Profile.upgrade_level("quill") -> 0..3 / Profile.buy_upgrade("quill")
@@ -37,6 +38,14 @@ func _ready() -> void:
 
 func add_lumens(amount: int) -> void:
 	lumens = maxi(lumens + amount, 0)
+	_changed()
+
+
+## A new run (PLAY or a chapter on the main menu): the purse starts empty
+## again, as the levels' coins come back (GameState.reset()) to be picked up
+## again. What was bought stays bought.
+func new_run() -> void:
+	lumens = 0
 	_changed()
 
 
