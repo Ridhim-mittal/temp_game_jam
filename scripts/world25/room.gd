@@ -26,6 +26,7 @@ const Shop = preload("res://scripts/ui/shop.gd")
 const SettingsMenu = preload("res://scripts/ui/settings_menu.gd")
 const Tutorial = preload("res://scripts/ui/tutorial.gd")
 const HauntLamp = preload("res://scripts/world25/haunt_lamp.gd")
+const RoomWarmup = preload("res://scripts/world25/room_warmup.gd")
 const DarknessScript = preload("res://scripts/world25/darkness.gd")
 const RING_SHADER = preload("res://shaders/world25/sigil_ring.gdshader")
 const MIST_SHADER = preload("res://shaders/world25/void_mist.gdshader")
@@ -111,6 +112,10 @@ var _cleared := false
 var _overlay: Control
 var _check_timer := 0.0
 var _music_b := false
+## In a browser: the room's shaders are still being compiled behind the
+## transition's cover (room_warmup.gd); `warmed` when they're done.
+var warming := false
+signal warmed
 
 
 func _ready() -> void:
@@ -136,6 +141,13 @@ func _ready() -> void:
 		_play_music(b.music)
 	if enter_captions != "" and (world == null or world.once(room_id + ":enter")):
 		_captions(enter_captions)
+	if RoomWarmup.wanted():
+		warming = true
+		var w := RoomWarmup.new()
+		w.done.connect(func():
+			warming = false
+			warmed.emit())
+		w.begin(self)
 	# no controls tutorial here: the keys are the same as in 2D, where it plays
 	# (Pause -> Controls still shows them on request, replay_tutorial())
 

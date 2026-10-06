@@ -21,6 +21,7 @@ extends Control
 ##   layer.add_child(fx)
 ##   await fx.finished
 
+const ScenePrefetch = preload("res://scripts/core/scene_prefetch.gd")
 signal finished
 
 const InkBatch = preload("res://scripts/depth/ink_batch.gd")
@@ -45,6 +46,7 @@ const T_CLEAR := 0.3  # the slit clears onto the new room
 const T_OPEN0 := 0.18
 const T_OPEN := 0.7  # the walls part
 const SETTLE_FRAMES := 3
+const RoomWarmup = preload("res://scripts/world25/room_warmup.gd")
 
 ## The room to load.
 var target := ""
@@ -55,6 +57,8 @@ var _t := 0.0
 var _stage := 0  # 0 the old room, 1 building the new one, 2 revealing it
 var _t2 := 0.0
 var _frames := 0
+var _held := false  # waiting in the dark for the new room's shaders (room_warmup.gd)
+var _hold_t := 0.0
 var _loading := false
 var _walls: Node2D  # the dead panels (drawn once, scrolled)
 var _front: Node2D
@@ -74,7 +78,8 @@ func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_size = size if size.x > 1.0 and size.y > 1.0 else Vector2(1280, 720)
 	_cx = _size.x * 0.5
-	_loading = ResourceLoader.load_threaded_request(target) == OK
+	ScenePrefetch.start(target)
+	_loading = true
 	_walls = Node2D.new()
 	_walls.draw.connect(_draw_walls)
 	add_child(_walls)
@@ -106,7 +111,10 @@ func _process(delta: float) -> void:
 				# gate and its camera finds him; then it holds still
 				_frames += 1
 				get_tree().paused = _frames > SETTLE_FRAMES
-				if _frames > SETTLE_FRAMES:
+				_held = _frames > SETTLE_FRAMES and "warming" in scene and scene.warming
+				if _held:
+					_hold_t += delta  # its shaders still compiling (room_warmup.gd): wait in the dark
+				elif _frames > SETTLE_FRAMES:
 					_stage = 2
 					_t2 = 0.0
 					for cam in get_tree().get_nodes_in_group("camera"):
@@ -134,12 +142,7 @@ func _update() -> void:
 func _loaded() -> PackedScene:
 	if not _loading:
 		return load(target) as PackedScene
-	var st := ResourceLoader.load_threaded_get_status(target)
-	if st == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
-		return null
-	if st == ResourceLoader.THREAD_LOAD_LOADED:
-		return ResourceLoader.load_threaded_get(target) as PackedScene
-	return load(target) as PackedScene  # the thread failed: load it here
+	return ScenePrefetch.ready_scene(target)
 
 
 # ------------------------------------------------------------------ timing
@@ -337,6 +340,8 @@ func _draw_front() -> void:
 		c.draw_line(top, v, Color(LIGHT, 0.18 * lit), 10.0)
 		c.draw_line(top, v, Color(LIGHT.lightened(0.4), 0.85 * lit), 2.5)
 		_draw_vesper(c, v, lit)
+	if _held:
+		RoomWarmup.paint_wait(c, _size, _hold_t, clampf(_hold_t * 3.0, 0.0, 1.0))
 
 
 ## Tiny Vesper's spot on screen: out of the tear, then running down the

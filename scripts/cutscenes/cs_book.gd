@@ -38,6 +38,7 @@ extends Control
 ## Lives on the root (it survives the scene change), like panel_turn.gd:
 ##   scenes/cutscenes/cs_book.tscn -> cs_book_start.gd -> CsBook.start(tree)
 
+const ScenePrefetch = preload("res://scripts/core/scene_prefetch.gd")
 const ComicFrame = preload("res://scripts/ui/comic_frame.gd")
 const PlayerArt = preload("res://scripts/player/player_visual.gd")
 const EraserArt = preload("res://scripts/enemies/eraser_art.gd")
@@ -333,7 +334,8 @@ func _ready() -> void:
 ## Starts loading the level the cutscene ends in, in the background.
 ## (cs_last_page.gd, the ending, has none.)
 func _load_next() -> bool:
-	return ResourceLoader.load_threaded_request(NEXT) == OK
+	ScenePrefetch.start(NEXT)
+	return true
 
 
 func _exit_tree() -> void:
@@ -487,12 +489,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func _loaded() -> PackedScene:
 	if not _loading:
 		return load(NEXT) as PackedScene
-	var st := ResourceLoader.load_threaded_get_status(NEXT)
-	if st == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
-		return null
-	if st == ResourceLoader.THREAD_LOAD_LOADED:
-		return ResourceLoader.load_threaded_get(NEXT) as PackedScene
-	return load(NEXT) as PackedScene
+	return ScenePrefetch.ready_scene(NEXT)
 
 
 func _finish(skipped: bool) -> void:

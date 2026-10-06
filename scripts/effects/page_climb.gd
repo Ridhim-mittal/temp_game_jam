@@ -26,6 +26,7 @@ extends Control
 ##
 ##   PageClimb.start(tree, last_frame, letterbox_px, skipped)
 
+const ScenePrefetch = preload("res://scripts/core/scene_prefetch.gd")
 const InkBatch = preload("res://scripts/depth/ink_batch.gd")
 const PlayerArt = preload("res://scripts/player/player_visual.gd")
 const ShadeHand = preload("res://scripts/effects/shade_hand.gd")
@@ -116,8 +117,7 @@ static func start(tree: SceneTree, shot: Texture2D, bar: float, skipped: bool) -
 ## Starts loading Shade's City in the background (light_capture.gd calls it
 ## as the cutscene begins, so it's ready by the climb).
 static func preload_level() -> void:
-	if ResourceLoader.load_threaded_get_status(TARGET) == ResourceLoader.THREAD_LOAD_INVALID_RESOURCE:
-		ResourceLoader.load_threaded_request(TARGET)
+	ScenePrefetch.start(TARGET)
 
 
 func _ready() -> void:
@@ -336,12 +336,7 @@ func _process(delta: float) -> void:
 
 
 func _loaded() -> PackedScene:
-	var st := ResourceLoader.load_threaded_get_status(TARGET)
-	if st == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
-		return null
-	if st == ResourceLoader.THREAD_LOAD_LOADED:
-		return ResourceLoader.load_threaded_get(TARGET) as PackedScene
-	return load(TARGET) as PackedScene  # the thread failed: load it here
+	return ScenePrefetch.ready_scene(TARGET)
 
 
 ## The level is in and paused: find where its Vesper hangs (he'll drop from
