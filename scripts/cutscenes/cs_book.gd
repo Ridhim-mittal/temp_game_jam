@@ -2656,6 +2656,7 @@ func _update_room() -> void:
 func _play(snd: String, db: float, pitch := 1.0) -> void:
 	var p := AudioStreamPlayer.new()
 	p.stream = _sounds[snd]
+	p.bus = "SFX"  # Sfx.BUS: every sound effect shares one, quieter than the music
 	p.volume_db = db
 	p.pitch_scale = pitch
 	p.process_mode = Node.PROCESS_MODE_ALWAYS

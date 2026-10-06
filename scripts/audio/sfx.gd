@@ -7,10 +7,15 @@ extends Node
 ##
 ## A small pool of players is reused so many sounds can overlap; every play
 ## gets a slight random pitch so repeats don't sound mechanical. Plays through
-## the Master bus, so Settings' volume applies. Keeps playing while paused
-## (menus).
+## the "SFX" bus (BUS, made here, LEVEL_DB quieter than the music, sending to
+## Master so Settings' volume still applies); every other sound effect in the
+## game (sfx_synth.gd, the Scribbles, the gates, the opening book, the page
+## climb) plays through it too. Keeps playing while paused (menus).
 
 const DIR := "res://assets/sfx/"
+## The bus every sound effect plays through, and how far below the music it sits.
+const BUS := "SFX"
+const LEVEL_DB := -8.0
 const POOL := 16
 ## Per-sound level trims (dB), so the pack sits evenly in the mix.
 const TRIM := {"menu_hover": -10.0, "coin_collect": -4.0, "fall_land": -3.0, "sword_swing": -3.0,
@@ -22,6 +27,16 @@ var _streams := {}  # name -> Array[AudioStream] (variants)
 var _players: Array[AudioStreamPlayer] = []
 var _next := 0
 var _last := {}
+
+
+func _enter_tree() -> void:
+	# the SFX bus, before anything plays (autoloads enter the tree first)
+	if AudioServer.get_bus_index(BUS) < 0:
+		AudioServer.add_bus()
+		var i := AudioServer.bus_count - 1
+		AudioServer.set_bus_name(i, BUS)
+		AudioServer.set_bus_send(i, "Master")
+	AudioServer.set_bus_volume_db(AudioServer.get_bus_index(BUS), LEVEL_DB)
 
 
 func _ready() -> void:
@@ -45,7 +60,7 @@ func _ready() -> void:
 				_streams[key].append(stream)
 	for i in POOL:
 		var p := AudioStreamPlayer.new()
-		p.bus = "Master"
+		p.bus = BUS
 		add_child(p)
 		_players.append(p)
 
