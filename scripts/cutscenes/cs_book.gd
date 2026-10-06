@@ -71,6 +71,10 @@ const PANE_X := Vector3(196, 44, 0)
 const PANE_Y := Vector3(-70, 250, 0)
 ## Lightning (seconds; the second is set to the moment he stabs the full stop in).
 const T_FLASH := 0.35
+## The ending he tore in two: where it lies on the desk (world), turned, its size.
+const DRAFT_AT := Vector3(-130, -480, 0)
+const DRAFT_TURN := 0.22
+const DRAFT_SIZE := Vector2(310, 222)
 const SHADOW := Vector3(0.55, -0.3, -1.0)  # light direction for shadows (book space)
 
 ## The Writer's hand reaches in (it lifts the cover at T_OPEN).
@@ -128,6 +132,15 @@ const GLYPHS := {
 	"E": [[Vector2(21, 1), Vector2(3, 0), Vector2(2, 30), Vector2(21, 29)], [Vector2(3, 15), Vector2(17, 14)]],
 	"N": [[Vector2(2, 30), Vector2(3, 0), Vector2(21, 30), Vector2(22, 0)]],
 	"D": [[Vector2(3, 0), Vector2(2, 30), Vector2(12, 29), Vector2(20, 23), Vector2(22, 12), Vector2(15, 2), Vector2(3, 0)]],
+	"O": [[Vector2(12, 0), Vector2(4, 4), Vector2(1, 15), Vector2(5, 26), Vector2(12, 30), Vector2(19, 26), Vector2(23, 15), Vector2(20, 4), Vector2(12, 0)]],
+	"B": [[Vector2(3, 0), Vector2(2, 30), Vector2(14, 30), Vector2(21, 24), Vector2(15, 15), Vector2(3, 15)], [Vector2(3, 0), Vector2(13, 1), Vector2(19, 7), Vector2(15, 15)]],
+	"C": [[Vector2(21, 5), Vector2(13, 0), Vector2(5, 4), Vector2(1, 15), Vector2(5, 26), Vector2(13, 30), Vector2(22, 25)]],
+	"I": [[Vector2(12, 0), Vector2(11, 30)]],
+	"U": [[Vector2(2, 0), Vector2(2, 21), Vector2(7, 29), Vector2(15, 30), Vector2(21, 22), Vector2(22, 0)]],
+	"F": [[Vector2(21, 1), Vector2(3, 0), Vector2(2, 30)], [Vector2(3, 15), Vector2(16, 14)]],
+	"R": [[Vector2(2, 30), Vector2(3, 0), Vector2(14, 1), Vector2(20, 8), Vector2(14, 15), Vector2(3, 16)], [Vector2(11, 16), Vector2(22, 30)]],
+	"M": [[Vector2(1, 30), Vector2(3, 0), Vector2(12, 18), Vector2(21, 0), Vector2(23, 30)]],
+	"Y": [[Vector2(1, 0), Vector2(12, 15), Vector2(23, 0)], [Vector2(12, 15), Vector2(11, 30)]],
 }
 ## Page one: the four panels (page pixels).
 const P1_PANELS := [Rect2(26, 196, 225, 200), Rect2(269, 196, 225, 200), Rect2(26, 412, 225, 200), Rect2(269, 412, 225, 200)]
@@ -181,6 +194,16 @@ var _p2: SubViewport
 var _sheet: SubViewport
 var _photo: SubViewport
 var _draft: SubViewport
+## 0 = the torn page's halves lie apart .. 1 = put back together (the ending does it).
+var _mend := 0.0
+## How bright the whole desk is shot (1 = as lit; the ending opens up for the
+## pile of issues, which lies far from the lamp).
+var _exposure := 1.0
+## How the candle by the photo burns: 1 alight .. 0 out (the ending puts it out).
+var _flame := 1.0
+## How many earlier issues are in the pile (the ending adds to it; the part
+## after the point is the next one, on its way down).
+var _issues := 4.0
 var _p1_nodes: Array = []   # per panel: [clip Control, art nodes...]
 
 # the Writer
@@ -226,7 +249,7 @@ static func start(tree: SceneTree) -> void:
 
 func _ready() -> void:
 	_g0 = get_viewport().global_canvas_transform
-	_loading = ResourceLoader.load_threaded_request(NEXT) == OK
+	_loading = _load_next()
 	_wood = _make_vp(Vector2i(2048, 2048), Callable(), true)
 	var wood_rect := ColorRect.new()
 	wood_rect.size = Vector2(2048, 2048)
@@ -307,6 +330,12 @@ func _ready() -> void:
 	_make_sounds()
 	_rain = _room_sound("rain")
 	_hum = _room_sound("hum")
+
+
+## Starts loading the level the cutscene ends in, in the background.
+## (cs_last_page.gd, the ending, has none.)
+func _load_next() -> bool:
+	return ResourceLoader.load_threaded_request(NEXT) == OK
 
 
 func _exit_tree() -> void:
@@ -598,7 +627,7 @@ func _projb(p: Vector3) -> Vector2:
 ## Light of the lamp's pool at a world point (0 dark .. ~1.15 in the middle).
 func _pool(p: Vector3) -> float:
 	var d := Vector2(p.x, p.y).distance_to(LAMP)
-	return (0.12 + 1.05 / (1.0 + pow(d / 620.0, 2.4))) * _lamp
+	return (0.12 + 1.05 / (1.0 + pow(d / 620.0, 2.4))) * _lamp * _exposure
 
 
 func _lit(p: Vector3, k := 1.0) -> Color:
@@ -1137,6 +1166,15 @@ func _update_writer(delta: float) -> void:
 		flex = 0.5 + 0.4 * hook - 0.7 * leave + 0.16 * sin(_t * 15.0) * floorf(k) * (1.0 - hook)
 		if k <= 0.0:
 			flex = 1.0
+	_apply_hand(goal, reach, up, flex, shove, lit, delta)
+
+
+## Puts the hand where its part in the scene says (`goal`: the nib, world;
+## `reach` 0 out of frame .. 1 there; `up` 0 nib down .. 1 lifted; `flex` the
+## fingers' curl; `shove` thrown about on screen; `lit` the book's light on
+## it), with its pen's sounds, its trailing wrist and its shadow, and dims
+## the lamp under it.
+func _apply_hand(goal: Vector3, reach: float, up: float, flex: float, shove: Vector2, lit: float, delta: float) -> void:
 	# the pen on the paper: a scratch for each stroke (and on through the long ones), a stab for an eye
 	if _pen_job >= 0:
 		var job: Dictionary = _jobs[_pen_job]
@@ -1217,7 +1255,7 @@ func _draw_world() -> void:
 	_eraser(w, Vector3(-420, -330, 0))
 	_shavings(w)
 	# what he threw away: the ending he tore up, drafts in balls, a pencil snapped in two
-	_torn(w, _draft.get_texture(), Vector3(-130, -480, 0), 0.22, Vector2(310, 222))
+	_torn(w, _draft.get_texture(), DRAFT_AT, DRAFT_TURN, DRAFT_SIZE)
 	_crumple(w, Vector3(150, -335, 0), 34.0, 3)
 	_crumple(w, Vector3(235, -430, 0), 27.0, 7)
 	_crumple(w, Vector3(650, -150, 0), 31.0, 12)
@@ -1453,10 +1491,11 @@ func _torn(w: Node2D, tex: Texture2D, c: Vector3, turn: float, size: Vector2) ->
 	var along := Vector3(cos(turn), sin(turn), 0)
 	var halves := []  # [points, uvs, colours, indices] each
 	for half in 2:
-		var a := turn + (half - 0.5) * 0.2
+		var apart := 1.0 - _mend
+		var a := turn + (half - 0.5) * 0.2 * apart
 		var ex := Vector3(cos(a), sin(a), 0)
 		var ey := Vector3(-sin(a), cos(a), 0)
-		var at := c + along * ((half - 0.5) * 52.0) + Vector3(0, -22.0 * half, 0.6)
+		var at := c + along * ((half - 0.5) * 52.0 * apart) + Vector3(0, -22.0 * half * apart, 0.6)
 		var pts := PackedVector2Array()
 		var uvs := PackedVector2Array()
 		var cols := PackedColorArray()
@@ -1530,20 +1569,22 @@ func _stub(w: Node2D, a: Vector3, b: Vector3, point: bool) -> void:
 
 
 ## Earlier issues of the comic in a loose pile (he has written it for years).
+## `_issues` of them; the newest may still be coming down onto the pile.
 func _stack(w: Node2D, c: Vector3) -> void:
-	for i in 4:
-		var a: float = 0.5 + [0.0, 0.16, -0.1, 0.07][i]
+	for i in ceili(_issues):
+		var a: float = 0.5 + sin(i * 2.3) * 0.15
 		var ex := Vector3(cos(a), sin(a), 0)
 		var ey := Vector3(-sin(a), cos(a), 0)
-		var at := c + Vector3([0, 14, -8, 5][i], [0, -6, 9, 2][i], 3.0 + i * 7.0)
+		var falling := clampf(i + 1.0 - _issues, 0.0, 1.0)  # (0 = landed)
+		var at := c + Vector3(sin(i * 1.7) * 13.0, cos(i * 2.9) * 9.0, 3.0 + i * 7.0 + falling * falling * 260.0)
 		var grid := []
 		for u in 3:
 			var row := []
 			for v in 3:
 				row.append(at + ex * (u / 2.0 - 0.5) * 200.0 + ey * (0.5 - v / 2.0) * 300.0)
 			grid.append(row)
-		_soft_shadow(w, [grid[0][0], grid[2][0], grid[2][2], grid[0][2]], 9.0, 0.4)
-		_grid_surface(w, _cover.get_texture(), grid, false, 0.62 + i * 0.1)
+		_soft_shadow(w, [grid[0][0], grid[2][0], grid[2][2], grid[0][2]], 9.0 + falling * 60.0, 0.4 * (1.0 - falling * 0.7))
+		_grid_surface(w, _cover.get_texture(), grid, false, minf(0.62 + i * 0.1, 1.0))
 		var rim := PackedVector2Array([_proj(grid[0][0]), _proj(grid[2][0]), _proj(grid[2][2]), _proj(grid[0][2]), _proj(grid[0][0])])
 		w.draw_polyline(rim, Color(INK, 0.85), 1.5)
 
@@ -1663,12 +1704,14 @@ func _shavings(w: Node2D) -> void:
 		w.draw_arc(s, r * 1.1, a0, a0 + 3.6, 10, Color(0.95, 0.75, 0.2) * _pool(p), maxf(r * 0.12, 1.0))
 
 
-## Skips shapes seen edge-on (no area to triangulate: a book side, a shadow).
+## Skips shapes seen edge-on (no area to triangulate: a book side, a shadow)
+## and ones the view has folded over themselves (the ink bottle's shoulders
+## from straight above), which can't be triangulated either.
 func _fill(ci: CanvasItem, pts: PackedVector2Array, col: Color) -> void:
 	var area := 0.0
 	for i in pts.size():
 		area += pts[i].cross(pts[(i + 1) % pts.size()])
-	if absf(area) > 2.0:
+	if absf(area) > 2.0 and not Geometry2D.triangulate_polygon(pts).is_empty():
 		ci.draw_colored_polygon(pts, col)
 
 
@@ -1751,11 +1794,13 @@ func _draw_glow() -> void:
 	var lick := 0.85 + 0.1 * sin(_t * 11.0) + 0.05 * sin(_t * 27.0)
 	var tip := _proj(wick + Vector3(sin(_t * 6.3) * 2.0, 0, 26.0 * lick))
 	var foot := _proj(wick)
-	_radial(g, foot, 210.0 * ck * lick, Color(1.0, 0.62, 0.25, 0.2))
-	var side := (tip - foot).orthogonal().normalized() * 7.0 * ck
-	g.draw_colored_polygon(PackedVector2Array([foot - side, foot.lerp(tip, 0.45) - side * 1.25, tip, foot.lerp(tip, 0.45) + side * 1.25, foot + side]),
-		Color(1.0, 0.72, 0.25, 0.9))
-	g.draw_colored_polygon(PackedVector2Array([foot - side * 0.5, tip.lerp(foot, 0.4), foot + side * 0.5]), Color(1.0, 0.95, 0.8, 0.9))
+	_radial(g, foot, 210.0 * ck * lick * (0.3 + 0.7 * _flame), Color(1.0, 0.62, 0.25, 0.2 * _flame))
+	if _flame > 0.04:
+		tip = foot.lerp(tip, _flame)
+		var side := (tip - foot).orthogonal().normalized() * 7.0 * ck * (0.4 + 0.6 * _flame)
+		g.draw_colored_polygon(PackedVector2Array([foot - side, foot.lerp(tip, 0.45) - side * 1.25, tip, foot.lerp(tip, 0.45) + side * 1.25, foot + side]),
+			Color(1.0, 0.72, 0.25, 0.9))
+		g.draw_colored_polygon(PackedVector2Array([foot - side * 0.5, tip.lerp(foot, 0.4), foot + side * 0.5]), Color(1.0, 0.95, 0.8, 0.9))
 	# the lamp: a warm cone from off the top left and its pool on the desk
 	var pool := _proj(Vector3(LAMP.x, LAMP.y, 0))
 	_radial(g, pool, 760.0, Color(1.0, 0.72, 0.4, 0.09))

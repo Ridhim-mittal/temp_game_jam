@@ -21,6 +21,7 @@ extends Node2D
 ## Hunters again, slowly, for the end.
 
 const Hand = preload("res://scripts/effects/shade_hand.gd")
+const CsLastPage = preload("res://scripts/cutscenes/cs_last_page.gd")
 const SfxSynth = preload("res://scripts/effects/sfx_synth.gd")
 const Heart = preload("res://scripts/world/health_heart.gd")
 const FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
@@ -360,16 +361,11 @@ func _the_end() -> void:
 	_say("FOR THE FIRST TIME, VESPER WRITES HIS OWN NEXT PAGE.", "writer")
 	await _wait(4.5)
 	_say("WHY, SHADE? WHY DID YOU WANT ME DEAD?", "vesper")  # the answer is the ending cutscene
-	await _wait(4.0)
-	var e := create_tween()
-	e.tween_property(self, "_end_card", 1.0, 1.5)
-	await e.finished
-	await _wait(2.0)
-	var waited := 0.0
-	while waited < 8.0 and not Input.is_anything_pressed():
-		await get_tree().process_frame
-		waited += get_process_delta_time()
-	get_tree().change_scene_to_file(MENU)
+	await _wait(4.6)
+	# the answer: the ending (cs_last_page.gd) climbs out of this very frame
+	# onto the Writer's desk, and ends at the main menu
+	await get_tree().process_frame
+	CsLastPage.play(get_tree(), get_viewport().get_texture().get_image())
 
 
 # --- helpers --------------------------------------------------------------------

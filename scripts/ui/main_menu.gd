@@ -45,6 +45,7 @@ const CHAPTERS := [
 	["THE INK CAVE", "res://scenes/levels/ink_cave.tscn"],
 	["SHADE", "res://scenes/levels/shade_finale.tscn"],
 	["THE MARGINS", "res://scenes/clearing/clearing.tscn"],
+	["THE ENDING", "res://scenes/cutscenes/cs_last_page.tscn"],  # the ending cutscene and its credits
 	["BACK", "@back"],
 ]
 const TITLE := "VESPER"
@@ -196,14 +197,15 @@ func _build_row(list: Array, delay := 0.0) -> void:
 	for it in _items:
 		it.button.queue_free()
 	_items.clear()
-	var rows: Array = [list] if list.size() <= 4 else [list.slice(0, 4), list.slice(4)]
+	var half := ceili(list.size() * 0.5)
+	var rows: Array = [list] if list.size() <= 4 else [list.slice(0, half), list.slice(half)]
 	var px := 46 if rows.size() == 1 else 34
 	for r in rows.size():
 		var row: Array = rows[r]
 		var y := 652.0 if rows.size() == 1 else 618.0 + r * 58.0
 		for k in row.size():
 			var label: String = row[k][0]
-			var cx := SIZE.x * (k + 0.5) / row.size() if rows.size() == 1 else 640.0 + (k - (row.size() - 1) * 0.5) * 300.0
+			var cx := SIZE.x * (k + 0.5) / row.size() if rows.size() == 1 else 640.0 + (k - (row.size() - 1) * 0.5) * minf(300.0, 1210.0 / row.size())
 			var sz := FONT.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, px)
 			var b := Button.new()
 			b.flat = true

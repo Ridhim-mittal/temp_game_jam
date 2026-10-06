@@ -105,7 +105,31 @@ at the Rubbing Room's end the light finds him ("FOUND YOU." / "The light... it's
 the pull back into 2D is a cutscene a teammate is drawing). Shade's City: everything corrupted,
 Shade: "I'M ENDING YOU... THIS ONE IS PERSONAL." The Ink Cave, then the finale: Shade draws the
 monsters live, then fights as Vesper's double; after it Vesper asks "WHY, SHADE? WHY DID YOU WANT ME
-DEAD?" (the answer, his brother who died fighting a city of monsters, is the ending cutscene to come).
+DEAD?" and the ending answers him: THE LAST PAGE (`scripts/cutscenes/cs_last_page.gd`, ~51 s, Enter / Esc
+skips, played by shade_finale.gd `_the_end()` with the screen as it is, ends at the main menu). The
+Writer began the comic with his brother as its hero; his brother died (in life, not in the book; he is
+never named), and in his grief he kept trying to write the hero's death, and the hero kept getting up.
+It is the opening run the other way and extends cs_book.gd for its desk, book, hand and pen (the base
+clock starts at `T0`, past the opening's own timeline; its times are `_t - T0`; the book lies open at
+its last page: `_p1` / `_inside` are pointed at two new pages): the finale's last frame is a panel on
+the book's last page, under it THE END as he stamped it; the camera pulls up out of it onto the desk
+in the rain ("YOU WANT TO KNOW WHY."); the photo, the candle, the scarf ("I DID NOT MAKE YOU UP,
+VESPER."), the ending he tore up; then what the desk remembers, in three of its things: the photo up
+close ("HE ASKED ME TO MAKE HIM THE HERO."), the pile of earlier issues, more landing on it (`_issues`:
+"SO I DID. EVERY PAGE WAS HIS."), and the photo again as his brother fades out of it to a dashed pencil
+outline (`_gone()`, `_paint_gone()`) and the candle goes out (`_flame`: "THEN HE WAS GONE."); the page of his
+attempts, each crossed out ("EVERY PAGE YOU WON WAS A PAGE HE DIDN'T GET." / Vesper: "THEN LET ME WIN
+THEM FOR HIM."); then the hand takes back what it did in the opening: it strikes THE END and writes TO
+BE CONTINUED, puts the torn ending back together (`_mend`) and blacks out its NO, and writes FOR MY
+BROTHER; the rain stops, the window warms; "AND VESPER CAME HOME."; the title, "to be continued"; then
+the credits roll (`CREDITS` at the top of the script: names, music, fonts) and the main menu. It is also
+the last of the main menu's CHAPTERS, THE ENDING (`scenes/cutscenes/cs_last_page.tscn`:
+cs_last_page_start.gd stands up a frame of the finale's street, Vesper asking his question, for it to
+climb out of). Music: the "ending" track, then for the credits "credits" (Last Page Stomp: our own
+hard-rock stomp, synthesised by `tools/make_credits_song.py`; plays once). "EVERY PAGE YOU WON..." is
+the one spoken line in the game: the team's own recording (`assets/voice/src/`, kept out of Godot by a
+.gdignore; `tools/voice/build_shade_voice.py` trims and levels it into
+`assets/voice/shade_every_page.wav`; played on Master, not the SFX bus).
 Every story line is a caption panel (`scripts/ui/caption_style.gd`): the comic's narration = the yellow
 box, Vesper = yellow with a VESPER tab, Shade = blood red with a SHADE tab. 2D: narration.gd `speaker`
 ("narrator" / "vesper" / "shade"; the generators' `narration(text, x, speaker)`); the Margins:
