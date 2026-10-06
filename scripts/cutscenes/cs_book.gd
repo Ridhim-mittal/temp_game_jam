@@ -1463,6 +1463,7 @@ func _make_sounds() -> void:
 func _play(snd: String, db: float) -> void:
 	var p := AudioStreamPlayer.new()
 	p.stream = _sounds[snd]
+	p.bus = "SFX"  # Sfx.BUS: every sound effect shares one, quieter than the music
 	p.volume_db = db
 	p.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(p)

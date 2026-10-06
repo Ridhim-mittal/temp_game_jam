@@ -440,6 +440,7 @@ func _sounds() -> void:
 func _play(sound: String, db: float, pitch: float) -> void:
 	var p := AudioStreamPlayer.new()
 	p.stream = SfxSynth.get_stream(sound)
+	p.bus = "SFX"  # Sfx.BUS: every sound effect shares one, quieter than the music
 	p.volume_db = db
 	p.pitch_scale = pitch
 	p.process_mode = Node.PROCESS_MODE_ALWAYS
