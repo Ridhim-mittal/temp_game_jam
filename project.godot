@@ -30,6 +30,7 @@ Profile="*res://scripts/core/profile.gd"
 window/size/viewport_width=1280
 window/size/viewport_height=720
 window/stretch/mode="canvas_items"
+window/stretch/mode.web="viewport"
 
 [layer_names]
 
@@ -41,6 +42,7 @@ window/stretch/mode="canvas_items"
 [physics]
 
 common/physics_ticks_per_second=120
+common/physics_ticks_per_second.web=60
 
 [rendering]
 
