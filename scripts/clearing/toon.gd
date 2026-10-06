@@ -7,6 +7,7 @@ extends RefCounted
 
 const TOON_SHADER = preload("res://shaders/clearing/toon.gdshader")
 const OUTLINE_SHADER = preload("res://shaders/clearing/toon_outline.gdshader")
+const PrimArrays = preload("res://scripts/clearing/prim_arrays.gd")
 const INK := Color(0.06, 0.04, 0.09)
 const STONE := Color(0.64, 0.6, 0.58)
 const MOSS := Color(0.36, 0.6, 0.42)
@@ -118,17 +119,56 @@ static func merge(root_v: Variant, keep: Array = []) -> void:
 		var parts: Array = groups[key]
 		if parts.size() < 2:
 			continue
-		var st := SurfaceTool.new()
-		for mi: MeshInstance3D in parts:
-			st.append_from(mi.mesh, 0, inv * mi.global_transform)
 		var merged := MeshInstance3D.new()
-		merged.mesh = st.commit()
+		merged.mesh = _baked(parts, inv)
 		merged.material_override = parts[0].material_override
 		merged.cast_shadow = parts[0].cast_shadow
 		root.add_child(merged)
 		for mi: MeshInstance3D in parts:
 			mi.get_parent().remove_child(mi)
 			mi.free()
+
+
+## One mesh of `parts`, their transforms (relative to `inv`) baked in. Built
+## from arrays made on the CPU (prim_arrays.gd): asking a mesh for its arrays
+## (SurfaceTool.append_from) reads them back from the GPU, which in a browser
+## stalls the frame every time. Parts of any other kind of mesh are read the
+## old way.
+static func _baked(parts: Array, inv: Transform3D) -> Mesh:
+	var v := PackedVector3Array()
+	var n := PackedVector3Array()
+	var idx := PackedInt32Array()
+	var others: Array[MeshInstance3D] = []
+	for mi: MeshInstance3D in parts:
+		var a := PrimArrays.of(mi.mesh)
+		if a.is_empty():
+			others.append(mi)
+			continue
+		var xf := inv * mi.global_transform
+		var base := v.size()
+		var pv: PackedVector3Array = a[0]
+		var pn: PackedVector3Array = a[1]
+		for i in pv.size():
+			v.append(xf * pv[i])
+			n.append(xf.basis * pn[i])  # as SurfaceTool.append_from does
+		for i: int in a[2]:
+			idx.append(base + i)
+	var mesh := ArrayMesh.new()
+	if not others.is_empty():
+		var st := SurfaceTool.new()
+		for mi in others:
+			st.append_from(mi.mesh, 0, inv * mi.global_transform)
+		if v.is_empty():
+			return st.commit()
+		st.commit(mesh)
+	if not v.is_empty():
+		var arrays := []
+		arrays.resize(Mesh.ARRAY_MAX)
+		arrays[Mesh.ARRAY_VERTEX] = v
+		arrays[Mesh.ARRAY_NORMAL] = n
+		arrays[Mesh.ARRAY_INDEX] = idx
+		mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	return mesh
 
 
 static func box(size: Vector3) -> BoxMesh:
