@@ -19,6 +19,8 @@ extends Node
 ## laid over it: gate_arena.gd, cave_arena.gd, shade_finale.gd); the last
 ## fight, Shade as Vesper's double, plays "duel"; the waves Shade's hand draws
 ## before it, "hand".
+## The ending's credits roll to "credits" (Last Page Stomp: our own hard-rock
+## stomp, tools/make_credits_song.py; plays once).
 
 const TRACKS := {
 	"lit": "res://audio/music/lit_pages.ogg",
@@ -35,6 +37,7 @@ const TRACKS := {
 	"hunt": "res://audio/music/hunt.ogg",
 	"hand": "res://audio/music/hand.ogg",
 	"duel": "res://audio/music/duel.ogg",
+	"credits": "res://audio/music/credits.ogg",
 }
 ## Where a track loops back to (seconds; master_music.py prints these): the part
 ## before it is an intro, heard once.
@@ -64,7 +67,7 @@ const TRIM := {
 	"hand": 1.5,
 	"duel": 1.5,
 }
-const PLAY_ONCE := ["ending"]
+const PLAY_ONCE := ["ending", "credits"]
 
 ## 4 dB over the SFX bus (sfx.gd LEVEL_DB -8), so the effects don't bury the music.
 @export var volume_db := -4.0
