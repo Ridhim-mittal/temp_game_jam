@@ -401,12 +401,13 @@ those stay at their defaults, settings.gd FIXED).
 ## Music
 Autoload `Music` (`scripts/audio/music.gd`): `Music.play(track, fade)` cross-fades (nothing if it's
 already on), `Music.stop(fade)`; a level picks its track with a `LevelMusic` node (`level_music.gd`).
-Old synth tracks (`tools/make_music.py`): lit, margins (2.5D rooms), boss, ending. The 2D story's own
-loops (`tools/make_music_2d.py`, original, written after the team's references; deterministic, seamless,
-mastered quiet, `TRIM` in music.gd sets each one's level; run it from `audio/music/`): "city" (THE CITY +
-the Sketchbook, cs_book starts it as the book opens: slow warm groove, electric piano 9ths, round bass,
-brushes, vibes tune), "deep" (THE LONG DROP: kalimba in the dark, cold pad, distant drips, a soft pulse
-later), "beast" (E phrygian, 160 bpm: string ostinato, taiko, brass). beast_arena.gd: the deep tune fades
+Old synth tracks (`tools/make_music.py`): lit, margins (2.5D rooms), boss, ending. The 2D story uses the team's licensed
+tracks (sources in `audio/music/src/`, kept out of Godot by a .gdignore; `tools/master_music.py` cuts each
+into an intro + seamless loop by matching the music, blends the seam, cuts the clips' fade-outs, eases the
+battle's hot top end and masters them quiet; `LOOP_FROM` in music.gd = the loop points it prints, `TRIM` the
+levels): "city" = Cool Down (THE CITY + the Sketchbook; cs_book starts it as the book opens), "deep" =
+A Flicker in the Deep (THE LONG DROP: the quiet first pass is the intro, the full one loops through its own
+fade, quiet into quiet), "beast" = Incisive Battle (the Beast's fight and the Eraser's chase). beast_arena.gd: the deep tune fades
 as the intro starts (only the rumble), "beast" crashes in on the ROAR (or when the fight starts / the
 short intro), silence for the death and Shade's lines, "beast" again on RUN! (eraser_chase.gd `begin()`),
 fading out as he runs out of page; the 2.5D hub's biome takes over after the fall.
