@@ -124,7 +124,8 @@ func _run() -> void:
 	beast.health = 1
 	beast.take_hit(3, Vector2.LEFT, beast.global_position + Vector2(-80, 0))
 	check(beast.state == beast.State.DYING and not beast.dead, "at 0 it doesn't tumble away: it dies slowly")
-	await pframes(4)
+	for i in 4:
+		await process_frame  # the arena notices on its own (render) frame
 	check(arena.phase == arena.Phase.OUTRO and player.cutscene, "the ending takes the controls")
 	await seconds(4.0)
 	check(beast.dead and gs.seen.has("beast_dead"), "the Beast unravels and is gone")
