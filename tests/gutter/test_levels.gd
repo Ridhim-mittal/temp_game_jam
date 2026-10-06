@@ -51,6 +51,7 @@ func _run() -> void:
 	await hub_test()
 	await gutter_test()
 	await protection_test()
+	await heal_test()
 	await bridge_test()
 	await eraser_test()
 	print("DONE fails=%d" % fails)
@@ -273,7 +274,7 @@ func hub_test() -> void:
 	change_scene_to_file(HUB)
 	await frames(6)
 	var player = current_scene.player
-	var hud: Node = current_scene.find_children("*", "Control", true, false).filter(func(n): return n.has_method("_draw_heals"))[0]
+	var hud: Node = current_scene.find_children("*", "Control", true, false).filter(func(n): return n.has_method("_draw_ember"))[0]
 	check(player.max_health == 12 and hud.maximum == 12 and hud._bottles.count() == 6, "six ink bottles (max %d half bottles, HUD %d, %d bottles)" % [player.max_health, hud.maximum, hud._bottles.count()])
 	var altar: Node = current_scene.get_node("Props/Altar")
 	check(altar.find_child("Statue", true, false) != null, "the hub's shrine holds a statue of Vesper")
@@ -333,6 +334,38 @@ func protection_test() -> void:
 	player._invuln = 0.0
 	player.take_damage(1, player.global_position + Vector3(1, 0, 0))
 	check(player.health == hp - 1, "after it, hits land again (%d -> %d)" % [hp, player.health])
+
+
+## Light or life in the Gutter, as in 2D: hold F, standing with the Ember
+## lowered, to pour a third of it into half a bottle; the HUD's "F HEAL" tag
+## shows only when that would work (no flask counter any more).
+func heal_test() -> void:
+	change_scene_to_file(HUB)
+	await frames(6)
+	for l in get_nodes_in_group("haunt_lamp"):
+		l.queue_free()
+	var player = current_scene.player
+	for m in current_scene.get_node("Enemies").get_children():
+		m.queue_free()
+	var hud: Node = current_scene.find_children("*", "Control", true, false).filter(func(n): return n.has_method("_draw_ember"))[0]
+	check(not hud.has_method("_draw_heals"), "the HUD has no healing flask any more")
+	await seconds(2.2)
+	player.add_fuel(player.max_fuel)
+	check(not player.can_heal(), "full ink: F can't heal (no F HEAL tag)")
+	player.health = player.max_health - 2
+	player.health_changed.emit(player.health, player.max_health)
+	check(player.can_heal(), "hurt with a full Ember: F can heal (the F HEAL tag shows)")
+	var hp: int = player.health
+	Input.action_press("heal")
+	await seconds(1.15)
+	check(player.health == hp + 1 and absf(player.fuel - (player.max_fuel - player.heal_cost)) < 1.0,
+		"holding F for a second: half a bottle back for a third of the Ember (hp %d -> %d, fuel %.0f)" % [hp, player.health, player.fuel])
+	await seconds(1.0)
+	Input.action_release("heal")
+	check(player.health == hp + 2 and player.fuel < player.max_fuel - 2.0 * player.heal_cost + 1.0,
+		"keep holding: the next third pours, and the Ember doesn't refill meanwhile (fuel %.0f)" % player.fuel)
+	player.add_fuel(-player.max_fuel)
+	check(not player.can_heal(), "an empty Ember: no heal")
 
 
 ## Puts Vesper at `at` (on the floor), still.
