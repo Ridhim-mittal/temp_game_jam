@@ -2636,6 +2636,7 @@ func _make_sounds() -> void:
 func _room_sound(snd: String) -> AudioStreamPlayer:
 	var p := AudioStreamPlayer.new()
 	p.stream = _sounds[snd]
+	p.bus = "SFX"  # (Sfx.BUS, as _play())
 	p.volume_db = -60.0
 	add_child(p)
 	p.play()
