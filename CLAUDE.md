@@ -39,6 +39,11 @@ paintings of Shade's City and the Ink Cave (`assets/backgrounds/shades_city.webp
   It never steps into a monster light and backs out of one; raising the Ember on a windup stuns it
   (`light_stun`, the parry). At most `max_attackers` (2) wind up at once (group "scribble_claw").
   Pen-scratch sounds are synthesised in the script.
+  The Crossed-Out (`scripts/enemies/crossed_out.gd`, its `paint()` shared by 2D and, via the puppet,
+  `crossed_out_3d.gd`; after the team's sheet, kept slim and about Vesper's height): a stooped ghoul in a
+  tattered brown coat and a battered top hat, white X eyes (red on a windup) over a grin of jagged teeth,
+  a black clawed hand on its shield, an X of two splintered nailed planks with a red-ink stain; light
+  chars the planks, edges glowing, until they crumble (`_shield`). Strokes boil at 12 fps, one InkBatch.
 
 ## 2D story start (main menu PLAY)
 `cs_book` (scripts/cutscenes/cs_book.gd: ~20 s animated opening, a comic book on a desk opens,
