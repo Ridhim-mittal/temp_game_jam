@@ -46,6 +46,10 @@ paintings of Shade's City and the Ink Cave (`assets/backgrounds/shades_city.webp
   chars the planks, edges glowing, until they crumble (`_shield`). Strokes boil at 12 fps, one InkBatch.
 
 ## 2D story start (main menu PLAY)
+The main menu's CHAPTERS are locked (greyed, a padlock, "FINISH THE STORY TO UNLOCK") until the story
+has been played to its end once: `Profile.finished`, saved in user://profile.cfg, set by shade_finale.gd
+`_the_end()` (`Profile.mark_finished()`), cleared by Settings -> Reset progress; main_menu.gd `_locked()`.
+For the team: F9 on the main menu unlocks them, in debug builds only (not in an exported game).
 `cs_book` (scripts/cutscenes/cs_book.gd: ~28 s animated opening. It sounds like grief and anger: the
 "margins" track (the game's tune, minor and slow: the menu's) plays all through it, the City's own
 LevelMusic bringing "city" in when the level loads; under it rain on the window, the lamp's hum and a

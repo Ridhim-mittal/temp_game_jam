@@ -214,7 +214,7 @@ func _build_row(list: Array, delay := 0.0) -> void:
 			b.position = Vector2(cx - sz.x * 0.5 - 16, y - px - 6)
 			b.size = Vector2(sz.x + 32, px + 20)
 			var it := {"label": label, "target": row[k][1], "button": b, "appear": 0.0, "hover": 0.0,
-				"pos": Vector2(cx, y), "px": px, "w": sz.x, "focused": false, "pop": 0.0}
+				"pos": Vector2(cx, y), "px": px, "w": sz.x, "focused": false, "pop": 0.0, "deny": 0.0}
 			b.pressed.connect(_choose.bind(it))
 			b.mouse_entered.connect(b.grab_focus)
 			add_child(b)
@@ -336,6 +336,14 @@ func _update_weather(delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	# for the team, in debug builds only (never in an exported game): F9
+	# unlocks CHAPTERS without playing the story through
+	if OS.is_debug_build() and event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_F9:
+		var profile := get_node_or_null("/root/Profile")
+		if profile:
+			profile.mark_finished()
+			Sfx.play("gate_unlock")
+		return
 	if _busy:
 		return
 	var focused := get_viewport().gui_get_focus_owner()
@@ -361,8 +369,20 @@ func _unhandled_input(event: InputEvent) -> void:
 		_switch(MAIN, "main")
 
 
+## CHAPTERS stay locked until the story has been played to its end
+## (Profile.finished, set by shade_finale.gd).
+func _locked(it: Dictionary) -> bool:
+	var profile := get_node_or_null("/root/Profile")
+	return it.target == "@chapters" and not (profile and profile.finished)
+
+
 func _choose(it: Dictionary) -> void:
 	if _busy:
+		return
+	if _locked(it):
+		Sfx.play("menu_close", -4.0, 0.8)
+		var no := create_tween()  # it shakes its head
+		no.tween_method(func(v: float): it.deny = v, 1.0, 0.0, 0.45)
 		return
 	Sfx.play("menu_close" if it.target == "@back" else ("menu_open" if it.target == "@chapters" else "menu_select"))
 	var t := create_tween()  # the label punches out
@@ -528,15 +548,31 @@ func _draw_menu() -> void:
 		var h: float = it.hover
 		var px: int = it.px
 		var p: Vector2 = it.pos + Vector2(0, (1.0 - it.appear) * 50.0 + sin(_time * 3.0 + it.pos.x) * 1.5 * h)
-		var s := 1.0 + 0.16 * h + 0.25 * float(it.pop)
-		m.draw_set_transform(p, sin(_time * 7.0) * 0.02 * h, Vector2(s, s))
+		var locked := _locked(it)
+		var s := 1.0 + 0.16 * h * (0.4 if locked else 1.0) + 0.25 * float(it.pop)
+		p.x += sin(_time * 55.0) * 9.0 * float(it.deny)
+		m.draw_set_transform(p, sin(_time * 7.0) * 0.02 * h * float(not locked), Vector2(s, s))
 		var o := Vector2(-it.w * 0.5, 0)
 		var col := CREAM.lerp(GOLD, h)
+		if locked:
+			# greyed out, a padlock hung on it, and why, while it is looked at
+			col = Color(0.5, 0.48, 0.54).lerp(Color(0.72, 0.68, 0.7), h)
+			var lock := Vector2(o.x - 30.0, -px * 0.36)
+			m.draw_arc(lock + Vector2(0, -9), 9.0, PI, TAU, 12, Color(INK, a), 9.0)
+			m.draw_arc(lock + Vector2(0, -9), 9.0, PI, TAU, 12, Color(col, a), 4.0)
+			m.draw_rect(Rect2(lock + Vector2(-15, -10), Vector2(30, 25)), Color(INK, a))
+			m.draw_rect(Rect2(lock + Vector2(-12, -7), Vector2(24, 19)), Color(col, a))
+			m.draw_circle(lock + Vector2(0, 1), 3.5, Color(INK, a))
+			if h > 0.02:
+				var why := "FINISH THE STORY TO UNLOCK"
+				var ww := FONT.get_string_size(why, HORIZONTAL_ALIGNMENT_LEFT, -1, 20).x
+				m.draw_string_outline(FONT, Vector2(-ww * 0.5, 34), why, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, 7, Color(INK, a * h))
+				m.draw_string(FONT, Vector2(-ww * 0.5, 34), why, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color(GOLD, a * h))
 		# shadow, ink outline, face
 		m.draw_string(FONT, o + Vector2(4, 5), it.label, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Color(RED.darkened(0.3), 0.85 * a))
 		m.draw_string_outline(FONT, o, it.label, HORIZONTAL_ALIGNMENT_LEFT, -1, px, 9, Color(INK, a))
 		m.draw_string(FONT, o, it.label, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Color(col, a))
-		if h > 0.02:
+		if h > 0.02 and not locked:
 			# a brush stroke draws itself in under the focused item
 			var pts := PackedVector2Array()
 			var n := 16

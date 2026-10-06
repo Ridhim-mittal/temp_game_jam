@@ -12,6 +12,8 @@ extends Node
 ##   Profile.look() -> {...}                       # outfit + weapon look
 ##   Profile.record_clear("darkwood_1")            # remembers first clears
 ##   Profile.tutorial_seen("2d.jump") / Profile.mark_tutorial("2d.jump")
+##   Profile.finished / Profile.mark_finished()    # the whole game beaten once:
+##                                                 # unlocks CHAPTERS on the main menu
 ## Items are defined in scripts/core/catalog.gd. (The skill tree is retired:
 ## `skills` / `skill_points` are kept in the save but give nothing.)
 
@@ -28,6 +30,9 @@ var upgrades := {}  # weapon id -> upgrades bought (0..Catalog.UPGRADES.size())
 var equipped := Catalog.STARTING.duplicate()
 var first_clears := {}  # room id -> true
 var tutorials := {}  # tutorial step id (scripts/ui/tutorial.gd) -> true once seen
+## True once the story has been played to its end (shade_finale.gd): the main
+## menu's CHAPTERS stay locked until then.
+var finished := false
 
 
 func _ready() -> void:
@@ -57,6 +62,13 @@ func record_clear(room_id: String) -> bool:
 	first_clears[room_id] = true
 	_changed()
 	return true
+
+
+## The story has been played to its end (the double is beaten).
+func mark_finished() -> void:
+	if not finished:
+		finished = true
+		_changed()
 
 
 ## Tutorial steps play once; these remember which ones have been seen.
@@ -204,6 +216,7 @@ func reset() -> void:
 	owned.clear()
 	upgrades.clear()
 	first_clears.clear()
+	finished = false
 	equipped = Catalog.STARTING.duplicate()
 	for id in Catalog.STARTING.values():
 		owned[id] = true
@@ -225,6 +238,7 @@ func _save() -> void:
 	cfg.set_value("profile", "equipped", equipped)
 	cfg.set_value("profile", "first_clears", first_clears.keys())
 	cfg.set_value("profile", "tutorials", tutorials.keys())
+	cfg.set_value("profile", "finished", finished)
 	cfg.save(PATH)
 
 
@@ -252,3 +266,4 @@ func _load() -> void:
 		first_clears[id] = true
 	for id in cfg.get_value("profile", "tutorials", []):
 		tutorials[id] = true
+	finished = cfg.get_value("profile", "finished", false)

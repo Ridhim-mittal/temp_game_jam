@@ -324,6 +324,9 @@ func _checkpoint_double() -> void:
 
 
 func _the_end() -> void:
+	var profile := get_node_or_null("/root/Profile")
+	if profile:
+		profile.mark_finished()  # the story is done: CHAPTERS unlock on the main menu
 	var p := _player()
 	if p:
 		p.set_physics_process(false)
