@@ -62,6 +62,25 @@ Text is kept light: two story captions a level, and the only signs in the world 
 other rule is taught by the tutorial's keys. The trapdoor
 (`trapdoor.gd` + `gutter_fall.gd`) is kept for a later level but no longer placed.
 
+## The story and its captions
+Shade IS the Writer (one person). Vesper lives in an ordinary comic of cities and monsters (the City,
+the Sketchbook; the opening and their narration stay as they were). He wanders into a panel that
+was drawn for his death (the Long Drop: "WAIT... THIS IS A WEIRD PANEL. I SHOULD EXPLORE."); Shade
+sends the Scribbled Beast to finish the page, Vesper wins, Shade names himself ("I AM SHADE. YOUR
+WRITER. PAGE FORTY-ONE...") and sends his Eraser; Vesper falls into the margins. In the Margins
+(2.5D) Shade hunts him with his lamp ("My lamp will find him"), Vesper doesn't know where he is;
+at the Rubbing Room's end the light finds him ("FOUND YOU." / "The light... it's pulling me up!";
+the pull back into 2D is a cutscene a teammate is drawing). Shade's City: everything corrupted,
+Shade: "I'M ENDING YOU... THIS ONE IS PERSONAL." The Ink Cave, then the finale: Shade draws the
+monsters live, then fights as Vesper's double; after it Vesper asks "WHY, SHADE? WHY DID YOU WANT ME
+DEAD?" (the answer, his brother who died fighting a city of monsters, is the ending cutscene to come).
+Every story line is a caption panel (`scripts/ui/caption_style.gd`): the comic's narration = the yellow
+box, Vesper = yellow with a VESPER tab, Shade = blood red with a SHADE tab. 2D: narration.gd `speaker`
+("narrator" / "vesper" / "shade"; the generators' `narration(text, x, speaker)`); the Margins:
+room captions, a leading "~" = Shade, "^" = Vesper (room.gd), story_ui.gd "shaky" / "shade" = Shade's
+red panel (the lamps' and the Red Pen's lines too); beast_arena.gd, eraser_chase.gd, margins_fall.gd,
+shade_trap.gd and shade_finale.gd (`_say(text, "writer" | "shade" | "vesper")`) draw the same panels.
+
 ## 2D light mechanic (the Sketchbook level)
 Rules in `scripts/world/lights.gd`: sources in group `drawn_light` (`reaches(point)`) make
 `sketch_platform.gd` cells solid; group `light` (`lights(point)`) is what monsters react to.

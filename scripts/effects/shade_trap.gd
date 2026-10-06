@@ -9,6 +9,7 @@ extends CanvasLayer
 const FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
 const MENU := "res://scenes/ui/main_menu.tscn"
 const LINE := "DID YOU REALLY THINK I'D LET YOU LEAVE?"
+const CaptionStyle = preload("res://scripts/ui/caption_style.gd")
 
 var next_scene := ""
 var _t := 0.0
@@ -81,12 +82,8 @@ func _paint() -> void:
 		var text := LINE.substr(0, shown)
 		var w := FONT.get_string_size(LINE, HORIZONTAL_ALIGNMENT_LEFT, -1, 40).x
 		var box := Rect2(s.x * 0.5 - w * 0.5 - 30, s.y * 0.38 - 40, w + 60, 80)
-		_view.draw_rect(box.grow(4), Color(0.9, 0.86, 0.95))
-		_view.draw_rect(box, Color(0.02, 0.01, 0.04))
-		_view.draw_colored_polygon(PackedVector2Array([Vector2(box.position.x + 60, box.end.y), Vector2(box.position.x + 100, box.end.y),
-			Vector2(box.position.x + 40, box.end.y + 40)]), Color(0.02, 0.01, 0.04))
-		_view.draw_string(FONT, box.position + Vector2(30, 54), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 40, Color(0.92, 0.88, 1.0))
-		_view.draw_string(FONT, box.position + Vector2(box.size.x - 90, -12), "- SHADE", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color(0.7, 0.62, 0.9))
+		CaptionStyle.panel(_view, box, "shade")  # Shade's red caption panel
+		_view.draw_string(FONT, box.position + Vector2(30, 54), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 40, CaptionStyle.text_color("shade"))
 	# 4. to be continued (only when there's nowhere to go yet)
 	if _t > 5.0 and next_scene == "":
 		var a := clampf((_t - 5.0) / 0.6, 0.0, 1.0)

@@ -136,13 +136,16 @@ func _ready() -> void:
 	# (Pause -> Controls still shows them on request, replay_tutorial())
 
 
-## "|" separates captions; a leading "~" makes one shaky (the Writer
-## losing their nerve).
+## "|" separates captions; a leading "~" is Shade, the Writer, talking (his
+## red panel), a leading "^" is Vesper (yellow, VESPER tab), the rest are the
+## comic's narration / tips.
 func _captions(text: String) -> void:
 	for line in text.split("|"):
 		line = line.strip_edges()
 		if line.begins_with("~"):
 			ui.caption(line.substr(1).strip_edges(), "shaky")
+		elif line.begins_with("^"):
+			ui.caption(line.substr(1).strip_edges(), "vesper")
 		elif line != "":
 			ui.caption(line)
 

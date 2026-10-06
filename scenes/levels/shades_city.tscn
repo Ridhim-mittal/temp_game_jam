@@ -240,20 +240,33 @@ live_areas = Array[Rect2]([Rect2(-660, -2000, 8060, 3200)])
 
 [node name="Narration1" type="CanvasLayer" parent="."]
 script = ExtResource("19_narration")
-text = "VESPER HAS BEEN DRAGGED BACK INTO SHADE'S CORRUPTED COMIC CITY. THE AUTHOR IS TRYING TO DELETE THE METROPOLIS."
+text = "SHADE, THE WRITER, DRAGGED VESPER BACK ONTO THE PAGE. BUT THE CITY HE KNEW WAS GONE."
 trigger_x = -1000000000.0
 
 [node name="Narration2" type="CanvasLayer" parent="."]
 script = ExtResource("19_narration")
-text = "SOMETHING SKITTERS IN THE GUTTERS. SHADE HAS BEEN DRAWING NEW THINGS."
-trigger_x = 1500
+text = "MY CITY... WHAT DID HE DO TO IT? EVERYTHING'S CORRUPTED."
+trigger_x = -1000000000.0
+speaker = "vesper"
 
 [node name="Narration3" type="CanvasLayer" parent="."]
 script = ExtResource("19_narration")
-text = "THE AUTHOR IS LOOKING FOR YOU. STAY OUT OF THE LIGHT."
-trigger_x = 3200
+text = "I'M ENDING YOU, VESPER. ONCE AND FOR ALL. THIS ONE IS PERSONAL."
+trigger_x = 900
+speaker = "shade"
 
 [node name="Narration4" type="CanvasLayer" parent="."]
+script = ExtResource("19_narration")
+text = "SOMETHING SKITTERS IN THE GUTTERS. SHADE HAS BEEN DRAWING NEW THINGS."
+trigger_x = 1500
+
+[node name="Narration5" type="CanvasLayer" parent="."]
+script = ExtResource("19_narration")
+text = "I SEE YOU, VESPER. STEP INTO MY LIGHT."
+trigger_x = 3200
+speaker = "shade"
+
+[node name="Narration6" type="CanvasLayer" parent="."]
 script = ExtResource("19_narration")
 text = "A GATE OUT OF THE CITY. AND SOMETHING GUARDING IT."
 trigger_x = 5700
