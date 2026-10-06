@@ -626,6 +626,18 @@ func set_slowed(source: Object, speed_mult := 1.0, jump_mult := 1.0) -> void:
 		_slow_sources[source] = Vector2(speed_mult, jump_mult)
 
 
+## Colour of what's slowing him (the strongest slow's `goo_color`, e.g. an
+## ink puddle's ink), for the gunk on his boots; null when nothing has one.
+func _slow_color() -> Variant:
+	var best := 2.0
+	var col: Variant = null
+	for src: Object in _slow_sources:
+		if is_instance_valid(src) and _slow_sources[src].x < best and "goo_color" in src:
+			best = _slow_sources[src].x
+			col = src.goo_color
+	return col
+
+
 func _slow_mult() -> Vector2:
 	var m := Vector2.ONE
 	for v in _slow_sources.values():
@@ -1294,6 +1306,10 @@ func _update_visuals(delta: float) -> void:
 	art.dashing = _dash_timer > 0.0
 	art.max_speed = max_speed
 	art.stuck = _slow_mult().x < 1.0
+	if art.stuck:
+		var gunk: Variant = _slow_color()
+		if gunk != null:
+			art.goo_color = gunk  # kept while it drips off
 	art.charge = clampf((_charge - charge_show_delay) / (charge_time - charge_show_delay), 0.0, 1.0) if _charge >= 0.0 else 0.0
 	art.charge_ready = _charge_ready
 	art.crouch = crouch_amount() if _crouch >= 0.0 else 0.0
