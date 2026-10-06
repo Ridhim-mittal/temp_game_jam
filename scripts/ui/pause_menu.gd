@@ -99,7 +99,11 @@ static func open_2d(the_player: Node) -> void:
 	tree.paused = true
 
 
+var _sfx_focus := 0
+
+
 func _ready() -> void:
+	Sfx.play("pause")
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
@@ -120,6 +124,9 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_t += delta
+	if _focus != _sfx_focus:
+		_sfx_focus = _focus
+		Sfx.play("menu_hover")
 	_boil = int(_t * 8.0)
 	var mat := _rays.material as ShaderMaterial
 	mat.set_shader_parameter("intro", _ease_out(_t / 0.35))
@@ -149,6 +156,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		if _t > 0.1:
 			_closing = 0.0
+			Sfx.play("menu_close")
 		return
 	var move := Vector2i.ZERO
 	if event.is_action_pressed("move_left") or event.is_action_pressed("ui_left"):
@@ -191,6 +199,7 @@ func _choose(i: int) -> void:
 		return
 	_focus = i
 	var action: String = _items[i][1]
+	Sfx.play("menu_close" if action == "resume" else "menu_select")
 	match action:
 		"resume":
 			_closing = 0.0

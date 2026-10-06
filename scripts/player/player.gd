@@ -4,6 +4,8 @@ extends CharacterBody2D
 ##  - snappy run, variable jump height, apex hang, fast-fall
 ##  - coyote time + jump buffering
 ##  - double jump: one extra jump in the air, refilled on landing or a pogo
+##  - wall cling / slide / wall jump (Hollow Knight's Mantis Claw)
+##  - hard landing after a long fall (kneel, dust, shake); longer falls hurt
 ##  - dash with brief invincibility (vs enemies), resets on ground / pogo
 ##  - directional slashes (side / up / down-in-air)
 ##  - down-slash pogo off enemies and hazards, side-slash recoil
@@ -23,6 +25,9 @@ const SlashEffect = preload("res://scripts/effects/slash_effect.gd")
 const JumpPuff = preload("res://scripts/effects/jump_puff.gd")
 const ComicText = preload("res://scripts/effects/comic_text.gd")
 const InkWave = preload("res://scripts/effects/ink_wave.gd")
+const LandImpact = preload("res://scripts/effects/land_impact.gd")
+const FallStreaks = preload("res://scripts/effects/fall_streaks.gd")
+const WallFx = preload("res://scripts/effects/wall_fx.gd")
 const DeathScreen = preload("res://scripts/ui/death_screen.gd")
 const Tutorial = preload("res://scripts/ui/tutorial.gd")
 const PauseMenu = preload("res://scripts/ui/pause_menu.gd")
@@ -68,6 +73,31 @@ const HAZARD_DAMAGE := 2.0  # one ink bottle
 @export var air_jumps := 1
 ## Launch speed of an air jump: a little weaker than the ground jump.
 @export var air_jump_velocity := -700.0
+
+@export_group("Hard Landing")
+## Falls at least this long (px, from the top of the last rise) end in a
+## Hollow Knight-style hard landing: Vesper slams down and kneels, unable to
+## act for `hard_land_time`. A normal jump is ~170 px.
+@export var hard_land_height := 400.0
+@export var hard_land_time := 0.4
+## Falls at least this long also hurt (0 = no fall damage) and kneel longer.
+@export var fall_damage_height := 750.0
+@export var fall_damage := 2.0
+## Extra damage per 300 px fallen beyond `fall_damage_height`, up to the max.
+@export var fall_damage_step := 1.0
+@export var max_fall_damage := 4.0
+
+@export_group("Wall")
+## Hollow Knight-style wall cling: pushing into a wall while falling grabs it
+## and slides down slowly; jump kicks off it. The wall just kicked off can't be
+## grabbed again until landing or touching the opposite wall, so shafts can be
+## climbed wall to wall but a single wall can't (no skipping puzzles).
+@export var wall_cling := true
+@export var wall_slide_speed := 150.0
+## Kick-off speed: x away from the wall, y up.
+@export var wall_jump_velocity := Vector2(430, -720)
+## Seconds after a kick before steering takes over again.
+@export var wall_jump_lock := 0.15
 
 @export_group("Crouch Jump")
 ## Standing still, holding jump crouches and coils the legs; releasing
@@ -166,6 +196,16 @@ var _coyote_timer := 0.0
 var _jump_buffer_timer := 0.0
 var _air_jumps_left := 0
 var _crouch := -1.0  # seconds spent crouching; -1 = not crouching
+var _fall_top := 0.0  # y where the current fall began (top of the last rise)
+var _land_timer := 0.0  # hard-landing kneel left
+var _land_length := 0.4
+var _streaks: Node2D
+var _wall_dir := 0  # side of the wall being slid down (1 right, -1 left), 0 = none
+var _wall_coyote := 0.0  # a kick still counts this long after letting go
+var _wall_coyote_dir := 0
+var _wall_lock := 0.0
+var _banned_wall := 0  # the side just kicked off (can't re-grab it)
+var _wall_fx: Node2D
 var _dash_timer := 0.0
 var _dash_cooldown_timer := 0.0
 var _attack_timer := 0.0
@@ -226,6 +266,11 @@ func _ready() -> void:
 		coins = profile.lumens
 		profile.changed.connect(_on_profile_changed)
 	_last_safe_position = global_position
+	_fall_top = global_position.y
+	_streaks = FallStreaks.new()
+	add_child(_streaks)
+	_wall_fx = WallFx.new()
+	add_child(_wall_fx)
 	health_changed.emit(health, max_health)
 	coins_changed.emit(coins)
 	# only the steps this level teaches (none in later levels); waits while the
@@ -279,8 +324,10 @@ func _physics_process(delta: float) -> void:
 		_post_move(delta)
 		return
 
-	# Hit-stun: no control, just fall with knockback.
-	if _hurt_timer > 0.0:
+	# Hit-stun: no control, just fall with knockback. A hard landing kneels.
+	if _hurt_timer > 0.0 or _land_timer > 0.0:
+		if _land_timer > 0.0:
+			velocity.x = move_toward(velocity.x, 0.0, ground_decel * delta)
 		_apply_gravity(delta)
 		move_and_slide()
 		_post_move(delta)
@@ -297,6 +344,7 @@ func _physics_process(delta: float) -> void:
 
 	_update_horizontal(input_x, delta)
 	_apply_gravity(delta)
+	_update_wall(input_x)
 	_update_crouch(input_x, delta)
 	_handle_jump()
 	_handle_attack_input()
@@ -319,6 +367,9 @@ func _tick_timers(delta: float) -> void:
 	_recoil_timer = maxf(_recoil_timer - delta, 0.0)
 	_invuln_timer = maxf(_invuln_timer - delta, 0.0)
 	_hurt_timer = maxf(_hurt_timer - delta, 0.0)
+	_land_timer = maxf(_land_timer - delta, 0.0)
+	_wall_coyote = maxf(_wall_coyote - delta, 0.0)
+	_wall_lock = maxf(_wall_lock - delta, 0.0)
 	if _dash_timer > 0.0:
 		_dash_timer -= delta
 		if _dash_timer <= 0.0:
@@ -330,6 +381,8 @@ func _update_horizontal(input_x: float, delta: float) -> void:
 	if _recoil_timer > 0.0:
 		velocity.x = _recoil_dir * recoil_speed
 		return
+	if _wall_lock > 0.0:
+		return  # carried by the wall kick
 	# Facing is locked while a slash is active.
 	if input_x != 0.0 and _attack_timer <= 0.0:
 		facing = 1 if input_x > 0.0 else -1
@@ -343,6 +396,46 @@ func _update_horizontal(input_x: float, delta: float) -> void:
 	else:
 		rate = air_accel if accelerating else air_decel
 	velocity.x = move_toward(velocity.x, target, rate * delta)
+
+
+## Wall cling: falling while pushing into a wall grabs it and slides down.
+func _update_wall(input_x: float) -> void:
+	_wall_dir = 0
+	if is_on_floor():
+		_banned_wall = 0
+		return
+	if not wall_cling or not is_on_wall() or velocity.y < -60.0:
+		return
+	var side := -int(signf(get_wall_normal().x))
+	if side == 0 or side == _banned_wall or signf(input_x) != side:
+		return
+	_wall_dir = side
+	_banned_wall = 0  # touching the other wall frees the one kicked off before
+	velocity.y = minf(velocity.y, wall_slide_speed)
+	facing = -side  # back to the wall, like the Knight
+	is_jumping = false
+	can_dash = true
+	_air_jumps_left = air_jumps
+	_wall_coyote = 0.1
+	_wall_coyote_dir = side
+
+
+func _wall_jump() -> void:
+	Sfx.play("jump", 0.0, 1.1)
+	var away := -_wall_coyote_dir
+	velocity = Vector2(away * wall_jump_velocity.x, wall_jump_velocity.y * _slow_mult().y)
+	facing = away
+	is_jumping = true
+	_jump_buffer_timer = 0.0
+	_wall_coyote = 0.0
+	_wall_lock = wall_jump_lock
+	_banned_wall = _wall_coyote_dir
+	_wall_dir = 0
+	_squash = Vector2(0.7, 1.3)
+	var puff := JumpPuff.new()
+	puff.position = global_position + Vector2(-away * 13.0, 4.0)
+	puff.rotation = -away * PI * 0.5  # fans out from the wall
+	get_tree().current_scene.add_child(puff)
 
 
 func _apply_gravity(delta: float) -> void:
@@ -361,10 +454,14 @@ func _handle_jump() -> void:
 		_jump_buffer_timer = 0.0
 		_coyote_timer = 0.0
 		_squash = Vector2(0.75, 1.25)
+		Sfx.play("jump")
+	elif _jump_buffer_timer > 0.0 and _wall_coyote > 0.0 and not is_on_floor():
+		_wall_jump()
 	elif Input.is_action_just_pressed("jump") and not is_on_floor() and _air_jumps_left > 0:
 		# Double jump: only on the press itself, so a jump buffered just before
 		# landing still becomes a ground jump instead of spending this.
 		_air_jumps_left -= 1
+		Sfx.play("double_jump")
 		velocity.y = air_jump_velocity * _slow_mult().y
 		is_jumping = true
 		_jump_buffer_timer = 0.0
@@ -557,6 +654,7 @@ func _crouch_launch(still_holding: bool) -> void:
 	_coyote_timer = 0.0
 	# spring legs: launch speed grows linearly with crouch depth
 	velocity.y = jump_velocity * lerpf(1.0, crouch_jump_mult, depth) * _slow_mult().y
+	Sfx.play("jump", 0.0, lerpf(1.0, 0.85, depth))
 	# the hold was spent coiling, so a release doesn't cut this jump short
 	is_jumping = still_holding
 	_squash = Vector2(0.75, 1.25).lerp(Vector2(0.62, 1.45), depth)
@@ -566,7 +664,10 @@ func _crouch_launch(still_holding: bool) -> void:
 
 
 func _start_dash(input_x: float) -> void:
-	if input_x != 0.0:
+	Sfx.play("dash")
+	if _wall_dir != 0:
+		facing = -_wall_dir  # off a wall, the dash always goes away from it
+	elif input_x != 0.0:
 		facing = 1 if input_x > 0.0 else -1
 	_dash_timer = dash_time
 	_dash_cooldown_timer = dash_cooldown
@@ -594,6 +695,12 @@ func _cancel_charge_for_cutscene() -> void:
 
 func _post_move(delta: float) -> void:
 	var on_floor := is_on_floor()
+	if on_floor and not _was_on_floor:
+		var drop := global_position.y - _fall_top
+		if drop >= hard_land_height and hard_land_height > 0.0:
+			_hard_land(drop)
+	if on_floor or velocity.y <= 0.0 or _wall_dir != 0:
+		_fall_top = global_position.y  # a fall is measured from the top of the last rise (or a wall)
 	if on_floor:
 		_coyote_timer = coyote_time
 		can_dash = true
@@ -602,6 +709,8 @@ func _post_move(delta: float) -> void:
 			is_jumping = false
 		if not _was_on_floor:
 			_squash = Vector2(1.25, 0.8)
+			if _land_timer <= 0.0:
+				Sfx.play("fall_land", -9.0, 1.15)  # a soft step down
 	_since_hazard += delta
 	# safe ground: stood on for a moment, solid for good, nowhere near spikes
 	if on_floor and _on_stable_floor() and not _touching_hazard() and _floor_under(global_position):
@@ -614,6 +723,38 @@ func _post_move(delta: float) -> void:
 	_was_on_floor = on_floor
 	_check_hurtbox()
 	_update_visuals(delta)
+
+
+## Hollow Knight-style hard landing: freeze-frame, shake, ground burst and a
+## kneel that locks control; past `fall_damage_height` it also hurts.
+func _hard_land(drop: float) -> void:
+	Sfx.play("fall_land", 2.0 if drop >= fall_damage_height else 0.0)
+	var hurts := fall_damage_height > 0.0 and drop >= fall_damage_height
+	_land_length = hard_land_time * (1.6 if hurts else 1.0)
+	_land_timer = _land_length
+	_crouch = -1.0
+	_cancel_charge()
+	_attack_timer = 0.0
+	velocity.x *= 0.3
+	_squash = Vector2(1.5, 0.58)
+	var fx := LandImpact.new()
+	fx.power = 1.5 if hurts else 1.0
+	fx.position = global_position + Vector2(0, BODY_HALF_HEIGHT)
+	get_tree().current_scene.add_child(fx)
+	if hurts:
+		var dmg := minf(roundf(fall_damage + (drop - fall_damage_height) / 300.0 * fall_damage_step), max_fall_damage)  # whole half bottles
+		health = maxf(health - dmg, 0.0)
+		health_changed.emit(health, max_health)
+		_invuln_timer = invuln_time
+		_pop_text(global_position + Vector2(0, -50), "CRUNCH!", Color(1.0, 0.4, 0.35))
+		_hitstop(0.12, 0.02)
+		_shake(0.8)
+		if health <= 0.0:
+			_die()
+	else:
+		_pop_text(global_position + Vector2(0, -46), "THUD!", Color(0.97, 0.94, 0.86))
+		_hitstop(0.06, 0.05)
+		_shake(0.45)
 
 
 # ------------------------------------------------------------------ combat
@@ -868,6 +1009,7 @@ func _ink_slam() -> void:
 
 
 func _release_wave() -> void:
+	Sfx.play("sword_swing", 2.0, 0.8)
 	var wave := InkWave.new()
 	wave.direction = facing
 	wave.speed = wave_speed
@@ -918,6 +1060,7 @@ func _on_attack_connect(target: Object) -> void:
 		if _weapon == "prism":
 			_stun(target, prism_stun)  # its light dazzles
 		landed = true
+		Sfx.play("sword_hit")
 		_pop_text(target.global_position + Vector2(0, -40), HIT_WORDS.pick_random())
 		_hitstop(0.06)
 		_shake(0.35)
@@ -944,6 +1087,7 @@ func _on_attack_connect(target: Object) -> void:
 
 
 func _spawn_slash() -> void:
+	Sfx.play("sword_swing")
 	var box := _get_attack_box()
 	var slash := SlashEffect.new()
 	slash.position = box[0]
@@ -1041,6 +1185,7 @@ func take_damage(amount: float, source_pos: Vector2, from_hazard := false) -> vo
 	_recoil_timer = 0.0
 	is_jumping = false
 	_pop_text(global_position + Vector2(0, -50), "OOF!", Color(1.0, 0.4, 0.35))
+	Sfx.play("hurt")
 	_hitstop(0.12, 0.02)
 	_shake(0.6)
 
@@ -1050,6 +1195,7 @@ func take_damage(amount: float, source_pos: Vector2, from_hazard := false) -> vo
 	if from_hazard:
 		velocity = Vector2.ZERO
 		global_position = _hazard_respawn_point()
+		_fall_top = global_position.y
 		_hurt_timer = 0.4  # brief freeze after respawn
 		var cam := get_node_or_null("Camera2D") as Camera2D
 		if cam:
@@ -1120,6 +1266,7 @@ func _respawn_point() -> Vector2:
 
 func _die() -> void:
 	dead = true
+	Sfx.play("death")
 	died.emit()
 	velocity = Vector2.ZERO
 	var t := create_tween()
@@ -1143,6 +1290,13 @@ func _update_visuals(delta: float) -> void:
 	art.charge_ready = _charge_ready
 	art.crouch = crouch_amount() if _crouch >= 0.0 else 0.0
 	art.crouching = _crouch >= 0.0
+	art.land = _land_timer / _land_length if _land_timer > 0.0 else 0.0
+	art.wall = 1.0 if _wall_dir != 0 else 0.0
+	_wall_fx.side = _wall_dir
+	var drop := global_position.y - _fall_top if not is_on_floor() and velocity.y > 0.0 else 0.0
+	_streaks.amount = clampf((drop - hard_land_height * 0.6) / (hard_land_height * 0.4), 0.0, 1.0) \
+		if hard_land_height > 0.0 else 0.0
+	_streaks.danger = fall_damage_height > 0.0 and drop >= fall_damage_height
 	sword.charge = art.charge
 	sword.charge_ready = _charge_ready
 	var col := Color.WHITE

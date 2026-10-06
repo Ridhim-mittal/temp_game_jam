@@ -21,6 +21,7 @@ EXT = [
     ("Script", "res://scripts/clearing/scatter_props.gd", "scatter"),
     ("Script", "res://scripts/clearing/watcher_eyes.gd", "eyes"),
     ("Script", "res://scripts/clearing/altar.gd", "altar"),
+    ("Script", "res://scripts/world25/big_lumen.gd", "biglumen"),
     ("PackedScene", "res://scenes/clearing/scribble.tscn", "scribble"),
     ("PackedScene", "res://scenes/clearing/monsters/crumple.tscn", "crumple"),
     ("PackedScene", "res://scenes/clearing/monsters/crossed_out.tscn", "crossed_out"),

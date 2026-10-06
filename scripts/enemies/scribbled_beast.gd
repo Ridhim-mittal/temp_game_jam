@@ -64,6 +64,8 @@ enum State { DORMANT, INTRO, IDLE, CLAW_WINDUP, CLAW, RUSH_WINDUP, RUSH, DAZED, 
 ## The gutter's tear in the floor (world x) it climbs out of and drags
 ## Scribbles up through (beast_arena.gd sets it).
 @export var gap_x := 0.0
+## Shown over its health bar.
+var display_name := "THE SCRIBBLED BEAST"
 
 var state := State.DORMANT
 var max_hp := 34
@@ -105,6 +107,7 @@ var _rng := RandomNumberGenerator.new()
 
 func _ready() -> void:
 	setup(Vector2(110, 210), hp)
+	add_to_group("boss")  # the SFX pack's boss_hit on every hit (enemy_base.gd)
 	max_hp = hp
 	knockback_speed = 30.0
 	_seed = randi() % 10000

@@ -17,6 +17,9 @@ const OnScreen = preload("res://scripts/core/on_screen.gd")
 @export var value := 1
 @export var radius := 13.0
 @export var spin_speed := 3.2
+## The word that pops up when it is picked up.
+@export var pop_text := "CLINK!"
+@export var pop_size := 20
 
 var _time := 0.0
 var _collected := false
@@ -50,11 +53,13 @@ func _on_body_entered(body: Node2D) -> void:
 	if state:
 		state.collected[state.id_of(self)] = true
 	body.add_coins(value)
+	if has_node("/root/Sfx"):
+		get_node("/root/Sfx").play("coin_collect")
 	var pop := ComicText.new()
-	pop.text = "CLINK!"
+	pop.text = pop_text
 	pop.color = GOLD
-	pop.font_size = 20
-	pop.position = global_position + Vector2(0, -26)
+	pop.font_size = pop_size
+	pop.position = global_position + Vector2(0, -radius - 13.0)
 	get_tree().current_scene.add_child(pop)
 	# fast spin, jump up, flash and vanish
 	spin_speed = 18.0

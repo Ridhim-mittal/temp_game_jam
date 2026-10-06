@@ -34,6 +34,7 @@
 [ext_resource type="Script" path="res://scripts/ui/narration.gd" id="46_narration"]
 [ext_resource type="Script" path="res://scripts/world/city_block.gd" id="47_cityblock"]
 [ext_resource type="Script" path="res://scripts/world/city_ledge.gd" id="48_cityledge"]
+[ext_resource type="Script" path="res://scripts/world/big_coin.gd" id="49_bigcoin"]
 
 [node name="Sketchbook" type="Node2D"]
 

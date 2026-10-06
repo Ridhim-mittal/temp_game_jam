@@ -491,6 +491,7 @@ func take_hit(damage: int, dir: Vector3, _aerial := false) -> void:
 	if dead:
 		return
 	health -= damage
+	Sfx.play("boss_hit" if is_in_group("boss") else "ink_enemy_hit", -3.0)
 	_flash = 1.0
 	_squash = Vector3(1.35, 0.7, 1.35)
 	# light hits only nudge it, so a combo keeps connecting; the finisher
@@ -507,6 +508,7 @@ func take_hit(damage: int, dir: Vector3, _aerial := false) -> void:
 
 func _die() -> void:
 	dead = true
+	Sfx.play("ink_splat")
 	_cancel_attack()
 	state = State.DEAD
 	remove_from_group("enemy")

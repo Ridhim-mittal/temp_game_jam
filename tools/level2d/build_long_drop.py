@@ -66,6 +66,7 @@ def res(kind, path, rid):
 
 
 res("PackedScene", "res://scenes/player/player.tscn", "1_player")
+res("Script", "res://scripts/world/big_coin.gd", "49_bigcoin")
 res("PackedScene", "res://scenes/enemies/crawler.tscn", "2_crawler")
 res("Script", "res://scripts/ui/hud.gd", "5_hud")
 res("Script", "res://scripts/audio/level_music.gd", "8_music")
@@ -282,6 +283,11 @@ def checkpoint(x, floor_y):
     node(uniq("Checkpoint"), "Area2D", "World", [("position", v(x, floor_y)), ("script", 'ExtResource("18_pen")')])
 
 
+def big_coin(x, y):
+    """The big Lumen (big_coin.gd): 15 coins at once, off the usual path."""
+    node(uniq("BigCoin"), "Area2D", "World", [("position", v(x, y)), ("script", 'ExtResource("49_bigcoin")')])
+
+
 def heart(x, y):
     node(uniq("Heart"), "Area2D", "World", [("position", v(x, y)), ("script", 'ExtResource("19_heart")')])
 
@@ -307,6 +313,8 @@ coin_row(sl + 225, sl + 225, st + 200, 1)
 nl, nt, nr, nf = px("nook")
 lamp(nl + 220, nt, 260, 120)
 heart(nl + 520, nf - 60)
+ledge(nl + 260, nf - 120, 180)                  # the nook's secret: up on a ledge in the dark corner
+big_coin(nl + 110, nf - 330)
 ledge(l2 + 900, f2 - 110, 240)
 ledge(l2 + 1500, f2 - 110, 240)
 ledge(l2 + 1200, f2 - 220, 240)
@@ -373,6 +381,8 @@ enemy("crossed", bl + 900, bf - 30)
 coin_row(bl + 150, bl + 450, bf - 200, 6)
 ledge(bl + 300, bf - 110, 220)
 lamp(bl + 650, bt, 280, 130)
+ledge(bl + 120, bf - 250, 160)                  # the ambush room's prize, over the low ledge
+big_coin(bl + 110, bf - 410)
 
 # 3. THE DRIPPING MARGINS: shaft, the Pendulum (light puzzle), the pit, the bottom
 sl, st, sr, sf = px("shaft3")
@@ -431,7 +441,8 @@ heart(ol + 3700, of - 60)
 # THE SCRIBBLED BEAST (scribbled_beast.gd, run by beast_arena.gd): it climbs out of a tear in
 # the floor (the gutter) holding a shield torn out of the gutter itself. Two lanterns on posts:
 # it snuffs them as it rises; light one and its shield swings round to the light. The way on
-# (level_exit.gd) opens over the tear after the fight. It watches only these two lanterns.
+# (level_exit.gd) opens over the tear after the fight, INTO THE MARGINS (the purse comes along;
+# the Eraser chase goes in here later). It watches only these two lanterns.
 al, at, ar, af = px("arena")
 gap = (al + ar) / 2
 lantern(gap - 560, af - 150, 280, chain=0, post=150, lit=True, name="ArenaLanternW")
@@ -441,7 +452,8 @@ node("BeastArena", "Node2D", "World", [("position", v(gap, af)), ("script", 'Ext
      ("beast_path", 'NodePath("../../Enemies/ScribbledBeast")'),
      ("lantern_paths", 'Array[NodePath]([NodePath("../ArenaLanternW"), NodePath("../ArenaLanternE")])'),
      ("trigger_x", f"{al + 340:g}"), ("barrier_x", f"{al + 30:g}"), ("room_height", f"{af - at:g}"),
-     ("exit_x", f"{gap:g}")])
+     ("exit_x", f"{gap:g}"), ("exit_target", '"res://scenes/clearing/clearing.tscn"'),
+     ("exit_label", '"INTO THE MARGINS"')])
 
 
 # ------------------------------------------------------------------ write

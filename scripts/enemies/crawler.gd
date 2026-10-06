@@ -290,6 +290,7 @@ func take_hit(damage: int, hit_dir: Vector2, from_pos: Vector2) -> void:
 	if dead:
 		return
 	health -= damage
+	Sfx.play("boss_hit" if is_in_group("boss") else "ink_enemy_hit", -3.0)
 	_flash()
 	var kx := signf(global_position.x - from_pos.x)
 	if kx == 0.0:
@@ -310,6 +311,7 @@ func _flash() -> void:
 
 
 func _die(kx: float) -> void:
+	Sfx.play("ink_splat")
 	dead = true
 	remove_from_group("enemy")
 	set_deferred("collision_layer", 0)

@@ -18,6 +18,7 @@ config/features=PackedStringArray("4.7")
 
 InputSetup="*res://scripts/core/input_setup.gd"
 Music="*res://scripts/audio/music.gd"
+Sfx="*res://scripts/audio/sfx.gd"
 Mood="*res://scripts/core/mood.gd"
 GameState="*res://scripts/core/game_state.gd"
 World25="*res://scripts/world25/world25.gd"

@@ -31,6 +31,7 @@ var ink := 1.0
 
 
 func _ready() -> void:
+	add_to_group("boss")
 	setup(Vector2(60, 140), hp)
 	set_harmful(false)
 

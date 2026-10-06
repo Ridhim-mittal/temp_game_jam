@@ -431,8 +431,8 @@ func margins_coins_test() -> void:
 	check(coins.size() == 4, "it spills 4 coins (%d)" % coins.size())
 	var radius: float = coins[0]._coin.get_child(0).mesh.top_radius if coins.size() > 0 else 1.0
 	check(radius < 0.15, "small coins (radius %.2f; the 2D ones are much bigger)" % radius)
-	var col: Color = coins[0].SILVER if coins.size() > 0 else Color.GOLD
-	check(absf(col.r - col.b) < 0.15 and col.v < 0.75, "dark silver, not gold (%s)" % col)
+	var col: Color = coins[0].GOLD if coins.size() > 0 else Color.BLACK
+	check(col.is_equal_approx(preload("res://scripts/world/coin.gd").GOLD), "gold, the same Lumen as the 2D levels (%s)" % col)
 	await seconds(0.6)
 	spread = 0.0
 	for c in get_nodes_in_group("margin_coin"):

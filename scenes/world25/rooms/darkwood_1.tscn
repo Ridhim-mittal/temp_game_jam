@@ -10,6 +10,7 @@
 [ext_resource type="Script" path="res://scripts/clearing/scatter_props.gd" id="scatter"]
 [ext_resource type="Script" path="res://scripts/clearing/watcher_eyes.gd" id="eyes"]
 [ext_resource type="Script" path="res://scripts/clearing/altar.gd" id="altar"]
+[ext_resource type="Script" path="res://scripts/world25/big_lumen.gd" id="biglumen"]
 [ext_resource type="PackedScene" path="res://scenes/clearing/scribble.tscn" id="scribble"]
 [ext_resource type="PackedScene" path="res://scenes/clearing/monsters/crumple.tscn" id="crumple"]
 [ext_resource type="PackedScene" path="res://scenes/clearing/monsters/crossed_out.tscn" id="crossed_out"]
@@ -42,7 +43,7 @@ backdrop_style = 1
 
 [node name="Island" type="Node3D" parent="."]
 script = ExtResource("island")
-polygon = PackedVector2Array(-11.50, -9.50, -7.67, -9.24, -3.83, -9.54, 0.00, -10.07, 3.83, -9.01, 7.67, -9.07, 14.00, -7.00, 13.94, -3.50, 14.00, -1.80, 14.00, 1.80, 13.80, 3.50, 11.50, 9.50, 7.67, 9.78, 3.83, 9.53, 0.00, 10.04, -3.83, 9.61, -7.67, 10.01, -14.00, 7.00, -13.97, 3.50, -14.00, 1.80, -14.00, -1.80, -13.83, -3.50)
+polygon = PackedVector2Array(-11.50, -9.50, -7.67, -9.97, -3.83, -10.08, 0.00, -9.69, 3.83, -9.73, 7.67, -9.60, 14.00, -7.00, 13.57, -3.50, 14.00, -1.80, 14.00, 1.80, 13.44, 3.50, 11.50, 9.50, 7.67, 8.92, 3.83, 9.99, 0.00, 9.74, -3.83, 10.06, -7.67, 8.93, -14.00, 7.00, -14.16, 3.50, -14.00, 1.80, -14.00, -1.80, -13.98, -3.50)
 open_edges = PackedInt32Array(8, 19)
 
 [node name="GateEast" type="Node3D" parent="."]
@@ -61,6 +62,11 @@ target_scene = "res://scenes/world25/rooms/shallows_pen.tscn"
 target_gate = "east"
 
 [node name="Props" type="Node3D" parent="."]
+
+[node name="BigLumen" type="Node3D" parent="Props"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 12.20, 0.00, -6.00)
+script = ExtResource("biglumen")
+
 
 [node name="RuneStone1" type="Node3D" parent="Props"]
 transform = Transform3D(0.9756, 0, -0.2196, 0, 1, 0, 0.2196, 0, 0.9756, 4.72, 0.00, -7.06)
@@ -140,14 +146,14 @@ seed = 78
 solid = true
 
 [node name="Rocks2" type="Node3D" parent="Props"]
-transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 11.94, 0.00, -4.42)
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -10.41, 0.00, -6.31)
 script = ExtResource("scatter")
 kind = 2
 count = 3
 radius = 0.9
 size = 1.2
 color = Color(0.6, 0.58, 0.56, 1)
-seed = 34
+seed = 75
 solid = true
 
 [node name="Lantern1" type="Node3D" parent="Props"]
@@ -162,77 +168,71 @@ flame_color = Color(1, 0.25, 0.15, 1)
 
 [node name="Forest" type="Node3D" parent="."]
 
-[node name="Pine1" type="Node3D" parent="Forest"]
-transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 7.64, 0.00, -12.82)
-script = ExtResource("pine")
-height = 7.9
-radius = 1.8
-
 [node name="Pine2" type="Node3D" parent="Forest"]
-transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -8.16, 0.00, -13.59)
-script = ExtResource("pine")
-height = 7.0
-radius = 2.0
-
-[node name="Pine3" type="Node3D" parent="Forest"]
-transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -17.63, 0.00, 4.17)
-script = ExtResource("pine")
-height = 8.5
-radius = 2.1
-
-[node name="Pine4" type="Node3D" parent="Forest"]
-transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 16.96, 0.00, -7.30)
-script = ExtResource("pine")
-height = 9.7
-radius = 2.3
-
-[node name="Pine5" type="Node3D" parent="Forest"]
-transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 6.31, 0.00, -12.40)
-script = ExtResource("pine")
-height = 8.9
-radius = 2.1
-
-[node name="Pine6" type="Node3D" parent="Forest"]
-transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -18.88, 0.00, 3.07)
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 18.06, 0.00, -7.69)
 script = ExtResource("pine")
 height = 8.8
-radius = 2.1
+radius = 2.3
 
-[node name="Pine7" type="Node3D" parent="Forest"]
-transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -10.95, 0.00, -13.28)
+[node name="Pine3" type="Node3D" parent="Forest"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 10.26, 0.00, -12.46)
 script = ExtResource("pine")
-height = 7.8
-radius = 2.2
+height = 7.5
+radius = 2.3
 
-[node name="Pine10" type="Node3D" parent="Forest"]
+[node name="Pine4" type="Node3D" parent="Forest"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -17.12, 0.00, -6.80)
+script = ExtResource("pine")
+height = 9.2
+radius = 2.4
+
+[node name="Pine5" type="Node3D" parent="Forest"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 5.24, 0.00, -12.97)
+script = ExtResource("pine")
+height = 8.4
+radius = 1.8
+
+[node name="Pine6" type="Node3D" parent="Forest"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -11.09, 0.00, -12.10)
+script = ExtResource("pine")
+height = 9.9
+radius = 1.9
+
+[node name="Pine9" type="Node3D" parent="Forest"]
 transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -18.94, 0.00, -7.70)
 script = ExtResource("pine")
 height = 8.4
 radius = 2.2
 
+[node name="Pine10" type="Node3D" parent="Forest"]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -18.04, 0.00, -5.51)
+script = ExtResource("pine")
+height = 9.8
+radius = 1.9
+
 [node name="VoidPine1" type="Node3D" parent="Forest"]
-transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 3.24, -9.00, 12.65)
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -13.54, -9.00, 13.04)
 script = ExtResource("pine")
 height = 11.0
 radius = 2.2
 color = Color(0.06, 0.06, 0.11, 1)
 
 [node name="VoidPine2" type="Node3D" parent="Forest"]
-transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -8.05, -9.00, 14.33)
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -1.52, -9.00, 12.62)
 script = ExtResource("pine")
 height = 11.0
 radius = 2.2
 color = Color(0.06, 0.06, 0.11, 1)
 
 [node name="VoidPine3" type="Node3D" parent="Forest"]
-transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 6.97, -9.00, 12.64)
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -9.06, -9.00, 13.24)
 script = ExtResource("pine")
 height = 11.0
 radius = 2.2
 color = Color(0.06, 0.06, 0.11, 1)
 
 [node name="VoidPine4" type="Node3D" parent="Forest"]
-transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -2.48, -9.00, 13.00)
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 2.02, -9.00, 12.76)
 script = ExtResource("pine")
 height = 11.0
 radius = 2.2
@@ -251,7 +251,7 @@ height = 26.0
 radius = 1.6
 
 [node name="Eyes1" type="Node3D" parent="Forest"]
-transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -12.70, -4.00, 12.50)
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -3.86, -4.00, 12.50)
 script = ExtResource("eyes")
 
 

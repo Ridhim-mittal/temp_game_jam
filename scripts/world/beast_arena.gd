@@ -351,6 +351,7 @@ func _intro_long() -> void:
 			InkBits.burst(get_tree(), _beast_head() + Vector2(_beast.facing * 30, 10), 3, 420.0, Vector2(_beast.facing, 0.2), 0.0)
 	if _at(7.4):
 		_title = 0.0
+		Sfx.play("boss_intro")
 		_cam_goal = _beast_head() + Vector2(0, 60)
 		_zoom_goal = 1.35
 		_cam_rate = 1.4

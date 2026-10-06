@@ -34,6 +34,7 @@
 [ext_resource type="Script" path="res://scripts/ui/narration.gd" id="46_narration"]
 [ext_resource type="Script" path="res://scripts/world/city_block.gd" id="47_cityblock"]
 [ext_resource type="Script" path="res://scripts/world/city_ledge.gd" id="48_cityledge"]
+[ext_resource type="Script" path="res://scripts/world/big_coin.gd" id="49_bigcoin"]
 
 [node name="TestLevel" type="Node2D"]
 
@@ -113,6 +114,40 @@ size = Vector2(160, 16)
 [node name="Heart1" type="Area2D" parent="World"]
 position = Vector2(3220, 350)
 script = ExtResource("19_heart")
+
+[node name="Plank4" type="StaticBody2D" parent="World"]
+position = Vector2(3600, 388)
+script = ExtResource("48_cityledge")
+size = Vector2(130, 16)
+
+[node name="Plank5" type="StaticBody2D" parent="World"]
+position = Vector2(3450, 278)
+script = ExtResource("48_cityledge")
+size = Vector2(130, 16)
+
+[node name="Plank6" type="StaticBody2D" parent="World"]
+position = Vector2(3600, 168)
+script = ExtResource("48_cityledge")
+size = Vector2(130, 16)
+
+[node name="Plank7" type="StaticBody2D" parent="World"]
+position = Vector2(3450, 58)
+script = ExtResource("48_cityledge")
+size = Vector2(130, 16)
+
+[node name="Plank8" type="StaticBody2D" parent="World"]
+position = Vector2(3600, -52)
+script = ExtResource("48_cityledge")
+size = Vector2(130, 16)
+
+[node name="Plank9" type="StaticBody2D" parent="World"]
+position = Vector2(3450, -162)
+script = ExtResource("48_cityledge")
+size = Vector2(130, 16)
+
+[node name="BigCoin1" type="Area2D" parent="World"]
+position = Vector2(3450, -260)
+script = ExtResource("49_bigcoin")
 
 [node name="PanelDoor" type="Area2D" parent="World"]
 position = Vector2(3600, 600)
@@ -197,6 +232,18 @@ script = ExtResource("9_coin")
 
 [node name="Coin18" type="Area2D" parent="Coins"]
 position = Vector2(3260, 352)
+script = ExtResource("9_coin")
+
+[node name="Coin19" type="Area2D" parent="Coins"]
+position = Vector2(3600, 120)
+script = ExtResource("9_coin")
+
+[node name="Coin20" type="Area2D" parent="Coins"]
+position = Vector2(3450, 10)
+script = ExtResource("9_coin")
+
+[node name="Coin21" type="Area2D" parent="Coins"]
+position = Vector2(3600, -100)
 script = ExtResource("9_coin")
 
 [node name="Enemies" type="Node2D" parent="."]

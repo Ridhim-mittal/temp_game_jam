@@ -39,6 +39,7 @@ const BASICS := {
 const LATER := {
 	"2d": [
 		{"id": "ember", "word": "EMBER", "keys": [["RMB", "ember"]], "hold": 0.8, "when": "near_light"},
+		{"id": "wall", "word": "WALL JUMP", "keys": [["SPACE", "jump"]], "when": "on_wall"},
 		# hold attack past player.gd's charge_time (0.6 s), let go: an ink wave flies out
 		{"id": "inkwave", "word": "INK WAVE", "keys": [["LMB", "attack"]], "hold": 0.7, "when": "near_flyer"},
 		# light or life (player.gd): pour a third of the Ember into half a bottle of ink
@@ -241,6 +242,8 @@ func _ready_for(when: String) -> bool:
 				var d := absf(l.global_position.x - player.global_position.x) - half
 				if d < 320.0 and absf(l.global_position.y - player.global_position.y) < 400.0:
 					return true
+		"on_wall":
+			return "_wall_dir" in player and player._wall_dir != 0
 		"near_monster":
 			return _nearest_monster() < 6.0
 		"hurt_2d":  # lost some ink, could heal right now, and nothing is about to hit him

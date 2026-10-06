@@ -371,6 +371,7 @@ func _physics_process(delta: float) -> void:
 			_cancel_charge()
 			_dash_timer = dash_time
 			_dash_cooldown_timer = dash_cooldown
+			Sfx.play("dash")
 			_attack_timer = 0.0  # a dash cancels a swing
 			_squash = Vector2(1.3, 0.75)
 		_update_heal(delta)
@@ -434,6 +435,7 @@ func _update_vertical(delta: float) -> void:
 	if _jump_buffer > 0.0 and _coyote > 0.0 and _attack_timer <= 0.0:
 		velocity.y = jump_velocity * _slow_mult().y
 		_jumping = true
+		Sfx.play("jump")
 		_jump_buffer = 0.0
 		_coyote = 0.0
 		_squash = Vector2(0.75, 1.25)
@@ -452,6 +454,7 @@ func _update_vertical(delta: float) -> void:
 func _post_move() -> void:
 	if is_on_floor() and not _was_on_floor:
 		_squash = Vector2(1.25, 0.8)
+		Sfx.play("fall_land", -9.0, 1.15)
 	_was_on_floor = is_on_floor()
 	_probe_ground()
 	_check_contact_damage()
@@ -494,6 +497,7 @@ func _start_attack(move_dir: Vector3) -> void:
 	_attack_buffer = 0.0
 	_combo = _combo % 3 + 1 if _combo_timer > 0.0 else 1
 	var finisher := _combo == 3
+	Sfx.play("sword_swing", 1.0 if finisher else 0.0, 0.9 if finisher else 1.0)
 	var dir := _aim_direction(move_dir)
 	facing_dir = dir  # Vesper turns into the swing (aim assist included)
 	if absf(dir.x) > 0.15:
@@ -618,6 +622,7 @@ func _hit_in_front(dir: Vector3, finisher: bool) -> void:
 			if _weapon == "prism":
 				_stun(target, prism_stun)  # its light dazzles
 			hits += 1
+			Sfx.play("sword_hit")
 			var word: String = "KA-POW!" if finisher else HIT_WORDS.pick_random()
 			Fx.pop_text(get_tree(), target.global_position + Vector3(0, 1.3, 0), word)
 	# unlit lanterns catch when struck
@@ -1199,12 +1204,13 @@ func _update_inking(delta: float) -> void:
 ## ground with the Ember lowered, to pour `heal_cost` of its fuel (a third)
 ## into half a bottle of ink.
 func _update_heal(delta: float) -> void:
-	var can := Input.is_action_pressed("heal") and is_on_floor() and health < max_health \
-		and fuel >= heal_cost and _attack_timer <= 0.0 and _dash_timer <= 0.0 and not ember_raised
-	if not can:
+	if Input.is_action_just_pressed("heal") and not can_heal():
+		_heal_refused()
+	if not (Input.is_action_pressed("heal") and can_heal()):
 		_channel = -1.0
 		return
 	_channel = maxf(_channel, 0.0) + delta
+	_since_raised = 0.0  # no regen while pouring (2D: ember.hold_regen())
 	if _channel >= heal_time:
 		_channel = -1.0
 		add_fuel(-heal_cost)
@@ -1213,6 +1219,25 @@ func _update_heal(delta: float) -> void:
 		Fx.pop_text(get_tree(), global_position + Vector3(0, 1.8, 0), "+½ INK", Color(1.0, 0.85, 0.45), 32)
 		Fx.burst(get_tree(), global_position + Vector3(0, 0.8, 0), Color(1.0, 0.75, 0.35), 14, 2.5)
 		_squash = Vector2(0.85, 1.2)
+
+
+## Could hold F right now and heal (the HUD's "F HEAL" tag asks).
+func can_heal() -> bool:
+	return not dead and _hurt_timer <= 0.0 and is_on_floor() and health < max_health and fuel >= heal_cost \
+		and _attack_timer <= 0.0 and _dash_timer <= 0.0 and not ember_raised
+
+
+## F pressed when it can't heal: say why, so it never seems broken.
+func _heal_refused() -> void:
+	var why := ""
+	if health >= max_health:
+		why = "INK FULL"
+	elif fuel < heal_cost:
+		why = "NOT ENOUGH EMBER"
+	elif ember_raised:
+		why = "LOWER THE EMBER"
+	if why != "":
+		Fx.pop_text(get_tree(), global_position + Vector3(0, 1.8, 0), why, Color(0.75, 0.72, 0.7), 24)
 
 
 # ------------------------------------------------------------------ damage
@@ -1257,6 +1282,7 @@ func take_damage(amount: int, from_pos: Vector3) -> void:
 		Fx.pop_text(get_tree(), global_position + Vector3(0, 2.2, 0), "LAST DROP!", Color(0.55, 0.65, 1.0), 34)
 	health = maxi(health - amount, 0)
 	health_changed.emit(health, max_health)
+	Sfx.play("hurt")
 	_invuln = invuln_time
 	_hurt_timer = 0.2
 	_attack_timer = 0.0
@@ -1313,6 +1339,7 @@ func bounce_back(dir: Vector3) -> void:
 func _die() -> void:
 	dead = true
 	died.emit()
+	Sfx.play("death")
 	Fx.splat(get_tree(), global_position, 2.0)
 	Fx.pop_text(get_tree(), global_position + Vector3(0, 1.8, 0), "THE END?", Color(0.98, 0.96, 0.9), 40)
 	if not _model:

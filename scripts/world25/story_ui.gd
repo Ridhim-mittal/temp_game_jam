@@ -46,6 +46,8 @@ func toast(text: String) -> void:
 
 ## Shows a boss health bar (reads the monster's `health`, `hp`, `dead`).
 func set_boss(boss: Node, boss_name: String) -> void:
+	boss.add_to_group("boss")
+	Sfx.play("boss_intro")
 	_boss = boss
 	_boss_name = boss_name
 	_boss_max = maxi(boss.hp, 1)

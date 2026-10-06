@@ -54,6 +54,8 @@ func _on_body_entered(body: Node2D) -> void:
 		pen._current = false
 	_active = true
 	_current = true
+	if has_node("/root/Sfx"):
+		get_node("/root/Sfx").play("checkpoint")
 	_bounce = 1.0
 	var pop := ComicText.new()
 	pop.text = "SAVED!"
