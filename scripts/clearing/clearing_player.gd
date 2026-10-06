@@ -470,8 +470,7 @@ func _update_vertical(delta: float) -> void:
 
 func _post_move() -> void:
 	if is_on_floor() and not _was_on_floor:
-		_squash = Vector2(1.25, 0.8)
-		Sfx.play("fall_land", -9.0, 1.15)
+		_squash = Vector2(1.25, 0.8)  # (landing is silent)
 	_was_on_floor = is_on_floor()
 	_probe_ground()
 	_check_contact_damage()

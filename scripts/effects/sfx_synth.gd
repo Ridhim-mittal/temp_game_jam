@@ -20,6 +20,7 @@ static func play(tree: SceneTree, sound: String, db := 0.0, pitch := 1.0) -> voi
 		return
 	var p := AudioStreamPlayer.new()
 	p.stream = get_stream(sound)
+	p.bus = "SFX"  # Sfx.BUS: every sound effect shares one, quieter than the music
 	p.volume_db = db
 	p.pitch_scale = pitch
 	p.process_mode = Node.PROCESS_MODE_ALWAYS

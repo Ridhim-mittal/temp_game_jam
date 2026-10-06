@@ -733,9 +733,7 @@ func _post_move(delta: float) -> void:
 		if velocity.y >= 0.0:
 			is_jumping = false
 		if not _was_on_floor:
-			_squash = Vector2(1.25, 0.8)
-			if _land_timer <= 0.0:
-				Sfx.play("fall_land", -9.0, 1.15)  # a soft step down
+			_squash = Vector2(1.25, 0.8)  # (landing is silent)
 	_since_hazard += delta
 	# safe ground: stood on for a moment, solid for good, nowhere near spikes
 	if on_floor and _on_stable_floor() and not _touching_hazard() and _floor_under(global_position):
@@ -753,7 +751,6 @@ func _post_move(delta: float) -> void:
 ## Hollow Knight-style hard landing: freeze-frame, shake, ground burst and a
 ## kneel that locks control; past `fall_damage_height` it also hurts.
 func _hard_land(drop: float) -> void:
-	Sfx.play("fall_land", 2.0 if drop >= fall_damage_height else 0.0)
 	var hurts := not cutscene and fall_damage_height > 0.0 and drop >= fall_damage_height
 	_land_length = hard_land_time * (1.6 if hurts else 1.0)
 	_land_timer = _land_length

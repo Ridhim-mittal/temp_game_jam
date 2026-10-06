@@ -342,6 +342,7 @@ func _play_chime() -> void:
 		_chime.data = data
 	var p := AudioStreamPlayer3D.new()
 	p.stream = _chime
+	p.bus = "SFX"  # Sfx.BUS: every sound effect shares one, quieter than the music
 	p.volume_db = -6.0
 	p.unit_size = 12.0
 	add_child(p)
