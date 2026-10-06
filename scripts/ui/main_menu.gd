@@ -45,10 +45,10 @@ const CHAPTERS := [
 	["THE CITY", "res://scenes/levels/test_level.tscn"],
 	["THE SKETCHBOOK", "res://scenes/levels/sketchbook.tscn"],
 	["THE LONG DROP", "res://scenes/levels/long_drop.tscn"],
+	["THE MARGINS", "res://scenes/clearing/clearing.tscn"],
 	["SHADE'S CITY", "res://scenes/levels/shades_city.tscn"],
 	["THE INK CAVE", "res://scenes/levels/ink_cave.tscn"],
 	["SHADE", "res://scenes/levels/shade_finale.tscn"],
-	["THE MARGINS", "res://scenes/clearing/clearing.tscn"],
 	["THE ENDING", "res://scenes/cutscenes/cs_last_page.tscn"],  # the ending cutscene and its credits
 	["BACK", "@back"],
 ]
