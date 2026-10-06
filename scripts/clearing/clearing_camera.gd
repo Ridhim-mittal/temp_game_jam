@@ -4,6 +4,10 @@ extends Camera3D
 ## target smoothly and leaning a little ahead of it.
 ## Follows the target's interpolated `smooth_position` when it has one, and
 ## eases height changes (stairs) more gently than ground movement.
+## Big things worth a proper look (group "camera_frame": Quire's shop) draw
+## the view to themselves as the target comes near: the focus slides towards
+## their `frame_point` (global) by up to `frame_pull` and the camera backs
+## off by up to `frame_zoom`, inside `frame_radius`.
 
 @export var target_path: NodePath
 @export var pitch_deg := 48.0
@@ -34,6 +38,7 @@ extends Camera3D
 var _target: Node3D
 var _lead := Vector3.ZERO
 var _focus := Vector3.ZERO
+var _back_off := 0.0  # extra distance, framing something big
 var _trauma := 0.0
 var _warmup := 0
 var _fade: ColorRect
@@ -65,13 +70,20 @@ func _process(delta: float) -> void:
 		var v: Vector3 = _target.velocity
 		_lead = _lead.lerp(Vector3(v.x, 0.0, v.z) * look_ahead, 1.0 - exp(-look_ahead_smoothing * delta))
 	var goal := _target_focus() + _lead
+	var back_off := 0.0
+	for thing in get_tree().get_nodes_in_group("camera_frame"):
+		var at: Vector3 = thing.frame_point
+		var near := smoothstep(thing.frame_radius, thing.frame_radius * 0.5, Vector2(goal.x - at.x, goal.z - at.z).length())
+		goal = goal.lerp(at, near * thing.frame_pull)
+		back_off = maxf(back_off, near * thing.frame_zoom)
+	_back_off = lerpf(_back_off, back_off, 1.0 - exp(-2.5 * delta))
 	goal.x = clampf(goal.x, bounds.position.x, bounds.end.x)
 	goal.z = clampf(goal.z, bounds.position.y, bounds.end.y)
 	var k := 1.0 - exp(-smoothing * delta)
 	_focus.x = lerpf(_focus.x, goal.x, k)
 	_focus.z = lerpf(_focus.z, goal.z, k)
 	_focus.y = lerpf(_focus.y, goal.y, 1.0 - exp(-height_smoothing * delta))
-	global_position = _from_focus(_focus)
+	global_position = _from_focus(_focus, distance + _back_off)
 	_update_shake(delta)
 
 

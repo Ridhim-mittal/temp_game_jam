@@ -360,9 +360,22 @@ Shade's black speech balloon):
   grey stone: only the lower half of his statue stands (broken off at the chest, built from
   primitives, not vesper_3d), his head, hat, an arm and the snapped blade lie in the rubble; a worn
   "VESPER" plaque, old offerings (faded scarf, tipped ink pots, quills, yellowed pages, a few
-  candles) and a dim ring of the Writer's marks. Quire's shop stall (`shop_stall.gd`, where Patch
-  the dog used to sit; `patch_npc.gd` is unhooked): a carved navy counter
-  (`shop_carving.gdshader`), Quire on it; E opens the shop. The hub's way on (CaveGate) stands
+  candles) and a dim ring of the Writer's marks. Quire's shop (`shop_stall.gd`, where Patch
+  the dog used to sit; `patch_npc.gd` is unhooked) is the biggest, brightest thing in the hub: a giant
+  book standing open on its end (`COVER`, 7 m across and 4.6 m tall: its covers are the walls, the page
+  blocks inside them have shelves of wares cut into them, its pages fan up out of the top like a crown
+  under the gold QUIRE'S CURIOS sign, a red ribbon hangs down its gutter, lanterns off the covers, loose
+  pages wheeling round it; a little gloomy: dark boards, tarnished gilt, yellowed pages ink has run
+  down, lanterns burning low), the carved navy counter (`shop_carving.gdshader`) in its gutter and,
+  hovering over it at `QUIRE_SCALE` (2.3), Quire (`quire_ghost.gd`, which extends unfinished_model.gd for
+  its strokes and helpers): the ghost of a character the Writer never finished, his left half inked over
+  a pale see-through fill, his right half only dashed pencil guides (one eye glowing, the other a pencil
+  ring; a writing arm and a stub; a tail that ends in pencil), a soft glow round him. `shown` fades him,
+  his lines coming and going, while he is alone and inks him in when Vesper is near; now and then he
+  skips a frame. His `head` follows Vesper; his quill scribbles in a real ledger floating at his
+  side. It is in group "camera_frame": clearing_camera.gd slides its focus towards such a thing's
+  `frame_point` (by `frame_pull`) and backs off (`frame_zoom`) as Vesper comes within `frame_radius`, so
+  the whole shop is in view. E opens the shop. The hub's way on (CaveGate) stands
   at the back of the terrace, where the skill tree was (the archway by the stairs is gone).
 - HUD (clearing_hud.gd, sized to the screen with set_anchors_and_offsets_preset): ink bottles
   (ink_bottles.gd, as in 2D), the Ember bar with its button (a mouse, right button lit), marked in
@@ -454,7 +467,10 @@ unhooked, Catalog.SKILLS unread, no Ink Points).
   "cosmetic"), cloaks; `UPGRADES` (3 per weapon, in order: SHARPENED +1 damage, QUICK HAND special
   charges 40% faster, MASTERWORK the weapon's `master`). `retired` items (Compass Edge) aren't sold.
 - Shop overlay `scripts/ui/shop.gd` ("Quire's Curios"; tabs WEAPONS / UPGRADES / HATS / SCARVES /
-  CLOAKS / ARMOR, 2D-art preview): B anywhere ("shop" action; 2D: player.gd `Shop.open(tree)`;
+  CLOAKS / ARMOR, 2D-art preview; it opens like a book, two navy covers and the pages under them
+  swinging away from the middle: `_draw_pages()`; a sale is a moment, `_bought()`: coins fly from the
+  purse to the item, a red SOLD! / UPGRADED! stamp lands on its row, the purse counts down and Vesper
+  hops in a gold ring): B anywhere ("shop" action; 2D: player.gd `Shop.open(tree)`;
   2.5D: room.gd `open_overlay("shop")`), the pause screen (pause_menu.gd, 2D and 2.5D: SHOP
   is its fifth button), Quire's stall. In 2D, B is read in player.gd `_unhandled_input()` (not
   polled, so the B that closes the shop can't reopen it). Quire's replies show under the sign (red
