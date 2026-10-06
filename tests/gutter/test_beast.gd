@@ -183,6 +183,32 @@ func _run() -> void:
 	check(arena._east_shape.disabled and not player.cutscene and chase.phase == chase.Phase.CHASE and chase.eraser == eraser,
 		"the panel's border rips open: RUN! (the chase starts, Vesper has the controls)")
 	check(music.current == "beast", "the fight's music comes back under the chase")
+	# the Eraser is a wall: running, dashing or jumping back at it, he never gets
+	# behind it into the rubbed-out paper, and it bounces him off forward
+	var hp_before: float = player.health
+	var worst := 1.0e9
+	var thrown := false
+	for attempt in ["run", "dash", "jump"]:
+		player._invuln_timer = 99.0  # the wall alone, not the hit's knockback
+		Input.action_press("move_left")
+		for i in 150:
+			if attempt == "dash" and i % 40 == 5:
+				Input.action_press("dash")
+			elif attempt == "dash" and i % 40 == 7:
+				Input.action_release("dash")
+			if attempt == "jump" and i % 40 == 5:
+				Input.action_press("jump")
+			elif attempt == "jump" and i % 40 == 25:
+				Input.action_release("jump")
+			await physics_frame
+			worst = minf(worst, player.global_position.x - (eraser.global_position.x + eraser.block.x * 0.4))
+			thrown = thrown or player.velocity.x > 300.0
+		Input.action_release("move_left")
+		Input.action_release("dash")
+		Input.action_release("jump")
+	check(worst > -4.0 and thrown and player.health == hp_before,
+		"the Eraser is a wall: run, dash or jump back at it and it bounces him off, never behind it (closest %.0f px)" % worst)
+	await seconds(0.5)
 	# the chase: keep running, hop the bumps
 	player._invuln_timer = 0.0
 	Input.action_press("move_right")

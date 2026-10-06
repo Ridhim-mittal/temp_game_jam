@@ -5,7 +5,9 @@ extends Node2D
 ## here over the level); the corridor ahead has a few easy hops. The Eraser
 ## keeps up (it speeds up when it falls far behind and eases off when it's on
 ## his heels), so it's always there, but anyone who keeps running gets away;
-## touching it costs half a bottle and throws him forward.
+## touching it costs half a bottle and throws him forward. It is a wall too:
+## nothing gets past it into the rubbed-out paper (not a dash, not a jump over
+## it); run back into it and it bounces him off, forward (`_hold_back()`).
 ## The corridor ends where its panel ends: the gutter, the dark gap between
 ## the columns of the page (drawn at `end_x`, a real pit). Near it the
 ## controls go (player.gd `cutscene` + `cutscene_run`): Vesper sprints for the
@@ -42,6 +44,8 @@ enum Phase { WAIT, CHASE, FINALE, DONE }
 ## The corridor's ceiling (world y), for the drawings.
 @export var room_top := -800.0
 @export var speed := 250.0
+## How hard the Eraser bounces him off when he runs into it (px/s: forward, up).
+@export var bounce := Vector2(560, -380)
 
 var phase := Phase.WAIT
 var eraser: Node2D
@@ -59,6 +63,7 @@ var _line := ""
 var _line_t := -1.0
 var _leapt := false
 var _fell := false
+var _bounced := 0.0
 var _time := 0.0
 var _batch := InkBatch.new()
 
@@ -165,8 +170,32 @@ func _chase(delta: float) -> void:
 	_erase_x = maxf(_erase_x, eraser.global_position.x - eraser.block.x * 0.3)
 	if fmod(_time, 0.9) < delta:
 		SfxSynth.play(get_tree(), "scritch", -8.0, randf_range(0.5, 0.7))
+	eraser.lunge = move_toward(eraser.lunge, 0.0, delta * 2.0)
+	_hold_back()
 	if _player.global_position.x > end_x - 380.0 and _player.global_position.y < global_position.y + 40.0:
 		_start_finale()
+
+
+## The rubbed-out paper is gone: Vesper can't get behind the Eraser's front.
+## Walking, dashing or jumping into it, he's put back in front of it and
+## bounced off, forward and up (a rubbery THWUMP); a hit throws him forward
+## too (player.gd take_damage), so either way he ends up running again.
+func _hold_back() -> void:
+	_bounced = maxf(_bounced - get_process_delta_time(), 0.0)
+	var front: float = eraser.global_position.x + eraser.block.x * 0.4 + 13.0  # + half his body
+	if _player.global_position.x >= front + 6.0:
+		return
+	_player.global_position.x = maxf(_player.global_position.x, front)
+	if _player.velocity.x < 0.0:
+		_player.velocity.x = 0.0
+	if _bounced > 0.0:
+		return
+	_bounced = 0.4
+	if _player.has_method("shove"):
+		_player.shove(bounce)
+	eraser.lunge = 0.6  # it shoves back
+	_pop(_player.global_position + Vector2(-20, -80), "THWUMP!", Color(0.95, 0.5, 0.55), 40)
+	SfxSynth.play(get_tree(), "thud", -4.0, 1.5)
 
 
 func _start_finale() -> void:
