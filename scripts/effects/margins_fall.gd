@@ -24,6 +24,7 @@ extends Control
 ##
 ##   MarginsFall.start(any_node, platformer_player)
 
+const ScenePrefetch = preload("res://scripts/core/scene_prefetch.gd")
 const InkBatch = preload("res://scripts/depth/ink_batch.gd")
 const PlayerArt = preload("res://scripts/player/player_visual.gd")
 const SfxSynth = preload("res://scripts/effects/sfx_synth.gd")
@@ -69,6 +70,7 @@ var _rng := RandomNumberGenerator.new()
 static func start(from: Node, player: Node) -> void:
 	var tree := from.get_tree()
 	var fx = load("res://scripts/effects/margins_fall.gd").new()
+	ScenePrefetch.start("res://scenes/clearing/clearing.tscn")  # the hub: read while he falls
 	fx._shot = ImageTexture.create_from_image(from.get_viewport().get_texture().get_image())
 	if player and "health" in player and "max_health" in player:
 		fx._health_frac = clampf(float(player.health) / maxf(float(player.max_health), 1.0), 0.0, 1.0)

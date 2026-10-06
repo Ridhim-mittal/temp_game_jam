@@ -7,6 +7,7 @@ extends Node2D
 ## back into Shade's city: `next_scene`, or "TO BE CONTINUED" and the main
 ## menu until the Shade fight exists. Place at the world origin.
 
+const ScenePrefetch = preload("res://scripts/core/scene_prefetch.gd")
 const COMIC = preload("res://scripts/effects/comic_text.gd")
 const SfxSynth = preload("res://scripts/effects/sfx_synth.gd")
 const FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
@@ -97,6 +98,7 @@ func _on_defeated() -> void:
 
 func _start_collapse() -> void:
 	phase = Phase.COLLAPSE
+	ScenePrefetch.start(next_scene if next_scene != "" else MENU)  # read while the cave falls in
 	Sfx.play("boss_intro", 0.0, 0.6)
 	SfxSynth.play(get_tree(), "rumble", 2.0, 0.6)
 	SfxSynth.play(get_tree(), "shatter", -4.0, 0.5)  # the rock cracking
@@ -150,7 +152,7 @@ func _collapse_tick(delta: float) -> void:
 	var done := 7.5 if next_scene == "" else 4.2
 	if _t > done or (next_scene == "" and _t > 5.5 and Input.is_anything_pressed()):
 		set_process(false)
-		get_tree().change_scene_to_file(next_scene if next_scene != "" else MENU)
+		ScenePrefetch.change(get_tree(), next_scene if next_scene != "" else MENU)
 	_view.queue_redraw()
 
 

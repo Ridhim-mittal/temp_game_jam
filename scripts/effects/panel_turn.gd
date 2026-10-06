@@ -17,6 +17,7 @@ extends Control
 ##   PanelTurn.start(self, "res://scenes/levels/sketchbook.tscn", "THE SKETCHBOOK")
 ##   PanelTurn.start(self, "res://scenes/levels/long_drop.tscn", "THE LONG DROP", true)
 
+const ScenePrefetch = preload("res://scripts/core/scene_prefetch.gd")
 const ComicFrame = preload("res://scripts/ui/comic_frame.gd")
 const FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
 const INK := Color(0.05, 0.03, 0.1)
@@ -84,7 +85,8 @@ static func start(from: Node, scene: String, next_title := "", tall_panel := fal
 
 func _ready() -> void:
 	_p2 = P2_TALL if tall else P2_WIDE
-	_loading = ResourceLoader.load_threaded_request(target) == OK
+	ScenePrefetch.start(target)
+	_loading = true
 	_g0 = get_viewport().global_canvas_transform
 	var img := Image.create(9, 9, false, Image.FORMAT_RGBA8)
 	for y in 9:
@@ -143,12 +145,7 @@ func _process(delta: float) -> void:
 func _loaded() -> PackedScene:
 	if not _loading:
 		return load(target) as PackedScene
-	var st := ResourceLoader.load_threaded_get_status(target)
-	if st == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
-		return null
-	if st == ResourceLoader.THREAD_LOAD_LOADED:
-		return ResourceLoader.load_threaded_get(target) as PackedScene
-	return load(target) as PackedScene  # the thread failed: load it here
+	return ScenePrefetch.ready_scene(target)
 
 
 func _begin_reveal(scene: Node) -> void:

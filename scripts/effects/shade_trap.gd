@@ -6,6 +6,7 @@ extends CanvasLayer
 ##
 ##   ShadeTrap.start(get_tree(), player, "res://scenes/levels/ink_cave.tscn")
 
+const ScenePrefetch = preload("res://scripts/core/scene_prefetch.gd")
 const FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
 const MENU := "res://scenes/ui/main_menu.tscn"
 const LINE := "DID YOU REALLY THINK I'D LET YOU LEAVE?"
@@ -29,6 +30,7 @@ static func start(tree: SceneTree, player: Node, next: String) -> void:
 func _ready() -> void:
 	layer = 120
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	ScenePrefetch.start(next_scene if next_scene != "" else MENU)  # read while the ink floods
 	_view = Control.new()
 	_view.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_view.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -46,7 +48,7 @@ func _process(delta: float) -> void:
 	var done := 8.5 if next_scene == "" else 5.6  # with a next scene: no "to be continued"
 	if _t > done or (next_scene == "" and _t > 6.0 and Input.is_anything_pressed()):
 		set_process(false)
-		get_tree().change_scene_to_file(next_scene if next_scene != "" else MENU)
+		ScenePrefetch.change(get_tree(), next_scene if next_scene != "" else MENU)
 	_view.queue_redraw()
 
 

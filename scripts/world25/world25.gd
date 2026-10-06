@@ -22,6 +22,8 @@ const START_SCENE := "res://scenes/clearing/clearing.tscn"
 const MENU_SCENE := "res://scenes/ui/main_menu.tscn"
 const WIPE_SHADER = preload("res://shaders/world25/ink_wipe.gdshader")
 const GutterTransition = preload("res://scripts/world25/gutter_transition.gd")
+const ScenePrefetch = preload("res://scripts/core/scene_prefetch.gd")
+const RoomWarmup = preload("res://scripts/world25/room_warmup.gd")
 
 ## Gate id the player arrives at in the next room ("" = the room's spawn).
 var entry_gate := ""
@@ -48,6 +50,8 @@ var hold_state := false
 var _layer: CanvasLayer
 var _wipe: ColorRect
 var _mat: ShaderMaterial
+var _wait: Control  # "INKING..." on the cover while the next room warms up
+var _wait_t := 0.0
 
 
 func _ready() -> void:
@@ -63,6 +67,12 @@ func _ready() -> void:
 	_wipe.material = _mat
 	_wipe.visible = false
 	_layer.add_child(_wipe)
+	_wait = Control.new()
+	_wait.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_wait.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_wait.visible = false
+	_wait.draw.connect(func(): RoomWarmup.paint_wait(_wait, _wait.size, _wait_t, clampf(_wait_t * 3.0, 0.0, 1.0)))
+	_layer.add_child(_wait)
 
 
 func start_story() -> void:
@@ -178,10 +188,14 @@ func go(scene_path: String, gate_id: String, through_gutter := false) -> void:
 		await fx.finished
 		transitioning = false
 		return
+	ScenePrefetch.start(scene_path)  # (a cutscene may have started it already)
 	await _cover()
+	while not ScenePrefetch.done(scene_path):
+		await get_tree().process_frame
 	Engine.time_scale = 1.0
 	get_tree().paused = false
-	get_tree().change_scene_to_file(scene_path)
+	ScenePrefetch.change(get_tree(), scene_path)
+	await _warmed()
 	await _reveal()
 	transitioning = false
 
@@ -212,6 +226,27 @@ func _cover() -> void:
 	t.tween_method(func(v: float): _mat.set_shader_parameter("progress", v), 0.0, 1.0, 0.45) \
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 	await t.finished
+
+
+## A few frames for the new room to place Vesper and find him with its camera,
+## then, in a browser, the cover stays (the room paused) while its shaders
+## compile (room_warmup.gd).
+func _warmed() -> void:
+	for i in 4:
+		await get_tree().process_frame
+	var room := get_tree().current_scene
+	if room == null or not ("warming" in room) or not room.warming:
+		return
+	var was := get_tree().paused
+	get_tree().paused = true
+	_wait_t = 0.0
+	_wait.visible = true
+	while is_instance_valid(room) and room.warming:
+		await get_tree().process_frame
+		_wait_t += get_process_delta_time()
+		_wait.queue_redraw()
+	_wait.visible = false
+	get_tree().paused = was
 
 
 func _reveal() -> void:

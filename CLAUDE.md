@@ -634,7 +634,7 @@ nib swish, a nib click + ink thwack + splat); re-running overwrites them (`--out
 - Gutter checks (need a display, e.g. `xvfb-run`): `godot --path . --rendering-driver opengl3 -s
   res://tests/gutter/test_phase1.gd` (also test_phase2, test_phase5, test_levels, test_shop,
   test_beast for the end of the Long Drop: the Scribbled Beast, the Eraser's chase and the fall
-  into the Margins, test_continue for the main menu's CONTINUE / NEW GAME, test_shade_music for Shade's part's music and boss sounds, and test_capture
+  into the Margins, test_continue for the main menu's CONTINUE / NEW GAME, test_warmup for the browser's room warm-up, test_shade_music for Shade's part's music and boss sounds, and test_capture
   for the end of the Gutter: the capture and the climb into
   Shade's City); exit code = failures. test_shop puts the player's Profile back when it's done.
 - Screenshots: from a script in a temporary scene, call `RenderingServer.force_draw(false)` then
@@ -655,3 +655,15 @@ nib swish, a nib click + ink thwack + splat); re-running overwrites them (`--out
   (it needs cross-origin isolation). Single-threaded, Godot mixes the sound between frames, so any frame
   longer than the audio buffer (`output_latency.web`, 80 ms) crackles the music (fine while the tab is
   minimised); threaded, a mixer thread fills it (a load test: 66% of audio blocks dropped vs none).
+- Every scene switch after a cutscene / transition loads through `scripts/core/scene_prefetch.gd`
+  (`ScenePrefetch.start(path)` as it begins, `.change()` / `.ready_scene()` / `.take()` at its end: cs_book,
+  panel_turn, page_climb, margins_fall, shade_trap, cave_arena, World25.go, gutter_transition). Desktop loads
+  in a thread; a browser loads on the main thread at `start()`: there a loading thread's every file read is
+  handed to the main thread (emscripten `proxyToMainThread`), ~1400 of them for the City, so the game sat on
+  the opening's last frame 10-20 s. Don't call `ResourceLoader.load_threaded_request` directly.
+- In a browser a 2.5D room compiles its shaders behind the cover (`scripts/world25/room_warmup.gd`, begun at
+  the end of room.gd `_ready`, `warming` / `warmed`): its meshes go on layer 20 (`HIDE`), an orthographic camera
+  looks down on the whole room and they come back a few materials a frame; World25.go() and gutter_transition.gd
+  hold their cover (paused, "INKING" + ink drops) until it's done; entered any other way it covers itself.
+  `RoomWarmup.force` turns it on natively (test_warmup). Toon.merge builds merged props from CPU arrays
+  (`scripts/clearing/prim_arrays.gd`) instead of reading meshes back from the GPU (~5000 stalls in the hub).

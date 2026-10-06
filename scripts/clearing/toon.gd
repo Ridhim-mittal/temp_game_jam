@@ -123,6 +123,9 @@ static func merge(root_v: Variant, keep: Array = []) -> void:
 		merged.mesh = _baked(parts, inv)
 		merged.material_override = parts[0].material_override
 		merged.cast_shadow = parts[0].cast_shadow
+		merged.layers = parts[0].layers  # (hidden with them while a room warms up: room_warmup.gd)
+		if parts[0].has_meta(&"warm_layers"):
+			merged.set_meta(&"warm_layers", parts[0].get_meta(&"warm_layers"))
 		root.add_child(merged)
 		for mi: MeshInstance3D in parts:
 			mi.get_parent().remove_child(mi)
