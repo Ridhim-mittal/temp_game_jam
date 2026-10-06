@@ -251,11 +251,35 @@ func _strokes(kind: String) -> Array:
 			for side in [-1.0, 1.0]:
 				s.append(_line([Vector2(side * 66, -86), Vector2(side * 102, -64), Vector2(side * 96, -30)]))
 		"eraser":
-			s.append(_line([Vector2(-80, 0), Vector2(-80, -86), Vector2(80, -86), Vector2(80, 0), Vector2(-80, 0)]))
-			s.append(_line([Vector2(-80, -30), Vector2(80, -30)]))
-			s.append(_line([Vector2(-40, -66), Vector2(-14, -56)]))
-			s.append(_line([Vector2(40, -66), Vector2(14, -56)]))
-			s.append(_line([Vector2(-26, -42), Vector2(26, -42)]))
+			# SHADE'S ERASER (eraser_art.gd), at the size it pops out: the chipped
+			# crown, the torn sleeve and its band, the skull's eyes and fanged maw,
+			# the scribbled arms and their claws
+			var k := 100.0 / 330.0
+			var e := func(pts: Array) -> PackedVector2Array:
+				var out := []
+				for q: Vector2 in pts:
+					out.append(q * k)
+				return _line(out)
+			s.append(e.call([Vector2(-92, -218), Vector2(-92, -312), Vector2(-60, -306), Vector2(-40, -318), Vector2(-14, -304),
+				Vector2(10, -316), Vector2(36, -306), Vector2(62, -318), Vector2(92, -310), Vector2(92, -218)]))
+			s.append(e.call([Vector2(-105, -66), Vector2(-105, -236), Vector2(-84, -224), Vector2(-63, -250), Vector2(-40, -234),
+				Vector2(-20, -252), Vector2(4, -236), Vector2(26, -250), Vector2(48, -236), Vector2(70, -248), Vector2(105, -238),
+				Vector2(105, -66), Vector2(60, -60), Vector2(30, -70), Vector2(-20, -62), Vector2(-105, -66)]))
+			s.append(e.call([Vector2(-88, -70), Vector2(-88, 0), Vector2(88, 0), Vector2(88, -70)]))
+			s.append(e.call([Vector2(-55, -228), Vector2(-50, -72)]))
+			for side: float in [-1.0, 1.0]:
+				var ex := side * 36.0 + 6.0
+				s.append(e.call([Vector2(ex - 26, -185), Vector2(ex - 12, -200), Vector2(ex + 12, -200), Vector2(ex + 26, -185), Vector2(ex - 26, -185)]))
+				s.append(e.call([Vector2(ex - side * 27, -192), Vector2(ex + side * 27, -218)]))
+				s.append(e.call([Vector2(side * 97, -165), Vector2(side * 148, -135), Vector2(side * 172, -90)]))
+				for c in 3:
+					s.append(e.call([Vector2(side * 172, -90), Vector2(side * (186 + c * 4), -98 + c * 14), Vector2(side * (194 + c * 3), -84 + c * 16)]))
+			s.append(e.call([Vector2(-68, -120), Vector2(-50, -150), Vector2(6, -160), Vector2(62, -150), Vector2(80, -120),
+				Vector2(62, -86), Vector2(6, -76), Vector2(-50, -86), Vector2(-68, -120)]))
+			var teeth := []
+			for i in 11:
+				teeth.append(Vector2(-60 + i * 13, -150 + (16 if i % 2 == 1 else 0) - (0 if i % 2 == 1 else 0)))
+			s.append(e.call(teeth))
 		"pen":
 			s.append(_line([Vector2(-20, -10), Vector2(-20, -150), Vector2(20, -150), Vector2(20, -10)]))
 			s.append(_line([Vector2(-20, -10), Vector2(0, 0), Vector2(20, -10)]))

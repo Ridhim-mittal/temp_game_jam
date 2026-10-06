@@ -36,7 +36,7 @@ func _ready() -> void:
 	knockback = 2.0
 	contact_damage = 4  # two ink bottles
 	respawn_time = 15.0
-	setup_monster("res://scenes/enemies/eraser.tscn", 288, 40)
+	setup_monster("res://scenes/enemies/eraser.tscn", 352, 40)  # room for its arms and the charge
 
 
 func _tick(delta: float) -> void:
@@ -125,3 +125,4 @@ func _on_respawn() -> void:
 func _sync_puppet() -> void:
 	puppet.figure.state = state
 	puppet.figure.velocity = Vector2(velocity.x, velocity.z) * 40.0
+	puppet.figure.rage = 1.0 if furious else 0.0

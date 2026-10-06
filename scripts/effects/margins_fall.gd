@@ -28,6 +28,7 @@ const InkBatch = preload("res://scripts/depth/ink_batch.gd")
 const PlayerArt = preload("res://scripts/player/player_visual.gd")
 const SfxSynth = preload("res://scripts/effects/sfx_synth.gd")
 const FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
+const EraserArt = preload("res://scripts/enemies/eraser_art.gd")
 const PAPER := Color(0.96, 0.93, 0.86)
 const INK := Color(0.04, 0.03, 0.07)
 const DARK := Color(0.02, 0.018, 0.03)
@@ -389,14 +390,12 @@ func _vignette(r: Rect2, kind: int, grey: float, a: float) -> void:
 			_batch.draw_rect(Rect2(mid + Vector2(-r.size.y * 0.24, -r.size.y * 0.08), Vector2(r.size.y * 0.48, 10)), c.call(Color(0.14, 0.11, 0.16)))
 			_batch.draw_rect(Rect2(mid + Vector2(-r.size.y * 0.13, -r.size.y * 0.3), Vector2(r.size.y * 0.26, r.size.y * 0.22)), c.call(Color(0.14, 0.11, 0.16)))
 			_batch.draw_rect(Rect2(mid + Vector2(-r.size.y * 0.13, -r.size.y * 0.13), Vector2(r.size.y * 0.26, 7)), c.call(Color(0.92, 0.3, 0.2)))
-		4:  # the Eraser
+		4:  # the Eraser (eraser_art.gd), scrubbing the paper behind it blank
 			_batch.draw_rect(r, c.call(Color(0.86, 0.84, 0.8)))
-			var b := Rect2(mid - Vector2(r.size.x * 0.16, r.size.y * 0.36), Vector2(r.size.x * 0.32, r.size.y * 0.72))
-			_batch.draw_rect(b, c.call(PINK))
-			_batch.draw_rect(Rect2(b.position + Vector2(0, b.size.y * 0.25), Vector2(b.size.x, b.size.y * 0.45)), c.call(Color(0.83, 0.69, 0.5)))
-			_batch.draw_rect(Rect2(b.position + Vector2(0, b.size.y * 0.25), Vector2(b.size.x * 0.22, b.size.y * 0.45)), c.call(Color(0.27, 0.42, 0.74)))
-			for sx: float in [-1.0, 1.0]:
-				_batch.draw_circle(b.get_center() + Vector2(sx * b.size.x * 0.18, -8), 6.0, c.call(Color(0.98, 0.97, 0.92)))
+			_batch.draw_rect(Rect2(r.position.x, r.end.y - r.size.y * 0.3, r.size.x, r.size.y * 0.3), c.call(Color(0.98, 0.97, 0.94)))
+			var k := minf(r.size.y * 0.64, r.size.x * 0.5) / EraserArt.H
+			EraserArt.draw_into(_batch, Transform2D(0.0, Vector2(k, k), 0.0, Vector2(mid.x, r.end.y - r.size.y * 0.1)),
+				{"time": _t, "rubbing": 1.0, "roar": 0.6}, c)
 		_:  # the Sketchbook: a page of pencil and blue
 			_batch.draw_rect(r, c.call(Color(0.93, 0.92, 0.88)))
 			var y := r.position.y + 12.0
@@ -498,17 +497,11 @@ func _draw_front() -> void:
 		var w := lerpf(380.0, 60.0, k)
 		var cx := s.x * 0.5 + sin(_t * 20.0) * 24.0 * (1.0 - k)
 		var top := lerpf(-60.0, -10.0, k)
-		# seen from below: the pink rubber scrubbing the edge, the sleeve with its
-		# blue band, the skull's angry eyes glaring down after him
-		var body := Rect2(cx - w * 0.5, top - w * 0.3, w, w * 0.62)
-		fb.draw_rect(body, Color(0.83, 0.69, 0.5))
-		fb.draw_rect(Rect2(body.position, Vector2(w * 0.2, body.size.y)), Color(0.27, 0.42, 0.74))
-		fb.draw_rect(Rect2(body.position.x, body.end.y - body.size.y * 0.32, w, body.size.y * 0.32), PINK)
-		for sx: float in [-1.0, 1.0]:
-			var e := Vector2(cx + sx * w * 0.16 + w * 0.06, body.position.y + body.size.y * 0.42)
-			fb.draw_colored_polygon(PackedVector2Array([e + Vector2(-w * 0.07, -w * 0.02 * sx), e + Vector2(w * 0.07, w * 0.02 * sx),
-				e + Vector2(0, w * 0.05)]), Color(0.97, 0.95, 0.9))
-		fb.draw_rect(body, INK, false, 4.0)
+		# hanging over the lip of the gap, scrubbing it: the skull glaring down after
+		# him, red-eyed, claws raking at the edge (eraser_art.gd)
+		var ks := w / EraserArt.W
+		EraserArt.draw_into(fb, Transform2D(0.0, Vector2(ks, ks), 0.0, Vector2(cx, top + EraserArt.H * ks * 0.62)),
+			{"time": _t, "rubbing": 1.0, "roar": 0.8, "rage": 1.0, "windup": 0.4})
 	if _t > T_EMBER and _t < T_LAND + 0.3:
 		var e := _ease((_t - T_EMBER) / 0.3)
 		var h := _hand()

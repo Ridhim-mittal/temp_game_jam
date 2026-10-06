@@ -193,7 +193,7 @@ func _on_drawn(kind: String, at: Vector2) -> void:
 			m.position = at + Vector2(0, -40)
 			m.hp = 4
 		"eraser":
-			m.position = at + Vector2(0, -34)
+			m.position = at + Vector2(0, -46)  # half its body (eraser.gd setup): feet on the street
 			m.hp = 6
 		"blot":
 			m.position = at + Vector2(0, -75)
