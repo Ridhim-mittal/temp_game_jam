@@ -13,6 +13,10 @@ extends Node
 ## The Margins (2.5D): "repose" (Repose: the Spine, the Torn Wastes), "silk"
 ## (Silksong: the Inkwood) and "dread" (the battle, lower, darker and far back in
 ## a cavern: the Red Pen and the Eraser; room.gd `boss_music`).
+## Shade's part (Shade's City, the Ink Cave, the finale): "hunters" (The
+## Hunters, kept low) and, in its boss fights, "hunt" (its driving middle,
+## faster, with a heartbeat, ticking, a trembling string cluster and risers
+## laid over it: gate_arena.gd, cave_arena.gd, shade_finale.gd).
 
 const TRACKS := {
 	"lit": "res://audio/music/lit_pages.ogg",
@@ -25,6 +29,8 @@ const TRACKS := {
 	"repose": "res://audio/music/repose.ogg",
 	"silk": "res://audio/music/silk.ogg",
 	"dread": "res://audio/music/dread.ogg",
+	"hunters": "res://audio/music/hunters.ogg",
+	"hunt": "res://audio/music/hunt.ogg",
 }
 ## Where a track loops back to (seconds; master_music.py prints these): the part
 ## before it is an intro, heard once.
@@ -35,6 +41,8 @@ const LOOP_FROM := {
 	"repose": 1.37,
 	"silk": 2.71,
 	"dread": 11.89,
+	"hunters": 7.006,
+	"hunt": 0.0,
 }
 ## Per-track level (dB on top of volume_db): the 2D loops are mastered quiet,
 ## and kept a little under the old tracks so they sit behind the sound effects.
@@ -45,6 +53,8 @@ const TRIM := {
 	"repose": 3.0,
 	"silk": 3.0,
 	"dread": 2.5,
+	"hunters": 0.0,  # low: it sits under everything
+	"hunt": 1.5,
 }
 const PLAY_ONCE := ["ending"]
 

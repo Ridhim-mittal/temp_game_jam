@@ -17,6 +17,7 @@ signal drawn(kind: String, at: Vector2)
 signal wrote_name
 
 const InkBatch = preload("res://scripts/depth/ink_batch.gd")
+const SfxSynth = preload("res://scripts/effects/sfx_synth.gd")
 
 ## World point the nib hovers at when idle (high above the arena).
 @export var rest := Vector2(980, 140)
@@ -66,6 +67,7 @@ var _xf := Transform2D.IDENTITY  # hand space -> world, from the last draw
 var _tips := [Vector2.ZERO, Vector2.ZERO, Vector2.ZERO, Vector2.ZERO, Vector2.ZERO]  # claw points (hand space)
 var _drips: Array = []  # {p, v, age, r} world space
 var _drip_t := 0.0
+var _scratch_t := 0.0  # until the nib's next scratch on the page
 
 
 func _ready() -> void:
@@ -202,9 +204,16 @@ func _run_job(delta: float) -> void:
 		else:
 			_nib += to.normalized() * step + Vector2(0, -sin(clampf(step / maxf(to.length(), 1.0), 0, 1) * PI) * 2.0)
 		return
-	# inking: run the nib along the stroke
+	# inking: run the nib along the stroke (it scratches; the name in heavy
+	# brush strokes, lower)
 	_glow = move_toward(_glow, 1.0, delta * 4.0)
 	_flex = 0.12 * sin(_time * 16.0)
+	_scratch_t -= delta
+	if _scratch_t <= 0.0 and is_inside_tree():
+		var name_job: bool = _job.kind == "__name__"
+		_scratch_t = randf_range(0.07, 0.12) if not name_job else randf_range(0.12, 0.2)
+		SfxSynth.play(get_tree(), "scritch", -15.0 if not name_job else -12.0,
+			randf_range(0.9, 1.35) if not name_job else randf_range(0.5, 0.65))
 	var left: float = draw_speed * delta * _job.speed
 	var done: float = sk.done[i]
 	while left > 0.0 and done < stroke.size() - 1:

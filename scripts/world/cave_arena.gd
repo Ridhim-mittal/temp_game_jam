@@ -11,6 +11,7 @@ extends Node2D
 ## menu until the Shade fight exists. Place at the world origin.
 
 const COMIC = preload("res://scripts/effects/comic_text.gd")
+const SfxSynth = preload("res://scripts/effects/sfx_synth.gd")
 const FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
 const MENU := "res://scenes/ui/main_menu.tscn"
 const INK := Color(0.03, 0.01, 0.05)
@@ -29,6 +30,8 @@ const RIM := Color(1.0, 0.27, 0.66)
 @export var breather := 3.0
 ## Where the collapse throws Vesper ("" = TO BE CONTINUED, then the main menu).
 @export_file("*.tscn") var next_scene := ""
+## The fight's music (music.gd); it dies away when the last Blot melts.
+@export var fight_music := "hunt"
 
 enum Phase { WAITING, LOCKED, COLLAPSE }
 
@@ -65,6 +68,8 @@ func _ready() -> void:
 		if blot:
 			_left += 1
 			blot.defeated.connect(_on_defeated)
+	for s in ["roar", "rumble", "thud", "rip", "whoosh", "splut", "screech", "scritch", "shatter"]:
+		SfxSynth.get_stream(s)  # built now, not mid-fight
 
 
 func _process(delta: float) -> void:
@@ -80,6 +85,11 @@ func _process(delta: float) -> void:
 				# the second one wakes a beat later: two roars, not one; it waits its turn
 				blot.waiting = i != _turn
 				get_tree().create_timer(0.6 * i).timeout.connect(blot.wake)
+		_music(fight_music, 0.2)
+		SfxSynth.play(get_tree(), "rumble", 0.0, 0.7)
+		get_tree().create_timer(0.5).timeout.connect(func():
+			if is_inside_tree():
+				SfxSynth.play(get_tree(), "thud", 0.0, 0.55))
 	if phase == Phase.LOCKED:
 		_turns(delta)
 	_rise = move_toward(_rise, 1.0 if phase == Phase.LOCKED else 0.0, delta * 2.0)
@@ -131,6 +141,7 @@ func _on_defeated() -> void:
 					if is_instance_valid(b) and not b.dead:
 						b.take_turn())
 		return
+	_music("", 2.0)  # the cave goes quiet... then gives way
 	await get_tree().create_timer(2.4).timeout  # time for its heart to reach Vesper
 	_start_collapse()
 
@@ -138,6 +149,8 @@ func _on_defeated() -> void:
 func _start_collapse() -> void:
 	phase = Phase.COLLAPSE
 	Sfx.play("boss_intro", 0.0, 0.6)
+	SfxSynth.play(get_tree(), "rumble", 2.0, 0.6)
+	SfxSynth.play(get_tree(), "shatter", -4.0, 0.5)  # the rock cracking
 	_overlay = CanvasLayer.new()
 	_overlay.layer = 110
 	_overlay.process_mode = Node.PROCESS_MODE_ALWAYS
@@ -252,6 +265,16 @@ func _pop(text: String, col: Color) -> void:
 	c.position = p.global_position + Vector2(0, -90)
 	get_tree().current_scene.add_child(c)
 
+
+## Music autoload: a track ("" = fade out).
+func _music(track: String, fade: float) -> void:
+	var m := get_node_or_null("/root/Music")
+	if m == null:
+		return
+	if track == "":
+		m.stop(fade)
+	else:
+		m.play(track, fade)
 
 func _draw() -> void:
 	# ink walls sealing the arena, lit pink by the fire

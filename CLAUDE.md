@@ -441,6 +441,25 @@ own tune creeps back over 3 s. test_phase2 checks each room's track. beast_arena
 as the intro starts (only the rumble), "beast" crashes in on the ROAR (or when the fight starts / the
 short intro), silence for the death and Shade's lines, "beast" again on RUN! (eraser_chase.gd `begin()`),
 fading out as he runs out of page; the 2.5D hub's biome takes over after the fall.
+Shade's part (Shade's City, the Ink Cave, the finale; their generators set `LevelMusic` `track`):
+"hunters" = The Hunters (`the_hunters.mp3`, 114 BPM, D minor), kept low (-23 LUFS, TRIM 0), its muddy low
+mids eased and a little presence added so it reads under the effects; the intro plays once, then it loops 39
+whole bars (7.006..89.1 s), its breakdown leading back into the build. Its boss fights play "hunt": 32 bars
+from the driving middle (peak, breakdown, climb back), 8% faster, brighter, starting straight on the groove,
+with tension laid over it on the track's own beat grid (master_music.py `tension()` / `TENSION`): a heartbeat
+thump on every beat, ticking sixteenths, a trembling D / E-flat string cluster swelling over each 8-bar phrase,
+and a noise riser into a sub hit at every phrase. gate_arena.gd: "hunt" as the walls rise and the Blot wakes,
+"hunters" back (3 s) when it melts; cave_arena.gd: "hunt" for the two Blots, silence when the last melts (the
+collapse); shade_finale.gd: "hunters" while the hand writes, "hunt" from the first wave, silence as the light
+falls, "hunt" again (from the top) when the double steps out, silence as it cracks apart, then "hunters"
+slowly for the end. The fights' sounds (SfxSynth, built at level load so nothing hitches): the Blot roars
+waking / enraging / on MY TURN!, wet footfalls, a growl before each swipe then a whoosh, a strain before the
+slam then a boom and the shockwaves' rumble, retching globs, a hiss when light sears it, a dying groan and
+slops as it melts; the arenas' walls rumble up and thud home, sink with a rumble, the tape rips off; Shade's
+hand scratches with its nib while it draws (brush strokes lower for its name); the double's blade rings
+before a cut, whooshes on cuts / dashes / dives, booms and rumbles on its plunge, sloshes its ink waves,
+hisses in light, screams when it rages and shatters when it dies; the light's pillar whooshes and rumbles.
+test_shade_music checks the tracks, the switches and the sounds.
 
 ## Sound effects
 Autoload `Sfx` (`scripts/audio/sfx.gd`) plays the team's SFX pack in `assets/sfx/` by name:
@@ -474,7 +493,8 @@ nib swish, a nib click + ink thwack + splat); re-running overwrites them (`--out
 - Gutter checks (need a display, e.g. `xvfb-run`): `godot --path . --rendering-driver opengl3 -s
   res://tests/gutter/test_phase1.gd` (also test_phase2, test_phase5, test_levels, test_shop,
   test_beast for the end of the Long Drop: the Scribbled Beast, the Eraser's chase and the fall
-  into the Margins, and test_capture for the end of the Gutter: the capture and the climb into
+  into the Margins, test_shade_music for Shade's part's music and boss sounds, and test_capture
+  for the end of the Gutter: the capture and the climb into
   Shade's City); exit code = failures. test_shop puts the player's Profile back when it's done.
 - Screenshots: from a script in a temporary scene, call `RenderingServer.force_draw(false)` then
   `get_viewport().get_texture().get_image().save_png(...)`. `--write-movie` stops drawing after a few

@@ -218,6 +218,7 @@ script = ExtResource("12_boss_bar")
 
 [node name="LevelMusic" type="Node" parent="."]
 script = ExtResource("13_level_music")
+track = "hunters"
 
 [node name="LevelMood" type="Node" parent="."]
 script = ExtResource("14_level_mood")

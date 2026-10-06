@@ -12,10 +12,14 @@ extends "res://scripts/enemies/enemy_base.gd"
 ## faster tells, longer combos, more dodges. Light (the Ember) doubles the
 ## damage it takes. Hits only stagger it while it's not attacking.
 ## `begin()` starts the fight (the director calls it after the emerge).
+## Sounds: a ring on the blade's glint, the whoosh of every cut and dive, the
+## boom and rumble of its plunge, the slosh of its ink waves, a hiss when the
+## light burns it, a scream when it rages and glass breaking as it dies.
 
 signal defeated
 
 const Shockwave = preload("res://scripts/enemies/ink_shockwave.gd")
+const SfxSynth = preload("res://scripts/effects/sfx_synth.gd")
 const VisualScript = preload("res://scripts/player/player_visual.gd")
 const SwordScene = preload("res://scenes/player/sword.tscn")
 const ClawScript = preload("res://scripts/enemies/ink_claw.gd")
@@ -112,6 +116,7 @@ func begin() -> void:
 	_cooldown = 0.8
 	set_harmful(true)
 	Sfx.play("boss_intro", 0.0, 0.85)
+	_snd("whoosh", 0.0, 0.5)
 
 
 func damage_default() -> float:
@@ -137,6 +142,7 @@ func take_hit(damage: int, hit_dir: Vector2, from_pos: Vector2) -> void:
 	super(damage * (2 if lit else 1), hit_dir, from_pos)
 	if lit and not dead:
 		pop("BURNS!", Color(1.0, 0.92, 0.6), Vector2(0, -70), 22)
+		_snd("scritch", -5.0, 0.65)
 	# only staggered when it isn't mid-attack
 	stun = 0.12 if state in [State.STALK, State.RECOVER] else 0.0
 	_vis.modulate = Color(3, 3, 3)
@@ -154,6 +160,8 @@ func _tick(delta: float) -> void:
 		dodge_chance = 0.45
 		pop("YOU CAN'T BEAT ME. I WROTE YOU.", Color(1.0, 0.3, 0.3), Vector2(0, -90), 26)
 		Sfx.play("boss_intro", 0.0, 1.25)
+		_snd("screech", -5.0, 0.7)
+		_snd("roar", -6.0, 1.3)
 		var cam := get_tree().get_first_node_in_group("camera")
 		if cam:
 			cam.add_trauma(0.6)
@@ -196,6 +204,7 @@ func _tick(delta: float) -> void:
 				velocity.x = facing * 430.0
 				_sword.swing(Vector2(facing, 0))
 				Sfx.play("sword_swing", 0.0, 0.8)
+				_snd("whoosh", -6.0, 1.2)
 		State.SLASH:
 			velocity.x = move_toward(velocity.x, 0.0, 1600.0 * delta)
 			_tell = 0.0
@@ -217,6 +226,7 @@ func _tick(delta: float) -> void:
 				_timer = 0.32
 				_iframes = 0.32
 				Sfx.play("dash", 0.0, 0.8)
+				_snd("whoosh", -3.0, 0.8)
 		State.DASH:
 			velocity = Vector2(facing * 960.0, 0.0)
 			_tell = 0.0
@@ -239,6 +249,7 @@ func _tick(delta: float) -> void:
 				velocity = Vector2(0, 1250.0)
 				_sword.swing(Vector2(0, 1))
 				Sfx.play("sword_swing", 0.0, 0.7)
+				_snd("whoosh", 0.0, 0.6)  # diving
 			elif is_on_floor() and velocity.y >= 0.0 and _timer <= 0.0:
 				_recover(0.4)
 		State.PLUNGE:
@@ -312,11 +323,13 @@ func _slash() -> void:
 	_timer = 0.22 if _rage else 0.3
 	_combo = 3 if _rage else 2
 	pop("!", EYE, Vector2(0, -70), 30)
+	_snd("clang", -10.0, 1.9)  # the glint rings on the blade
 
 
 func _dash() -> void:
 	state = State.DASH_WIND
 	_timer = 0.32 if _rage else 0.45
+	_snd("clang", -12.0, 1.5)
 
 
 func _leap() -> void:
@@ -363,6 +376,8 @@ func _recover(t: float) -> void:
 
 func _impact() -> void:
 	Sfx.play("fall_land", 4.0, 0.7)
+	_snd("thud", 2.0, 0.6)
+	_snd("rumble", -5.0, 1.4)
 	pop("SKRASH!", EYE, Vector2(0, -60), 30)
 	var cam := get_tree().get_first_node_in_group("camera")
 	if cam:
@@ -386,6 +401,8 @@ func _wave() -> void:
 	w.position = Vector2(global_position.x + facing * 40.0, global_position.y + body_size.y * 0.5)
 	get_tree().current_scene.add_child(w)
 	Sfx.play("sword_swing", 2.0, 0.6)
+	_snd("whoosh", -3.0, 0.75)
+	_snd("splut", -6.0, 0.6)  # a wave of ink slapping down the street
 
 
 func _blade_on(on: bool) -> void:
@@ -406,6 +423,7 @@ func _die(_kx: float) -> void:
 	_blade_on(false)
 	set_deferred("collision_layer", 0)
 	Sfx.play("boss_hit", 4.0, 0.6)
+	_snd("shatter", 0.0, 0.7)
 	defeated.emit()
 
 
@@ -473,3 +491,9 @@ func _paint_fx() -> void:
 			var q := p + Vector2(rng.randf_range(-14, 14), rng.randf_range(-14, 14))
 			_fx.draw_line(p, q, Color(1.0, 0.95, 0.75, _crumble), 3.0)
 		_fx.draw_circle(global_position, 30.0 + 60.0 * _crumble, Color(1.0, 0.95, 0.8, 0.25 * _crumble))
+
+
+## A synthesised sound (sfx_synth.gd).
+func _snd(sound: String, db: float, pitch: float) -> void:
+	if is_inside_tree():
+		SfxSynth.play(get_tree(), sound, db, pitch)

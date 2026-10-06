@@ -5,8 +5,11 @@ extends Node2D
 ## the "DO NOT CROSS" tape burns off and the
 ## gate at `gate_x` opens; walking in springs Shade's trap (shade_trap.gd),
 ## which goes on to `next_scene`. Place at the world origin.
+## While the Blot lives the city's tune gives way to its tense cut
+## (`fight_music`, music.gd "hunt"); the walls rumble up and slam home.
 
 const ShadeTrap = preload("res://scripts/effects/shade_trap.gd")
+const SfxSynth = preload("res://scripts/effects/sfx_synth.gd")
 const FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
 const INK := Color(0.05, 0.03, 0.1)
 const TAPE := Color(1.0, 0.85, 0.2)
@@ -19,6 +22,9 @@ const TAPE := Color(1.0, 0.85, 0.2)
 @export var street_y := 600.0
 ## Where the trap leads ("" = the main menu after "to be continued").
 @export_file("*.tscn") var next_scene := ""
+## The fight's music and what comes back once the Blot melts (music.gd).
+@export var fight_music := "hunt"
+@export var after_music := "hunters"
 
 enum Phase { WAITING, LOCKED, CLEARED, SPRUNG }
 
@@ -59,6 +65,8 @@ func _ready() -> void:
 	var blot := get_node_or_null(blot_path)
 	if blot:
 		blot.defeated.connect(_on_defeated)
+	for s in ["roar", "rumble", "thud", "rip", "whoosh", "splut", "screech", "scritch"]:
+		SfxSynth.get_stream(s)  # built now, not mid-fight
 
 
 func _process(delta: float) -> void:
@@ -71,6 +79,11 @@ func _process(delta: float) -> void:
 		var blot := get_node_or_null(blot_path)
 		if blot:
 			blot.wake()
+		_music(fight_music, 0.2)
+		SfxSynth.play(get_tree(), "rumble", 0.0, 0.7)  # the ink walls heave up...
+		get_tree().create_timer(0.5).timeout.connect(func():
+			if is_inside_tree():
+				SfxSynth.play(get_tree(), "thud", 0.0, 0.55))  # ...and slam home
 	_rise = move_toward(_rise, 1.0 if phase == Phase.LOCKED else 0.0, delta * 2.0)
 	if phase == Phase.CLEARED or phase == Phase.SPRUNG:
 		_open = move_toward(_open, 1.0, delta * 0.8)
@@ -78,9 +91,12 @@ func _process(delta: float) -> void:
 
 
 func _on_defeated() -> void:
+	_music(after_music, 3.0)  # the city's own tune creeps back
 	await get_tree().create_timer(1.2).timeout
 	phase = Phase.CLEARED
 	Sfx.play("gate_unlock")
+	SfxSynth.play(get_tree(), "rumble", -6.0, 1.1)  # the walls sink
+	SfxSynth.play(get_tree(), "rip", -2.0, 0.8)  # the tape burns off
 	for w in _walls:
 		w.collision_layer = 0
 	_gate.monitoring = true
@@ -93,6 +109,16 @@ func _on_gate(body: Node2D) -> void:
 	Sfx.play("teleport")
 	ShadeTrap.start(get_tree(), body, next_scene)
 
+
+## Music autoload: a track ("" = fade out).
+func _music(track: String, fade: float) -> void:
+	var m := get_node_or_null("/root/Music")
+	if m == null:
+		return
+	if track == "":
+		m.stop(fade)
+	else:
+		m.play(track, fade)
 
 func _draw() -> void:
 	# the gate: a tall comic panel doorway, taped shut until the Blot falls

@@ -13,6 +13,18 @@ Sources live in audio/music/src/ (a .gdignore keeps Godot from importing them):
                                       battle two semitones down at the same tempo, its top
                                       rolled off and set far back in a dark, cavernous
                                       reverb, so it drives but stays dark and mysterious
+  hunters <- the_hunters.mp3          Shade's part (Shade's City, the Ink Cave, the finale):
+                                      quiet, its muddy low mids eased and a little presence
+                                      added so it still reads under the sound effects; loops
+                                      39 bars, the breakdown leading back into the build
+  hunt    <- the_hunters.mp3          the boss fights there (the Ink Blots, Shade): 32 bars
+                                      from the driving middle of the same track (its peak,
+                                      breakdown and climb back), 8% faster, brighter,
+                                      starting straight in on the groove, with tension laid
+                                      over it on its own beat grid (TENSION below): a heart-
+                                      beat thump on every beat, ticking sixteenths, a
+                                      tremolo D / E-flat string cluster swelling over each
+                                      8-bar phrase and a riser into a sub hit at each phrase
 
 Each output plays from the top once (the intro), then music.gd loops it from
 LOOP_FROM (printed here; copy it into music.gd). The loop point is found by
@@ -54,19 +66,122 @@ TRACKS = {
 	"silk": dict(src="silksong.mp3", breath=-45.0, lufs=-21.0),
 	"dread": dict(src="incisive_battle.mp3", s=11.89, length=57.6, slack=0.6, lufs=-20.0,
 				  pitch=-2.0, top=-6.0, top_fc=3200.0, verb=0.3),
+	# 114.04 BPM, beat 0 at 0.166 s (`grid`: found by folding the onset strength
+	# on the beat; it holds to +-13 ms through the whole track). Loops are whole
+	# bars on that grid: 7.006..89.085 s is 39 bars (beat 13 to 169)
+	"hunters": dict(src="the_hunters.mp3", s=7.006, length=82.08, slack=0.03, lufs=-23.0,
+					eq=[(380.0, -2.0, 0.9), (2800.0, 2.0, 0.7)], grid=(0.52615, 0.166)),
+	# beat 64 to 192: 32 bars (four 8-bar phrases, so the layers loop with it) of
+	# the driving middle, the peak, the breakdown and the climb back; no intro
+	"hunt": dict(src="the_hunters.mp3", s=33.840, length=67.347, slack=0.03, lufs=-20.5, start="s",
+				 tempo=1.08, eq=[(380.0, -2.5, 0.9), (3200.0, 3.5, 0.7), (9000.0, 2.0, 0.7)],
+				 grid=(0.52615, 0.166), tension=True),
 }
 
+## The boss layers' levels (relative to the music's own loudness, dB) and the
+## cluster's notes (Hz): D4 E-flat4 A4 D5 E-flat5, the track's D minor with
+## the half step above the root rubbing against it.
+TENSION = dict(thump=-3.0, tick=-29.0, strings=-13.0, riser=-15.0, hit=-5.0,
+			   notes=(293.66, 311.13, 440.0, 587.33, 622.25), phrase_bars=8)
 
-def load(path, pitch=0.0):
-	if pitch:  # rubberband: pitch only, the tempo stays
+
+def load(path, pitch=0.0, tempo=1.0):
+	stretch = pitch or tempo != 1.0
+	if stretch:  # rubberband: pitch and tempo apart from each other
 		tmp = os.path.join(OUT, "_pitched.wav")
 		subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", path, "-af",
-						f"rubberband=pitch={2 ** (pitch / 12):.6f}:pitchq=quality", tmp], check=True)
+						f"rubberband=pitch={2 ** (pitch / 12):.6f}:tempo={tempo:.6f}:pitchq=quality", tmp], check=True)
 		path = tmp
 	y, _ = librosa.load(path, sr=SR, mono=False)
-	if pitch:
+	if stretch:
 		os.remove(path)
 	return y if y.ndim == 2 else np.stack([y, y])
+
+
+def peak_eq(x, f0, gain_db, q):
+	"""An RBJ peaking filter: `gain_db` round `f0` Hz."""
+	a = 10 ** (gain_db / 40); w = 2 * np.pi * f0 / SR; al = np.sin(w) / (2 * q)
+	b = np.array([1 + al * a, -2 * np.cos(w), 1 - al * a])
+	den = np.array([1 + al / a, -2 * np.cos(w), 1 - al / a])
+	from scipy.signal import lfilter
+	return lfilter(b / den[0], den / den[0], x, axis=-1)
+
+
+def band(sig, lo, hi):
+	return sosfilt(butter(2, [lo, hi], "band", fs=SR, output="sos"), sig)
+
+
+def tension(x, period, phase, s_smp, e_smp):
+	"""The boss layers, on the (stretched) track's beat grid, from the loop start
+	S on (none in the intro, if there is one); phrases are counted from S, so
+	the loop's end and its start agree. Levels are set against the music's own
+	RMS in the loop."""
+	t = TENSION
+	n = x.shape[1]
+	ref = np.sqrt((x[:, s_smp:e_smp] ** 2).mean())
+	lvl = lambda db: ref * 10 ** (db / 20)
+	rng = np.random.default_rng(11)
+	out = np.zeros(n)
+	strings = np.zeros(n)
+	phrase = t["phrase_bars"] * 4
+	k0 = int(np.ceil((s_smp / SR - phase) / period - 1e-6))  # the first beat at or after S
+	k = k0 - 4
+	while True:
+		bt = phase + k * period
+		i = int(round(bt * SR))
+		if i >= n:
+			break
+		pos = (k - k0) % phrase  # beat in the phrase (from S)
+		if i >= 0 and k >= k0 - 4:
+			# heartbeat thump: a sine dropping from 95 Hz to 48 Hz, strong beats louder
+			m = int(0.22 * SR); tt = np.arange(m) / SR
+			f = 48 + 47 * np.exp(-tt * 30)
+			th = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-tt * 16) * (1.0 if k % 2 == 0 else 0.6)
+			out[i:i + m] += lvl(t["thump"]) * 2.2 * th[:max(0, min(m, n - i))]
+			# ticking sixteenths: short bright noise, the off ones softer
+			for q in range(4):
+				j = i + int(q * period / 4 * SR)
+				m2 = int(0.018 * SR)
+				if j + m2 >= n:
+					continue
+				tick = band(rng.standard_normal(m2), 6000, 11000) * np.exp(-np.arange(m2) / SR * 260)
+				out[j:j + m2] += lvl(t["tick"]) * 3.0 * tick * (1.0 if q == 0 else 0.55 if q == 2 else 0.35)
+			# into each phrase: a noise riser over its last bar, then a sub hit on its downbeat
+			if pos == phrase - 4:
+				m3 = int(4 * period * SR); tt = np.arange(m3) / SR
+				nz = rng.standard_normal(m3)
+				rise = np.zeros(m3)
+				for c in range(8):  # sweep up through eight bands
+					a_, b_ = c * m3 // 8, (c + 1) * m3 // 8
+					fc = 400 * 2 ** (c * 0.6)
+					rise[a_:b_] = band(nz[a_:b_], fc, min(fc * 2.2, 16000))
+				rise *= (tt / tt[-1]) ** 2.5
+				out[i:i + m3] += lvl(t["riser"]) * 2.5 * rise[:max(0, min(m3, n - i))]
+			if pos == 0 and k > k0 - 4:
+				m4 = int(1.4 * SR); tt = np.arange(m4) / SR
+				f = 34 + 60 * np.exp(-tt * 9)
+				hit = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-tt * 3.2)
+				hit += band(rng.standard_normal(m4), 80, 900) * np.exp(-tt * 14) * 0.5
+				out[i:i + m4] += lvl(t["hit"]) * 2.0 * hit[:max(0, min(m4, n - i))]
+		k += 1
+	# the string cluster: detuned saws, low-passed, trembling in sixteenths, each
+	# phrase swelling from a whisper to full and breaking off at the next
+	tt = np.arange(n) / SR
+	for f0 in t["notes"]:
+		for det in (-0.12, 0.0, 0.12):
+			fr = f0 * 2 ** (det / 12)
+			strings += 2 * ((tt * fr + rng.random()) % 1.0) - 1
+	strings = sosfilt(butter(2, 1800.0, "low", fs=SR, output="sos"), strings)
+	strings = sosfilt(butter(2, 160.0, "high", fs=SR, output="sos"), strings)
+	beats = (tt - phase) / period
+	trem = 0.55 + 0.45 * np.abs(np.sin(np.pi * beats * 2))  # four pulses a beat
+	ph = ((beats - k0) % phrase) / phrase  # 0..1 through the phrase
+	swell = np.where(tt >= s_smp / SR - 4 * period, 0.25 + 0.75 * ph ** 1.6, 0.0)
+	strings *= trem * swell
+	strings *= lvl(t["strings"]) / (np.sqrt((strings[s_smp:e_smp] ** 2).mean()) + 1e-9)
+	layer = out + strings
+	# a little width: the layers slightly apart in the two channels
+	return x + np.stack([layer, np.roll(layer, int(0.004 * SR))])
 
 
 def breath_points(mono, level):
@@ -132,23 +247,34 @@ def shelf_cut(x, db, fc=7000.0):
 
 def master(name):
 	t = TRACKS[name]
-	x = load(os.path.join(SRC, t["src"]), t.get("pitch", 0.0))
+	tempo = t.get("tempo", 1.0)
+	x = load(os.path.join(SRC, t["src"]), t.get("pitch", 0.0), tempo)
 	slack = t.get("slack")
 	if "breath" in t:
 		s_smp, e_smp = breath_points(x.mean(0), t["breath"]); score = 1.0
 	elif slack is None:
 		s_smp, e_smp, score = int(t["s"] * SR), int((t["s"] + t["length"]) * SR), 1.0
 	else:
-		s_smp, e_smp, score = find_end(x.mean(0), t["s"], t["length"], slack)
+		s_smp, e_smp, score = find_end(x.mean(0), t["s"] / tempo, t["length"] / tempo, slack)
 	x = sosfilt(butter(2, 28.0, "high", fs=SR, output="sos"), x, axis=-1)
 	x = shelf_cut(x, t.get("top", 0.0), t.get("top_fc", 7000.0))
+	for f0, g, q in t.get("eq", []):
+		x = peak_eq(x, f0, g, q)
 	if t.get("verb", 0.0):
 		x = cavern(x, t["verb"])
+	if t.get("tension"):
+		period, phase = t["grid"]
+		x = tension(x, period / tempo, phase / tempo, s_smp, e_smp)
 	lufs = t["lufs"]
-	out = x[:, :e_smp].copy()
+	# "start": "s" = no intro, the file starts on the loop (no fade-in: the loop
+	# comes back to its first sample; music.gd's fade covers the first start)
+	head = s_smp if t.get("start") == "s" else 0
+	out = x[:, head:e_smp].copy()
 	n = int((XFADE if slack is not None else 0.4) * SR)
 	k = np.linspace(0, np.pi / 2, n)
 	out[:, -n:] = out[:, -n:] * np.cos(k) + x[:, s_smp - n:s_smp] * np.sin(k)  # end runs into S
+	s_smp -= head
+	e_smp -= head
 	meter = pyloudnorm.Meter(SR)
 	loop = np.concatenate([out[:, s_smp:]] * 2, axis=1)  # measure what's heard most: the loop
 	gain = 10 ** ((lufs - meter.integrated_loudness(loop.T)) / 20)

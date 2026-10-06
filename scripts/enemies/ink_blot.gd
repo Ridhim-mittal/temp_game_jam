@@ -5,6 +5,10 @@ extends "res://scripts/enemies/enemy_base.gd"
 ## sends shockwaves both ways along the floor (jump them), and globs of ink
 ## that splash into slowing puddles. Light hardens the ink: lit, it takes
 ## double damage. When it falls it melts into a puddle and emits `defeated`.
+## Sounds: a roar as it wakes and enrages, wet footfalls, a growl before each
+## swipe (then the whoosh), a strain before the slam (then the boom and the
+## rumble of its shockwaves), retching globs, a hiss when light burns it, a
+## dying groan as it melts.
 
 signal defeated
 
@@ -12,6 +16,7 @@ enum State { SLEEP, WAKE, WALK, SWIPE_UP, SWIPE, SLAM_UP, SLAM, SPIT, REST, MELT
 
 const Shockwave = preload("res://scripts/enemies/ink_shockwave.gd")
 const Glob = preload("res://scripts/enemies/ink_glob.gd")
+const SfxSynth = preload("res://scripts/effects/sfx_synth.gd")
 const SWIRL := Color(0.3, 0.24, 0.42)
 const SHEEN := Color(0.44, 0.38, 0.62)
 const BODY := Color(0.06, 0.04, 0.09)
@@ -51,6 +56,7 @@ var wait_distance := 360.0
 var attacks_done := 0
 var _dim := 0.0
 var _slams_left := 0
+var _step_t := 0.0  # until the next wet footfall
 
 
 func _ready() -> void:
@@ -83,6 +89,7 @@ func wake() -> void:
 	state = State.WAKE
 	_timer = 1.0
 	Sfx.play("boss_intro")
+	_snd("roar", 0.0, 0.75)
 	pop("GRRAAAH!", Color(0.95, 0.85, 0.4), Vector2(0, -180), 40)
 	var cam := get_tree().get_first_node_in_group("camera")
 	if cam:
@@ -96,8 +103,11 @@ func damage_default() -> float:
 func take_hit(damage: int, hit_dir: Vector2, from_pos: Vector2) -> void:
 	if state == State.SLEEP:
 		wake()
-	super(damage * (2 if is_lit() else 1), hit_dir, from_pos)
+	var lit := is_lit()
+	super(damage * (2 if lit else 1), hit_dir, from_pos)
 	stun = 0.0  # a heavyweight: hits don't stagger it
+	if lit and not dead:
+		_snd("scritch", -6.0, 0.55)  # the light hardens and sears the ink
 
 
 func _tick(delta: float) -> void:
@@ -105,6 +115,8 @@ func _tick(delta: float) -> void:
 		_enraged = true
 		pop("RAAARGH!!", Color(1.0, 0.3, 0.25), Vector2(0, -190), 44)
 		Sfx.play("boss_intro", 0.0, 1.2)
+		_snd("roar", 2.0, 0.9)
+		_snd("screech", -8.0, 0.6)
 	var rage := 1.3 if _enraged else 1.0
 	delta *= rage  # everything it does speeds up
 	_timer -= delta
@@ -133,6 +145,10 @@ func _tick(delta: float) -> void:
 				if dist > wait_distance + 120.0:
 					want = facing * walk_speed * 0.6
 			velocity.x = move_toward(velocity.x, want, 500.0 * delta)
+			_step_t -= delta
+			if absf(velocity.x) > 30.0 and is_on_floor() and _step_t <= 0.0:
+				_step_t = 0.4
+				_snd("splut", -15.0, randf_range(0.42, 0.55))  # heavy, wet footfalls
 			if _player and _cooldown <= 0.0 and is_on_floor() and not waiting:
 				if dist < 160.0:
 					state = State.SWIPE_UP
@@ -149,6 +165,13 @@ func _tick(delta: float) -> void:
 				if state != State.WALK:
 					velocity.x = 0.0
 					attacks_done += 1
+					match state:
+						State.SWIPE_UP:
+							_snd("roar", -11.0, 1.8)  # a short growl: here it comes
+						State.SLAM_UP:
+							_snd("roar", -8.0, 1.25)  # the strain of heaving both arms up
+						State.SPIT:
+							_snd("roar", -12.0, 2.1)  # it gags up the ink
 		State.SWIPE_UP:
 			_swing = minf(_swing + delta / 0.5, 1.0) * 0.6
 			if _timer <= 0.0:
@@ -156,6 +179,8 @@ func _tick(delta: float) -> void:
 				_timer = 0.22
 				velocity.x = facing * 220.0
 				pop("SWISH!", Color(0.95, 0.95, 1.0), Vector2(facing * 70.0, -120), 24)
+				_snd("whoosh", 0.0, 0.7)
+				Sfx.play("sword_swing", -4.0, 0.55)
 		State.SWIPE:
 			_swing = 1.0
 			velocity.x = move_toward(velocity.x, 0.0, 900.0 * delta)
@@ -175,6 +200,7 @@ func _tick(delta: float) -> void:
 					_slams_left -= 1  # enraged: up again for a second slam
 					state = State.SLAM_UP
 					_timer = 0.45
+					_snd("roar", -8.0, 1.4)
 				else:
 					_rest(0.6)
 		State.SPIT:
@@ -208,6 +234,7 @@ func take_turn() -> void:
 	attacks_done = 0
 	_cooldown = minf(_cooldown, 0.4)
 	pop("MY TURN!", Color(1.0, 0.85, 0.3), Vector2(0, -170), 28)
+	_snd("roar", -4.0, 1.05)
 
 
 func _rest(t: float) -> void:
@@ -228,6 +255,8 @@ func _claw_active(on: bool) -> void:
 
 func _slam() -> void:
 	Sfx.play("fall_land", 4.0, 0.6)
+	_snd("thud", 2.0, 0.55)
+	_snd("rumble", -4.0, 1.3)  # the shockwaves tearing along the street
 	pop("KRAKOOM!", Color(1.0, 0.86, 0.2), Vector2(0, -170), 40)
 	var cam := get_tree().get_first_node_in_group("camera")
 	if cam:
@@ -243,6 +272,7 @@ func _slam() -> void:
 
 func _spit() -> void:
 	for k in (5 if _enraged else 3):
+		_snd("splut", -4.0, 0.65 + k * 0.1)
 		var g := Glob.new()
 		g.position = global_position + Vector2(facing * 30.0, -110.0)
 		var reach := 180.0 + k * (100.0 if _enraged else 130.0)
@@ -258,6 +288,11 @@ func _die(_kx: float) -> void:
 	set_deferred("collision_layer", 0)
 	pop("BLORRP...", Color(0.7, 0.62, 0.9), Vector2(0, -150), 34)
 	Sfx.play("ink_splat", 4.0, 0.7)
+	_snd("roar", -2.0, 0.5)  # a long, sinking groan
+	for k in 3:  # and it slops down into a puddle
+		get_tree().create_timer(0.35 + k * 0.4).timeout.connect(func():
+			if is_inside_tree():
+				_snd("splut", -6.0, 0.5 - k * 0.06))
 	defeated.emit()
 	var heart_script = load("res://scripts/world/health_heart.gd")  # untyped: calls its static player_full()
 	if not heart_script.player_full(get_tree()):  # full ink: no heart to fly in and sit on him
@@ -353,3 +388,9 @@ func _blob(c: CanvasItem, at: Vector2, r: Vector2) -> void:
 		var wob := 1.0 + 0.06 * sin(a * 3.0 + time * 2.0 + at.x * 0.1)
 		p.append(at + Vector2(cos(a) * r.x, sin(a) * r.y) * wob)
 	c.draw_colored_polygon(p, BODY)
+
+
+## A synthesised sound (sfx_synth.gd) from where the Blot is.
+func _snd(sound: String, db: float, pitch: float) -> void:
+	if is_inside_tree():
+		SfxSynth.play(get_tree(), sound, db, pitch)
