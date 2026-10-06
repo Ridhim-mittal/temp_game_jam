@@ -167,7 +167,7 @@ pen(5440)
 heart(5530, 560)
 
 # 4. the gate and its keeper
-node("InkBlot", None, "Enemies", [("position", v(6450, STREET - 75))], instance=BLOT)
+node("InkBlot", None, "Enemies", [("position", v(6450, STREET - 75)), ("hp", "20"), ("swipe_damage", "2.5"), ("slam_damage", "3.75")], instance=BLOT)  # the toughest Blot
 node("GateArena", "Node2D", "World", [("script", f'ExtResource("{ARENA}")'), ("blot_path", 'NodePath("../../Enemies/InkBlot")'),
      ("trigger_x", "5960.0"), ("left_x", "5800.0"), ("right_x", "7000.0"), ("gate_x", "6830.0"),
      ("street_y", f"{STREET}.0"), ("next_scene", '"res://scenes/levels/ink_cave.tscn"')])
