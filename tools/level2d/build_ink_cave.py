@@ -163,7 +163,8 @@ blot("InkBlotB", 3900)
 node("CaveArena", "Node2D", "World", [("script", f'ExtResource("{ARENA}")'),
      ("blot_paths", 'Array[NodePath]([NodePath("../../Enemies/InkBlotA"), NodePath("../../Enemies/InkBlotB")])'),
      ("backdrop_path", 'NodePath("../../Backdrop")'),
-     ("trigger_x", "3100.0"), ("left_x", "2980.0"), ("right_x", "4280.0"), ("floor_y", f"{FLOOR}.0")])
+     ("trigger_x", "3100.0"), ("left_x", "2980.0"), ("right_x", "4280.0"), ("floor_y", f"{FLOOR}.0"),
+     ("next_scene", '"res://scenes/levels/shade_finale.tscn"')])
 
 # Vesper falls in out of Shade's trap: a hard landing (500 px), not a damaging one
 node("Player", None, ".", [("position", v(260, FLOOR - 26 - 500))], instance=PLAYER)

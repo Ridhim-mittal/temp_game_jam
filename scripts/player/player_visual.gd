@@ -20,6 +20,8 @@ const DUST := Color(0.97, 0.94, 0.86)
 ## Torn comic-page lining that shows along the coat hem.
 @export var page_color := Color(0.92, 0.89, 0.8)
 @export var pencil_color := Color(0.96, 0.76, 0.2)
+## Eye colour (Shade's double has burning red eyes, shade_double.gd).
+@export var eye_color := INK
 ## Run-cycle radians per pixel travelled (bigger = shorter, quicker steps).
 @export var stride := 0.07
 
@@ -288,7 +290,7 @@ func _draw_head() -> void:
 	var open := 1.0 if _blink <= 0.0 else 0.15
 	for ex in [1.5, 8.0]:
 		draw_set_transform_matrix(_upper * Transform2D(0.0, Vector2(1.0, open), 0.0, Vector2(ex, -33)))
-		draw_colored_polygon(_ellipse(1.8, 3.8), INK)
+		draw_colored_polygon(_ellipse(1.8, 3.8), eye_color)
 	draw_set_transform_matrix(_upper)
 	# wide-brimmed hat with a coloured band; the brim tips with speed
 	var tip := clampf(velocity.x * facing / max_speed, -1.0, 1.0) * -0.06

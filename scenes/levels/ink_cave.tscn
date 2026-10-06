@@ -187,6 +187,7 @@ trigger_x = 3100.0
 left_x = 2980.0
 right_x = 4280.0
 floor_y = 600.0
+next_scene = "res://scenes/levels/shade_finale.tscn"
 
 [node name="Player" parent="." instance=ExtResource("1_player")]
 position = Vector2(260, 74)
