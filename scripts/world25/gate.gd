@@ -81,6 +81,7 @@ var _progress := 0.0
 var _time := 0.0
 
 static var _chime: AudioStreamWAV
+const SfxSynthBaked = preload("res://scripts/effects/sfx_synth.gd")
 
 
 func _ready() -> void:
@@ -324,22 +325,9 @@ func _process(delta: float) -> void:
 ## A soft two-note chime, synthesised once and shared by every gate.
 func _play_chime() -> void:
 	if _chime == null:
-		var rate := 22050
-		var length := int(rate * 1.6)
-		var data := PackedByteArray()
-		data.resize(length * 2)
-		for i in length:
-			var t := float(i) / rate
-			var second := maxf(t - 0.12, 0.0)
-			var v := sin(TAU * 1046.5 * t) * exp(-t * 3.2) * 0.5 + sin(TAU * 2093.0 * t) * exp(-t * 5.0) * 0.12
-			v += (sin(TAU * 1568.0 * second) * exp(-second * 2.8) * 0.45) if t > 0.12 else 0.0
-			var s := int(clampf(v * 0.6 * minf(t / 0.004, 1.0), -1.0, 1.0) * 32767.0)
-			data.encode_s16(i * 2, s)
-		_chime = AudioStreamWAV.new()
-		_chime.format = AudioStreamWAV.FORMAT_16_BITS
-		_chime.mix_rate = rate
-		_chime.stereo = false
-		_chime.data = data
+		_chime = SfxSynthBaked.baked("gate_chime")
+	if _chime == null:
+		_chime = _make_chime()
 	var p := AudioStreamPlayer3D.new()
 	p.stream = _chime
 	p.bus = "SFX"  # Sfx.BUS: every sound effect shares one, quieter than the music
@@ -348,6 +336,27 @@ func _play_chime() -> void:
 	add_child(p)
 	p.play()
 	p.finished.connect(p.queue_free)
+
+
+## The chime, made in code (tools/sfx/bake_synth.gd bakes it).
+static func _make_chime() -> AudioStreamWAV:
+	var rate := 22050
+	var length := int(rate * 1.6)
+	var data := PackedByteArray()
+	data.resize(length * 2)
+	for i in length:
+		var t := float(i) / rate
+		var second := maxf(t - 0.12, 0.0)
+		var v := sin(TAU * 1046.5 * t) * exp(-t * 3.2) * 0.5 + sin(TAU * 2093.0 * t) * exp(-t * 5.0) * 0.12
+		v += (sin(TAU * 1568.0 * second) * exp(-second * 2.8) * 0.45) if t > 0.12 else 0.0
+		var s := int(clampf(v * 0.6 * minf(t / 0.004, 1.0), -1.0, 1.0) * 32767.0)
+		data.encode_s16(i * 2, s)
+	var w := AudioStreamWAV.new()
+	w.format = AudioStreamWAV.FORMAT_16_BITS
+	w.mix_rate = rate
+	w.stereo = false
+	w.data = data
+	return w
 
 
 func _physics_process(_delta: float) -> void:

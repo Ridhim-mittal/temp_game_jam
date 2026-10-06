@@ -52,6 +52,7 @@ func _rebuild() -> void:
 	if not is_inside_tree():
 		return
 	var root := Toon.fresh_root(self)
+	Toon.merge_when_built(root)  # one mesh per material (only its light flickers)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 23
 	if ring_radius > 0.0:

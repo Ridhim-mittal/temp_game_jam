@@ -8,7 +8,10 @@ extends CanvasLayer
 ## is redrawn as a pencil sketch of itself (shaders/pencil_outside.gdshader),
 ## like the unfinished part of the page; the HUD sits above and stays as is.
 ## Drop one into a level (layer 1: above the world, under the HUD).
+## The page is drawn through InkBatch (its ~900 halftone dots were as many
+## draw calls a frame).
 
+const InkBatch = preload("res://scripts/depth/ink_batch.gd")
 const INK := Color(0.05, 0.03, 0.1)
 const PAPER := Color(0.96, 0.93, 0.86)
 ## The panel inside the page, in screen px (the rest is page margin).
@@ -58,8 +61,9 @@ func _process(_delta: float) -> void:
 	_sketch_mat.set_shader_parameter("base_size", get_viewport().get_visible_rect().size)
 
 
-## The page round a panel `r` (also used by panel_turn.gd).
-static func draw_page_margin(c: CanvasItem, r: Rect2, outer: Rect2) -> void:
+## The page round a panel `r` (also used by panel_turn.gd). `c`: a CanvasItem
+## or an InkBatch.
+static func draw_page_margin(c: Object, r: Rect2, outer: Rect2) -> void:
 	c.draw_rect(Rect2(outer.position, Vector2(outer.size.x, r.position.y - outer.position.y)), PAPER)
 	c.draw_rect(Rect2(outer.position.x, r.end.y, outer.size.x, outer.end.y - r.end.y), PAPER)
 	c.draw_rect(Rect2(outer.position.x, r.position.y, r.position.x - outer.position.x, r.size.y), PAPER)
@@ -67,7 +71,7 @@ static func draw_page_margin(c: CanvasItem, r: Rect2, outer: Rect2) -> void:
 
 
 ## Thick ink panel border with a little hand-drawn wobble.
-static func draw_border(c: CanvasItem, r: Rect2, width := 5.0, seed_i := 0) -> void:
+static func draw_border(c: Object, r: Rect2, width := 5.0, seed_i := 0) -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 911 + seed_i
 	var corners := [r.position, Vector2(r.end.x, r.position.y), r.end, Vector2(r.position.x, r.end.y)]
@@ -87,9 +91,9 @@ static func draw_border(c: CanvasItem, r: Rect2, width := 5.0, seed_i := 0) -> v
 
 
 func _draw_frame() -> void:
-	var c := _art
-	var screen := Rect2(Vector2.ZERO, c.size)
-	var r := Rect2(PANEL.position, c.size - PANEL.position * 2.0)
+	var c := InkBatch.new()
+	var screen := Rect2(Vector2.ZERO, _art.size)
+	var r := Rect2(PANEL.position, _art.size - PANEL.position * 2.0)
 	draw_page_margin(c, r, screen)
 	# halftone on the paper margin, fading toward the panel
 	var x := 4.0
@@ -109,7 +113,8 @@ func _draw_frame() -> void:
 	c.draw_rect(Rect2(r.end.x, r.position.y + 6, 4, r.size.y), Color(INK, 0.18))
 	c.draw_rect(Rect2(r.position.x + 6, r.end.y, r.size.x, 4), Color(INK, 0.18))
 	draw_border(c, r, 5.0)
+	c.flush(_art)
 	var font := preload("res://assets/fonts/Bangers-Regular.ttf")
 	var label := "PAGE %d" % page_number
 	var w := font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x
-	c.draw_string(font, Vector2(screen.end.x * 0.5 - w * 0.5, screen.end.y - 4), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(INK, 0.6))
+	_art.draw_string(font, Vector2(screen.end.x * 0.5 - w * 0.5, screen.end.y - 4), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(INK, 0.6))

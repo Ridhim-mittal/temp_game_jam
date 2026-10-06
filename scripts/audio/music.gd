@@ -70,8 +70,8 @@ const TRIM := {
 	"dread": 2.5,
 	"hunters": 0.0,  # low: it sits under everything
 	"hunt": 1.5,
-	"ruin": 1.5,
-	"inkcave": 1.5,
+	"ruin": 3.5,  # +2 dB: up out from under the effects
+	"inkcave": 4.0,  # +2.5 dB (it sits further back, in the cavern reverb)
 	"hand": 1.5,
 	"duel": 1.5,
 }

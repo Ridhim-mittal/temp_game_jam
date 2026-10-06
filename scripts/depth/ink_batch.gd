@@ -24,6 +24,10 @@ var _cols := PackedColorArray()
 var _idx := PackedInt32Array()
 var _xf := Transform2D.IDENTITY
 
+## Unit circles and their fan indices by segment count (draw_circle).
+static var _rings := {}
+static var _fans := {}
+
 
 func draw_set_transform(pos: Vector2, rot := 0.0, scale := Vector2.ONE) -> void:
 	_xf = Transform2D(rot, scale, 0.0, pos)
@@ -61,9 +65,9 @@ func draw_rect(rect: Rect2, color: Color, filled := true, width := -1.0, antiali
 	var c := PackedVector2Array([rect.position, Vector2(rect.end.x, rect.position.y), rect.end, Vector2(rect.position.x, rect.end.y)])
 	if filled:
 		var b := _pts.size()
-		for p in c:
-			_add(p, color)
-		_idx.append_array([b, b + 1, b + 2, b, b + 2, b + 3])
+		_pts.append_array(_xf * c)
+		_cols.append_array(PackedColorArray([color, color, color, color]))
+		_idx.append_array(PackedInt32Array([b, b + 1, b + 2, b, b + 2, b + 3]))
 	else:
 		c.append(rect.position)
 		_stroke(c, color, width, antialiased)
@@ -71,11 +75,25 @@ func draw_rect(rect: Rect2, color: Color, filled := true, width := -1.0, antiali
 
 func draw_circle(center: Vector2, radius: float, color: Color, filled := true, width := -1.0, antialiased := false) -> void:
 	var n := clampi(int(radius * 0.6) + 10, 10, 48)
-	var ring := PackedVector2Array()
-	for i in n:
-		ring.append(center + Vector2.from_angle(TAU * i / n) * radius)
+	if not _rings.has(n):
+		var unit := PackedVector2Array()
+		var fan := PackedInt32Array()
+		for i in n:
+			unit.append(Vector2.from_angle(TAU * i / n))
+			fan.append_array(PackedInt32Array([0, 1 + i, 1 + (i + 1) % n]))
+		_rings[n] = unit
+		_fans[n] = fan
+	# the ring placed and transformed in two native multiplies
+	var ring: PackedVector2Array = Transform2D(0.0, Vector2(radius, radius), 0.0, center) * (_rings[n] as PackedVector2Array)
 	if filled:
-		_fan(center, ring, color, color)
+		var b := _pts.size()
+		_pts.append(_xf * center)
+		_pts.append_array(_xf * ring)
+		var cols := PackedColorArray()
+		cols.resize(n + 1)
+		cols.fill(color)
+		_cols.append_array(cols)
+		_offset_indices(_fans[n], b)
 	else:
 		ring.append(ring[0])
 		_stroke(ring, color, width, antialiased)
@@ -135,14 +153,27 @@ func _fill(poly: PackedVector2Array, colors: PackedColorArray) -> void:
 		return
 	var tri := Geometry2D.triangulate_polygon(poly)
 	var b := _pts.size()
-	for i in poly.size():
-		_add(poly[i], colors[i] if colors.size() == poly.size() else colors[0])
+	_pts.append_array(_xf * poly)
+	if colors.size() == poly.size():
+		_cols.append_array(colors)
+	else:
+		var cols := PackedColorArray()
+		cols.resize(poly.size())
+		cols.fill(colors[0])
+		_cols.append_array(cols)
 	if tri.is_empty():  # self-touching outline: a fan is close enough
 		for i in range(1, poly.size() - 1):
-			_idx.append_array([b, b + i, b + i + 1])
-		return
-	for i in tri:
-		_idx.append(b + i)
+			tri.append_array(PackedInt32Array([0, i, i + 1]))
+	_offset_indices(tri, b)
+
+
+## Appends `local` (indices into the shape just added) shifted by `b`.
+func _offset_indices(local: PackedInt32Array, b: int) -> void:
+	var start := _idx.size()
+	var n := local.size()
+	_idx.resize(start + n)
+	for i in n:
+		_idx[start + i] = local[i] + b
 
 
 func _fan(center: Vector2, ring: PackedVector2Array, inner: Color, outer: Color) -> void:
@@ -166,9 +197,10 @@ func _stroke(points: PackedVector2Array, color: Color, width: float, antialiased
 	if n < 2:
 		return
 	var hw := maxf(width, 1.0) * 0.5
-	var feather := 1.0 if antialiased else 0.0
-	var clear := Color(color, 0.0)
-	var b := _pts.size()
+	var feather := antialiased
+	var per := 4 if feather else 2
+	var verts := PackedVector2Array()
+	verts.resize(n * per)
 	for i in n:
 		var d0 := (p[i] - p[i - 1]).normalized() if i > 0 else (p[1] - p[0]).normalized()
 		var d1 := (p[i + 1] - p[i]).normalized() if i < n - 1 else d0
@@ -177,17 +209,48 @@ func _stroke(points: PackedVector2Array, color: Color, width: float, antialiased
 			nrm = d0.orthogonal()
 		nrm = nrm.normalized()
 		var m := hw / maxf(nrm.dot(d0.orthogonal()), 1.0 / MITER_LIMIT)
-		_add(p[i] + nrm * m, color)
-		_add(p[i] - nrm * m, color)
-		if feather > 0.0:
-			var mf := m * (hw + feather) / hw
-			_add(p[i] + nrm * mf, clear)
-			_add(p[i] - nrm * mf, clear)
-	var per := 4 if feather > 0.0 else 2
+		var k := i * per
+		verts[k] = p[i] + nrm * m
+		verts[k + 1] = p[i] - nrm * m
+		if feather:
+			var mf := m * (hw + 1.0) / hw
+			verts[k + 2] = p[i] + nrm * mf
+			verts[k + 3] = p[i] - nrm * mf
+	var b := _pts.size()
+	_pts.append_array(_xf * verts)
+	var cols := PackedColorArray()
+	cols.resize(n * per)
+	cols.fill(color)
+	if feather:
+		var clear := Color(color, 0.0)
+		for i in n:
+			cols[i * 4 + 2] = clear
+			cols[i * 4 + 3] = clear
+	_cols.append_array(cols)
+	var start := _idx.size()
+	var tris := 18 if feather else 6
+	_idx.resize(start + (n - 1) * tris)
+	var j := start
 	for i in n - 1:
 		var a := b + i * per
 		var c := a + per
-		_idx.append_array([a, a + 1, c + 1, a, c + 1, c])          # core
-		if feather > 0.0:
-			_idx.append_array([a + 2, a, c, a + 2, c, c + 2])      # left feather
-			_idx.append_array([a + 1, a + 3, c + 3, a + 1, c + 3, c + 1])  # right feather
+		_idx[j] = a  # core
+		_idx[j + 1] = a + 1
+		_idx[j + 2] = c + 1
+		_idx[j + 3] = a
+		_idx[j + 4] = c + 1
+		_idx[j + 5] = c
+		if feather:
+			_idx[j + 6] = a + 2  # left feather
+			_idx[j + 7] = a
+			_idx[j + 8] = c
+			_idx[j + 9] = a + 2
+			_idx[j + 10] = c
+			_idx[j + 11] = c + 2
+			_idx[j + 12] = a + 1  # right feather
+			_idx[j + 13] = a + 3
+			_idx[j + 14] = c + 3
+			_idx[j + 15] = a + 1
+			_idx[j + 16] = c + 3
+			_idx[j + 17] = c + 1
+		j += tris

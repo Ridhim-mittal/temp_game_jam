@@ -4,6 +4,8 @@ extends StaticBody2D
 ## so the line Vesper walks on reads at a glance against the busy skyline,
 ## joints every few metres and a halftone fade into the dark below.
 ## Origin = top-left corner of the walkable top.
+## Drawn through InkBatch: its thousands of halftone dots are one draw call
+## (one each, it was ~6900 draw calls a frame, the browser build's worst lag).
 
 @export var size := Vector2(4000, 400):
 	set(value):
@@ -16,6 +18,7 @@ extends StaticBody2D
 @export var joint_every := 200.0
 
 const INK := Color(0.04, 0.03, 0.08)
+const InkBatch = preload("res://scripts/depth/ink_batch.gd")
 
 var _shape: CollisionShape2D
 
@@ -38,20 +41,21 @@ func _update_shape() -> void:
 
 
 func _draw() -> void:
+	var b := InkBatch.new()
 	var r := Rect2(Vector2.ZERO, size)
-	draw_rect(r.grow(3), INK)
-	draw_rect(r, body)
+	b.draw_rect(r.grow(3), INK)
+	b.draw_rect(r, body)
 	# kerb face: a lighter band under the lip, shading down into the body
 	for i in 6:
-		draw_rect(Rect2(0, 6 + i * 6.0, size.x, 6), face.lerp(body, i / 6.0))
-	draw_rect(Rect2(0, 0, size.x, 4), lip)
-	draw_rect(Rect2(0, 4, size.x, 2), INK)
-	draw_rect(Rect2(0, 42, size.x, 3), Color(INK, 0.7))
+		b.draw_rect(Rect2(0, 6 + i * 6.0, size.x, 6), face.lerp(body, i / 6.0))
+	b.draw_rect(Rect2(0, 0, size.x, 4), lip)
+	b.draw_rect(Rect2(0, 4, size.x, 2), INK)
+	b.draw_rect(Rect2(0, 42, size.x, 3), Color(INK, 0.7))
 	# joints between the slabs
 	var x := joint_every * 0.5
 	while x < size.x:
-		draw_line(Vector2(x, 6), Vector2(x, 42), INK, 3.0)
-		draw_line(Vector2(x + 3, 6), Vector2(x + 3, 42), Color(lip, 0.25), 1.0)
+		b.draw_line(Vector2(x, 6), Vector2(x, 42), INK, 3.0)
+		b.draw_line(Vector2(x + 3, 6), Vector2(x + 3, 42), Color(lip, 0.25), 1.0)
 		x += joint_every
 	# halftone dots fading into the dark
 	var y := 60.0
@@ -60,6 +64,7 @@ func _draw() -> void:
 		var dx := 14.0
 		var xx := fmod(y, 28.0) * 0.5
 		while xx < size.x:
-			draw_circle(Vector2(xx, y), 3.0 * k, Color(face, 0.55))
+			b.draw_circle(Vector2(xx, y), 3.0 * k, Color(face, 0.55))
 			xx += dx
 		y += 12.0
+	b.flush(self)

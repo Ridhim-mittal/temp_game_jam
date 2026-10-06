@@ -34,6 +34,7 @@ func _rebuild() -> void:
 	if not is_inside_tree():
 		return
 	var root := Toon.fresh_root(self)
+	Toon.merge_when_built(root)  # one mesh per material: far fewer draw calls
 	var length := end.length()
 	if length < 0.1:
 		return

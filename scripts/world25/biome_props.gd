@@ -97,6 +97,7 @@ func _rebuild() -> void:
 	if not is_inside_tree():
 		return
 	var root := Toon.fresh_root(self)
+	Toon.merge_when_built(root)  # one mesh per material: far fewer draw calls
 	_rng.seed = seed
 	glow_radius = 0.0
 	var s := size

@@ -71,6 +71,7 @@ func _rebuild() -> void:
 	if not is_inside_tree() or polygon.size() < 3:
 		return
 	var root: Node3D = preload("res://scripts/clearing/toon.gd").fresh_root(self)
+	preload("res://scripts/clearing/toon.gd").merge_when_built(root)  # one mesh per material: far fewer draw calls
 	var mi := MeshInstance3D.new()
 	mi.mesh = _build_mesh()
 	var mat := ShaderMaterial.new()
