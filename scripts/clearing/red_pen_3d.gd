@@ -56,11 +56,12 @@ var _shadow: MeshInstance3D
 
 
 func _ready() -> void:
-	lumens = 40
+	light_immune = true  # the Writer's lamps never burn his own pen
+	lumens = 30
 	hp = maxi(hp, 18)
 	sight = 40.0
 	knockback = 0.0
-	contact_damage = 1
+	contact_damage = 2  # one ink bottle
 	respawn_time = 0.0
 	setup_monster("res://scenes/enemies/red_pen.tscn", 384, 40)
 	flying = true
@@ -212,7 +213,7 @@ func _impact(at: Vector3) -> void:
 	if wet:
 		pop("SKRITCH!", RED, 2.4, 30)
 		if _player and _flat(_player.global_position, at) < circle_radius + 0.25:
-			_player.take_damage(1, at)
+			_player.take_damage(2, at)
 		state = State.STUCK
 		_timer = stuck_time * (0.45 if _circles_left > 0 else 1.0)
 	else:
@@ -274,7 +275,7 @@ func _update_strike(delta: float) -> void:
 	_tilt_to(1.0, delta)
 	if not _strike_hit and _player and _player_on_segment(_strike_a, at, 0.75):
 		_strike_hit = true
-		_player.take_damage(1, at)
+		_player.take_damage(2, at)
 	if phase2:
 		for l in get_tree().get_nodes_in_group("lantern"):
 			if l.lit and _dist_to_segment(l.global_position, _strike_a, at) < 1.0:

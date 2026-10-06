@@ -1,8 +1,11 @@
 extends CharacterBody3D
 ## Vesper's controller in the Gutter (the 2.5D Margins), seen side-on from a
 ## low tilted camera. Moves on the ground plane with WASD / stick, jumps on
-## Space, dashes on Shift, attacks on left click / X: a three-hit combo (the
-## third hit is a heavier overhead finisher). Q / right click Flash, F heals.
+## Space, dashes on right click / Shift, attacks on left click / X: a
+## three-hit combo (the third hit is a heavier overhead finisher); holding
+## attack charges the equipped weapon's special, as in the 2D levels (wave,
+## volley, slam, drill, sweep, whirl; Quire's shop on B). Hold right click
+## to raise the Ember (as in the 2D levels), F heals.
 ##
 ## Aiming: `facing_dir` (a unit vector on the XZ plane, snapped to
 ## `snap_directions`) is the source of truth. It follows the movement input
@@ -33,8 +36,11 @@ signal died
 const Fx = preload("res://scripts/clearing/clearing_fx.gd")
 const FlashScript = preload("res://scripts/world25/flash.gd")
 const InkWave = preload("res://scripts/world25/ink_wave_3d.gd")
+const WeaponFx = preload("res://scripts/clearing/weapon_fx_3d.gd")
 const VesperModel = preload("res://scripts/clearing/vesper_3d.gd")
 const CHEVRON_SHADER = preload("res://shaders/clearing/facing_chevron.gdshader")
+const ScreenAnchor = preload("res://scripts/clearing/screen_anchor.gd")
+const PROMPT_FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
 const ART_RUN_SPEED := 300.0  # player_visual.gd's full-run speed, px/s
 const MASK_WORLD := 1
 const MASK_ENEMY := 4  # physics layer 3
@@ -85,9 +91,45 @@ enum AttackStyle { INK_SLASH, NIB_SWORD, BOTH }
 ## Upward bounce after an air attack connects.
 @export var pogo_velocity := 8.5
 
+@export_group("Weapon Specials")
+## Hold attack this long to charge the equipped weapon's special.
+@export var charge_time := 0.55
+## PEN-DRILL (Corkscrew Nib): drag radius, pull speed, grinding reach and
+## tick, longest spin, burst damage.
+@export var drill_radius := 3.2
+@export var drill_pull := 6.0
+@export var drill_grind := 1.4
+@export var drill_tick := 0.3
+@export var drill_max := 2.5
+@export var drill_burst := 2
+## BLINDING SWEEP (Prism Saber): radius, damage, stun; a normal hit's stun.
+@export var sweep_radius := 3.2
+@export var sweep_damage := 2
+@export var sweep_stun := 1.6
+@export var prism_stun := 0.8
+## LANTERN WHIRL (Lantern Flail): orbit radius, Ember burnt a second,
+## damage a pass.
+@export var whirl_radius := 1.8
+@export var whirl_drain := 14.0
+@export var whirl_damage := 1
+## QUILL VOLLEY (Quill Rapier).
+@export var dart_count := 3
+@export var dart_speed := 14.0
+@export var dart_range := 9.0
+@export var dart_damage := 1
+## INK SLAM (Brush Maul).
+@export var slam_radius := 2.8
+@export var slam_damage := 2
+
 @export_group("Health")
-@export var max_health := 5
+## In half ink bottles (12 = six bottles, ink_bottles.gd; the same as in 2D):
+## small monsters take 1 (half a bottle), most hits 2.
+@export var max_health := 12
 @export var invuln_time := 1.0
+## Spawn protection: nothing can hurt Vesper for this many seconds after he
+## arrives in a room or comes back after dying (monsters, falls, the
+## Writer's lamps); he blinks while it lasts.
+@export var spawn_protection := 2.0
 @export var hurt_knockback := 7.0
 @export var hurt_hop := 4.0
 
@@ -99,7 +141,23 @@ enum AttackStyle { INK_SLASH, NIB_SWORD, BOTH }
 @export var fuel_per_hit := 8.0
 @export var glow_radius_full := 3.4
 @export var glow_radius_empty := 1.6
-## Flash: right click / Q.
+## Hold right click (the "flash" action) to raise the Ember, as in the 2D levels: its
+## light swells to `raised_radius` and becomes the Writer's kind of light
+## (it shows the unfinished Scribbles and lets you cut them, dries wet ink,
+## melts the Red Pen's letters). Raised, it drains `raise_drain` a second;
+## lowered, the fuel comes back at `regen` a second after `regen_delay`,
+## at `lantern_regen` in a lit lantern's light. Run dry and it gutters out
+## until `relight_at` is back. Held still next to a sketched bridge, it inks
+## the bridge instead (drawn_bridge.gd).
+@export var raised_radius := 5.0
+@export var raise_drain := 16.0
+@export var regen := 14.0
+@export var regen_delay := 0.6
+@export var lantern_regen := 40.0
+@export var relight_at := 20.0
+## The old Flash (a burst of light on Q / right click) is retired from the
+## controls: holding the Ember up does its job. Kept for scripts that call
+## _flash().
 @export var flash_cost := 25.0
 ## Heal: hold F, standing still.
 @export var heal_cost := 33.0
@@ -128,14 +186,25 @@ var facing_dir := Vector3(0, 0, 1)
 var facing := 1
 var health := 0
 var dead := false
+## A cutscene has the controls (light_capture.gd): no input, no damage, the
+## Ember stays down; Vesper walks along `cutscene_dir` (zero = stands still).
+var cutscene := false
+var cutscene_dir := Vector3.ZERO
+## With `cutscene` too: the cutscene moves Vesper itself (no physics at all):
+## he hangs at `cutscene_point`, posed as if in the air.
+var cutscene_hold := false
+var cutscene_point := Vector3.ZERO
 ## Interpolated position of the visuals; the camera follows this.
 var smooth_position := Vector3.ZERO
 ## Height of the ground under the player (the shadow and camera use it, so
 ## jumping doesn't bob the view).
 var ground_height := 0.0
 var fuel := 60.0
-## The Ember only makes drawn things real; it doesn't burn monsters.
+## Lowered, the Ember only makes drawn things real; raised (hold right click), it is
+## the Writer's kind of light too (world25/light.gd rule 2).
 var monster_light := false
+## True while right click holds the Ember up.
+var ember_raised := false
 ## 0..1: how close a searchlight is to erasing Vesper (searchlight.gd fills
 ## it; she whitens as it rises).
 var erase := 0.0
@@ -158,6 +227,7 @@ var _coyote := 0.0
 var _jump_buffer := 0.0
 var _jumping := false
 var _invuln := 0.0
+var _spawn_guard := 0.0  # seconds of spawn protection left (see spawn_protection)
 var _hurt_timer := 0.0
 var _slow_sources := {}  # source -> Vector2(speed_mult, jump_mult)
 var _channel := -1.0  # seconds spent channelling a heal; -1 = not healing
@@ -176,6 +246,25 @@ var _chevron: MeshInstance3D
 var _chevron_mat: ShaderMaterial
 var _chevron_flash := 0.0
 var _chevron_yaw := 0.0
+## The drawn bridge being inked while right click is held (drawn_bridge.gd), or null.
+var _inking: Node3D = null
+var _snuffed := false  # ran dry: the Ember won't rise until relight_at is back
+var _since_raised := 10.0
+var _raise_w := 0.0  # 0..1, eases towards ember_raised (radius and light)
+var _q_prompt: Node2D  # "HOLD RIGHT CLICK TO SEE THEM" over Vesper's head
+var _weapon := "nib"  # equipped weapon (catalog.gd id)
+var _special := "wave"  # what holding attack does
+var _tier := 0  # upgrades bought for it (0..3)
+var _charge := -1.0  # seconds attack has been held; -1 = not charging
+var _charge_ready := false
+var _drill := -1.0  # seconds spent drilling; -1 = not
+var _drill_t := 0.0
+var _drill_fx := 0.0
+var _whirl := -1.0  # seconds spent whirling; -1 = not
+var _whirl_angle := 0.0
+var _whirl_hits := {}  # target -> seconds before it can be hit again
+var _lantern: Node3D
+var _q_label: Label
 
 @onready var visual_3d: Node3D = $Visual3D
 @onready var sprite: Sprite3D = $Visual3D/Sprite
@@ -198,6 +287,7 @@ func _ready() -> void:
 	_apply_loadout()
 	health = max_health
 	fuel = minf(start_fuel, max_fuel)
+	_spawn_guard = spawn_protection
 	_safe_pos = global_position
 	add_to_group("light_3d")
 	_art_scale = visual.scale.y
@@ -260,32 +350,56 @@ func _physics_process(delta: float) -> void:
 		velocity = Vector3.ZERO
 		_prev_tick_pos = _tick_pos
 		return
-	var input := Input.get_vector("move_left", "move_right", "up", "down")
+	if cutscene and cutscene_hold:
+		velocity = (cutscene_point - global_position) / maxf(delta, 0.001)  # (for the pose)
+		global_position = cutscene_point
+		_prev_tick_pos = _tick_pos
+		_tick_pos = global_position
+		return
+	var input := Vector2.ZERO if cutscene else Input.get_vector("move_left", "move_right", "up", "down")
 	var dir := Vector3(input.x, 0.0, input.y)
-	var in_control := _hurt_timer <= 0.0
+	var in_control := _hurt_timer <= 0.0 and not cutscene
 	if not in_control:
 		dir = Vector3.ZERO
+		_inking = null
+	if cutscene:
+		dir = cutscene_dir
+		set_facing(dir)
 	if in_control and input.length() > facing_deadzone and _attack_timer <= 0.0:
 		set_facing(dir)
 
+	if not in_control:
+		_cancel_charge()
 	if in_control:
 		if Input.is_action_just_pressed("attack"):
 			_attack_buffer = attack_buffer_time
+			_charge = 0.0
+			_charge_ready = false
+		_update_charge(delta)
 		if Input.is_action_just_pressed("jump"):
 			_jump_buffer = jump_buffer_time
-		if Input.is_action_just_pressed("flash"):
-			_flash()
-		# right click is Flash here; Shift / C dash
-		var dash_pressed := Input.is_action_just_pressed("dash") and not Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT)
+		if Input.is_action_just_pressed("flash") or (ember_raised and input.length() < 0.1 and _inking == null):
+			var sketch := _sketch_near()
+			if sketch:
+				_inking = sketch  # held still by a drawn bridge, the Ember inks it
+		var dash_pressed := Input.is_action_just_pressed("dash")
 		if dash_pressed and _dash_cooldown_timer <= 0.0:
 			_dash_dir = dir.normalized() if dir.length() > facing_deadzone else facing_dir
+			_cancel_charge()
 			_dash_timer = dash_time
 			_dash_cooldown_timer = dash_cooldown
+			Sfx.play("dash")
 			_attack_timer = 0.0  # a dash cancels a swing
 			_squash = Vector2(1.3, 0.75)
 		_update_heal(delta)
-		if _channel >= 0.0:
-			dir = Vector3.ZERO  # rooted while healing
+		if _inking:
+			_update_inking(delta)
+	_update_ember(delta, in_control)
+	if in_control:
+		if _channel >= 0.0 or _inking:
+			dir = Vector3.ZERO  # rooted while healing or inking
+		elif _drill >= 0.0 or _whirl >= 0.0:
+			dir *= 0.35  # slowed while the drill spins or the lantern whirls
 		elif _attack_buffer > 0.0 and _attack_timer <= 0.0 and _dash_timer <= 0.0:
 			_start_attack(dir)
 
@@ -303,6 +417,7 @@ func _tick_timers(delta: float) -> void:
 	_combo_timer = maxf(_combo_timer - delta, 0.0)
 	_jump_buffer = maxf(_jump_buffer - delta, 0.0)
 	_invuln = maxf(_invuln - delta, 0.0)
+	_spawn_guard = maxf(_spawn_guard - delta, 0.0)
 	_hurt_timer = maxf(_hurt_timer - delta, 0.0)
 
 
@@ -337,6 +452,7 @@ func _update_vertical(delta: float) -> void:
 	if _jump_buffer > 0.0 and _coyote > 0.0 and _attack_timer <= 0.0:
 		velocity.y = jump_velocity * _slow_mult().y
 		_jumping = true
+		Sfx.play("jump")
 		_jump_buffer = 0.0
 		_coyote = 0.0
 		_squash = Vector2(0.75, 1.25)
@@ -354,7 +470,7 @@ func _update_vertical(delta: float) -> void:
 
 func _post_move() -> void:
 	if is_on_floor() and not _was_on_floor:
-		_squash = Vector2(1.25, 0.8)
+		_squash = Vector2(1.25, 0.8)  # (landing is silent)
 	_was_on_floor = is_on_floor()
 	_probe_ground()
 	_check_contact_damage()
@@ -384,6 +500,7 @@ func _process(delta: float) -> void:
 	shadow.position.y = -height + 0.03
 	shadow.scale = Vector3.ONE * clampf(1.0 - height * 0.25, 0.45, 1.0)
 	_update_chevron(height, delta)
+	_update_q_prompt()
 	if _model:
 		_update_model(delta)
 	else:
@@ -396,6 +513,7 @@ func _start_attack(move_dir: Vector3) -> void:
 	_attack_buffer = 0.0
 	_combo = _combo % 3 + 1 if _combo_timer > 0.0 else 1
 	var finisher := _combo == 3
+	Sfx.play("sword_swing", 1.0 if finisher else 0.0, 0.9 if finisher else 1.0)
 	var dir := _aim_direction(move_dir)
 	facing_dir = dir  # Vesper turns into the swing (aim assist included)
 	if absf(dir.x) > 0.15:
@@ -446,6 +564,16 @@ func _aim_direction(move_dir: Vector3) -> Vector3:
 		if d.length() > 0.05:
 			dir = d.normalized()
 	return dir
+
+
+## A cutscene's dash (light_capture.gd): the same lunge and afterimages.
+func cutscene_dash(dir: Vector3) -> void:
+	_dash_dir = Vector3(dir.x, 0.0, dir.z).normalized()
+	set_facing(_dash_dir)
+	_dash_timer = dash_time
+	_dash_cooldown_timer = dash_cooldown
+	Sfx.play("dash")
+	_squash = Vector2(1.3, 0.75)
 
 
 ## Turns Vesper to face `dir` (flattened, snapped to snap_directions).
@@ -517,7 +645,10 @@ func _hit_in_front(dir: Vector3, finisher: bool) -> void:
 			var landed = target.take_hit(dmg, dir, aerial)
 			if landed == false:
 				continue  # blocked: the monster shows its own reaction
+			if _weapon == "prism":
+				_stun(target, prism_stun)  # its light dazzles
 			hits += 1
+			Sfx.play("sword_hit")
 			var word: String = "KA-POW!" if finisher else HIT_WORDS.pick_random()
 			Fx.pop_text(get_tree(), target.global_position + Vector3(0, 1.3, 0), word)
 	# unlit lanterns catch when struck
@@ -548,6 +679,310 @@ func _hit_in_front(dir: Vector3, finisher: bool) -> void:
 		_shake(0.12)
 
 
+# ------------------------------------------------------- weapon specials
+
+## Hold-to-charge, as in the 2D levels: the press already swung, keep
+## holding to charge, let go when charged for the weapon's special. The
+## drill and the whirl run while still held, once charged.
+func _update_charge(delta: float) -> void:
+	if _charge < 0.0:
+		return
+	if Input.is_action_pressed("attack"):
+		_charge += delta
+		if not _charge_ready and _charge >= charge_time:
+			_charge_ready = true
+			_chevron_flash = 1.0
+			Fx.burst(get_tree(), global_position + Vector3(0, 1.0, 0), _slash_rim, 8, 2.0)
+			if _special == "drill":
+				_start_drill()
+			elif _special == "whirl":
+				_start_whirl()
+		if _drill >= 0.0:
+			_update_drill(delta)
+		elif _whirl >= 0.0:
+			_update_whirl(delta)
+		return
+	if _charge_ready:
+		_release_special()
+	_cancel_charge()
+
+
+func _cancel_charge() -> void:
+	_charge = -1.0
+	_charge_ready = false
+	_stop_drill()
+	_stop_whirl()
+
+
+## True while holding a charged attack (the model and tests read it).
+func charge_ready() -> bool:
+	return _charge_ready
+
+
+func _release_special() -> void:
+	match _special:
+		"drill":
+			if _drill >= 0.0:
+				_drill_burst()
+		"whirl":
+			pass  # it whirled while held
+		"sweep":
+			_blinding_sweep()
+		"darts":
+			_quill_volley()
+		"slam":
+			_ink_slam()
+		_:
+			_ink_wave_special()
+
+
+## SHARPENED (first upgrade): +1 damage on every hit, specials included.
+func _sharp() -> int:
+	return 1 if _tier >= 1 else 0
+
+
+## MASTERWORK (third upgrade): the special is stronger.
+func _master() -> bool:
+	return _tier >= 3
+
+
+## Living monsters within `radius` of `at` on the ground plane.
+func _enemies_near(at: Vector3, radius: float) -> Array:
+	var out := []
+	for e in get_tree().get_nodes_in_group("enemy"):
+		if not (e is Node3D) or not e.has_method("take_hit") or ("dead" in e and e.dead):
+			continue
+		var d: Vector3 = e.global_position - at
+		if absf(d.y) < 2.5 and Vector2(d.x, d.z).length() <= radius:
+			out.append(e)
+	return out
+
+
+## Stuns a monster for at least `seconds` (monster_3d.gd and scribble.gd
+## both answer stun_for()).
+func _stun(e: Node, seconds: float) -> void:
+	if e.has_method("stun_for"):
+		e.stun_for(seconds)
+
+
+## A special's hit: like a swing (the monster may block it), with a word.
+func _special_hit(e: Node3D, dmg: int, dir: Vector3, word: String, col := Color(1.0, 0.82, 0.15)) -> bool:
+	var landed = e.take_hit(dmg, dir, false)
+	if landed == false:
+		return false
+	add_fuel(fuel_per_hit)
+	Fx.pop_text(get_tree(), e.global_position + Vector3(0, 1.3, 0), word, col)
+	return true
+
+
+# INK WAVE (Nib-Sword)
+func _ink_wave_special() -> void:
+	var wave := InkWave.new()
+	wave.direction = facing_dir
+	wave.rim = _slash_rim
+	wave.damage = finisher_damage + _sharp() + (2 if _master() else 0)
+	if _master():
+		wave.max_range *= 1.4
+	get_tree().current_scene.add_child(wave)
+	wave.global_position = Vector3(global_position.x, ground_height, global_position.z) + facing_dir * 0.6
+	Fx.pop_text(get_tree(), global_position + Vector3(0, 1.8, 0), "KA-SHOOM!", _slash_rim)
+	_squash = Vector2(1.25, 0.8)
+	_shake(0.3)
+
+
+# PEN-DRILL (Corkscrew Nib): spin, drag monsters in, grind; burst on release
+func _drill_radius() -> float:
+	return drill_radius * (1.4 if _master() else 1.0)
+
+
+func _start_drill() -> void:
+	_drill = 0.0
+	_drill_t = 0.0
+	_drill_fx = 0.0
+	if _model:
+		_model.spin = 22.0
+	Fx.pop_text(get_tree(), global_position + Vector3(0, 1.9, 0), "VRRRRR!", Color(0.85, 0.9, 1.0), 30)
+
+
+func _update_drill(delta: float) -> void:
+	_drill += delta
+	_drill_t -= delta
+	_drill_fx -= delta
+	if _drill_fx <= 0.0:
+		# an ink twister: slashes all round, turning
+		_drill_fx = 0.08
+		var a := _drill * 14.0
+		Fx.slash(get_tree(), global_position, Vector3(cos(a), 0.0, sin(a)), int(_drill * 12.0) % 2 == 0, false, _slash_rim)
+	var tick := _drill_t <= 0.0
+	if tick:
+		_drill_t = drill_tick
+	for e in _enemies_near(global_position, _drill_radius()):
+		var d: Vector3 = global_position - e.global_position
+		d.y = 0.0
+		_stun(e, 0.15)
+		var pull := d.normalized() * minf(drill_pull, d.length() * 6.0)
+		e.velocity.x = pull.x
+		e.velocity.z = pull.z
+		if tick and d.length() < drill_grind:
+			_special_hit(e, 1 + _sharp(), -d.normalized() if d.length() > 0.01 else facing_dir, "BZZRT!", Color(0.85, 0.9, 1.0))
+			_shake(0.12)
+	if _drill >= drill_max:
+		_drill_burst()
+		_cancel_charge()
+
+
+func _drill_burst() -> void:
+	var dmg := drill_burst + _sharp() + (2 if _master() else 0)
+	for e in _enemies_near(global_position, _drill_radius() * 0.75):
+		var away: Vector3 = e.global_position - global_position
+		away.y = 0.0
+		away = away.normalized() if away.length() > 0.01 else facing_dir
+		if _special_hit(e, dmg, away, "KA-BLOOEY!", Color(0.85, 0.9, 1.0)):
+			e.velocity.x = away.x * 11.0
+			e.velocity.z = away.z * 11.0
+	WeaponFx.ring(get_tree(), global_position, _drill_radius() * 0.75, _slash_rim, 0.25)
+	_squash = Vector2(1.3, 0.75)
+	_hitstop(0.06)
+	_shake(0.5)
+	_stop_drill()
+
+
+func _stop_drill() -> void:
+	if _drill < 0.0:
+		return
+	_drill = -1.0
+	if _model:
+		_model.spin = 0.0
+
+
+# LANTERN WHIRL (Lantern Flail): the lantern orbits, hits what it passes,
+# and its light shows hidden things
+func _whirl_reach() -> float:
+	return whirl_radius * (1.3 if _master() else 1.0)
+
+
+func _start_whirl() -> void:
+	if _snuffed or fuel <= 0.0:
+		Fx.pop_text(get_tree(), global_position + Vector3(0, 1.8, 0), "NO EMBER", Color(0.7, 0.6, 0.5), 24)
+		return
+	_whirl = 0.0
+	_whirl_hits.clear()
+	_whirl_angle = atan2(facing_dir.z, facing_dir.x)
+	_lantern = WeaponFx.OrbitLantern.new()
+	_lantern.glow_range = 4.0 * (1.3 if _master() else 1.0)
+	get_tree().current_scene.add_child(_lantern)
+	_place_lantern()
+	Fx.pop_text(get_tree(), global_position + Vector3(0, 1.9, 0), "WHOOM!", Color(1.0, 0.8, 0.4), 30)
+
+
+func _place_lantern() -> void:
+	if _lantern:
+		_lantern.global_position = global_position + Vector3(cos(_whirl_angle), 0.0, sin(_whirl_angle)) * _whirl_reach() + Vector3(0, 0.9, 0)
+		_lantern.anchor = global_position + Vector3(0, 0.9, 0)
+
+
+func _update_whirl(delta: float) -> void:
+	_whirl += delta
+	_whirl_angle += delta * 9.0
+	_place_lantern()
+	add_fuel(-whirl_drain * delta)
+	_since_raised = 0.0  # no regen while it burns
+	for t in _whirl_hits.keys():
+		_whirl_hits[t] -= delta
+	var dmg := whirl_damage + _sharp() + (1 if _master() else 0)
+	for e in _enemies_near(_lantern.global_position, 0.95):
+		if _whirl_hits.get(e, 0.0) > 0.0:
+			continue
+		_whirl_hits[e] = 0.35
+		var away: Vector3 = e.global_position - global_position
+		away.y = 0.0
+		_special_hit(e, dmg, away.normalized() if away.length() > 0.01 else facing_dir, "CLONK!")
+		_shake(0.15)
+	if fuel <= 0.0:
+		_snuffed = true
+		_cancel_charge()
+
+
+func _stop_whirl() -> void:
+	if _whirl < 0.0:
+		return
+	_whirl = -1.0
+	if _lantern:
+		_lantern.queue_free()
+	_lantern = null
+
+
+## The Prism Saber's blade is light (its hits stun).
+func light_blade() -> bool:
+	return _weapon == "prism"
+
+
+## True while the Lantern Flail whirls (its light counts as the Writer's).
+func whirling() -> bool:
+	return _whirl >= 0.0
+
+
+# BLINDING SWEEP (Prism Saber): a rainbow sweep in front that blinds, and
+# turns the Haunting Lamp's light away
+func _blinding_sweep() -> void:
+	var radius := sweep_radius * (1.3 if _master() else 1.0)
+	WeaponFx.rainbow(get_tree(), global_position, facing_dir, radius)
+	var min_dot := cos(deg_to_rad(100.0))
+	for e in _enemies_near(global_position, radius):
+		var d: Vector3 = e.global_position - global_position
+		d.y = 0.0
+		if d.length() > 0.6 and d.normalized().dot(facing_dir) < min_dot:
+			continue  # behind
+		if _special_hit(e, sweep_damage + _sharp(), d.normalized() if d.length() > 0.01 else facing_dir, "BLINDED!", Color(0.6, 1.0, 0.95)):
+			_stun(e, sweep_stun * (2.0 if _master() else 1.0))
+	for lamp in get_tree().get_nodes_in_group("haunt_lamp"):
+		if not lamp.has_method("dazzle"):
+			continue
+		var on_me: bool = lamp.has_method("lights") and lamp.lights(global_position)
+		var near: bool = "spot" in lamp and Vector2(lamp.spot.x - global_position.x, lamp.spot.z - global_position.z).length() < radius * 1.5
+		if on_me or near:
+			lamp.dazzle()
+	Fx.pop_text(get_tree(), global_position + Vector3(0, 2.0, 0), "FWASSH!", Color(0.85, 1.0, 1.0), 36)
+	_hitstop(0.05)
+	_shake(0.35)
+
+
+# QUILL VOLLEY (Quill Rapier): a fan of quills that pierce
+func _quill_volley() -> void:
+	var n := dart_count + (2 if _master() else 0)
+	for i in n:
+		var a := deg_to_rad(lerpf(-14.0, 14.0, float(i) / maxf(n - 1, 1)))
+		var dart := WeaponFx.QuillDart.new()
+		dart.direction = facing_dir.rotated(Vector3.UP, a)
+		dart.speed = dart_speed
+		dart.max_range = dart_range
+		dart.damage = dart_damage + _sharp()
+		dart.color = _slash_rim
+		get_tree().current_scene.add_child(dart)
+		dart.global_position = global_position + Vector3(0, 0.9, 0) + facing_dir * 0.5
+	Fx.pop_text(get_tree(), global_position + Vector3(0, 1.9, 0), "FWIP-FWIP!", Color(0.6, 0.9, 1.0), 30)
+	_shake(0.2)
+
+
+# INK SLAM (Brush Maul): a ring of ink thrown out along the ground
+func _ink_slam() -> void:
+	var radius := slam_radius * (1.4 if _master() else 1.0)
+	var at := Vector3(global_position.x, ground_height, global_position.z)
+	WeaponFx.ring(get_tree(), at, radius, _slash_rim)
+	Fx.splat(get_tree(), at, radius * 0.9)
+	Fx.burst(get_tree(), at + Vector3(0, 0.3, 0), Color(0.06, 0.03, 0.13), 22, 5.0)
+	var dmg := slam_damage + _sharp() + (1 if _master() else 0)
+	for e in _enemies_near(global_position, radius):
+		var away: Vector3 = e.global_position - global_position
+		away.y = 0.0
+		if _special_hit(e, dmg, away.normalized() if away.length() > 0.01 else facing_dir, "KA-BLAM!", Color(1.0, 0.4, 0.35)):
+			if not ("flying" in e and e.flying):
+				e.velocity.y = 6.0
+	_squash = Vector2(1.35, 0.7)
+	_hitstop(0.07)
+	_shake(0.55)
+
+
 func _hitstop(duration: float) -> void:
 	Engine.time_scale = 0.05
 	await get_tree().create_timer(duration, true, false, true).timeout
@@ -562,11 +997,12 @@ func _shake(amount: float) -> void:
 
 # ----------------------------------------------------------------- loadout
 
-## Applies skills (Ink Points), shop gear and the difficulty setting on top
-## of the exported base values. Runs once per spawn (each room).
+## Applies the gear from Quire's shop (the weapon and its upgrades, armor,
+## outfit) and the difficulty setting on top of the exported base values.
+## Runs once per spawn (each room) and after the shop closes.
 const LOADOUT_STATS := ["max_health", "invuln_time", "max_speed", "dash_speed", "dash_cooldown", "attack_reach",
 	"attack_radius", "attack_damage", "finisher_damage", "attack_time", "finisher_time", "pogo_velocity", "max_fuel",
-	"glow_radius_full", "fuel_per_hit", "flash_cost", "heal_time", "heal_cost"]
+	"glow_radius_full", "fuel_per_hit", "flash_cost", "heal_time", "heal_cost", "charge_time"]
 var _base_stats := {}
 
 
@@ -582,19 +1018,24 @@ func _apply_loadout() -> void:
 	var settings := get_node_or_null("/root/Settings")
 	var diff: String = settings.get_value("difficulty") if settings else "normal"
 	if diff == "relaxed":
-		max_health += 2
+		max_health += 4
 		invuln_time *= 1.5
 	if profile == null:
 		return
-	max_health += int(profile.effect("health_bonus", 0))
+	max_health += 2 * int(profile.effect("health_bonus", 0))  # bonus is in bottles
 	max_speed *= profile.effect("speed_mult", 1.0)
 	dash_speed *= profile.effect("dash_mult", 1.0)
 	dash_cooldown *= profile.effect("dash_cd_mult", 1.0)
 	attack_reach *= profile.effect("reach_mult", 1.0)
 	attack_radius *= profile.effect("radius_mult", 1.0)
-	var dmg := int(profile.effect("damage_bonus", 0))
+	_weapon = profile.weapon()
+	_special = profile.weapon_item().get("special", "wave")
+	_tier = profile.upgrade_level(_weapon)
+	var dmg := int(profile.effect("damage_bonus", 0)) + _sharp()
 	attack_damage += dmg
 	finisher_damage += dmg + int(profile.effect("finisher_bonus", 0))
+	if _tier >= 2:
+		charge_time *= 0.6  # QUICK HAND
 	attack_time *= profile.effect("swing_mult", 1.0)
 	finisher_time *= profile.effect("swing_mult", 1.0)
 	pogo_velocity *= profile.effect("pogo_mult", 1.0)
@@ -614,9 +1055,10 @@ func _apply_loadout() -> void:
 	_apply_look(profile.look())
 
 
-## After the shop or skill tree: re-apply everything, keeping health and
-## fuel (topped up by any new maximum).
+## After the shop: re-apply everything, keeping health and fuel (topped up
+## by any new maximum).
 func refresh_loadout() -> void:
+	_cancel_charge()
 	var old_max := max_health
 	var old_fuel_max := max_fuel
 	_apply_loadout()
@@ -639,6 +1081,12 @@ func _apply_look(look: Dictionary) -> void:
 		sword.cloak_color = look.cloak
 	if look.has("cloak_rim"):
 		art.cloak_rim = look.cloak_rim
+	if look.has("hat"):
+		art.hat_color = look.hat
+	if look.has("band"):
+		art.band_color = look.band
+	if look.has("weapon"):
+		sword.style = look.weapon
 	if look.has("blade_length"):
 		sword.blade_length = look.blade_length
 	if look.has("grip"):
@@ -655,7 +1103,7 @@ func add_fuel(amount: float) -> void:
 
 
 func glow_radius() -> float:
-	return lerpf(glow_radius_empty, glow_radius_full, fuel / max_fuel)
+	return lerpf(lerpf(glow_radius_empty, glow_radius_full, fuel / max_fuel), raised_radius, _raise_w)
 
 
 ## Light source for drawn things (world25/light.gd): the Ember's glow.
@@ -679,22 +1127,143 @@ func _flash() -> void:
 	_squash = Vector2(1.2, 0.85)
 
 
-## Hold heal, standing on the ground, to turn fuel into one ink drop.
+## Hold right click to raise the Ember: it drains while up and comes back once it is
+## lowered (faster in a lit lantern's light), and gutters out if it runs dry.
+func _update_ember(delta: float, in_control: bool) -> void:
+	var want := in_control and not dead and Input.is_action_pressed("flash") and not _snuffed and _channel < 0.0
+	ember_raised = want and _inking == null and fuel > 0.0
+	monster_light = ember_raised or _whirl >= 0.0
+	if ember_raised or _inking:
+		_since_raised = 0.0
+	if ember_raised:
+		add_fuel(-raise_drain * delta)
+		if fuel <= 0.0:
+			_snuffed = true
+			ember_raised = false
+			monster_light = false
+			Fx.pop_text(get_tree(), global_position + Vector3(0, 1.8, 0), "fzzt...", Color(0.7, 0.6, 0.5), 24)
+	else:
+		_since_raised += delta
+		if _since_raised > regen_delay and fuel < max_fuel:
+			add_fuel((lantern_regen if _in_lantern_light() else regen) * delta)
+	if _snuffed and fuel >= relight_at:
+		_snuffed = false
+	_raise_w = move_toward(_raise_w, 1.0 if ember_raised else 0.0, delta * 6.0)
+
+
+## "HOLD RIGHT CLICK TO SEE THEM" over Vesper while an unfinished Scribble
+## (half_drawn_3d.gd, group "needs_ember") is near and the Ember is down.
+func _update_q_prompt() -> void:
+	var near := false
+	if not dead and not ember_raised:
+		for m in get_tree().get_nodes_in_group("needs_ember"):
+			if m is Node3D and not m.dead and global_position.distance_to(m.global_position) < 8.0:
+				near = true
+				break
+	if near and _q_prompt == null:
+		var ui := get_tree().current_scene.get_node_or_null("UI")
+		if ui == null:
+			return
+		_q_prompt = ScreenAnchor.new()
+		_q_label = Label.new()
+		_q_label.text = "HOLD RIGHT CLICK TO SEE THEM"
+		_q_label.add_theme_font_override("font", PROMPT_FONT)
+		_q_label.add_theme_font_size_override("font_size", 26)
+		_q_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
+		_q_label.add_theme_color_override("font_outline_color", Color(0.05, 0.03, 0.08))
+		_q_label.add_theme_constant_override("outline_size", 10)
+		_q_prompt.add_child(_q_label)
+		ui.add_child(_q_prompt)
+		_q_label.position = -_q_label.get_minimum_size() * Vector2(0.5, 1.0)
+	elif not near and _q_prompt != null:
+		_q_prompt.queue_free()
+		_q_prompt = null
+	if _q_prompt:
+		_q_prompt.world_position = smooth_position + Vector3(0, 2.7, 0)
+		_q_label.modulate.a = 0.75 + 0.25 * sin(Time.get_ticks_msec() * 0.006)
+
+
+func _in_lantern_light() -> bool:
+	for l in get_tree().get_nodes_in_group("lantern"):
+		if l is Node3D and l.get("lit") and "light_radius" in l \
+				and Vector2(l.global_position.x - global_position.x, l.global_position.z - global_position.z).length() < l.light_radius:
+			return true
+	return false
+
+
+## True when the raised Ember's light reaches `point` (the unfinished
+## Scribbles only show, and can only be cut, inside it). Only the raised
+## Ember (right click) counts, not the Lantern Flail's whirl.
+func ember_reveals(point: Vector3) -> bool:
+	if dead:
+		return false
+	if not ember_raised:
+		return false
+	var d := point - global_position
+	return Vector2(d.x, d.z).length() < glow_radius() and absf(d.y) < 3.0
+
+
+## The drawn bridge Vesper could ink from where he stands, or null.
+func _sketch_near() -> Node3D:
+	if not is_on_floor():
+		return null
+	for b in get_tree().get_nodes_in_group("drawn_bridge"):
+		if b.can_ink(global_position) and fuel >= b.ink_cost:
+			return b
+	return null
+
+
+## Holding right click by a drawn bridge: the Ember is up and ink runs out from his
+## feet along the planks (drawn_bridge.gd ink()), until he lets go, it
+## reaches as far as one hold can, or the Ember runs dry.
+func _update_inking(delta: float) -> void:
+	if not Input.is_action_pressed("flash") or not is_on_floor() or _dash_timer > 0.0 or not is_instance_valid(_inking):
+		_inking = null
+		return
+	if not _inking.ink(global_position, delta, self):
+		if fuel < _inking.ink_cost and not _inking.finished():
+			Fx.pop_text(get_tree(), global_position + Vector3(0, 1.8, 0), "fzzt... no Ember left", Color(0.7, 0.6, 0.5), 24)
+		_inking = null
+
+
+## Light or life (the same in 2D, player.gd): hold heal (F), standing on the
+## ground with the Ember lowered, to pour `heal_cost` of its fuel (a third)
+## into half a bottle of ink.
 func _update_heal(delta: float) -> void:
-	var can := Input.is_action_pressed("heal") and is_on_floor() and health < max_health \
-		and fuel >= heal_cost and _attack_timer <= 0.0 and _dash_timer <= 0.0
-	if not can:
+	if Input.is_action_just_pressed("heal") and not can_heal():
+		_heal_refused()
+	if not (Input.is_action_pressed("heal") and can_heal()):
 		_channel = -1.0
 		return
 	_channel = maxf(_channel, 0.0) + delta
+	_since_raised = 0.0  # no regen while pouring (2D: ember.hold_regen())
 	if _channel >= heal_time:
 		_channel = -1.0
 		add_fuel(-heal_cost)
-		health = mini(health + 1, max_health)
+		health = mini(health + 1, max_health)  # half a bottle, as in 2D
 		health_changed.emit(health, max_health)
-		Fx.pop_text(get_tree(), global_position + Vector3(0, 1.8, 0), "+1", Color(0.6, 1.0, 0.7), 32)
+		Fx.pop_text(get_tree(), global_position + Vector3(0, 1.8, 0), "+½ INK", Color(1.0, 0.85, 0.45), 32)
 		Fx.burst(get_tree(), global_position + Vector3(0, 0.8, 0), Color(1.0, 0.75, 0.35), 14, 2.5)
 		_squash = Vector2(0.85, 1.2)
+
+
+## Could hold F right now and heal (the HUD's "F HEAL" tag asks).
+func can_heal() -> bool:
+	return not dead and _hurt_timer <= 0.0 and is_on_floor() and health < max_health and fuel >= heal_cost \
+		and _attack_timer <= 0.0 and _dash_timer <= 0.0 and not ember_raised
+
+
+## F pressed when it can't heal: say why, so it never seems broken.
+func _heal_refused() -> void:
+	var why := ""
+	if health >= max_health:
+		why = "INK FULL"
+	elif fuel < heal_cost:
+		why = "NOT ENOUGH EMBER"
+	elif ember_raised:
+		why = "LOWER THE EMBER"
+	if why != "":
+		Fx.pop_text(get_tree(), global_position + Vector3(0, 1.8, 0), why, Color(0.75, 0.72, 0.7), 24)
 
 
 # ------------------------------------------------------------------ damage
@@ -702,7 +1271,7 @@ func _update_heal(delta: float) -> void:
 ## Touching a harmful monster hurts (jumping over it, or dashing through it,
 ## avoids that).
 func _check_contact_damage() -> void:
-	if _invuln > 0.0 or _dash_timer > 0.0:
+	if _invuln > 0.0 or _spawn_guard > 0.0 or _dash_timer > 0.0:
 		return
 	var shape := SphereShape3D.new()
 	shape.radius = 0.42
@@ -717,8 +1286,14 @@ func _check_contact_damage() -> void:
 			return
 
 
+## True during spawn protection: lamps don't fill the erase meter and
+## nothing deals damage.
+func is_protected() -> bool:
+	return _spawn_guard > 0.0
+
+
 func take_damage(amount: int, from_pos: Vector3) -> void:
-	if dead or _invuln > 0.0 or _dash_timer > 0.0:
+	if dead or cutscene or _invuln > 0.0 or _spawn_guard > 0.0 or _dash_timer > 0.0:
 		return
 	if _seal_ready:
 		# Wax-Seal Mantle: the first hit in a room cracks the seal instead
@@ -733,6 +1308,7 @@ func take_damage(amount: int, from_pos: Vector3) -> void:
 		Fx.pop_text(get_tree(), global_position + Vector3(0, 2.2, 0), "LAST DROP!", Color(0.55, 0.65, 1.0), 34)
 	health = maxi(health - amount, 0)
 	health_changed.emit(health, max_health)
+	Sfx.play("hurt")
 	_invuln = invuln_time
 	_hurt_timer = 0.2
 	_attack_timer = 0.0
@@ -766,14 +1342,14 @@ func _track_safe_ground(delta: float) -> void:
 
 
 ## Fell through a vanished bridge (or off the world): back to safe ground,
-## one ink drop poorer.
+## one ink bottle poorer.
 func _fell() -> void:
 	velocity = Vector3.ZERO
 	global_position = _safe_pos
 	_snap_visuals()
 	if not dead:
 		_invuln = 0.0
-		take_damage(1, global_position + Vector3(facing, 0, 0))
+		take_damage(2, global_position + Vector3(facing, 0, 0))
 		velocity = Vector3.ZERO
 
 
@@ -789,6 +1365,7 @@ func bounce_back(dir: Vector3) -> void:
 func _die() -> void:
 	dead = true
 	died.emit()
+	Sfx.play("death")
 	Fx.splat(get_tree(), global_position, 2.0)
 	Fx.pop_text(get_tree(), global_position + Vector3(0, 1.8, 0), "THE END?", Color(0.98, 0.96, 0.9), 40)
 	if not _model:
@@ -799,6 +1376,7 @@ func _die() -> void:
 	health = max_health
 	health_changed.emit(health, max_health)
 	_invuln = 1.5
+	_spawn_guard = spawn_protection
 	_slow_sources.clear()
 	dead = false
 	_snap_visuals()
@@ -840,7 +1418,7 @@ func _update_model(delta: float) -> void:
 	_squash = _squash.lerp(Vector2.ONE, 1.0 - exp(-14.0 * delta))
 	_model.facing_dir = facing_dir
 	_model.speed = Vector2(velocity.x, velocity.z).length() / max_speed
-	_model.on_floor = is_on_floor()
+	_model.on_floor = is_on_floor() and not (cutscene and cutscene_hold)
 	_model.vertical = velocity.y
 	_model.dashing = _dash_timer > 0.0
 	_model.squash = _squash
@@ -849,9 +1427,11 @@ func _update_model(delta: float) -> void:
 	_model.hurt = _hurt_timer / 0.2
 	_model.heal = clampf(_channel / heal_time, 0.0, 1.0) if _channel >= 0.0 else 0.0
 	_model.erase = erase
-	_model.blink = not dead and _invuln > 0.0 and fmod(_invuln, 0.16) < 0.08
+	var blink_t := maxf(_invuln, _spawn_guard)
+	_model.blink = not dead and blink_t > 0.0 and fmod(blink_t, 0.16) < 0.08
 	_model.dead = dead
 	_model.fuel = fuel / max_fuel
+	_model.inking = _inking != null or ember_raised
 	_update_ember_light()
 
 
@@ -871,8 +1451,8 @@ func _update_chevron(height: float, delta: float) -> void:
 func _update_ember_light() -> void:
 	var k := fuel / max_fuel
 	# the Gutter is dark: the Ember lights a real pool round Vesper
-	ember_light.omni_range = lerpf(3.4, 6.0, k)
-	ember_light.light_energy = lerpf(0.9, 1.9, k)
+	ember_light.omni_range = lerpf(3.4, 6.0, k) * (1.0 + 0.5 * _raise_w)
+	ember_light.light_energy = lerpf(0.9, 1.9, k) * (1.5 if _inking else 1.0 + 0.8 * _raise_w)  # brighter raised
 
 
 func _update_art(delta: float) -> void:
@@ -899,6 +1479,7 @@ func _update_art(delta: float) -> void:
 		# (a dark flicker rather than fading out: the sprite is alpha-cut, so a
 		# faded frame would vanish entirely, e.g. if the game pauses on it)
 		var w := 1.0 + erase * 1.6
-		if _invuln > 0.0 and fmod(_invuln, 0.16) < 0.08:
+		var blink_t := maxf(_invuln, _spawn_guard)
+		if blink_t > 0.0 and fmod(blink_t, 0.16) < 0.08:
 			w *= 0.45
 		sprite.modulate = Color(w, w, w * 1.1, 1.0)

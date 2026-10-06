@@ -19,30 +19,37 @@ import os
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 U = 5          # px per map unit
 G = 50         # grid cell, px
-W, H = 1050, 1780   # level bounds in map units (rock fills what is not a room)
+W, H = 2150, 900    # level bounds in map units (rock fills what is not a room)
 Y0 = 40             # first map row that matters
 
 # zone borders (map y) and their themes: 1 archive, 2 works, 0 cavern
-ZONES = [(500, 1), (1230, 2), (10 ** 6, 0)]
+ZONES = [(265, 1), (545, 2), (10 ** 6, 0)]
 
-# open air, map units: x, y, w, h
+# open air, map units: x, y, w, h. Cut down for a ~3 minute run (+ the boss): the hall with the dash
+# pit, the drop into the Shadow Gallery, a shaft and a second drop into the Pendulum's cavern, whose
+# far bank walks straight into the boss arena. (Retired: hall 1 and its shaft, the plank tower, the two
+# side rooms, the pit and the bottom room with the Sketchbook's Blue Gap / lantern bridge replays.)
 ROOMS = {
-    "hall1": (60, 90, 580, 130), "shaft1": (540, 220, 90, 120), "hall2": (200, 340, 660, 120),
-    "nook": (60, 340, 160, 120), "shaft2": (770, 460, 90, 110),
-    "gallery": (300, 570, 600, 220),                      # light puzzle 1: the Shadow Gallery
-    "tower": (430, 850, 460, 320), "side_a": (120, 890, 260, 110), "door_a": (380, 950, 50, 50),
-    "side_b": (120, 1060, 260, 110), "door_b": (380, 1120, 50, 50), "shaft3": (760, 1170, 90, 100),
-    "cavern": (80, 1270, 780, 150),                       # light puzzle 2: the Pendulum, over the sump
-    "sump": (420, 1420, 300, 90), "pit": (100, 1420, 110, 150), "bottom": (100, 1570, 840, 150),
-    "lift": (920, 340, 70, 1380), "lift_door": (860, 390, 60, 70),
+    "hall2": (200, 90, 660, 120), "nook": (60, 90, 160, 120), "shaft2": (770, 210, 90, 110),
+    "gallery": (300, 320, 600, 220),                      # light puzzle 1: the Shadow Gallery
+    "cavern": (400, 600, 540, 150),                       # light puzzle 2: the Pendulum, over the sump
+    "sump": (520, 750, 300, 90),
+    "arena": (940, 550, 440, 200),                        # the Scribbled Beast (boss)
+    "run": (1380, 600, 700, 150),                         # the Eraser's chase, to the gutter
 }
 # solid rock put back inside rooms (applied after ROOMS), then air cut through it again
 SOLIDS = {
-    "shelf": (300, 630, 240, 160),      # the gallery's high exit ledge
-    "slab": (550, 1390, 40, 10),        # hangs under the pendulum lantern and shadows the bridge
+    "bump1": (1560, 742, 20, 8),        # the chase: two easy hops (40 px)...
+    "bump2": (1810, 742, 24, 8),
+    "shelf": (300, 380, 240, 160),      # the gallery's high exit ledge
+    "slab": (650, 720, 40, 10),         # hangs under the pendulum lantern and shadows the bridge
 }
 CUTS = {
-    "shaft2b": (440, 630, 90, 220),     # down through the shelf into the tower
+    "run_dip": (1680, 750, 40, 10),     # ...a shallow dip (50 px)
+    "gutter_pit": (2030, 750, 50, 150),  # the end of the page: the gutter, down into the Margins
+    "shaft2b": (410, 380, 90, 220),     # down through the shelf into the cavern
+    # spike pits cut 200 px into the floor (the level's size is unchanged)
+    "dash_pit": (650, 210, 90, 40),     # hall2: 450 px, needs a double jump and a dash
 }
 
 
@@ -62,12 +69,14 @@ def res(kind, path, rid):
 
 
 res("PackedScene", "res://scenes/player/player.tscn", "1_player")
+res("Script", "res://scripts/world/big_coin.gd", "49_bigcoin")
+res("Script", "res://scripts/effects/fall_cutscene.gd", "48_fallcine")
+res("Script", "res://scripts/ui/narration.gd", "46_narration")
 res("PackedScene", "res://scenes/enemies/crawler.tscn", "2_crawler")
 res("Script", "res://scripts/ui/hud.gd", "5_hud")
 res("Script", "res://scripts/audio/level_music.gd", "8_music")
+res("Script", "res://scripts/world/spikes.gd", "4_spikes")
 res("Script", "res://scripts/world/coin.gd", "9_coin")
-res("Script", "res://scripts/world/moving_platform.gd", "12_moving")
-res("Script", "res://scripts/world/level_exit.gd", "17_exit")
 res("Script", "res://scripts/world/checkpoint_pen.gd", "18_pen")
 res("Script", "res://scripts/world/health_heart.gd", "19_heart")
 res("PackedScene", "res://scenes/enemies/scribble.tscn", "20_scribble")
@@ -84,6 +93,9 @@ res("Script", "res://scripts/depth/depth_backdrop.gd", "50_backdrop")
 res("Script", "res://scripts/depth/rock_block.gd", "51_rock")
 res("Script", "res://scripts/depth/depth_trim.gd", "52_trim")
 res("Script", "res://scripts/depth/depth_ledge.gd", "53_ledge")
+res("Script", "res://scripts/enemies/scribbled_beast.gd", "60_beast")
+res("Script", "res://scripts/world/beast_arena.gd", "61_arena")
+res("Script", "res://scripts/world/eraser_chase.gd", "62_chase")
 
 
 def v(x, y):
@@ -226,10 +238,26 @@ def lantern(x, y, r, chain=60, post=0, lit=True, swing=0, period=3.0, name="Puzz
     node(name, "Node2D", "World", props)
 
 
-def sketch(x0, x1, top, h=20, inkable=True, name=None):
-    node(name or uniq("Sketch"), "StaticBody2D", "World",
-         [("position", v((x0 + x1) / 2, top + h / 2)), ("script", 'ExtResource("41_sketch")'), ("size", v(x1 - x0, h)),
-          ("inkable", "true" if inkable else "false")])
+def sketch(x0, x1, top, h=20, inkable=True, name=None, drinks=False):
+    props = [("position", v((x0 + x1) / 2, top + h / 2)), ("script", 'ExtResource("41_sketch")'), ("size", v(x1 - x0, h)),
+             ("inkable", "true" if inkable else "false")]
+    if drinks:  # the Ember drains twice as fast over it (ember.gd)
+        props.append(("drinks_light", "true"))
+    node(name or uniq("Sketch"), "StaticBody2D", "World", props)
+
+
+def spikes(x0, x1, floor):
+    """A spike strip on a floor at y=floor (width a multiple of 20 px: the spike drawing needs it)."""
+    assert (x1 - x0) % 20 == 0, (x0, x1)
+    node(uniq("Spikes"), "StaticBody2D", "World",
+         [("position", v((x0 + x1) / 2, floor - 12)), ("script", 'ExtResource("4_spikes")'), ("size", v(x1 - x0, 24))])
+
+
+def pit_spikes(name):
+    """Spikes along the floor of a pit in CUTS (5 px clear of each wall)."""
+    l, t, r, f = px(name)
+    w = (r - l - 10) // 20 * 20
+    spikes((l + r - w) / 2, (l + r + w) / 2, f)
 
 
 def caster(x, y, stick=0, length=420, name=None):
@@ -260,44 +288,46 @@ def checkpoint(x, floor_y):
     node(uniq("Checkpoint"), "Area2D", "World", [("position", v(x, floor_y)), ("script", 'ExtResource("18_pen")')])
 
 
+def big_coin(x, y):
+    """The big Lumen (big_coin.gd): 15 coins at once, off the usual path."""
+    node(uniq("BigCoin"), "Area2D", "World", [("position", v(x, y)), ("script", 'ExtResource("49_bigcoin")')])
+
+
 def heart(x, y):
     node(uniq("Heart"), "Area2D", "World", [("position", v(x, y)), ("script", 'ExtResource("19_heart")')])
 
 
 # ------------------------------------------------------------- the rooms
-# 1. THE ARCHIVE: top hall, first shaft, lower hall, a quiet nook
-l, t, r, f = px("hall1")
-START = (l + 200, f - 26)
-ledge(l + 900, f - 110, 220)
-ledge(l + 1250, f - 220, 220)
-ledge(l + 1650, f - 110, 220)
-coin_row(l + 820, l + 980, f - 150, 3)
-coin_row(l + 1170, l + 1330, f - 260, 3)
-coin_row(l + 1570, l + 1730, f - 150, 3)
-lamp(l + 520, t, 300, 150)
-lamp(l + 1900, t, 300, 190)
-sl, st, sr, sf = px("shaft1")
+# 1. THE ARCHIVE: the hall with the dash pit (the level starts here), a quiet nook to the left
 l2, t2, r2, f2 = px("hall2")
-steps(sl, sr, st, f2)
-coin_row(sl + 225, sl + 225, st + 200, 1)
+START = (l2 + 150, f2 - 26)
 nl, nt, nr, nf = px("nook")
-checkpoint(nl + 330, nf)
 lamp(nl + 220, nt, 260, 120)
-heart(nl + 520, nf - 60)
+ledge(nl + 260, nf - 120, 180)                  # the nook's secret: up on a ledge in the dark corner
+big_coin(nl + 110, nf - 330)
 ledge(l2 + 900, f2 - 110, 240)
 ledge(l2 + 1500, f2 - 110, 240)
 ledge(l2 + 1200, f2 - 220, 240)
+coin_row(l2 + 820, l2 + 980, f2 - 150, 3)
 coin_row(l2 + 1120, l2 + 1280, f2 - 260, 3)
-enemy("crawler", l2 + 700, f2 - 20)
-enemy("crawler", l2 + 2000, f2 - 20)
+enemy("crawler", l2 + 1400, f2 - 20)
+enemy("crawler", l2 + 2050, f2 - 20)
+# the City's dash pit, wider: 450 px of spikes. A dash (at most ~430 px) or a double jump
+# (~470 at its very best, from the very edge) falls short; jump, jump again, dash (~510) clears it.
+pit_spikes("dash_pit")
+coin_row(px("dash_pit")[0] + 80, px("dash_pit")[2] - 80, f2 - 150, 3)
 lamp(l2 + 1200, t2, 320, 110)
 lamp(l2 + 2500, t2, 300, 150)
 
-# 2. THE PENCIL WORKS: the Shadow Gallery (light puzzle), the scaffold tower, two side rooms
+# 2. THE PENCIL WORKS: the Shadow Gallery (light puzzle)
 sl, st, sr, sf = px("shaft2")
 gl, gt, gr, F = px("gallery")
 steps(sl, sr, st, gt + 60)
-ledge((sl + sr) / 2, st, 150)                    # stepping stone across the shaft mouth, towards the lift
+# Below the shaft's last ledge it's a ~1200 px drop into the gallery, past the fall-damage height and
+# out of the player's hands: a short cutscene (fall_cutscene.gd) instead. HUD out, letterbox in, the
+# camera leans in, and he lands kneeling but unhurt.
+node("DropCutscene", "Area2D", "World", [("position", v((sl + sr) / 2, gt + 20)), ("script", 'ExtResource("48_fallcine")'),
+     ("size", v(sr - sl, 120))])
 # The Shadow Gallery. You land on the right; the way on is a ledge 800 px up on the left.
 #   1. Hit lantern B (on a post). The cut-out star beside it throws a ramp of shadow ink up and left.
 #   2. From the top of that ramp lantern A hangs dead ahead, out of sword reach: an ink wave
@@ -311,94 +341,69 @@ lantern(wall + 460, gt, 260, chain=F - 500 - gt, lit=False, name="LanternA")
 caster(wall + 330, F - 585, length=520, name="StarA")
 sketch(wall + 310, wall + 710, F - 470, inkable=False, name="GallerySketch")
 caption(wall + 1640, F - 330, "HIT THE LANTERN.\nA SHADOW IS INK TOO.")
-caption(wall + 1130, F - 640, "OUT OF REACH?\nHOLD ATTACK, THEN LET GO:\nINK FLIES FURTHER THAN A SWORD.", tilt=0.03)
-caption(wall + 760, F - 230, "BLUE PENCIL NEVER TAKES INK.\nIT NEEDS LIGHT ALL THE WAY (HOLD Q).")
 hl, ht, hr, hf = px("shelf")
 heart(hl + 250, ht - 60)
 coin_row(hl + 120, hl + 520, ht - 40, 5)
-sl, st, sr, sf = px("shaft2b")
-tl, tt, tr, tf = px("tower")
-steps(sl, sr, st, tt + 60)
-# the tower: a zigzag of planks from the shaft mouth down to the floor
-y, i = tt + 170, 0
-span = (tr - 260) - (tl + 260)
-while y <= tf - 100:
-    k = (i * 290) % (2 * span)
-    cx = (tl + 260) + (k if k <= span else 2 * span - k)
-    ledge(cx, y, 300)
-    if i % 3 == 1:
-        coin_row(cx - 60, cx + 60, y - 40, 3)
-    y += 110
-    i += 1
-for sx, sy in [(tl + 1500, tt + 420), (tl + 800, tt + 760), (tl + 1400, tt + 1150)]:
-    enemy("scribble", sx, sy)
-lamp(tl + 1700, tt, 320, 220)
-lamp(tl + 700, tt, 320, 560)
-lamp(tl + 1300, tt, 320, 900)
-al, at, ar, af = px("side_a")
-ledge(tl + 150, af, 300, one_way=False)        # landing outside the upper side room
-steps(tl, tl + 420, tt + 170, af, 150)         # and a ladder of ledges back up from it
-checkpoint(al + 500, af)
-coin_row(al + 200, al + 380, af - 40, 4)
-lamp(al + 700, at, 280, 130)
-heart(al + 950, af - 60)
-bl, bt, br, bf = px("side_b")                    # the ambush room
-enemy("crumple", bl + 350, bf - 25)
-enemy("crossed", bl + 900, bf - 30)
-coin_row(bl + 150, bl + 450, bf - 200, 6)
-ledge(bl + 300, bf - 110, 220)
-lamp(bl + 650, bt, 280, 130)
 
-# 3. THE DRIPPING MARGINS: shaft, the Pendulum (light puzzle), the pit, the bottom
-sl, st, sr, sf = px("shaft3")
+# 3. THE DRIPPING MARGINS: down through the shelf (a short shaft of ledges, then a second drop
+# cutscene into the cavern), the Pendulum (light puzzle), its far bank and the boss.
+sl, st, sr, sf = px("shaft2b")
 cl, ct, cr, cf = px("cavern")
-steps(sl, sr, st, cf)
+steps(sl, sr, st, ct)
+node("DropCutscene2", "Area2D", "World", [("position", v((sl + sr) / 2, ct + 20)), ("script", 'ExtResource("48_fallcine")'),
+     ("size", v(sr - sl, 120))])
 # The Pendulum. A blue sketch bridge over the sump, 1500 px: too far for one Ember (about
 # 1200 px), far too far to jump. The lantern swings across the middle of it and refills the
 # Ember in its light, but its reach stops short of both ends and the slab under it shadows the
 # centre. Cross with the swing; spend the Ember only where the lantern's light is not.
-# Falling in is not deadly: ledges on the near side climb back out.
+# You land on the near (west) bank. Falling in is not deadly: ledges climb back out, and down
+# there, under the bridge, lies the second big Lumen.
 ul, ut, ur, uf = px("sump")
 mid = (ul + ur) / 2
-checkpoint(ur + 250, cf)
+checkpoint(ul - 300, cf)
 sketch(ul, ur, cf, inkable=False, name="PendulumBridge")
 lantern(mid, cf - 640, 420, chain=380, swing=40, period=5.0, name="Pendulum")
-steps(ur - 300, ur, cf, uf, 150)
+steps(ul, ul + 300, cf, uf, 150)
+big_coin(ur - 200, uf - 70)
 enemy("scribble", mid + 200, cf - 430)
-caption(ur + 330, cf - 330, "THE LIGHT SWINGS. SHADOWS HOLD NOTHING UP.\nYOUR EMBER DOES (HOLD Q).\nA LANTERN'S LIGHT REFILLS IT.")
-# the far bank
-ledge(cl + 1500, cf - 110, 220)
-ledge(cl + 1150, cf - 220, 220)
-coin_row(cl + 1070, cl + 1230, cf - 260, 3)
-enemy("smudge", cl + 1300, cf - 12)
-enemy("inkwell", cl + 800, cf - 26)
-lamp(cl + 1000, ct, 300, 200)
-pl, pt, pr, pf = px("pit")
-ol, ot, orr, of = px("bottom")
-steps(pl, pr, pt, of, 190)
-heart(pl + 275, pt + 250)
-checkpoint(ol + 900, of)
-enemy("crossed", ol + 1700, of - 30)
-enemy("crawler", ol + 2600, of - 20)
-enemy("scribble", ol + 2100, of - 330)
-enemy("scribble", ol + 2300, of - 380)
-lamp(ol + 1400, ot, 320, 260)
-lamp(ol + 3000, ot, 320, 220)
-coin_row(ol + 3300, ol + 3600, of - 40, 5)
-node("Exit", "Area2D", "World", [("position", v(ol + 3750, of)), ("script", 'ExtResource("17_exit")'),
-     ("target_scene", '"res://scenes/ui/main_menu.tscn"'), ("label", '"THE END OF THE DROP"')])
+lamp(cl + 250, ct, 300, 200)
+# the far bank: a breath, a heart and the last checkpoint, then the arena
+coin_row(ur + 60, ur + 260, cf - 60, 3)
+heart(ur + 200, cf - 60)
+checkpoint(cr - 150, cf)                           # before the boss
 
-# 4. the lift: a girder that rides the shaft between the bottom room and the Archive
-ll, lt, lr, lf = px("lift")
-dl, dt, dr, df = px("lift_door")
-node("Lift", "AnimatableBody2D", "World",
-     [("position", v((ll + lr) / 2, lf - 10)), ("script", 'ExtResource("12_moving")'), ("size", v(lr - ll - 60, 20)),
-      ("travel", v(0, -(lf - df) - 10)), ("period", "56")])
-ledge((ll + lr) / 2, df, lr - ll)   # one-way cap: ride up through it, but no dropping down the shaft from the top
+# THE SCRIBBLED BEAST (scribbled_beast.gd, run by beast_arena.gd): it comes out of the gutter
+# between the page's columns, holding a shield torn out of the gutter itself. Two lanterns on
+# posts: it snuffs them as it comes; light one and it cowers a moment, its shield turned to the
+# light, then lobs ink at it. It watches only these two lanterns.
+al, at, ar, af = px("arena")
+gap = (al + ar) / 2
+lantern(gap - 560, af - 70, 280, chain=0, post=70, lit=True, name="ArenaLanternW")
+lantern(gap + 560, af - 70, 280, chain=0, post=70, lit=True, name="ArenaLanternE")
+node("ScribbledBeast", "CharacterBody2D", "Enemies", [("position", v(gap, af + 600)), ("script", 'ExtResource("60_beast")')])
+node("BeastArena", "Node2D", "World", [("position", v(gap, af)), ("script", 'ExtResource("61_arena")'),
+     ("beast_path", 'NodePath("../../Enemies/ScribbledBeast")'),
+     ("lantern_paths", 'Array[NodePath]([NodePath("../ArenaLanternW"), NodePath("../ArenaLanternE")])'),
+     ("trigger_x", f"{al + 340:g}"), ("barrier_x", f"{al + 30:g}"), ("east_x", f"{ar - 20:g}"), ("room_height", f"{af - at:g}"),
+     ("chase_path", 'NodePath("../EraserChase")')])
 
-caption(START[0] + 260, START[1] - 190, "The way on is down.")
-caption(px("tower")[0] + 1150, px("tower")[1] + 120, "Mind the drop.")
-caption(ol + 3300, of - 220, "The lift goes back to the top.")
+# THE ERASER'S CHASE (eraser_chase.gd): after the fight Shade drops his eraser into the arena,
+# the arena's right-hand border rips open and Vesper runs east down this corridor, the Eraser
+# rubbing the world out behind him. Two easy hops and a dip. The corridor ends where its panel
+# ends: the gutter (a pit), and he falls into the Margins (margins_fall.gd, then the 2.5D hub).
+rl, rt, rr, rf = px("run")
+gl1, _, gr1, _ = px("gutter_pit")
+checkpoint(rl + 160, rf)                            # dying in the chase restarts it here
+node("EraserChase", "Node2D", "World", [("position", v(rl, rf)), ("script", 'ExtResource("62_chase")'),
+     ("end_x", f"{(gl1 + gr1) / 2:g}"), ("gutter_half", f"{(gr1 - gl1) / 2:g}"), ("erase_from", f"{al + 60:g}"),
+     ("room_top", f"{rt:g}")])
+
+
+# ------------------------------------------------------------------ the story
+# Vesper's first thought on this page (narration.gd's caption panel, his yellow one). Nobody told
+# him: this panel was drawn for his death (the Beast's intro and ending, beast_arena.gd).
+STORY = [("WAIT... THIS IS A WEIRD PANEL. I SHOULD EXPLORE.", -1e9, "vesper")]
+
 
 # ------------------------------------------------------------------ write
 zone_bottoms = ", ".join(f"{b * U:g}" for b, _ in ZONES[:-1])
@@ -421,7 +426,10 @@ out += ['[node name="Enemies" type="Node2D" parent="."]', "", "\n\n".join(enemie
         '[node name="HUD" type="Control" parent="UI"]', "layout_mode = 3", "anchors_preset = 15",
         "anchor_right = 1.0", "anchor_bottom = 1.0", "grow_horizontal = 2", "grow_vertical = 2",
         "mouse_filter = 2", 'script = ExtResource("5_hud")', "",
-        '[node name="LevelMusic" type="Node" parent="."]', 'script = ExtResource("8_music")', 'track = "margins"', "",
+        '[node name="LevelMusic" type="Node" parent="."]', 'script = ExtResource("8_music")', 'track = "deep"', "",
         '[node name="LevelMood" type="Node" parent="."]', 'script = ExtResource("30_mood")', ""]
+for k, (text, x, who) in enumerate(STORY):
+    out += [f'[node name="Narration{k + 1}" type="CanvasLayer" parent="."]', 'script = ExtResource("46_narration")',
+            f'text = "{text}"', f"trigger_x = {x:g}", f'speaker = "{who}"', ""]
 open(os.path.join(ROOT, "scenes/levels/long_drop.tscn"), "w").write("\n".join(out))
 print(f"{len(world)} world nodes, {len(trims)} trims, {len(enemies)} enemies, {len(coins)} coins; start {START}")

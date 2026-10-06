@@ -71,4 +71,4 @@ func paint(c: CanvasItem) -> void:
 
 
 func damage_default() -> float:
-	return 15.0  # touching the bottle (its blobs deal 14)
+	return 1.0  # touching the bottle: half an ink bottle (its blobs too)

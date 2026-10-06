@@ -11,11 +11,15 @@ extends Node3D
 ## out through an open gate ink-wipes to `target_scene`, arriving at the
 ## gate there whose gate_id is `target_gate`.
 ##
+## The Margins are a comic's dead gutters, so a way on is an old one
+## (gutter_strip.gd): a dark, cracked, ragged walkway between two broken ink
+## kerbs, ending in a broken portal (two snapped pillars, a broken lintel).
+## Stone-post lanterns stand either side, cold until it opens.
 ## The gate's local -Z points out of the room. Styles:
-##   THRESHOLD  a carved stone step jutting out over the void at a room
-##              edge, with lanterns (leave a gap in the island edge for it)
-##   DOORWAY    a trigger for walking into an archway (the hub's cave door):
-##              the sketch fills the doorway until it opens
+##   THRESHOLD  the old gutter jutting out over the void at a room edge
+##              (leave a gap in the island edge for it)
+##   DOORWAY    a trigger for walking into an archway: the sketch fills the
+##              doorway until it opens
 
 const Toon = preload("res://scripts/clearing/toon.gd")
 const MARKS_SHADER = preload("res://shaders/world25/gate_marks.gdshader")
@@ -23,6 +27,7 @@ const GHOST_SHADER = preload("res://shaders/world25/drawn_ghost.gdshader")
 const LIGHT_SHADER = preload("res://shaders/world25/gate_light.gdshader")
 const FLAME_SHADER = preload("res://shaders/clearing/flame.gdshader")
 const Fx = preload("res://scripts/clearing/clearing_fx.gd")
+const GutterStrip = preload("res://scripts/world25/gutter_strip.gd")
 
 enum Style { THRESHOLD, DOORWAY }
 
@@ -42,23 +47,29 @@ const DRAW_TIME := 0.8
 	set(v):
 		width = v
 		_rebuild()
+## The lanterns' stone posts.
 @export var stone := Color(0.42, 0.4, 0.44):
 	set(v):
 		stone = v
 		_rebuild()
-## Lantern flames once the way is open: white or pale gold, never red.
+## Lantern flames once the way is open (and the portal's seams): white or
+## pale gold, never red.
 @export var lantern_color := Color(1.0, 0.9, 0.62):
 	set(v):
 		lantern_color = v
 		_rebuild()
 ## Open from the start (no seal).
 @export var always_open := false
+## The way Vesper came in. The Gutter only goes forward, so this gate never
+## opens; a moment after he arrives its sketched path rubs itself out,
+## slab by slab, from the far end in.
+@export var entry_only := false
 
 var is_open := false
 
 var _wall_shape: CollisionShape3D
 var _used := false
-var _slabs: Array = []  # [{solid, ghost, at: 0..1 along the path}]
+var _slabs: Array = []  # [{solid, ghost (Node3D), at: 0..1 along the path}]
 var _flames: Array[Node3D] = []
 var _lights: Array[OmniLight3D] = []
 var _line_mat: ShaderMaterial
@@ -76,7 +87,11 @@ func _ready() -> void:
 	if not Engine.is_editor_hint():
 		add_to_group("gate")
 	_rebuild()
-	if always_open and not Engine.is_editor_hint():
+	if Engine.is_editor_hint():
+		return
+	if entry_only:
+		_rub_out()
+	elif always_open:
 		open(false)
 
 
@@ -86,9 +101,12 @@ func arrival_point() -> Vector3:
 
 
 func open(animate := true) -> void:
-	if is_open:
+	if is_open or entry_only:
 		return
 	is_open = true
+	if animate:
+		if has_node("/root/Sfx"):
+			get_node("/root/Sfx").play("gate_unlock")
 	if _wall_shape:
 		_wall_shape.set_deferred("disabled", true)
 	if not animate or not is_inside_tree():
@@ -99,6 +117,28 @@ func open(animate := true) -> void:
 	_play_chime()
 	if target_scene != "":
 		Fx.burst(get_tree(), global_transform * Vector3(0, 0.6, -0.4), lantern_color, 10, 2.0)
+
+
+## An entry gate's sketch rubbed away behind Vesper: no going back.
+func _rub_out() -> void:
+	await get_tree().create_timer(1.0, false).timeout
+	if not is_inside_tree():
+		return
+	var order := _slabs.duplicate()
+	order.sort_custom(func(a, b): return a.at > b.at)
+	var delay := 0.0
+	for s in order:
+		var ghost: Node3D = s.ghost
+		var t := create_tween()
+		t.tween_interval(delay)
+		t.tween_callback(func(): Fx.burst(get_tree(), ghost.global_position + Vector3(0, 0.2, 0), Color(0.78, 0.78, 0.8), 5, 1.4))
+		t.tween_property(ghost, "scale", Vector3(1.0, 0.05, 0.05), 0.22).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+		t.tween_callback(ghost.hide)
+		delay += 0.12
+	if _sketch:
+		create_tween().tween_property(_sketch, "scale", Vector3(1.0, 0.02, 1.0), 0.4)
+	if _line:
+		_line.hide()
 
 
 ## 0 = sealed sketch .. 1 = drawn in, lit and glowing.
@@ -137,18 +177,26 @@ func _rebuild() -> void:
 	var half := width * 0.5
 	var ghost_mat := _ghost_material()
 	if style == Style.THRESHOLD:
-		# carved step jutting out of the room in slabs, a darker lip at the end;
-		# each slab has a sketch twin shown until the light reaches it
+		# the old gutter running out of the room in sections, the broken portal
+		# at its end; each has a sketch twin shown until the light reaches it
 		var d := STEP_DEPTH / SLABS
+		var seed := absi(hash(gate_id)) % 50
 		for i in SLABS:
 			var size := Vector3(width, 0.5, d * 0.97)
 			var c := Vector3(0, -0.25, -d * (i + 0.5))
-			var solid := Toon.part(root, Toon.box(size), stone.darkened(0.04 * (i % 2)), c, Vector3.ZERO, {"tile": 1.2, "moss": 0.15})
+			var solid := GutterStrip.section(root, -d * i, -d * (i + 1), width, seed + i)
 			_add_slab(root, solid, size, c, ghost_mat, (i + 0.5) / SLABS * 0.85)
-		var lip_size := Vector3(width + 0.3, 0.6, 0.35)
-		var lip_c := Vector3(0, -0.28, -STEP_DEPTH + 0.1)
-		var lip := Toon.part(root, Toon.box(lip_size), stone.darkened(0.25), lip_c)
-		_add_slab(root, lip, lip_size, lip_c, ghost_mat, 0.92)
+		var slit_z := -STEP_DEPTH + 0.25
+		var slit := GutterStrip.slit(root, slit_z, width, seed, lantern_color)
+		# the portal's sketch: a pencil twin of each pillar
+		var sketch := Node3D.new()
+		sketch.position = Vector3(0, 0, slit_z)
+		root.add_child(sketch)
+		for k in 2:
+			var g := _ghost_box(sketch, GutterStrip.PILLAR, ghost_mat)
+			g.transform = Transform3D(Basis(), Vector3(0, 0, -slit_z)) * (slit.get_child(k) as Node3D).transform \
+				* Transform3D(Basis(), Vector3(0, GutterStrip.PILLAR.y * 0.5, 0))
+		_slabs.append({"solid": slit, "ghost": sketch, "at": 0.92})
 		_runes = _marks(root, 0, Vector2(width * 0.85, 0.6), Vector3(0, 0.012, -0.9), Vector3(-90, 0, 0), lantern_color.lightened(0.3))
 		for side in [-1, 1]:
 			_lantern(root, Vector3(side * (half + 0.35), 0, -0.2))
@@ -190,16 +238,22 @@ func _ghost_material() -> ShaderMaterial:
 	return m
 
 
-func _add_slab(root: Node3D, solid: MeshInstance3D, size: Vector3, center: Vector3, ghost_mat: ShaderMaterial, at: float) -> void:
+func _add_slab(root: Node3D, solid: Node3D, size: Vector3, center: Vector3, ghost_mat: ShaderMaterial, at: float) -> void:
+	var ghost := _ghost_box(root, size, ghost_mat)
+	ghost.position = center
+	_slabs.append({"solid": solid, "ghost": ghost, "at": at})
+
+
+## A box of grey pencil sketch, `size` across.
+func _ghost_box(parent: Node3D, size: Vector3, ghost_mat: ShaderMaterial) -> MeshInstance3D:
 	var ghost := MeshInstance3D.new()
 	ghost.mesh = Toon.box(size)
 	var m: ShaderMaterial = ghost_mat.duplicate()
 	m.set_shader_parameter("half_size", size * 0.5)
 	ghost.material_override = m
-	ghost.position = center
 	ghost.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	root.add_child(ghost)
-	_slabs.append({"solid": solid, "ghost": ghost, "at": at})
+	parent.add_child(ghost)
+	return ghost
 
 
 ## The line of light along the path (gate_light.gdshader) and a soft glow.
@@ -288,6 +342,7 @@ func _play_chime() -> void:
 		_chime.data = data
 	var p := AudioStreamPlayer3D.new()
 	p.stream = _chime
+	p.bus = "SFX"  # Sfx.BUS: every sound effect shares one, quieter than the music
 	p.volume_db = -6.0
 	p.unit_size = 12.0
 	add_child(p)
@@ -307,4 +362,4 @@ func _physics_process(_delta: float) -> void:
 		_used = true
 		var world := get_node_or_null("/root/World25")
 		if world:
-			world.go(target_scene, target_gate)
+			world.go(target_scene, target_gate, true)

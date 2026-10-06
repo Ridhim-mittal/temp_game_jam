@@ -1,6 +1,6 @@
 extends Node2D
 ## Vesper's Ember: a little flame that floats at her shoulder. Hold the
-## "ember" action (Q / E) to raise it:
+## "ember" action (right click) to raise it:
 ##  - its light makes sketch platforms solid (light rule 1) and is monster
 ##    light (rule 2: burns a Crossed-Out's X, unfolds Crumples, surfaces
 ##    Smudges, scatters Scribbles)
@@ -26,6 +26,9 @@ const CORE := Color(1.0, 0.95, 0.7)
 @export var regen_delay := 0.6
 ## Meter per second inside a lit lantern's light (raised or not).
 @export var lantern_regen := 60.0
+## Over a light-drinking sketch (sketch_platform.gd drinks_light) the light
+## drains this many times faster.
+@export var blue_drain_mult := 2.0
 ## After running dry, the Ember can't be raised again until this much is back.
 @export var relight_at := 20.0
 ## Inking: standing still with the Ember raised, ink spreads out from Vesper's
@@ -41,6 +44,7 @@ var inks := true
 var reach := 0.0  # current light radius (animates in and out)
 var snuffed := false
 var in_lantern := false
+var over_blue := false  # over a sketch that drinks the light
 var inking := false  # raised + standing still this frame
 var ink_front := 0.0  # how far the spreading ink has reached (px from Vesper)
 
@@ -49,6 +53,7 @@ var _still := 0.0
 var _time := 0.0
 var _player: CharacterBody2D
 var _glow: Node2D
+var _pour_fx: Node2D  # in front of Vesper: the light going into him while healing
 
 
 func _ready() -> void:
@@ -63,6 +68,10 @@ func _ready() -> void:
 	_glow.material = mat
 	_glow.draw.connect(_draw_glow)
 	add_child(_glow)
+	_pour_fx = Node2D.new()
+	_pour_fx.z_index = 12  # above the player's art (the Ember itself sits behind it)
+	_pour_fx.draw.connect(_draw_pour)
+	add_child(_pour_fx)
 
 
 func _physics_process(delta: float) -> void:
@@ -73,12 +82,14 @@ func _physics_process(delta: float) -> void:
 		if l.lit and l.reaches(global_position):
 			in_lantern = true
 			break
-	var want := Input.is_action_pressed("ember") and not dead and not snuffed
+	var locked: bool = _player != null and "cutscene" in _player and _player.cutscene
+	var want := Input.is_action_pressed("ember") and not dead and not snuffed and not locked
 	raised = want
 	if raised:
 		_since_raised = 0.0
+		over_blue = _over_blue()
 		if not in_lantern:
-			meter -= drain * delta
+			meter -= drain * delta * (blue_drain_mult if over_blue else 1.0)
 		if meter <= 0.0:
 			meter = 0.0
 			raised = false
@@ -95,7 +106,7 @@ func _physics_process(delta: float) -> void:
 		snuffed = false
 	# light snaps up fast; when it gutters out it shrinks slowly, so the sketch
 	# under you is the last thing to go (a warning, not a trapdoor)
-	var rate := 10.0 if raised else (1.6 if snuffed else 5.0)
+	var rate := 10.0 if raised else (3.0 if snuffed else 5.0)
 	reach = move_toward(reach, radius if raised else 0.0, delta * radius * rate)
 	var still := raised and _player != null and _player.is_on_floor() and absf(_player.velocity.x) < still_speed
 	_still = _still + delta if still else 0.0
@@ -103,6 +114,25 @@ func _physics_process(delta: float) -> void:
 	inking = ink_front > 0.0
 	queue_redraw()
 	_glow.queue_redraw()
+	_pour_fx.queue_redraw()
+
+
+## Spent on healing (player.gd, light or life): wait before refilling, as after raising it.
+func hold_regen() -> void:
+	_since_raised = 0.0
+
+
+func _over_blue() -> bool:
+	if _player == null:
+		return false
+	var feet := _player.global_position + Vector2(0, 26)
+	for s in get_tree().get_nodes_in_group("sketch"):
+		if not s.drinks_light:
+			continue
+		var p: Vector2 = s.to_local(feet)
+		if absf(p.x) <= s.size.x * 0.5 and p.y > -240.0 and p.y < 30.0:  # jumping over it still counts
+			return true
+	return false
 
 
 ## Light rule 1: does the raised Ember reach `point`?
@@ -128,9 +158,36 @@ func flame_pos() -> Vector2:
 	return Vector2(-16.0 * face * (1.0 - k) + 10.0 * face * k, -34.0 - 26.0 * k + sin(_time * 3.0) * 3.0)
 
 
+## Light or life: sparks of the Ember spiral down into his chest, a ring of
+## light tightens round him as the half bottle fills.
+func _draw_pour() -> void:
+	var pour := _pour()
+	if pour < 0.0:
+		return
+	var fp := flame_pos()
+	var chest := Vector2(0, -10)
+	for m in 12:
+		var ph := fmod(_time * 1.8 + m / 12.0, 1.0)
+		var p := fp.lerp(chest, ph) + Vector2.from_angle(ph * TAU * 1.5 + m) * 26.0 * (1.0 - ph)
+		var r := 3.4 * (1.0 - ph * 0.5)
+		_pour_fx.draw_circle(p, r + 1.5, Color(INK, 0.5 * (1.0 - ph)))
+		_pour_fx.draw_circle(p, r, Color(1.0, 0.85, 0.4, 1.0 - ph * 0.5))
+	var rr := 46.0 * (1.0 - pour) + 12.0
+	_pour_fx.draw_arc(chest, rr, 0, TAU, 32, Color(1.0, 0.9, 0.55, 0.35 + 0.6 * pour), 3.0)
+	_pour_fx.draw_arc(chest, rr + 4.0, 0, TAU, 32, Color(INK, 0.35 * pour), 1.5)
+
+
+## 0..1 while Vesper pours the Ember into ink (player.gd heal), else -1.
+func _pour() -> float:
+	return _player.heal_progress() if _player and _player.has_method("heal_progress") else -1.0
+
+
 func _draw_glow() -> void:
 	var k := reach / radius
 	var fp := flame_pos()
+	var pour := _pour()
+	if pour >= 0.0:  # light going into him: his whole body glows warmer as it fills
+		Lights.draw_glow(_glow, Vector2(0, -10), 60.0 + 40.0 * pour, Color(1.0, 0.75, 0.35, 0.5 + 0.35 * pour))
 	var flick := 1.0 + sin(_time * 17.0) * 0.03 + sin(_time * 7.3) * 0.04
 	Lights.draw_glow(_glow, fp, (26.0 + 6.0 * meter / max_meter) * flick, Color(1.0, 0.6, 0.2, 0.55))
 	if k > 0.02:
@@ -162,6 +219,8 @@ func _draw() -> void:
 			p.x *= 1.0 - 0.4 * absf(p.y) / (r * 1.8)
 		pts.append(fp + p)
 	var body := FLAME if not snuffed else Color(0.55, 0.55, 0.6)
+	if raised and over_blue:
+		body = FLAME.lerp(Color(0.45, 0.75, 1.0), 0.6 + 0.2 * sin(_time * 20.0))  # the blue drinking it
 	if raised and frac < 0.25 and fmod(_time, 0.2) < 0.1:
 		body = Color(1.0, 0.95, 0.8)  # running low: the flame stutters
 	for poly in Geometry2D.offset_polygon(pts, 2.5, Geometry2D.JOIN_ROUND):

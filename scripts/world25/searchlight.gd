@@ -6,7 +6,7 @@ extends Node3D
 ##  - INVESTIGATE  goes to where it last saw Vesper, or to a Flash it heard
 ##  - LOCK_ON      follows Vesper for `lock_time` after spotting her
 ## Standing in the beam fills the erase meter (Vesper whitens); full = one
-## ink drop lost and a shove out of the light. Solid props between the
+## ink bottle lost and a shove out of the light. Solid props between the
 ## lamp and a point cast shadows (light rule 3): hide behind them.
 ## Monsters caught in the beam react like any Writer's light, and
 ## crossed-out things are slowly erased (on_searchlight). It also makes
@@ -154,6 +154,8 @@ func _physics_process(delta: float) -> void:
 
 
 func _update_erase(player: Node3D, seen: bool, delta: float) -> void:
+	if seen and player.has_method("is_protected") and player.is_protected():
+		seen = false  # spawn protection: the light can't take hold yet
 	if player == null:
 		return
 	if seen:
@@ -167,7 +169,7 @@ func _update_erase(player: Node3D, seen: bool, delta: float) -> void:
 	if erase >= 1.0 and player.has_method("take_damage"):
 		erase = 0.0
 		player._invuln = 0.0
-		player.take_damage(1, Vector3(spot.x, player.global_position.y, spot.z))
+		player.take_damage(2, Vector3(spot.x, player.global_position.y, spot.z))  # one ink bottle
 		_say("Out. OUT.")
 
 

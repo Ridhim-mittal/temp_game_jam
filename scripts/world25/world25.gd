@@ -3,6 +3,7 @@ extends Node
 ##
 ##   World25.start_story()                  # new run, starting in the clearing
 ##   World25.go(scene_path, gate_id)        # ink-wipe into another room
+##   World25.go(scene_path, gate_id, true)  # down the gutter into it (a gate's way on)
 ##   World25.play_cutscene(path, next)      # ink-wipe into a comic cutscene
 ##   World25.is_cleared(room_id)            # gates in cleared rooms stay open
 ##   World25.fall_in_from_panel(health_frac)  # 2D trapdoor -> drop into the clearing
@@ -13,12 +14,14 @@ extends Node
 ##
 ## It also owns the mouse cursor (the one place that sets Input.mouse_mode):
 ## hidden while a Gutter room is being played, shown everywhere else (the
-## main menu, pause, skill tree, settings, cutscenes, the 2D levels) and
-## whenever the game is paused. Settings "show_cursor" keeps it visible.
+## main menu, pause, the shop, settings, cutscenes, the 2D levels) and
+## whenever the game is paused (but not by a room change). Settings
+## "show_cursor" keeps it visible.
 
 const START_SCENE := "res://scenes/clearing/clearing.tscn"
 const MENU_SCENE := "res://scenes/ui/main_menu.tscn"
 const WIPE_SHADER = preload("res://shaders/world25/ink_wipe.gdshader")
+const GutterTransition = preload("res://scripts/world25/gutter_transition.gd")
 
 ## Gate id the player arrives at in the next room ("" = the room's spawn).
 var entry_gate := ""
@@ -101,12 +104,12 @@ func _process(_delta: float) -> void:
 
 
 ## Hidden only while a room says it is in play (room.gd in_gameplay(): no
-## overlay open) and nothing has paused the tree; checked every frame, so
+## overlay open) and nothing but a room change has paused the tree; checked every frame, so
 ## menus, cutscenes and scene changes can never leave it out of sync.
 func _update_cursor(scene: Node) -> void:
 	var settings := get_node_or_null("/root/Settings")
 	var hidden: bool = scene != null and scene.has_method("in_gameplay") and scene.in_gameplay() \
-		and not get_tree().paused and not (settings and settings.get_value("show_cursor") == "on")
+		and (not get_tree().paused or transitioning) and not (settings and settings.get_value("show_cursor") == "on")
 	var want := Input.MOUSE_MODE_HIDDEN if hidden else Input.MOUSE_MODE_VISIBLE
 	if Input.mouse_mode != want:
 		Input.mouse_mode = want
@@ -145,7 +148,11 @@ func once(key: String) -> bool:
 	return true
 
 
-func go(scene_path: String, gate_id: String) -> void:
+## Load another room, the player arriving at its gate `gate_id`. An ink
+## wipe, or with `through_gutter` the trip down the gutter between the
+## comic's columns (gutter_transition.gd): the way the gates go on.
+func go(scene_path: String, gate_id: String, through_gutter := false) -> void:
+	Sfx.play("teleport", -3.0)
 	if transitioning or scene_path == "":
 		return
 	transitioning = true
@@ -154,6 +161,14 @@ func go(scene_path: String, gate_id: String) -> void:
 		player_health = player.health
 		player_fuel = player.fuel
 	entry_gate = gate_id
+	if through_gutter:
+		var fx: Control = GutterTransition.new()
+		fx.target = scene_path
+		fx.capture(get_viewport())
+		_layer.add_child(fx)
+		await fx.finished
+		transitioning = false
+		return
 	await _cover()
 	Engine.time_scale = 1.0
 	get_tree().paused = false

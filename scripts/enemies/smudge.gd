@@ -85,4 +85,4 @@ func paint(c: CanvasItem) -> void:
 
 
 func damage_default() -> float:
-	return 18.0  # ambush lunge
+	return 2.0  # ambush lunge

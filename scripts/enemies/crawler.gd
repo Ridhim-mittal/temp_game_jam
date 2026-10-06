@@ -14,7 +14,7 @@ enum State { PATROL, IDLE, ALERT, CHASE, WINDUP, LEAP, RECOVER, SPIT, STUNNED }
 
 @export_group("Stats")
 @export var max_health := 4
-@export var contact_damage := 15.0  # HP
+@export var contact_damage := 1.0  # half ink bottles
 @export var gravity := 2000.0
 
 @export_group("Movement")
@@ -271,10 +271,26 @@ func _fire_spit() -> void:
 
 # ------------------------------------------------------------------ damage
 
+## Stunned for at least `seconds` (the weapons' specials: player.gd).
+func stun_for(seconds: float) -> void:
+	if dead:
+		return
+	if state == State.STUNNED:
+		_state_timer = maxf(_state_timer, seconds)
+	else:
+		_enter(State.STUNNED, seconds)
+
+
+## How long it stays stunned (0 = not), as enemy_base.gd's `stun` reads.
+func stunned_for() -> float:
+	return maxf(_state_timer, 0.0) if state == State.STUNNED else 0.0
+
+
 func take_hit(damage: int, hit_dir: Vector2, from_pos: Vector2) -> void:
 	if dead:
 		return
 	health -= damage
+	Sfx.play("boss_hit" if is_in_group("boss") else "ink_enemy_hit", -3.0)
 	_flash()
 	var kx := signf(global_position.x - from_pos.x)
 	if kx == 0.0:
@@ -295,6 +311,7 @@ func _flash() -> void:
 
 
 func _die(kx: float) -> void:
+	Sfx.play("ink_splat")
 	dead = true
 	remove_from_group("enemy")
 	set_deferred("collision_layer", 0)

@@ -2,9 +2,11 @@ extends Control
 ## Main menu, night edition (layout after the "Pasta at Night" reference):
 ## a rainy comic street at night runs to the horizon, VESPER towers over it
 ## in huge extruded neon-comic letters, Vesper stands on the road in front,
-## and the menu sits in one row along the bottom on a glowing halftone band
-## (the "Predictive Arc" shader, shaders/menu_arc.gdshader) that bends toward
-## the mouse, or toward the focused item when using the keyboard.
+## and the menu sits in one row along the bottom. Along the top hangs a band
+## of round comic halftone dots, violet ink brightening into the Writer's pale
+## gold light (the "Predictive Arc" shader, shaders/menu_arc.gdshader, turned
+## 180 degrees with `flip`), behind the title; it dips toward the mouse, or
+## toward the focused item when using the keyboard, but never over the sign.
 ## Everything is tweened: the letters drop in one by one, the band rises,
 ## the items slide up; hovering pops an item and draws its brush stroke;
 ## lightning flashes now and then and a letter of the sign blinks out.
@@ -25,10 +27,12 @@ const GOLD := Color(1.0, 0.82, 0.3)
 const RED := Color(0.9, 0.2, 0.16)
 const SIZE := Vector2(1280, 720)
 const HORIZON := Vector2(640, 468)
+## Lowest point the top band dips to, toward the mouse / focused item.
+const ARC_DIP := 150.0
 
 ## [label, scene to load ("" = quit, "@chapters" / "@back" switch rows)]
 const MAIN := [
-	["PLAY", "res://scenes/cutscenes/cs_opening.tscn"],
+	["PLAY", "res://scenes/cutscenes/cs_book.tscn"],  # the animated opening (cs_book.gd), into the City
 	["CHAPTERS", "@chapters"],
 	["SETTINGS", "res://scenes/ui/settings.tscn"],
 	["QUIT", ""],
@@ -36,10 +40,11 @@ const MAIN := [
 const CHAPTERS := [
 	["THE CITY", "res://scenes/levels/test_level.tscn"],
 	["THE SKETCHBOOK", "res://scenes/levels/sketchbook.tscn"],
-	["THE INK CAVERN", "res://scenes/levels/ink_cavern.tscn"],
 	["THE LONG DROP", "res://scenes/levels/long_drop.tscn"],
+	["SHADE'S CITY", "res://scenes/levels/shades_city.tscn"],
+	["THE INK CAVE", "res://scenes/levels/ink_cave.tscn"],
+	["SHADE", "res://scenes/levels/shade_finale.tscn"],
 	["THE MARGINS", "res://scenes/clearing/clearing.tscn"],
-	["MONSTER TEST", "res://scenes/levels/monster_test.tscn"],
 	["BACK", "@back"],
 ]
 const TITLE := "VESPER"
@@ -58,7 +63,7 @@ var _next_bolt := 6.0
 var _next_blink := 3.0
 var _parallax := Vector2.ZERO
 var _mouse_seen := -10.0
-var _arc_mouse := Vector2(640, 700)
+var _arc_mouse := Vector2(640, 20)
 var _arc_strength := 0.0
 
 var _scene: Node2D      # street, buildings, lamps
@@ -92,6 +97,14 @@ func _ready() -> void:
 	_build_title()
 	_build_hero()
 	_arc_mat = _shader_rect(ArcShader)
+	move_child(_arc_mat.get_meta("rect"), _scene.get_index() + 1)  # behind the windows, title and Vesper
+	_arc_mat.set_shader_parameter("flip", true)
+	_arc_mat.set_shader_parameter("round_dots", true)
+	_arc_mat.set_shader_parameter("thick", 0.8)
+	_arc_mat.set_shader_parameter("dot_size", 10.0)
+	_arc_mat.set_shader_parameter("base_col", Color(0.2, 0.07, 0.36))
+	_arc_mat.set_shader_parameter("accent_col", Color(0.52, 0.3, 0.86))
+	_arc_mat.set_shader_parameter("high_col", Color(1.0, 0.88, 0.58))
 	_menu = Node2D.new()
 	_menu.draw.connect(_draw_menu)
 	add_child(_menu)
@@ -111,6 +124,7 @@ func _shader_rect(shader: Shader) -> ShaderMaterial:
 	m.set_shader_parameter("rect_size", SIZE)
 	r.material = m
 	add_child(r)
+	m.set_meta("rect", r)
 	return m
 
 
@@ -270,6 +284,8 @@ func _update_focus() -> void:
 		var on: bool = it.button == focused
 		if on != it.focused:
 			it.focused = on
+			if on and _time > 0.3:
+				Sfx.play("menu_hover")
 			var t := create_tween()
 			t.tween_method(func(v: float): it.hover = v, it.hover, 1.0 if on else 0.0, 0.28 if on else 0.18) \
 				.set_trans(Tween.TRANS_BACK if on else Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
@@ -277,14 +293,15 @@ func _update_focus() -> void:
 
 func _update_arc(delta: float, mouse: Vector2) -> void:
 	# the band bends to the mouse while it moves, otherwise to the focused item
-	var target := Vector2(640, 720)
+	# (the band hangs from the top: it dips toward the pointer, never as far as the sign)
+	var target := Vector2(640, 0)
 	var strength := 0.34
 	if _time - _mouse_seen < 1.5:
-		target = mouse
+		target = Vector2(mouse.x, minf(mouse.y, ARC_DIP))
 	else:
 		for it in _items:
 			if it.focused:
-				target = it.pos + Vector2(0, -26)
+				target = Vector2(it.pos.x, ARC_DIP)
 				strength = 0.5
 	_arc_mouse = _arc_mouse.lerp(target, minf(1.0, delta * 12.0))
 	_arc_strength = lerpf(_arc_strength, strength, minf(1.0, delta * 6.0))
@@ -347,6 +364,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func _choose(it: Dictionary) -> void:
 	if _busy:
 		return
+	Sfx.play("menu_close" if it.target == "@back" else ("menu_open" if it.target == "@chapters" else "menu_select"))
 	var t := create_tween()  # the label punches out
 	t.tween_method(func(v: float): it.pop = v, 0.0, 1.0, 0.12)
 	t.tween_method(func(v: float): it.pop = v, 1.0, 0.0, 0.3).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
@@ -379,7 +397,24 @@ func _leave(it: Dictionary) -> void:
 		if it.target == "":
 			get_tree().quit()
 		else:
+			var profile := get_node_or_null("/root/Profile")
+			if profile and _starts_run(it.label):
+				profile.new_run()  # the coins come back, so the purse starts at 0
+			if it.label == "PLAY" and profile:  # a new run always teaches the controls again
+				profile.reset_tutorials("2d.")
 			get_tree().change_scene_to_file(it.target))
+
+
+## PLAY and the 2D chapters start a new run (the purse back to 0); SETTINGS
+## doesn't, and nor does THE MARGINS: the 2.5D half spends the coins brought
+## from the 2D levels, so the purse carries over.
+func _starts_run(label: String) -> bool:
+	if label == "PLAY":
+		return true
+	for c in CHAPTERS:
+		if c[0] == label and c[1].begins_with("res://scenes/levels/"):
+			return true
+	return false
 
 
 # ----------------------------------------------------------------- drawing

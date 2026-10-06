@@ -10,16 +10,17 @@ func _enter_tree() -> void:
 	_add_keys("jump", [KEY_SPACE, KEY_Z])
 	_add_keys("attack", [KEY_X])  # keyboard fallback (trackpads)
 	_add_mouse_button("attack", MOUSE_BUTTON_LEFT)
-	_add_keys("dash", [KEY_C, KEY_SHIFT])  # keyboard fallbacks
-	_add_mouse_button("dash", MOUSE_BUTTON_RIGHT)
-	_add_keys("restart", [KEY_R])
-	# 2.5D Ember: right click flashes there (the platformer keeps it as dash)
-	_add_keys("flash", [KEY_Q])
+	_add_keys("dash", [KEY_SHIFT, KEY_C])  # C: keyboard fallback
+	_add_keys("pause", [KEY_ESCAPE])  # the pause screen (pause_menu.gd), 2D and 2.5D
+	# The light is right click in both modes: hold it to raise the Ember.
+	# 2.5D ("flash", clearing_player.gd); Shift dashes in both modes.
 	_add_mouse_button("flash", MOUSE_BUTTON_RIGHT)
 	_add_keys("heal", [KEY_F])
 	_add_keys("interact", [KEY_E])
-	# platformer Ember: hold to raise it (light makes sketches real)
-	_add_keys("ember", [KEY_Q, KEY_E])
+	# Quire's shop, anywhere in the game (scripts/ui/shop.gd)
+	_add_keys("shop", [KEY_B])
+	# platformer Ember: hold right click to raise it (light makes sketches real)
+	_add_mouse_button("ember", MOUSE_BUTTON_RIGHT)
 
 	_add_joy_button("jump", JOY_BUTTON_A)
 	_add_joy_button("attack", JOY_BUTTON_X)
@@ -28,6 +29,7 @@ func _enter_tree() -> void:
 	_add_joy_button("heal", JOY_BUTTON_B)
 	_add_joy_button("interact", JOY_BUTTON_LEFT_SHOULDER)
 	_add_joy_button("ember", JOY_BUTTON_Y)
+	_add_joy_button("pause", JOY_BUTTON_START)
 	_add_joy_button("move_left", JOY_BUTTON_DPAD_LEFT)
 	_add_joy_button("move_right", JOY_BUTTON_DPAD_RIGHT)
 	_add_joy_button("up", JOY_BUTTON_DPAD_UP)

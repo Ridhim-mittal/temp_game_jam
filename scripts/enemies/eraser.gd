@@ -1,12 +1,18 @@
 extends "res://scripts/enemies/enemy_base.gd"
-## The Eraser (mini-boss). Rubber body: hits bounce off ("BOING!") except
-## while it is TIRED. Two attacks:
+## The Eraser (mini-boss): SHADE'S ERASER from the team's sheet, drawn by
+## eraser_art.gd like every Eraser (the Rubbing Room's boss in the Gutter shows
+## this same art on a billboard: eraser_3d.gd). Rubber body: hits bounce off
+## ("BOING!") except while it is TIRED. Two attacks:
 ##  - LUNGE: leans back, then charges. If the charge misses the player or
 ##    slams a wall it is left TIRED and vulnerable.
 ##  - RUB:   if the player stands on a block in the group "erasable", it
 ##    rubs that block out of existence for a few seconds.
 
 enum State { WALK, WINDUP, LUNGE, TIRED, RUB }
+
+const Art = preload("res://scripts/enemies/eraser_art.gd")
+## Height of the art in px (the sheet's block, scaled to this).
+const ART_HEIGHT := 100.0
 
 @export var hp := 10
 @export var walk_speed := 55.0
@@ -19,10 +25,13 @@ var _timer := 0.0
 var _cooldown := 1.5
 var _player_hp := 0.0
 var _target: Node2D
+## 0..1: its eyes burn red (the Rubbing Room's boss sets it when FURIOUS).
+var rage := 0.0
 
 
 func _ready() -> void:
-	setup(Vector2(60, 68), hp)
+	add_to_group("boss")
+	setup(Vector2(62, 92), hp)
 	knockback_speed = 90.0
 
 
@@ -125,43 +134,26 @@ func _die(kx: float) -> void:
 
 
 func paint(c: CanvasItem) -> void:
-	var pink := Color(0.93, 0.55, 0.6)
-	var lean := 0.0
-	var squash := 1.0
+	# the art layer is mirrored to face the player; un-mirror it so the lettering
+	# reads, and let the art lean / charge the way it faces instead
+	var flip := signf(art.scale.x) if art and art.scale.x != 0.0 else 1.0
+	var k := ART_HEIGHT / Art.H
+	var p := {"time": time, "heading": float(facing), "rage": rage, "seed": get_instance_id() % 97}
 	match state:
 		State.WINDUP:
-			lean = -0.22
+			p["windup"] = 1.0
 		State.LUNGE:
-			lean = 0.25
+			p["side"] = true
+			p["trail"] = 0.4
 		State.TIRED:
-			squash = 0.88 + 0.03 * sin(time * 8.0)  # panting
+			p["tired"] = 1.0
 		State.RUB:
-			lean = sin(time * 30.0) * 0.12
-	c.draw_set_transform(Vector2.ZERO, lean, Vector2(2.0 - squash, squash))
-	c.draw_colored_polygon(pts([-30, -68, 24, -68, 31, -60, 31, 0, -30, 0]), pink)
-	c.draw_colored_polygon(pts([24, -68, 31, -60, 31, 0, 24, 0]), pink.darkened(0.2))
-	c.draw_colored_polygon(pts([-30, -32, 31, -32, 31, 0, -30, 0]), Color(0.25, 0.4, 0.75))
-	c.draw_line(Vector2(-30, -32), Vector2(31, -32), INK, 2.0)
-	c.draw_rect(Rect2(-20, -22, 40, 4), PALE)
-	c.draw_rect(Rect2(-20, -13, 26, 4), PALE)
-	if state == State.TIRED:
-		for sx in [-11.0, 11.0]:
-			c.draw_arc(Vector2(sx, -47), 5.0, time * 9.0, time * 9.0 + 4.6, 10, INK, 2.0)
-		c.draw_arc(Vector2(0, -37), 5.0, 0.2, PI - 0.2, 8, INK, 2.0)
-		c.draw_circle(Vector2(0, -78 - sin(time * 6.0) * 3.0), 6.0, DANGER)  # weak-spot marker
-		c.draw_circle(Vector2(-36, -52), 3.0, Color(0.6, 0.8, 1.0))
-	else:
-		var look := to_player().normalized() * Vector2(facing, 1) if _player else Vector2.RIGHT
-		c.draw_line(Vector2(-21, -57), Vector2(-5, -51), INK, 3.5)
-		c.draw_line(Vector2(21, -57), Vector2(5, -51), INK, 3.5)
-		draw_eye(c, Vector2(-11, -46), 5.5, look)
-		draw_eye(c, Vector2(11, -46), 5.5, look)
-		c.draw_line(Vector2(-7, -38), Vector2(9, -38), INK, 2.5)
-	c.draw_set_transform(Vector2.ZERO)
-	if state == State.LUNGE:
-		for k in 3:
-			c.draw_line(Vector2(-40, -14.0 - k * 20.0), Vector2(-62, -14.0 - k * 20.0), pink.darkened(0.1), 3.0)
+			p["rubbing"] = 1.0
+			p["roar"] = 0.5
+		_:
+			p["roar"] = 0.15 if absf(velocity.x) > 10.0 else 0.0
+	Art.draw(c, Transform2D(0.0, Vector2(flip * k, k), 0.0, Vector2.ZERO), p)
 
 
 func damage_default() -> float:
-	return 35.0  # mini-boss charge
+	return 3.0  # mini-boss charge

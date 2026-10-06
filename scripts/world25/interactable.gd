@@ -1,8 +1,8 @@
 extends Node3D
 ## Something Vesper can use with Interact (E / gamepad LB) when he's near:
 ## shows a prompt over it, emits `used` and, if `action` is set, asks the
-## room to open that overlay (room.gd open_overlay: "skills", "settings").
-## Leave `action` empty for things that only talk (Patch).
+## room to open that overlay (room.gd open_overlay: "shop", "settings").
+## Leave `action` empty for things that only talk (and connect `used`).
 
 signal used
 

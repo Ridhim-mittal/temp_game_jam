@@ -104,4 +104,4 @@ func paint(c: CanvasItem) -> void:
 
 
 func damage_default() -> float:
-	return 8.0  # weak, but they come in swarms
+	return 1.0  # weak, but they come in swarms

@@ -14,10 +14,16 @@ config/name="Vesper"
 run/main_scene="res://scenes/ui/main_menu.tscn"
 config/features=PackedStringArray("4.7")
 
+[audio]
+
+general/default_playback_type.web=0
+driver/output_latency.web=80
+
 [autoload]
 
 InputSetup="*res://scripts/core/input_setup.gd"
 Music="*res://scripts/audio/music.gd"
+Sfx="*res://scripts/audio/sfx.gd"
 Mood="*res://scripts/core/mood.gd"
 GameState="*res://scripts/core/game_state.gd"
 World25="*res://scripts/world25/world25.gd"
@@ -29,6 +35,7 @@ Profile="*res://scripts/core/profile.gd"
 window/size/viewport_width=1280
 window/size/viewport_height=720
 window/stretch/mode="canvas_items"
+window/stretch/mode.web="viewport"
 
 [layer_names]
 
@@ -40,6 +47,7 @@ window/stretch/mode="canvas_items"
 [physics]
 
 common/physics_ticks_per_second=120
+common/physics_ticks_per_second.web=60
 
 [rendering]
 

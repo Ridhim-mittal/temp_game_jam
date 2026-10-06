@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/enemies/shade_double.gd" id="1_script"]
+
+[node name="ShadeDouble" type="CharacterBody2D"]
+collision_layer = 4
+collision_mask = 17
+script = ExtResource("1_script")

@@ -14,9 +14,14 @@ const DUST := Color(0.97, 0.94, 0.86)
 @export var mask_color := Color(0.98, 0.96, 0.9)
 ## Warm "ember" accent: the one warm saturated colour on a cool background.
 @export var scarf_color := Color(0.92, 0.3, 0.2)
+## The hat and its band (outfits from Quire's shop).
+@export var hat_color := Color(0.14, 0.11, 0.16)
+@export var band_color := Color(0.92, 0.3, 0.2)
 ## Torn comic-page lining that shows along the coat hem.
 @export var page_color := Color(0.92, 0.89, 0.8)
 @export var pencil_color := Color(0.96, 0.76, 0.2)
+## Eye colour (Shade's double has burning red eyes, shade_double.gd).
+@export var eye_color := INK
 ## Run-cycle radians per pixel travelled (bigger = shorter, quicker steps).
 @export var stride := 0.07
 
@@ -27,11 +32,13 @@ var on_floor := true
 var dashing := false
 var max_speed := 300.0
 var stuck := false  # wading through goo: boots get gooey
+var goo_color := Color(0.58, 0.95, 0.28)  # what the boots are wading in (player.gd sets it: green goo, ink...)
 var charge := 0.0  # 0..1 charged-attack build-up
 var charge_ready := false
 var crouch := 0.0       # 0..1 crouch-jump coil depth
 var crouching := false  # crouch held (even before the coil counts)
 var land := 0.0  # hard-landing kneel left, 1 at impact .. 0 standing (player.gd)
+var wall := 0.0  # 1 while sliding down a wall (the wall is behind him, at -x)
 
 var _phase := 0.0
 var _time := 0.0
@@ -44,11 +51,13 @@ var shoulder := Vector2(2, -33)  # sword arm pivot, read by sword.gd
 var _coil_draw := 0.0
 var _upper := Transform2D()  # hips + lean, for the upper-body parts
 var _kneel := 0.0
+var _wall := 0.0  # eased `wall`
 
 
 func _process(delta: float) -> void:
 	_time += delta
 	_goo = 1.0 if stuck else maxf(_goo - delta * 1.2, 0.0)
+	_wall = move_toward(_wall, wall, delta * 10.0)
 	var speed := clampf(absf(velocity.x) / max_speed, 0.0, 1.0)
 	_run = move_toward(_run, speed if on_floor and not dashing else 0.0, delta * 8.0)
 	if on_floor and not dashing:
@@ -99,6 +108,10 @@ func _draw() -> void:
 		hips.y += 17.0 * _kneel
 		lean += 0.2 * _kneel
 		_coil_draw = maxf(_coil_draw, _kneel)
+	# wall slide (Hollow Knight): back pressed to the wall, leaning on it
+	if _wall > 0.0:
+		hips.x -= 3.0 * _wall
+		lean -= 0.14 * _wall
 
 	# legs behind the cloak (far leg first, slightly lighter)
 	for k in [1, 0]:
@@ -113,15 +126,23 @@ func _draw() -> void:
 			else:  # front foot planted forward
 				foot = foot.lerp(Vector2(9.0, 0.0), _kneel)
 				knee = knee.lerp(Vector2(10.0, -12.0), _kneel)
+		if _wall > 0.0:
+			if k == 1:  # back boot braced flat on the wall
+				foot = foot.lerp(Vector2(-12.0, -5.0), _wall)
+				knee = knee.lerp(Vector2(-3.0, -11.0), _wall)
+			else:  # front leg hangs bent
+				foot = foot.lerp(Vector2(4.0, 9.0), _wall)
+				knee = knee.lerp(Vector2(7.0, -1.0), _wall)
 		draw_polyline(PackedVector2Array([hip, knee, foot]), col, 5.0)
 		draw_circle(knee, 2.5, col)
 		draw_set_transform(foot + Vector2(1.5, 0))
 		draw_colored_polygon(_ellipse(4.5, 3.0), col)  # boot
 		draw_set_transform(Vector2.ZERO)
 		if _goo > 0.0:
-			var goo := Color(0.58, 0.95, 0.28)
+			var goo := goo_color
 			draw_circle(foot + Vector2(1, -1), 4.0 * _goo + 1.0, goo)
 			draw_circle(foot + Vector2(-2, 2.0 + 4.0 * (1.0 - _goo)), 2.0 * _goo, goo)  # drip
+			draw_circle(foot + Vector2(-0.5, -2.5), 1.3 * _goo, goo.lightened(0.55))  # a wet glint
 
 	# upper body leans around the hips
 	_upper = Transform2D(lean, hips)
@@ -132,6 +153,13 @@ func _draw() -> void:
 	_draw_cloak(fall)
 	_draw_head()
 	draw_set_transform(Vector2.ZERO)
+	if _wall > 0.3:  # hand dragging along the wall behind him
+		var w := clampf((_wall - 0.3) / 0.4, 0.0, 1.0)
+		var grip := Vector2(-13.0, -27.0)
+		var bend := (shoulder + grip) * 0.5 + Vector2(-2.0, 5.0)
+		draw_polyline(PackedVector2Array([shoulder, bend.lerp(shoulder, 1.0 - w), grip.lerp(shoulder, 1.0 - w)]),
+			INK, 4.5)
+		draw_circle(grip.lerp(shoulder, 1.0 - w), 3.5, INK)
 	if _kneel > 0.3:  # hand braced on the floor
 		var a := clampf((_kneel - 0.3) / 0.3, 0.0, 1.0)
 		var hand := Vector2(17.0, -3.0)
@@ -212,8 +240,8 @@ func _draw_pencil() -> void:
 
 func _draw_cloak(fall: float) -> void:
 	var trail := 7.0 * _run + (8.0 if dashing else 0.0)
-	var flutter := sin(_time * 16.0) * 1.6 * maxf(_run, absf(fall))
-	var lift := -6.0 * maxf(fall, 0.0)  # hem billows up while falling
+	var flutter := sin(_time * 16.0) * 1.6 * maxf(maxf(_run, absf(fall)), _wall)
+	var lift := -6.0 * maxf(fall, 0.0) - 5.0 * _wall  # hem billows up while falling / sliding
 	var flare := 1.0 + 0.55 * _kneel  # a hard landing spreads the hem over the floor
 	# hem points, front to back
 	var hem := PackedVector2Array([
@@ -264,16 +292,16 @@ func _draw_head() -> void:
 	var open := 1.0 if _blink <= 0.0 else 0.15
 	for ex in [1.5, 8.0]:
 		draw_set_transform_matrix(_upper * Transform2D(0.0, Vector2(1.0, open), 0.0, Vector2(ex, -33)))
-		draw_colored_polygon(_ellipse(1.8, 3.8), INK)
+		draw_colored_polygon(_ellipse(1.8, 3.8), eye_color)
 	draw_set_transform_matrix(_upper)
-	# wide-brimmed hat with a scarf-red band; the brim tips with speed
+	# wide-brimmed hat with a coloured band; the brim tips with speed
 	var tip := clampf(velocity.x * facing / max_speed, -1.0, 1.0) * -0.06
 	draw_set_transform_matrix(_upper * Transform2D(tip, Vector2(1, -41)))
-	draw_colored_polygon(_ellipse(21.0, 4.8), cloak_color)
+	draw_colored_polygon(_ellipse(21.0, 4.8), hat_color)
 	draw_colored_polygon(PackedVector2Array([Vector2(-10, -2), Vector2(-8, -17), Vector2(9, -15),
-		Vector2(11, -2)]), cloak_color)
-	draw_line(Vector2(-10, -4.5), Vector2(11, -4.5), scarf_color, 3.0)
-	draw_line(Vector2(-16, -1.5), Vector2(8, -2.5), cloak_rim, 1.5)
+		Vector2(11, -2)]), hat_color)
+	draw_line(Vector2(-10, -4.5), Vector2(11, -4.5), band_color, 3.0)
+	draw_line(Vector2(-16, -1.5), Vector2(8, -2.5), hat_color.lightened(0.25), 1.5)
 	draw_set_transform_matrix(_upper)
 
 

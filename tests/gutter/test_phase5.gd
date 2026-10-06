@@ -1,17 +1,17 @@
 extends SceneTree
-## Gutter rework, Haunting Lamp checks: every room spawns the right lamps
-## with its biome's profile; a strike always comes after its full
+## Gutter rework, Haunting Lamp checks: every room spawns the right number
+## of lamps with its biome's profile; a strike always comes after its full
 ## telegraph; hiding behind a solid prop makes the lamp lose Vesper; the
 ## Spine's lamp never takes an ink drop; the circles glide without jumps.
 ## Run like test_phase1.gd.
 
-const ROOMS := {"res://scenes/clearing/clearing.tscn": "spine", "res://scenes/world25/rooms/darkwood_1.tscn": "inkwood",
-	"res://scenes/world25/rooms/darkwood_2.tscn": "inkwood", "res://scenes/world25/rooms/darkwood_bridge.tscn": "inkwood",
-	"res://scenes/world25/rooms/darkwood_3.tscn": "inkwood", "res://scenes/world25/rooms/shallows_1.tscn": "drowned",
-	"res://scenes/world25/rooms/shallows_2.tscn": "drowned", "res://scenes/world25/rooms/shallows_field.tscn": "drowned",
-	"res://scenes/world25/rooms/shallows_pen.tscn": "drowned", "res://scenes/world25/rooms/wastes_1.tscn": "wastes",
-	"res://scenes/world25/rooms/wastes_2.tscn": "wastes", "res://scenes/world25/rooms/wastes_gap.tscn": "wastes",
-	"res://scenes/world25/rooms/arena.tscn": "rubbing"}
+## room -> [haunt profile, lamps]: the four levels set their own lamp count
+## (room.gd haunt_lamps) where it differs from the profile's.
+const ROOMS := {"res://scenes/clearing/clearing.tscn": ["spine", 1],
+	"res://scenes/world25/rooms/darkwood_1.tscn": ["inkwood", 1],
+	"res://scenes/world25/rooms/shallows_pen.tscn": ["drowned", 2],
+	"res://scenes/world25/rooms/wastes_gap.tscn": ["wastes", 1],
+	"res://scenes/world25/rooms/arena.tscn": ["rubbing", 2]}
 var fails := 0
 
 
@@ -51,11 +51,12 @@ func _run() -> void:
 	for path in ROOMS:
 		change_scene_to_file(path)
 		await frames(6)
-		var want: Resource = load("res://data/haunt/%s.tres" % ROOMS[path])
+		var want: Resource = load("res://data/haunt/%s.tres" % ROOMS[path][0])
+		var count: int = ROOMS[path][1]
 		var got := lamps(current_scene)
-		var ok: bool = got.size() == want.lamps and got.all(func(l): return l.profile.resource_path == want.resource_path)
+		var ok: bool = got.size() == count and got.all(func(l): return l.profile.resource_path == want.resource_path)
 		var far: bool = got.all(func(l): return Vector2(l.spot.x - current_scene.player.global_position.x, l.spot.z - current_scene.player.global_position.z).length() > l.spot_radius + 3.0)
-		check(ok, "%s: %d lamp(s) with %s.tres (got %d)" % [path.get_file(), want.lamps, ROOMS[path], got.size()])
+		check(ok, "%s: %d lamp(s) with %s.tres (got %d)" % [path.get_file(), count, ROOMS[path][0], got.size()])
 		check(far, "%s: no lamp starts on the arrival point" % path.get_file())
 	await telegraph_test()
 	await hide_test()
@@ -65,10 +66,10 @@ func _run() -> void:
 	quit(fails)
 
 
-## Lets the Torn Wastes' two lamps hunt a moving Vesper for a long while and
-## checks every strike in their history against its telegraph.
+## Lets the Rubbing Room's two lamps hunt a moving Vesper for a long while
+## and checks every strike in their history against its telegraph.
 func telegraph_test() -> void:
-	change_scene_to_file("res://scenes/world25/rooms/wastes_1.tscn")
+	change_scene_to_file("res://scenes/world25/rooms/arena.tscn")
 	await frames(6)
 	var room := current_scene
 	quiet(room)
@@ -99,11 +100,12 @@ func telegraph_test() -> void:
 				var marked: bool = i > 0 and h[i - 1][1] == lamp.Hunt.MARK and h[i][0] - h[i - 1][0] >= lamp._telegraph() - 0.01
 				if not marked:
 					bad += 1
-	check(strikes > 0, "the Wastes' lamps struck during 90 s of hunting (%d strikes)" % strikes)
+	check(strikes > 0, "the Rubbing Room's lamps struck during 90 s of hunting (%d strikes)" % strikes)
 	check(bad == 0, "every strike came after its full telegraph (%d without)" % bad)
 	# a physics tick here is 4 x 1/120 s; even the fastest glide onto a mark
-	# moves well under a unit in that time
-	check(max_jump < 0.6, "the circles glide: no jumps (largest step per tick %.2f u)" % max_jump)
+	# (the Rubbing Room's lamps, ~18 u/s) moves well under a unit in that
+	# time, while a jump would be several
+	check(max_jump < 1.0, "the circles glide: no jumps (largest step per tick %.2f u)" % max_jump)
 
 
 ## A solid wall between the lamp and Vesper hides him: it loses him.

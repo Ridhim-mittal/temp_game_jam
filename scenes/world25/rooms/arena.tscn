@@ -10,6 +10,7 @@
 [ext_resource type="Script" path="res://scripts/clearing/scatter_props.gd" id="scatter"]
 [ext_resource type="Script" path="res://scripts/clearing/watcher_eyes.gd" id="eyes"]
 [ext_resource type="Script" path="res://scripts/clearing/altar.gd" id="altar"]
+[ext_resource type="Script" path="res://scripts/world25/big_lumen.gd" id="biglumen"]
 [ext_resource type="PackedScene" path="res://scenes/clearing/scribble.tscn" id="scribble"]
 [ext_resource type="PackedScene" path="res://scenes/clearing/monsters/crumple.tscn" id="crumple"]
 [ext_resource type="PackedScene" path="res://scenes/clearing/monsters/crossed_out.tscn" id="crossed_out"]
@@ -20,6 +21,7 @@
 [ext_resource type="Script" path="res://scripts/world25/searchlight.gd" id="searchlight"]
 [ext_resource type="PackedScene" path="res://scenes/clearing/monsters/scribble_diver.tscn" id="scribble_diver"]
 [ext_resource type="PackedScene" path="res://scenes/clearing/monsters/red_pen.tscn" id="red_pen"]
+[ext_resource type="PackedScene" path="res://scenes/clearing/monsters/half_drawn.tscn" id="half_drawn"]
 [ext_resource type="Resource" path="res://data/biomes/darkwood.tres" id="b_darkwood"]
 [ext_resource type="Resource" path="res://data/biomes/shallows.tres" id="b_shallows"]
 [ext_resource type="Resource" path="res://data/biomes/wastes.tres" id="b_wastes"]
@@ -29,14 +31,14 @@
 script = ExtResource("room")
 room_id = "arena"
 biome = ExtResource("b_arena")
-map_cell = Vector2i(-9, -3)
+map_cell = Vector2i(-4, 0)
 camera_bounds = Rect2(-6.5, -7, 13, 14)
 default_spawn = Vector3(0, 0.05, 0)
 title = "The Rubbing Room"
-subtitle = ""
-enter_captions = "~No. Not this one. Turn back.|~You don't need to see what I did to the other drafts."
-clear_captions = "~...That isn't how this goes.|~That isn't how ANY of this goes."
-cutscene_on_clear = "res://scenes/cutscenes/cs_reveal.tscn"
+subtitle = "4 / 4"
+enter_captions = "~The Rubbing Room. Where I erase what I don't need.|^His eraser... it followed me all the way down here."
+clear_captions = "~FOUND YOU.|^The light... it's pulling me up!"
+ending_on_clear = "res://scenes/world25/light_capture.tscn"
 boss_path = NodePath("Enemies/Eraser1")
 boss_name = "THE ERASER"
 
@@ -51,6 +53,7 @@ script = ExtResource("gate")
 gate_id = "east"
 target_scene = "res://scenes/world25/rooms/wastes_gap.tscn"
 target_gate = "west"
+entry_only = true
 
 [node name="Props" type="Node3D" parent="."]
 
@@ -246,4 +249,9 @@ color = Color(1, 0.6, 0.85, 1)
 
 [node name="Eraser1" parent="Enemies" instance=ExtResource("eraser")]
 transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -3.00, 0.05, 0.00)
-hp = 16
+hp = 26
+walk_speed = 2.0
+lunge_speed = 12.5
+windup_time = 0.45
+tired_time = 1.5
+cooldown = 0.8

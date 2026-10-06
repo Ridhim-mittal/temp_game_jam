@@ -3,7 +3,7 @@ extends "res://scripts/world25/searchlight.gd"
 ## the biome's HauntProfile), hunting Vesper. A pure white column of light
 ## comes down out of the dark onto a circle of the Writer's proofreading
 ## marks. Built on searchlight.gd, so it shares its erase meter (standing in
-## the light whitens Vesper; a full meter costs an ink drop), its shadow
+## the light whitens Vesper; a full meter costs an ink bottle), its shadow
 ## rays (solid props between the lamp and a point block it: hide behind
 ## them), the Flash investigation (`hear`), erasing monsters it catches and
 ## lighting drawn bridges. For shadows the light counts as coming from up
@@ -28,6 +28,7 @@ extends "res://scripts/world25/searchlight.gd"
 
 signal hunt_changed(state: int)
 
+const Fx = preload("res://scripts/clearing/clearing_fx.gd")
 const COLUMN_SHADER = preload("res://shaders/world25/haunt_column.gdshader")
 const CIRCLE_SHADER = preload("res://shaders/world25/haunt_circle.gdshader")
 ## Where the light comes from, seen from the circle: up, a little towards
@@ -200,6 +201,22 @@ func hear(at: Vector3) -> void:
 	_set_hunt(Hunt.SEEK)
 
 
+## The Prism Saber's Blinding Sweep turns the light away: it loses Vesper
+## (LOST, wandering off), its erase meter empties and its next strike waits.
+func dazzle() -> void:
+	if hunt == Hunt.DORMANT:
+		return
+	erase = 0.0
+	_unseen = profile.lose_after
+	_strike_t = _strike_every()
+	_wander = _floor_point()
+	_flash = 1.0
+	_set_hunt(Hunt.LOST)
+	var tree := get_tree()
+	if tree:
+		Fx.pop_text(tree, spot + Vector3(0, 1.2, 0), "DAZZLED!", Color(0.6, 1.0, 0.95), 32)
+
+
 ## In its light, or close enough to it (the halo round the circle) and not
 ## hidden behind something solid.
 func sees(point: Vector3) -> bool:
@@ -344,7 +361,8 @@ func _strike() -> void:
 	if cam and cam.has_method("add_trauma"):
 		cam.add_trauma(0.55)
 	var player := get_tree().get_first_node_in_group("player") as Node3D
-	if player and not player.dead and lights(player.global_position):
+	if player and not player.dead and lights(player.global_position) \
+			and not (player.has_method("is_protected") and player.is_protected()):
 		erase = minf(erase + profile.strike_erase, 1.0)
 	for m in get_tree().get_nodes_in_group("enemy"):
 		if m is Node3D and not ("dead" in m and m.dead) and lights(m.global_position):
@@ -359,6 +377,8 @@ func _strike() -> void:
 
 ## The searchlight's meter, but a profile that can't damage only whitens.
 func _update_erase(player: Node3D, seen: bool, delta: float) -> void:
+	if seen and player.has_method("is_protected") and player.is_protected():
+		seen = false  # spawn protection: the light can't take hold yet
 	if player == null:
 		return
 	if seen:
@@ -373,7 +393,7 @@ func _update_erase(player: Node3D, seen: bool, delta: float) -> void:
 		if profile.can_damage and player.has_method("take_damage") and not player.dead:
 			erase = 0.0
 			player._invuln = 0.0
-			player.take_damage(1, Vector3(spot.x, player.global_position.y, spot.z))
+			player.take_damage(2, Vector3(spot.x, player.global_position.y, spot.z))  # one ink bottle
 			_line("Out. OUT.")
 		else:
 			erase = 0.92

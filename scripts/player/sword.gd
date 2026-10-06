@@ -1,11 +1,15 @@
 extends Node2D
-## Vesper's nib-sword: a steel blade shaped like a fountain-pen nib (slit,
-## breather hole, ink-dipped tip) - the hero of a drawn world fights with
-## the artist's pen. Owns the sword arm too: shoulder -> hand -> blade.
+## Vesper's weapon (the nib-sword by default: a steel blade shaped like a
+## fountain-pen nib, slit, breather hole, ink-dipped tip - the hero of a
+## drawn world fights with the artist's pen). `style` picks the weapon from
+## Quire's shop (catalog.gd look "weapon"): nib, quill, brush, corkscrew,
+## prism or lantern. Owns the sword arm too: shoulder -> hand -> blade.
 ##
 ## Lives inside the player's Visual CanvasGroup (so it gets the outline and
 ## is flipped with the body); faces +X. player.gd calls swing() / thrust()
-## and feeds charge; the shoulder position comes from the sibling Art node.
+## and feeds charge, spin() (the Corkscrew's drill) and whirl() (the
+## Lantern Flail's orbit); the shoulder position comes from the sibling Art
+## node.
 
 const INK := Color(0.05, 0.03, 0.1)
 const STEEL_LIGHT := Color(0.9, 0.92, 0.98)
@@ -15,7 +19,7 @@ const SWEEP_TIME := 0.09
 const HOLD_TIME := 0.07
 const RECOVER_TIME := 0.16
 
-enum Move { NONE, SIDE, UP, DOWN, THRUST }
+enum Move { NONE, SIDE, UP, DOWN, THRUST, SPIN, WHIRL }
 ## Sweep [start angle, end angle] per slash, radians in facing space
 ## (0 = forward, +PI/2 = down). Plain lerp, so the sweep direction is kept.
 const SWEEPS := {
@@ -28,6 +32,9 @@ const SWEEPS := {
 @export var arm_length := 9.0
 @export var grip_color := Color(1.0, 0.58, 0.14)  # wrapped in scarf cloth
 @export var cloak_color := Color(0.1, 0.09, 0.2)
+@export var style := "nib"
+## Chain length of the Lantern Flail while whirling (px).
+@export var whirl_reach := 70.0
 
 # Fed by player.gd.
 var charge := 0.0
@@ -56,6 +63,30 @@ func is_swinging() -> bool:
 	return _move != Move.NONE
 
 
+## The Corkscrew's drill: held straight out, spinning, while `on`.
+func spin(on: bool) -> void:
+	if on:
+		_move = Move.SPIN
+		_t = 0.0
+	elif _move == Move.SPIN:
+		_move = Move.NONE
+
+
+## The Lantern Flail's whirl: the lantern swings round on a long chain.
+func whirl(on: bool) -> void:
+	if on:
+		_move = Move.WHIRL
+		_t = 0.0
+	elif _move == Move.WHIRL:
+		_move = Move.NONE
+
+
+## Where the lantern is while whirling (global), for the player's hits.
+func lantern_global() -> Vector2:
+	var shoulder: Vector2 = _art.shoulder if _art else Vector2(2, -33)
+	return to_global(shoulder + Vector2.from_angle(_angle) * (arm_length + whirl_reach))
+
+
 func _rest_angle() -> float:
 	# Held low behind the body (Hollow Knight nail at rest): the tip never
 	# dips below the feet, and it never covers the face.
@@ -77,6 +108,12 @@ func _process(delta: float) -> void:
 		Move.NONE:
 			_angle = lerp_angle(_angle, rest, 1.0 - exp(-14.0 * delta))
 			_extend = move_toward(_extend, 0.0, delta * 80.0)
+		Move.SPIN:
+			_angle = lerp_angle(_angle, 0.05 * sin(_time * 40.0), 1.0 - exp(-30.0 * delta))
+			_extend = move_toward(_extend, 8.0, delta * 80.0)
+		Move.WHIRL:
+			_angle = wrapf(_angle - delta * 13.0, -PI, PI)
+			_extend = 0.0
 		Move.THRUST:
 			_angle = lerp_angle(_angle, 0.0, 1.0 - exp(-40.0 * delta))
 			_extend = 14.0 * (1.0 - clampf((_t - 0.12) / 0.15, 0.0, 1.0)) * minf(_t / 0.04, 1.0)
@@ -116,6 +153,23 @@ func _draw() -> void:
 
 
 func _draw_blade() -> void:
+	match style:
+		"quill":
+			_draw_quill()
+		"brush":
+			_draw_brush()
+		"corkscrew":
+			_draw_corkscrew()
+		"prism":
+			_draw_prism()
+		"lantern":
+			_draw_lantern()
+		_:
+			_draw_nib()
+	_draw_charge()
+
+
+func _draw_nib() -> void:
 	var L := blade_length
 	# grip + pommel behind the hand
 	draw_rect(Rect2(-8, -2, 9, 4), grip_color)
@@ -131,17 +185,101 @@ func _draw_blade() -> void:
 	draw_colored_polygon(PackedVector2Array([Vector2(L * 0.72, -2.3), Vector2(L, 0), Vector2(L * 0.72, 2.3)]), INK)
 	draw_line(Vector2(L * 0.66, 0), Vector2(L * 0.97, 0), STEEL_LIGHT, 1.0)
 	draw_circle(Vector2(L * 0.63, 0), 1.7, INK)  # breather hole
-	# charge glow along the edge
-	if charge > 0.0:
-		var a := charge
-		if charge_ready:
-			a = 0.6 + 0.4 * sin(_time * 22.0)
-		draw_line(Vector2(4, -3.8), Vector2(L * 0.55, -3.5), Color(grip_color, a), 2.5)
-		draw_line(Vector2(L * 0.55, -3.5), Vector2(L + 1, 0), Color(grip_color, a), 2.5)
-		if charge_ready:
-			draw_circle(Vector2(L + 1, 0), 3.0 + 1.5 * sin(_time * 22.0), grip_color.lightened(0.4))
 	# cross-guard on top
 	draw_rect(Rect2(0, -6, 3, 12), GUARD)
+
+
+## Charge glow along the edge (any weapon).
+func _draw_charge() -> void:
+	if charge <= 0.0:
+		return
+	var L := blade_length if style != "lantern" else 24.0
+	var a := charge
+	if charge_ready:
+		a = 0.6 + 0.4 * sin(_time * 22.0)
+	draw_line(Vector2(4, -3.8), Vector2(L * 0.55, -3.5), Color(grip_color, a), 2.5)
+	draw_line(Vector2(L * 0.55, -3.5), Vector2(L + 1, 0), Color(grip_color, a), 2.5)
+	if charge_ready:
+		draw_circle(Vector2(L + 1, 0), 3.0 + 1.5 * sin(_time * 22.0), grip_color.lightened(0.4))
+
+
+## Quill Rapier: a long white feather with a tinted vane and a steel nib.
+func _draw_quill() -> void:
+	var L := blade_length
+	draw_rect(Rect2(-8, -1.6, 9, 3.2), grip_color.darkened(0.4))
+	var vane := PackedVector2Array([Vector2(3, 0), Vector2(L * 0.25, -5.5), Vector2(L * 0.7, -4.2), Vector2(L * 0.86, -1.0),
+		Vector2(L * 0.86, 1.0), Vector2(L * 0.6, 3.6), Vector2(L * 0.2, 2.6)])
+	draw_colored_polygon(vane, grip_color.lerp(Color.WHITE, 0.6))
+	for k in 5:  # barbs
+		var x := L * (0.2 + k * 0.13)
+		draw_line(Vector2(x, 0), Vector2(x + 5, -4.0), grip_color.darkened(0.1), 1.0)
+	draw_line(Vector2(0, 0), Vector2(L * 0.88, 0), Color(0.97, 0.95, 0.88), 1.6)  # the shaft
+	draw_colored_polygon(PackedVector2Array([Vector2(L * 0.84, -2.2), Vector2(L + 4, 0), Vector2(L * 0.84, 2.2)]), STEEL_LIGHT)
+	draw_line(Vector2(L * 0.88, 0), Vector2(L + 2, 0), INK, 0.8)
+
+
+## Brush Maul: a wooden handle, a gold ferrule, a fat bristle head dipped in ink.
+func _draw_brush() -> void:
+	var L := blade_length
+	draw_rect(Rect2(-8, -2.4, L * 0.6 + 8, 4.8), Color(0.5, 0.3, 0.18))
+	draw_rect(Rect2(L * 0.55, -4.2, 6, 8.4), Color(0.95, 0.75, 0.3))
+	var head := PackedVector2Array([Vector2(L * 0.62, -5.0), Vector2(L * 0.9, -6.5), Vector2(L + 8, 0), Vector2(L * 0.9, 6.5),
+		Vector2(L * 0.62, 5.0)])
+	draw_colored_polygon(head, Color(0.88, 0.82, 0.68))
+	draw_colored_polygon(PackedVector2Array([Vector2(L * 0.9, -6.5), Vector2(L + 8, 0), Vector2(L * 0.9, 6.5), Vector2(L * 0.84, 0)]), INK)
+	draw_circle(Vector2(-9, 0), 2.6, GUARD)
+
+
+## Corkscrew Nib: a wooden pen grip with silver rings and a twisted steel
+## drill of a nib; its spiral turns while it spins.
+func _draw_corkscrew() -> void:
+	var L := blade_length
+	draw_rect(Rect2(-9, -2.6, 13, 5.2), grip_color)
+	draw_rect(Rect2(2, -3.4, 2.5, 6.8), STEEL_LIGHT)
+	draw_rect(Rect2(5.5, -3.4, 2.5, 6.8), STEEL_LIGHT)
+	var cone := PackedVector2Array([Vector2(8, -4.4), Vector2(L + 4, 0), Vector2(8, 4.4)])
+	draw_colored_polygon(cone, STEEL_DARK)
+	draw_colored_polygon(PackedVector2Array([Vector2(8, -4.4), Vector2(L + 4, 0), Vector2(8, 0)]), STEEL_LIGHT)
+	var turn := fmod(_time * (60.0 if _move == Move.SPIN else 6.0), 7.0)
+	var x := 8.0 + turn
+	while x < L:
+		var hw := 4.4 * (1.0 - (x - 8.0) / (L - 4.0))
+		draw_line(Vector2(x, hw), Vector2(x + 4.0, -hw), INK, 1.2)
+		x += 7.0
+
+
+## Prism Saber: a brass guard and a long faceted crystal blade, glowing,
+## with a rainbow down its face.
+func _draw_prism() -> void:
+	var L := blade_length
+	draw_rect(Rect2(-8, -2, 9, 4), grip_color)
+	draw_circle(Vector2(-9, 0), 2.6, Color(0.95, 0.75, 0.3))
+	var pulse := 0.85 + 0.15 * sin(_time * 6.0)
+	draw_colored_polygon(PackedVector2Array([Vector2(2, -4.6), Vector2(L * 0.8, -4.0), Vector2(L + 6, 0), Vector2(L * 0.8, 4.0),
+		Vector2(2, 4.6)]), Color(0.6, 1.0, 0.97, 0.9 * pulse))
+	draw_colored_polygon(PackedVector2Array([Vector2(2, -4.6), Vector2(L * 0.8, -4.0), Vector2(L + 6, 0), Vector2(2, 0)]),
+		Color(0.92, 1.0, 1.0, pulse))
+	var bands := [Color(1.0, 0.4, 0.5), Color(1.0, 0.85, 0.35), Color(0.5, 1.0, 0.6), Color(0.45, 0.65, 1.0)]
+	for k in bands.size():
+		draw_line(Vector2(6 + k * L * 0.18, 2.4), Vector2(6 + (k + 1) * L * 0.18, 2.0), bands[k], 1.6)
+	draw_rect(Rect2(0, -6.5, 3, 13), Color(0.95, 0.75, 0.3))
+
+
+## Lantern Flail: a short handle, a chain and a small lit lantern at its end
+## (a long chain while it whirls).
+func _draw_lantern() -> void:
+	var reach := whirl_reach if _move == Move.WHIRL else 22.0
+	draw_rect(Rect2(-8, -2.2, 10, 4.4), Color(0.3, 0.2, 0.14))
+	var links := int(reach / 5.0)
+	for k in links:
+		draw_circle(Vector2(3 + k * 5.0, 0), 1.5, Color(0.55, 0.55, 0.6))
+	var c := Vector2(reach + 6, 0)
+	draw_circle(c, 9.0, Color(1.0, 0.8, 0.4, 0.25))
+	draw_rect(Rect2(c - Vector2(5, 6), Vector2(10, 12)), Color(1.0, 0.85, 0.45))
+	draw_rect(Rect2(c - Vector2(5, 6), Vector2(10, 12)), INK, false, 1.4)
+	draw_line(c - Vector2(6, 6.5), c + Vector2(6, -6.5), INK, 2.0)
+	draw_line(c - Vector2(6, -6.5), c + Vector2(6, 6.5), INK, 2.0)
+	draw_circle(c, 2.6, Color(1.0, 1.0, 0.85))
 
 
 ## Motion smear following the blade through its sweep (comic "swoosh").

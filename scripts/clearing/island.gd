@@ -30,8 +30,8 @@ const GROUND_SHADER = preload("res://shaders/clearing/ground.gdshader")
 	set(v):
 		stain_zone = v
 		_rebuild()
-## Broken stone piled along the closed edges (one merged mesh): 0 = none,
-## 1 = the usual amount.
+## Crumpled paper and torn scraps piled along the closed edges (one merged
+## mesh; was broken stone): 0 = none, 1 = the usual amount.
 @export var rubble := 1.0:
 	set(v):
 		rubble = v
@@ -106,17 +106,17 @@ func _apply_biomes(mat: ShaderMaterial) -> void:
 		mat.set_shader_parameter("rune_color", a.rune_color)
 
 
-## Rocks and broken flagstones along every closed edge, some hanging over
-## the drop, kept clear of the open edges (stairs, bridges, gates).
+## The Writer's rejects along every closed edge: crumpled balls of paper
+## and torn scraps lying flat, some hanging over the drop, kept clear of the
+## open edges (stairs, bridges, gates). Paper, dimmed and tinted towards the
+## biome's light colour.
 func _build_rubble(root: Node3D) -> void:
 	var Toon = preload("res://scripts/clearing/toon.gd")
 	var rng := RandomNumberGenerator.new()
 	rng.seed = polygon.size() * 97 + int(absf(polygon[0].x) * 13.0)
-	var rock := SphereMesh.new()
-	rock.radius = 0.5
-	rock.height = 1.0
-	rock.radial_segments = 6
-	rock.rings = 3
+	var ball := _crumpled_ball()
+	var scrap := BoxMesh.new()
+	scrap.size = Vector3(1.0, 0.04, 0.75)
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var n := polygon.size()
@@ -135,24 +135,53 @@ func _build_rubble(root: Node3D) -> void:
 			var p2 := a.lerp(b, (k + rng.randf()) / maxf(steps, 1))
 			if _near_open_edge(p2, 2.2):
 				continue
-			# a little pile: two to four stones, the biggest nearest the drop
+			# a little pile: two to four balls of paper, the biggest nearest
+			# the drop, now and then a torn sheet lying flat among them
 			for j in 2 + rng.randi() % 3:
-				var size := rng.randf_range(0.25, 0.62) * (1.0 - j * 0.15)
+				var size := rng.randf_range(0.25, 0.55) * (1.0 - j * 0.15)
 				var q := p2 + along * rng.randf_range(-0.5, 0.5)
 				var p := Vector3(q.x, 0.0, q.y) + inward * (rng.randf_range(-0.15, 0.35) + j * 0.3)
-				var basis := Basis.from_euler(Vector3(rng.randf() * TAU, rng.randf() * TAU, rng.randf() * TAU))
-				basis = basis.scaled(Vector3(size * rng.randf_range(1.0, 1.6), size * rng.randf_range(0.5, 0.9), size))
-				st.append_from(rock, 0, Transform3D(basis, p + Vector3(0, size * 0.15, 0)))
+				if rng.randf() < 0.25:
+					var flat := Basis.from_euler(Vector3(rng.randf_range(-0.12, 0.12), rng.randf() * TAU, rng.randf_range(-0.12, 0.12)))
+					st.append_from(scrap, 0, Transform3D(flat.scaled(Vector3.ONE * size * 1.8), p + Vector3(0, 0.02, 0)))
+				else:
+					var basis := Basis.from_euler(Vector3(rng.randf() * TAU, rng.randf() * TAU, rng.randf() * TAU))
+					basis = basis.scaled(Vector3(size * rng.randf_range(0.9, 1.25), size * rng.randf_range(0.75, 1.0), size))
+					st.append_from(ball, 0, Transform3D(basis, p + Vector3(0, size * 0.35, 0)))
 				placed += 1
 	if placed == 0:
 		return
 	var a_biome: Resource = biome if biome else DEFAULT_BIOME
-	var color: Color = a_biome.light.lerp(a_biome.accent, 0.15).linear_to_srgb()
+	var color: Color = Color(0.84, 0.81, 0.72).lerp(a_biome.light.linear_to_srgb(), 0.2).darkened(0.12)
 	var mi := MeshInstance3D.new()
 	mi.name = "Rubble"
 	mi.mesh = st.commit()
 	mi.material_override = Toon.material(color, {"outline": 0.035, "from_center": 0.0})
 	root.add_child(mi)
+
+
+## A ball of crumpled paper, half a unit across: a sphere with its points
+## pushed in and out, every face flat so the creases catch the light.
+static func _crumpled_ball() -> ArrayMesh:
+	var sphere := SphereMesh.new()
+	sphere.radius = 0.5
+	sphere.height = 1.0
+	sphere.radial_segments = 9
+	sphere.rings = 5
+	var arrays := sphere.get_mesh_arrays()
+	var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	for i in verts.size():
+		var v := verts[i]
+		# the same push for the same point, so the seams stay closed
+		var h := absi(hash(Vector3i(roundi(v.x * 100.0), roundi(v.y * 100.0), roundi(v.z * 100.0)))) % 1000 / 1000.0
+		verts[i] = v * lerpf(0.72, 1.12, h)
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var idx: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
+	for i in idx:
+		st.add_vertex(verts[i])
+	st.generate_normals()
+	return st.commit()
 
 
 func _near_open_edge(p: Vector2, dist: float) -> bool:

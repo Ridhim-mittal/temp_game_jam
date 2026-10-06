@@ -4,12 +4,10 @@
 [ext_resource type="Script" path="res://scripts/world25/room.gd" id="25_room"]
 [ext_resource type="Script" path="res://scripts/world25/gate.gd" id="26_gate"]
 [ext_resource type="Script" path="res://scripts/world25/biome_props.gd" id="28_bprops"]
-[ext_resource type="Script" path="res://scripts/world25/patch_npc.gd" id="29_patch"]
-[ext_resource type="Script" path="res://scripts/world25/interactable.gd" id="30_interact"]
+[ext_resource type="Script" path="res://scripts/world25/shop_stall.gd" id="29_shop"]
 [ext_resource type="Resource" path="res://data/biomes/spine.tres" id="27_spine"]
 [ext_resource type="Script" path="res://scripts/clearing/stairs.gd" id="2_stairs"]
 [ext_resource type="Script" path="res://scripts/clearing/bridge.gd" id="3_bridge"]
-[ext_resource type="Script" path="res://scripts/clearing/archway.gd" id="4_arch"]
 [ext_resource type="Script" path="res://scripts/clearing/altar.gd" id="5_altar"]
 [ext_resource type="Script" path="res://scripts/clearing/brazier.gd" id="6_brazier"]
 [ext_resource type="Script" path="res://scripts/clearing/fence.gd" id="7_fence"]
@@ -22,12 +20,13 @@
 script = ExtResource("25_room")
 room_id = "clearing"
 biome = ExtResource("27_spine")
+backdrop_style = 1
 camera_bounds = Rect2(-28, -27, 40, 37)
 default_spawn = Vector3(2.5, 0.05, 3)
 title = "The Spine"
 subtitle = "The fold between the pages"
-enter_captions = "Page one. A clean sheet, a warm lamp, and... wait. Where are you?|This isn't a panel. This is the margin. Nothing I drew is supposed to be down here.|Those scribbles are old mistakes. Swat them away and find the way out."
-clear_captions = "Good. The cave is open. Go on, I'm right behind you."
+enter_captions = "~Where is he? He fell right off the page.|~No matter. My lamp will find him. Nothing hides from my light.|^Where... am I? This isn't a panel. Everything's grey and torn.|^Those scribbles bite. I'd better swat them away and find a way out.|A red scratch on the floor means a claw is coming: dash out of its line, or hold right click and light it up."
+clear_captions = "^The way's open. I'd better keep moving, before that light finds me."
 
 [node name="Island" type="Node3D" parent="."]
 script = ExtResource("1_island")
@@ -52,19 +51,19 @@ script = ExtResource("3_bridge")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 0, -2.5)
 script = ExtResource("5_altar")
 
-[node name="CaveDoor" type="Node3D" parent="Props"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0, -10.6)
-script = ExtResource("4_arch")
-walk_through = true
-
 [node name="CaveGate" type="Node3D" parent="Props"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0, -10.6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.88, -30.2)
 script = ExtResource("26_gate")
 gate_id = "cave"
 target_scene = "res://scenes/world25/rooms/darkwood_1.tscn"
 target_gate = "east"
-style = 1
-width = 2.4
+width = 2.6
+
+[node name="DraftsByStairs" type="Node3D" parent="Props"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0, -10.2)
+script = ExtResource("28_bprops")
+kind = 1
+seed = 41
 
 [node name="BrazierStairsL" type="Node3D" parent="Props"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.6, 0, -10.4)
@@ -240,9 +239,9 @@ size = 0.7
 [node name="Terrace" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.88, 0)
 script = ExtResource("1_island")
-polygon = PackedVector2Array(-2.4, -17.8, -9, -17.6, -12, -20, -12.5, -25, -9, -29, 0, -30.5, 9, -29, 12.5, -25, 12, -20, 9, -17.6, 2.4, -17.8)
+polygon = PackedVector2Array(-2.4, -17.8, -9, -17.6, -12, -20, -12.5, -25, -9, -29, -1.5, -30.2, 1.5, -30.2, 9, -29, 12.5, -25, 12, -20, 9, -17.6, 2.4, -17.8)
 depth = 10.0
-open_edges = PackedInt32Array(10)
+open_edges = PackedInt32Array(5, 11)
 stain_zone = Vector3(0, -24, 7)
 
 [node name="Shrine" type="Node3D" parent="Props"]
@@ -283,13 +282,6 @@ script = ExtResource("28_bprops")
 kind = 6
 size = 1.2
 seed = 8
-solid = true
-
-[node name="ShadeStatue" type="Node3D" parent="Props/Shrine"]
-transform = Transform3D(1.0000, 0, -0.0000, 0, 1, 0, 0.0000, 0, 1.0000, 0, 2.88, -29)
-script = ExtResource("28_bprops")
-kind = 8
-size = 0.9
 solid = true
 
 [node name="ShrineFlameL" type="Node3D" parent="Props/Shrine"]
@@ -363,17 +355,9 @@ color = Color(0.6, 0.58, 0.56, 1)
 seed = 31
 solid = true
 
-[node name="Patch" type="Node3D" parent="Props"]
+[node name="QuireShop" type="Node3D" parent="Props"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17, 0, -6.6)
-script = ExtResource("29_patch")
-
-[node name="SkillShrine" type="Node3D" parent="Props/Shrine"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.88, -24)
-script = ExtResource("30_interact")
-action = "skills"
-prompt = "SKILL TREE"
-radius = 3.5
-prompt_height = 1.6
+script = ExtResource("29_shop")
 
 [node name="Hub" type="Node3D" parent="Props"]
 
@@ -519,7 +503,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0.05, 3)
 sight_range = 5.5
 
 [node name="Scribble2" parent="Enemies" instance=ExtResource("18_scribble")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0.05, -4)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0.05, -5)
 sight_range = 5.5
 
 [node name="Scribble3" parent="Enemies" instance=ExtResource("18_scribble")]
@@ -527,17 +511,25 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0.05, 2)
 sight_range = 5.5
 
 [node name="Scribble4" parent="Enemies" instance=ExtResource("18_scribble")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0.05, -7)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0.05, -3)
 sight_range = 5.5
 
 [node name="Scribble5" parent="Enemies" instance=ExtResource("18_scribble")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 0.05, 7.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 0.05, 3)
 sight_range = 5.5
 
 [node name="Scribble6" parent="Enemies" instance=ExtResource("18_scribble")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21, 0.05, -1.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -19, 0.05, 2.5)
 sight_range = 5.5
 
 [node name="Scribble7" parent="Enemies" instance=ExtResource("18_scribble")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -27, 0.05, 5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -26, 0.05, 4)
+sight_range = 5.5
+
+[node name="Scribble8" parent="Enemies" instance=ExtResource("18_scribble")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 2.93, -25)
+sight_range = 5.5
+
+[node name="Scribble9" parent="Enemies" instance=ExtResource("18_scribble")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 2.93, -23)
 sight_range = 5.5

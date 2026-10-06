@@ -5,15 +5,16 @@ extends Control
 ##
 ##   ui.title_card("DARKWOOD MARGINS", "1 / 3")
 ##   ui.caption("Where did you go?")            # queued, auto-hides
-##   ui.caption("THERE.", "shaky")              # the Writer losing it
+##   ui.caption("THERE.", "shaky")              # Shade, the Writer (red panel, shaking; also "shade")
+##   ui.caption("Where am I?", "vesper")        # Vesper (yellow, VESPER tab)
 ##   ui.caption("Woof.", "patch")               # Patch talking (pale tag)
 
 const TITLE_FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
 const INK := Color(0.06, 0.04, 0.09)
 const PAPER := Color(0.97, 0.95, 0.9)
 const CAPTION := Color(1.0, 0.88, 0.4)
-const SHAKY := Color(0.95, 0.93, 0.88)
 const PATCH := Color(0.8, 0.84, 0.86)
+const CaptionStyle = preload("res://scripts/ui/caption_style.gd")
 
 var _title := ""
 var _subtitle := ""
@@ -46,6 +47,8 @@ func toast(text: String) -> void:
 
 ## Shows a boss health bar (reads the monster's `health`, `hp`, `dead`).
 func set_boss(boss: Node, boss_name: String) -> void:
+	boss.add_to_group("boss")
+	Sfx.play("boss_intro")
 	_boss = boss
 	_boss_name = boss_name
 	_boss_max = maxi(boss.hp, 1)
@@ -154,12 +157,19 @@ func _draw_caption() -> void:
 	var lines := _wrap(font, _text, fs, max_w)
 	var line_h := fs + 8.0
 	var box := Rect2(Vector2((size.x - max_w - 40.0) * 0.5, 18.0), Vector2(max_w + 40.0, lines.size() * line_h + 26.0))
-	var shaky := _who == "shaky"
+	var shaky := _who == "shaky" or _who == "shade"  # the Writer, Shade: his blood-red panel
 	var patch := _who == "patch"
 	var jitter := Vector2(randf_range(-1, 1), randf_range(-1, 1)) * 1.5 if shaky else Vector2.ZERO
-	draw_rect(Rect2(box.position + Vector2(6, 6), box.size), Color(INK, 0.5 * _alpha))
-	draw_rect(box, Color(SHAKY if shaky else (PATCH if patch else CAPTION), _alpha))
-	draw_rect(box, Color(INK, _alpha), false, 3.0)
+	var speaker := "shade" if shaky else ("vesper" if _who == "vesper" else "narrator")
+	var text_col := CaptionStyle.text_color(speaker, _alpha)
+	if patch:
+		draw_rect(Rect2(box.position + Vector2(6, 6), box.size), Color(INK, 0.5 * _alpha))
+		draw_rect(box, Color(PATCH, _alpha))
+		draw_rect(box, Color(INK, _alpha), false, 3.0)
+		text_col = Color(INK, _alpha)
+	else:
+		box.position.y += 10.0 if speaker != "narrator" else 0.0  # room for the name tab
+		CaptionStyle.panel(self, box, speaker, _alpha)
 	if patch:
 		# a torn name tag on the box's corner: not the Writer talking
 		var tag := Rect2(box.position + Vector2(14, -16), Vector2(78, 26))
@@ -171,7 +181,7 @@ func _draw_caption() -> void:
 	for line in lines:
 		var part: String = line.substr(0, maxi(left, 0))
 		left -= line.length() + 1
-		draw_string(font, Vector2(box.position.x + 20.0, y) + jitter, part, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(INK, _alpha))
+		draw_string(font, Vector2(box.position.x + 20.0, y) + jitter, part, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, text_col)
 		y += line_h
 
 

@@ -21,7 +21,7 @@ extends Resource
 @export var erase_fill := 1.1
 ## Seconds Vesper must stay out of the light before it loses him.
 @export var lose_after := 1.5
-## Off: it fills the meter and whitens him, but never takes an ink drop.
+## Off: it fills the meter and whitens him, but never takes an ink bottle.
 @export var can_damage := true
 ## How much one strike adds to the erase meter (1 = a whole drop).
 @export var strike_erase := 0.65

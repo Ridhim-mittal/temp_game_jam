@@ -1,12 +1,12 @@
 extends Control
 ## First-run controls tutorial. One move at a time, its key flashes in the
 ## middle of the screen until the player does it, then it drops into a tray
-## of learned keys at the bottom. Moves that only matter later (Ember, Flash,
-## Heal) pop up on their own the first time they're useful.
+## of learned keys at the bottom. Moves that only matter later (the Ember,
+## Heal, the 2D ink wave) pop up on their own the first time they're useful.
 ##
 ## Every step is remembered in Profile, so each one plays only once (a
-## restart picks up where it left off); Esc skips the rest of the mode and
-## Settings -> Tutorials plays them all again. While the basics run, the
+## restart picks up where it left off); Enter skips the rest of the mode and
+## PLAY on the main menu plays the 2D ones again. While the basics run, the
 ## level's "Controls" hint line is hidden.
 ##
 ##   Tutorial.start(self, self, "2d")               # scripts/player/player.gd
@@ -26,7 +26,7 @@ const BASICS := {
 		{"id": "move", "word": "MOVE", "keys": [["A", "move_left"], ["D", "move_right"]]},
 		{"id": "jump", "word": "JUMP", "keys": [["SPACE", "jump"]], "hold": 0.3},
 		{"id": "attack", "word": "ATTACK", "keys": [["LMB", "attack"]]},
-		{"id": "dash", "word": "DASH", "keys": [["RMB", "dash"]]},
+		{"id": "dash", "word": "DASH", "keys": [["SHIFT", "dash"]]},
 	],
 	"25d": [
 		{"id": "move", "word": "MOVE", "keys": [["W", "up"], ["A", "move_left"], ["S", "down"], ["D", "move_right"]]},
@@ -38,10 +38,15 @@ const BASICS := {
 ## Taught once, the first time `when` holds (see _ready_for()).
 const LATER := {
 	"2d": [
-		{"id": "ember", "word": "EMBER", "keys": [["Q", "ember"]], "hold": 0.8, "when": "near_lantern"},
+		{"id": "ember", "word": "EMBER", "keys": [["RMB", "ember"]], "hold": 0.8, "when": "near_light"},
+		{"id": "wall", "word": "WALL JUMP", "keys": [["SPACE", "jump"]], "when": "on_wall"},
+		# hold attack past player.gd's charge_time (0.6 s), let go: an ink wave flies out
+		{"id": "inkwave", "word": "INK WAVE", "keys": [["LMB", "attack"]], "hold": 0.7, "when": "near_flyer"},
+		# light or life (player.gd): pour a third of the Ember into half a bottle of ink
+		{"id": "heal", "word": "HEAL", "keys": [["F", "heal"]], "hold": 1.0, "when": "hurt_2d"},
 	],
 	"25d": [
-		{"id": "flash", "word": "FLASH", "keys": [["Q", "flash"]], "when": "near_monster"},
+		{"id": "ember25", "word": "EMBER", "keys": [["RMB", "flash"]], "hold": 0.8, "when": "near_monster"},
 		{"id": "heal", "word": "HEAL", "keys": [["F", "heal"]], "hold": 0.6, "when": "hurt"},
 	],
 }
@@ -55,10 +60,13 @@ const CLUSTER_CAP := 64.0  # ...when a move has several keys
 const TRAY_SCALE := 0.5
 
 var mode := "2d"
+var only := PackedStringArray()  # steps this level teaches (empty = all)
 var player: Node
 var story: Node  # story_ui.gd: the tutorial waits while it talks
 var host: Node
-## Height of the key on screen (0..1); higher in 2.5D to clear the player.
+## Height of the key on screen (0..1): high in 2.5D to clear the player; low
+## in 2D, under Vesper's feet (the 2D camera keeps him above the middle), so
+## it never covers the monsters, platforms or the Writer's captions above.
 var center_y := 0.3
 
 var _basics: Array = []  # basic steps not done yet
@@ -82,13 +90,16 @@ var _pad := false  # the last input came from a controller
 
 
 ## Adds the tutorial for `mode` over the game, unless it has all been seen.
-static func start(host_node: Node, the_player: Node, the_mode: String, story_ui: Node = null) -> void:
+## `only_steps`: the step ids this level teaches (empty = all of the mode's).
+static func start(host_node: Node, the_player: Node, the_mode: String, story_ui: Node = null,
+		only_steps := PackedStringArray()) -> void:
 	var profile := host_node.get_node_or_null("/root/Profile")
 	if profile == null:
 		return
 	var todo := false
 	for s in BASICS[the_mode] + LATER[the_mode]:
-		todo = todo or not profile.tutorial_seen(the_mode + "." + s.id)
+		if only_steps.is_empty() or only_steps.has(s.id):
+			todo = todo or not profile.tutorial_seen(the_mode + "." + s.id)
 	if not todo:
 		return
 	var layer := CanvasLayer.new()
@@ -99,7 +110,8 @@ static func start(host_node: Node, the_player: Node, the_mode: String, story_ui:
 	t.player = the_player
 	t.story = story_ui
 	t.host = host_node
-	t.center_y = 0.25 if the_mode == "25d" else 0.3
+	t.only = only_steps
+	t.center_y = 0.25 if the_mode == "25d" else 0.76
 	layer.add_child(t)
 	host_node.add_child.call_deferred(layer)
 
@@ -109,12 +121,14 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	process_mode = Node.PROCESS_MODE_ALWAYS  # to hide under pause menus (below)
 	for s in BASICS[mode]:
+		if not only.is_empty() and not only.has(s.id):
+			continue
 		if _seen(s):
 			_tray.append(s)
 		else:
 			_basics.append(s)
 	for s in LATER[mode]:
-		if not _seen(s):
+		if not _seen(s) and (only.is_empty() or only.has(s.id)):
 			_later.append(s)
 	_tray_alpha = 1.0 if not _basics.is_empty() and not _tray.is_empty() else 0.0
 	var scope := host.owner if host.owner else host  # the 2D player lives in a level scene
@@ -132,7 +146,7 @@ func _input(event: InputEvent) -> void:
 		_pad = false
 	if _current.is_empty() or _alpha < 0.5 or get_tree().paused:
 		return
-	var skip: bool = (event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_ESCAPE) \
+	var skip: bool = (event is InputEventKey and event.pressed and not event.echo and event.physical_keycode in [KEY_ENTER, KEY_KP_ENTER]) \
 		or (event is InputEventJoypadButton and event.pressed and event.button_index == JOY_BUTTON_BACK)
 	if skip:
 		get_viewport().set_input_as_handled()  # skip, don't pause / leave
@@ -220,12 +234,30 @@ func _show(s: Dictionary) -> void:
 
 func _ready_for(when: String) -> bool:
 	match when:
-		"near_lantern":
-			for l in get_tree().get_nodes_in_group("lantern"):
-				if l is Node2D and l.global_position.distance_to(player.global_position) < 320.0:
+		"near_light":  # the first pencil sketch or lantern: where the Ember is needed
+			for l in get_tree().get_nodes_in_group("lantern") + get_tree().get_nodes_in_group("sketch"):
+				if not l is Node2D:
+					continue
+				var half: float = l.size.x * 0.5 if "size" in l else 0.0
+				var d := absf(l.global_position.x - player.global_position.x) - half
+				if d < 320.0 and absf(l.global_position.y - player.global_position.y) < 400.0:
 					return true
+		"on_wall":
+			return "_wall_dir" in player and player._wall_dir != 0
 		"near_monster":
 			return _nearest_monster() < 6.0
+		"hurt_2d":  # lost some ink, could heal right now, and nothing is about to hit him
+			if not (player.has_method("can_heal") and player.can_heal()):
+				return false
+			for m in get_tree().get_nodes_in_group("enemy"):
+				if m is Node2D and not ("dead" in m and m.dead) and m.global_position.distance_to(player.global_position) < 420.0:
+					return false
+			return true
+		"near_flyer":  # a Scribble circling out of sword reach
+			for m in get_tree().get_nodes_in_group("enemy"):
+				if m is Node2D and m.scene_file_path.ends_with("scribble.tscn") and not ("dead" in m and m.dead) \
+						and m.global_position.distance_to(player.global_position) < 500.0:
+					return true
 		"hurt":
 			return player.health < player.max_health and player.fuel >= player.heal_cost \
 				and player.is_on_floor() and _nearest_monster() > 7.0
@@ -258,9 +290,6 @@ func _check_input(delta: float) -> void:
 
 
 func _down(action: String) -> bool:
-	# right click is Flash in 2.5D, not dash (clearing_player.gd)
-	if action == "dash" and mode == "25d" and Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT):
-		return false
 	return Input.is_action_pressed(action)
 
 
@@ -341,7 +370,7 @@ func _draw() -> void:
 	var sk := Vector2(size.x - 34, size.y - (100.0 if hint_up else 40.0))
 	_text(sk + Vector2(0, 8), "SKIP", 22, Color(PAPER, 0.9 * a), a, false, true)
 	var sw := FONT.get_string_size("SKIP", HORIZONTAL_ALIGNMENT_LEFT, -1, 22).x
-	var key := "BACK" if _pad else "ESC"
+	var key := "BACK" if _pad else "ENTER"
 	_cap(sk - Vector2(sw + 14 + _key_w(key, 30.0) * 0.5, 0), key, 30.0, 0.0, false, a)
 
 
@@ -365,7 +394,7 @@ func _tray_slot(s: Dictionary) -> Vector2:
 		if o == s:
 			break
 		x += w + gap
-	return Vector2(x + _keys_size(s, TRAY_SCALE).x * 0.5, size.y - 78.0)
+	return Vector2(x + _keys_size(s, TRAY_SCALE).x * 0.5, size.y - (78.0 if mode == "25d" else 44.0))
 
 
 ## What the caps of a step show: its keys, or its controller button.

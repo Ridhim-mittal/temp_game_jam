@@ -1,9 +1,10 @@
 extends CharacterBody3D
 ## Shared base for the clearing's monsters (crumple, crossed-out, smudge,
-## inkwell, eraser). Mirrors the platformer's enemy_base.gd in 3D: health,
+## inkwell, eraser, the Half-Drawn). Mirrors the platformer's enemy_base.gd in 3D: health,
 ## hits and knockback, stun, contact damage, death and respawn, and the
 ## "am I in light?" question (the clearing's braziers are the light).
-## The look comes from the platformer's own 2D monster via MonsterPuppet.
+## The look comes from the platformer's own 2D monster via MonsterPuppet,
+## or from a 3D model of the monster's own (setup_monster_model()).
 ##
 ## A monster script extends this, sets `art_scene` / `hp` / sizes, and
 ## overrides:
@@ -15,22 +16,28 @@ extends CharacterBody3D
 const Fx = preload("res://scripts/clearing/clearing_fx.gd")
 const Puppet = preload("res://scripts/clearing/monster_puppet.gd")
 const Light = preload("res://scripts/world25/light.gd")
+const Lumen = preload("res://scripts/world25/lumen.gd")
 const DANGER := Color(1.0, 0.86, 0.2)
 const PALE := Color(0.98, 0.96, 0.9)
 
 @export var hp := 3
-@export var contact_damage := 1
+@export var contact_damage := 2  # half ink bottles: one bottle
 @export var gravity := 30.0
 @export var knockback := 6.0
 @export var sight := 9.0
 ## Seconds before a defeated monster scribbles itself back (0 = never).
 @export var respawn_time := 8.0
-## Unused: the Gutter has no coins any more (lumen.gd is unhooked). Kept so
-## scenes and scripts that set it still load.
+## Coins it drops when beaten (lumen.gd: small, dark silver, into the shop's
+## purse), by how hard it is to beat: Scribbles and divers 1, Smudges 2,
+## Crumples / Inkwells / Crossed-Outs 3, Half-Drawn 4, the Red Pen 30, the
+## Eraser 45.
 @export var lumens := 2
 
 var health := 0
 var dead := false
+## The Writer's lamps (searchlight.gd, haunt_lamp.gd) don't burn it: the bosses (the
+## Red Pen, the Eraser) are his own.
+var light_immune := false
 ## Flying monsters ignore gravity (the dive-bomber Scribble).
 var flying := false
 var stun := 0.0
@@ -44,6 +51,21 @@ var _player: Node3D
 
 ## Called by the subclass in _ready().
 func setup_monster(art_scene: String, viewport_size := 256, feet_margin := 40, blend := false) -> void:
+	_setup_common()
+	puppet = Puppet.new()
+	add_child(puppet)
+	puppet.setup(art_scene, viewport_size, feet_margin, blend)
+
+
+## Like setup_monster(), for a monster with its own 3D model instead of the
+## platformer's 2D art (the Half-Drawn): `model`, already a child, takes the
+## puppet's place, so it needs `facing`, look_at_point() and flash().
+func setup_monster_model(model: Node3D) -> void:
+	_setup_common()
+	puppet = model
+
+
+func _setup_common() -> void:
 	add_to_group("enemy")
 	collision_layer = 4
 	collision_mask = 5
@@ -53,9 +75,6 @@ func setup_monster(art_scene: String, viewport_size := 256, feet_margin := 40, b
 		contact_damage += 1
 	health = hp
 	_home = global_position
-	puppet = Puppet.new()
-	add_child(puppet)
-	puppet.setup(art_scene, viewport_size, feet_margin, blend)
 	time = randf() * 10.0
 
 
@@ -126,9 +145,10 @@ func on_flash(_from: Vector3) -> void:
 
 ## Caught in the Writer's searchlight: crossed-out things are erased.
 func on_searchlight(damage: int) -> void:
-	if dead:
+	if dead or light_immune:
 		return
 	health -= damage
+	Sfx.play("boss_hit" if is_in_group("boss") else "ink_enemy_hit", -3.0)
 	puppet.flash()
 	pop("SIZZLE!", Color(1.0, 0.95, 0.7), 1.6, 22)
 	if health <= 0:
@@ -181,6 +201,12 @@ func pop(text: String, color := DANGER, height := 1.6, size := 30) -> void:
 
 # ------------------------------------------------------------------ damage
 
+## Stunned for at least `seconds` (the weapons' specials: clearing_player.gd).
+func stun_for(seconds: float) -> void:
+	if not dead:
+		stun = maxf(stun, seconds)
+
+
 ## Called by the player's attack. Returns false when the hit was blocked.
 func take_hit(damage: int, dir: Vector3, aerial := false) -> bool:
 	if dead:
@@ -201,10 +227,13 @@ func take_hit(damage: int, dir: Vector3, aerial := false) -> bool:
 
 func _die() -> void:
 	dead = true
+	Sfx.play("ink_splat")
 	remove_from_group("enemy")
 	collision_layer = 0
 	Fx.splat(get_tree(), global_position)
 	Fx.burst(get_tree(), global_position + Vector3(0, 0.6, 0), Color(0.08, 0.05, 0.12), 18, 4.5)
+	if global_position.y > _home.y - 4.0:
+		Lumen.spill(get_tree(), global_position, lumens)  # not when it fell into the void
 	var t := create_tween()
 	t.tween_property(puppet, "scale", Vector3(1.5, 0.1, 1.5), 0.1)
 	t.tween_callback(func(): puppet.visible = false)

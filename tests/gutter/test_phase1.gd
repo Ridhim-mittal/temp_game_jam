@@ -39,7 +39,7 @@ func cursor_test() -> void:
 	await frames(40)
 	var room := current_scene
 	check(Input.mouse_mode == Input.MOUSE_MODE_HIDDEN, "hub gameplay: cursor hidden (%s)" % mode_name())
-	for action in ["pause", "skills", "settings"]:
+	for action in ["pause", "shop", "settings"]:
 		room.open_overlay(action)
 		await frames(3)
 		check(Input.mouse_mode == Input.MOUSE_MODE_VISIBLE, "%s overlay: cursor visible (%s)" % [action, mode_name()])
@@ -51,12 +51,12 @@ func cursor_test() -> void:
 			ov.queue_free()
 		await frames(3)
 		check(Input.mouse_mode == Input.MOUSE_MODE_HIDDEN, "%s closed: cursor hidden again (%s)" % [action, mode_name()])
-	# pause -> skill tree straight from the pause menu
+	# pause -> shop straight from the pause menu
 	room.open_overlay("pause")
 	await frames(2)
-	room._on_pause_choice("skills")
+	room._on_pause_choice("shop")
 	await frames(3)
-	check(Input.mouse_mode == Input.MOUSE_MODE_VISIBLE, "pause -> skills: cursor visible (%s)" % mode_name())
+	check(Input.mouse_mode == Input.MOUSE_MODE_VISIBLE, "pause -> shop: cursor visible (%s)" % mode_name())
 	var ov2 = room._overlay
 	room._on_overlay_closed()
 	ov2.queue_free()

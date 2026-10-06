@@ -49,7 +49,7 @@ enum Ground { GRASS, WATER_STONE, CRACKED, DIRT }
 @export var motes := Color(1, 0.88, 0.55)
 
 @export_group("Mood")
-## Music track for the Music autoload ("lit", "margins", "boss", "ending").
+## Music track for the Music autoload (music.gd TRACKS: "repose", "silk", "margins", ...).
 @export var music := "margins"
 ## Comic overlay vignette strength (halftone dots in the corners).
 @export var vignette := 0.35

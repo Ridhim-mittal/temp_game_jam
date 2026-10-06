@@ -19,9 +19,9 @@ const INK := Color(0.05, 0.03, 0.1)
 const PALE := Color(0.98, 0.96, 0.9)
 const DANGER := Color(1.0, 0.86, 0.2)
 
-## HP taken from the player on contact. 0 = this monster's default
+## Half ink bottles taken from the player on contact. 0 = this monster's default
 ## (damage_default(), overridden per monster).
-@export var contact_damage := 0.0
+@export var contact_damage := 0.0  # half ink bottles (0 = damage_default())
 @export var gravity := 2000.0
 @export var knockback_speed := 260.0
 
@@ -43,7 +43,7 @@ func get_damage() -> float:
 
 ## Per-monster default damage (HP). Override in the monster script.
 func damage_default() -> float:
-	return 15.0
+	return 1.0  # half a bottle
 
 
 func setup(size: Vector2, hp: int) -> void:
@@ -165,12 +165,19 @@ func pop(text: String, color := DANGER, offset := Vector2(0, -50), size := 26) -
 
 # ------------------------------------------------------------------ damage
 
+## Stunned for at least `seconds` (the weapons' specials: player.gd).
+func stun_for(seconds: float) -> void:
+	if not dead:
+		stun = maxf(stun, seconds)
+
+
 func take_hit(damage: int, hit_dir: Vector2, from_pos: Vector2) -> void:
 	if dead:
 		return
 	if _blocks(hit_dir, from_pos):
 		return
 	health -= damage
+	Sfx.play("boss_hit" if is_in_group("boss") else "ink_enemy_hit", -3.0)
 	art.modulate = Color(4, 4, 4)
 	create_tween().tween_property(art, "modulate", Color.WHITE, 0.15)
 	var kx := signf(global_position.x - from_pos.x)
@@ -186,6 +193,7 @@ func take_hit(damage: int, hit_dir: Vector2, from_pos: Vector2) -> void:
 
 func _die(kx: float) -> void:
 	dead = true
+	Sfx.play("ink_splat")
 	set_harmful(false)
 	set_deferred("collision_layer", 0)
 	var t := create_tween().set_parallel()
