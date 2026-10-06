@@ -29,7 +29,7 @@ func _ready() -> void:
 	hp = 3
 	sight = 10.0
 	knockback = 4.0
-	setup_monster("res://scenes/enemies/crossed_out.tscn", 320, 40)  # room for the X and the hat
+	setup_monster("res://scenes/enemies/crossed_out.tscn", 256, 40)
 
 
 func _tick(delta: float) -> void:
