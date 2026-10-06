@@ -247,8 +247,8 @@ Shade's black speech balloon):
 2. `WAVES`: the hand `draw_monster()`s one at a time (the nib traces the outline in ink, the sketch flares
    with light, `drawn` fires and the monster pops out: `materialize()`): paper spiders, ink bats, diving
    pens (`pen_diver.gd`: the Red Pen's art, hovers, shakes to aim, dives nib-first and sticks in the street),
-   erasers (hp 6) and one weakened Ink Blot (`blot_hp` 10). Five short waves, never more than 3 monsters a
-   wave (3 spiders, 6 bats, 2 pens, 1 eraser, 1 Blot in all). Only the Blot keeps a boss bar. Kills drop half a bottle at `drop_chance`; a cleared wave always drops a bottle.
+   erasers (hp 6) and weakened Ink Blots (`blot_hp` 10). Six short waves, never more than 3 monsters a
+   wave, each Blot alone (3 spiders, 4 bats, 2 pens, 1 eraser, 2 Blots in all). Only the Blot keeps a boss bar. Kills drop half a bottle at `drop_chance`; a cleared wave always drops a bottle.
    No drop (kills, waves, an Ink Blot's big heart) is made while Vesper's ink is full (health_heart.gd
    `player_full()`), and a seeking heart that reaches him full fades away instead of sitting on him.
 3. The light: a pillar of light falls on the street, Vesper is healed to full, the hand plunges into it and
