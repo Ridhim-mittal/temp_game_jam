@@ -177,6 +177,7 @@ func take_hit(damage: int, hit_dir: Vector2, from_pos: Vector2) -> void:
 	if _blocks(hit_dir, from_pos):
 		return
 	health -= damage
+	Sfx.play("boss_hit" if is_in_group("boss") else "ink_enemy_hit", -3.0)
 	art.modulate = Color(4, 4, 4)
 	create_tween().tween_property(art, "modulate", Color.WHITE, 0.15)
 	var kx := signf(global_position.x - from_pos.x)
@@ -192,6 +193,7 @@ func take_hit(damage: int, hit_dir: Vector2, from_pos: Vector2) -> void:
 
 func _die(kx: float) -> void:
 	dead = true
+	Sfx.play("ink_splat")
 	set_harmful(false)
 	set_deferred("collision_layer", 0)
 	var t := create_tween().set_parallel()

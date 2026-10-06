@@ -104,6 +104,9 @@ func open(animate := true) -> void:
 	if is_open or entry_only:
 		return
 	is_open = true
+	if animate:
+		if has_node("/root/Sfx"):
+			get_node("/root/Sfx").play("gate_unlock")
 	if _wall_shape:
 		_wall_shape.set_deferred("disabled", true)
 	if not animate or not is_inside_tree():

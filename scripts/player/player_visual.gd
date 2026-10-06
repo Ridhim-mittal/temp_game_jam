@@ -20,6 +20,8 @@ const DUST := Color(0.97, 0.94, 0.86)
 ## Torn comic-page lining that shows along the coat hem.
 @export var page_color := Color(0.92, 0.89, 0.8)
 @export var pencil_color := Color(0.96, 0.76, 0.2)
+## Eye colour (Shade's double has burning red eyes, shade_double.gd).
+@export var eye_color := INK
 ## Run-cycle radians per pixel travelled (bigger = shorter, quicker steps).
 @export var stride := 0.07
 
@@ -34,6 +36,8 @@ var charge := 0.0  # 0..1 charged-attack build-up
 var charge_ready := false
 var crouch := 0.0       # 0..1 crouch-jump coil depth
 var crouching := false  # crouch held (even before the coil counts)
+var land := 0.0  # hard-landing kneel left, 1 at impact .. 0 standing (player.gd)
+var wall := 0.0  # 1 while sliding down a wall (the wall is behind him, at -x)
 
 var _phase := 0.0
 var _time := 0.0
@@ -45,11 +49,14 @@ var _goo := 0.0  # 1 while in goo, fades after leaving (drips off)
 var shoulder := Vector2(2, -33)  # sword arm pivot, read by sword.gd
 var _coil_draw := 0.0
 var _upper := Transform2D()  # hips + lean, for the upper-body parts
+var _kneel := 0.0
+var _wall := 0.0  # eased `wall`
 
 
 func _process(delta: float) -> void:
 	_time += delta
 	_goo = 1.0 if stuck else maxf(_goo - delta * 1.2, 0.0)
+	_wall = move_toward(_wall, wall, delta * 10.0)
 	var speed := clampf(absf(velocity.x) / max_speed, 0.0, 1.0)
 	_run = move_toward(_run, speed if on_floor and not dashing else 0.0, delta * 8.0)
 	if on_floor and not dashing:
@@ -93,6 +100,17 @@ func _draw() -> void:
 		lean += 0.14 * coil
 		if crouch >= 1.0:
 			hips.x += sin(_time * 70.0) * 1.0
+	# hard landing (Hollow Knight): drop to one knee, hand down, head bowed;
+	# held for the first half, then she rises
+	_kneel = smoothstep(0.0, 0.5, land)
+	if _kneel > 0.0:
+		hips.y += 17.0 * _kneel
+		lean += 0.2 * _kneel
+		_coil_draw = maxf(_coil_draw, _kneel)
+	# wall slide (Hollow Knight): back pressed to the wall, leaning on it
+	if _wall > 0.0:
+		hips.x -= 3.0 * _wall
+		lean -= 0.14 * _wall
 
 	# legs behind the cloak (far leg first, slightly lighter)
 	for k in [1, 0]:
@@ -100,6 +118,20 @@ func _draw() -> void:
 		var knee := (hips + foot) * 0.5 + Vector2(3.5 + 6.0 * _coil_draw, -1.0 - 3.0 * _coil_draw)
 		var col := INK.lightened(0.12) if k == 1 else INK
 		var hip := hips + Vector2(-2.5 + k * 5.0, 0)
+		if _kneel > 0.0:
+			if k == 1:  # back knee on the ground, boot tucked behind
+				knee = knee.lerp(Vector2(hip.x - 3.0, -3.0), _kneel)
+				foot = foot.lerp(Vector2(-15.0, -1.0), _kneel)
+			else:  # front foot planted forward
+				foot = foot.lerp(Vector2(9.0, 0.0), _kneel)
+				knee = knee.lerp(Vector2(10.0, -12.0), _kneel)
+		if _wall > 0.0:
+			if k == 1:  # back boot braced flat on the wall
+				foot = foot.lerp(Vector2(-12.0, -5.0), _wall)
+				knee = knee.lerp(Vector2(-3.0, -11.0), _wall)
+			else:  # front leg hangs bent
+				foot = foot.lerp(Vector2(4.0, 9.0), _wall)
+				knee = knee.lerp(Vector2(7.0, -1.0), _wall)
 		draw_polyline(PackedVector2Array([hip, knee, foot]), col, 5.0)
 		draw_circle(knee, 2.5, col)
 		draw_set_transform(foot + Vector2(1.5, 0))
@@ -119,6 +151,20 @@ func _draw() -> void:
 	_draw_cloak(fall)
 	_draw_head()
 	draw_set_transform(Vector2.ZERO)
+	if _wall > 0.3:  # hand dragging along the wall behind him
+		var w := clampf((_wall - 0.3) / 0.4, 0.0, 1.0)
+		var grip := Vector2(-13.0, -27.0)
+		var bend := (shoulder + grip) * 0.5 + Vector2(-2.0, 5.0)
+		draw_polyline(PackedVector2Array([shoulder, bend.lerp(shoulder, 1.0 - w), grip.lerp(shoulder, 1.0 - w)]),
+			INK, 4.5)
+		draw_circle(grip.lerp(shoulder, 1.0 - w), 3.5, INK)
+	if _kneel > 0.3:  # hand braced on the floor
+		var a := clampf((_kneel - 0.3) / 0.3, 0.0, 1.0)
+		var hand := Vector2(17.0, -3.0)
+		var elbow := (shoulder + hand) * 0.5 + Vector2(5.0, 1.0)
+		draw_polyline(PackedVector2Array([shoulder.lerp(hand, 1.0 - a), elbow.lerp(hand, 1.0 - a), hand]),
+			INK, 4.5)
+		draw_circle(hand, 3.5, INK)
 
 	if dashing:
 		for i in 3:
@@ -192,15 +238,16 @@ func _draw_pencil() -> void:
 
 func _draw_cloak(fall: float) -> void:
 	var trail := 7.0 * _run + (8.0 if dashing else 0.0)
-	var flutter := sin(_time * 16.0) * 1.6 * maxf(_run, absf(fall))
-	var lift := -6.0 * maxf(fall, 0.0)  # hem billows up while falling
+	var flutter := sin(_time * 16.0) * 1.6 * maxf(maxf(_run, absf(fall)), _wall)
+	var lift := -6.0 * maxf(fall, 0.0) - 5.0 * _wall  # hem billows up while falling / sliding
+	var flare := 1.0 + 0.55 * _kneel  # a hard landing spreads the hem over the floor
 	# hem points, front to back
 	var hem := PackedVector2Array([
-		Vector2(14, lift * 0.4),
-		Vector2(6, lift * 0.5),
-		Vector2(0, lift * 0.7 + flutter * 0.5),
-		Vector2(-7, lift + flutter),
-		Vector2(-15 - trail, -trail * 0.3 + lift + flutter),
+		Vector2(14 * flare, lift * 0.4 + 3.0 * _kneel),
+		Vector2(6 * flare, lift * 0.5 + 4.0 * _kneel),
+		Vector2(0, lift * 0.7 + flutter * 0.5 + 4.0 * _kneel),
+		Vector2(-7 * flare, lift + flutter + 4.0 * _kneel),
+		Vector2((-15 - trail) * flare, -trail * 0.3 + lift + flutter + 3.0 * _kneel),
 	])
 	# torn-page lining: a zigzag strip hanging below the hem
 	var page := PackedVector2Array()
@@ -243,7 +290,7 @@ func _draw_head() -> void:
 	var open := 1.0 if _blink <= 0.0 else 0.15
 	for ex in [1.5, 8.0]:
 		draw_set_transform_matrix(_upper * Transform2D(0.0, Vector2(1.0, open), 0.0, Vector2(ex, -33)))
-		draw_colored_polygon(_ellipse(1.8, 3.8), INK)
+		draw_colored_polygon(_ellipse(1.8, 3.8), eye_color)
 	draw_set_transform_matrix(_upper)
 	# wide-brimmed hat with a coloured band; the brim tips with speed
 	var tip := clampf(velocity.x * facing / max_speed, -1.0, 1.0) * -0.06

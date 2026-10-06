@@ -23,7 +23,11 @@ var _flash := {}  # skill id -> 1..0 burst after learning
 var _hits := {}  # skill id -> Rect2 for the mouse
 
 
+var _sfx_sel := Vector2i.ZERO
+
+
 func _ready() -> void:
+	Sfx.play("menu_open")
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
@@ -31,6 +35,9 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_time += delta
+	if Vector2i(_col, _tier) != _sfx_sel:
+		_sfx_sel = Vector2i(_col, _tier)
+		Sfx.play("menu_hover")
 	for k in _flash.keys():
 		_flash[k] -= delta * 2.0
 		if _flash[k] <= 0.0:
@@ -73,6 +80,7 @@ func _gui_input(event: InputEvent) -> void:
 
 
 func _close() -> void:
+	Sfx.play("menu_close")
 	closed.emit()
 	queue_free()
 
@@ -97,6 +105,7 @@ func _selected() -> String:
 
 
 func _learn(id: String) -> void:
+	Sfx.play("menu_select")
 	var profile := get_node_or_null("/root/Profile")
 	if profile and profile.unlock_skill(id):
 		_flash[id] = 1.0

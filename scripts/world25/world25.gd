@@ -152,6 +152,7 @@ func once(key: String) -> bool:
 ## wipe, or with `through_gutter` the trip down the gutter between the
 ## comic's columns (gutter_transition.gd): the way the gates go on.
 func go(scene_path: String, gate_id: String, through_gutter := false) -> void:
+	Sfx.play("teleport", -3.0)
 	if transitioning or scene_path == "":
 		return
 	transitioning = true

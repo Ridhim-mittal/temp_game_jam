@@ -145,6 +145,7 @@ func on_searchlight(damage: int) -> void:
 	if dead:
 		return
 	health -= damage
+	Sfx.play("boss_hit" if is_in_group("boss") else "ink_enemy_hit", -3.0)
 	puppet.flash()
 	pop("SIZZLE!", Color(1.0, 0.95, 0.7), 1.6, 22)
 	if health <= 0:
@@ -223,6 +224,7 @@ func take_hit(damage: int, dir: Vector3, aerial := false) -> bool:
 
 func _die() -> void:
 	dead = true
+	Sfx.play("ink_splat")
 	remove_from_group("enemy")
 	collision_layer = 0
 	Fx.splat(get_tree(), global_position)
