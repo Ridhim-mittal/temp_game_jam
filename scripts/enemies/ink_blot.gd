@@ -43,13 +43,6 @@ var _swing := 0.0  # claw swipe
 var _melt := 0.0
 var _eye_open := 0.0
 var _enraged := false
-## Taking turns (cave_arena.gd, two Blots): while waiting it backs off to
-## `wait_distance`, glows dim, doesn't attack and its touch doesn't hurt.
-var waiting := false
-var wait_distance := 360.0
-## Attacks started since the last turn change (cave_arena.gd counts them).
-var attacks_done := 0
-var _dim := 0.0
 var _slams_left := 0
 
 
@@ -127,13 +120,8 @@ func _tick(delta: float) -> void:
 			face_player()
 			var dist := absf(d.x)
 			var want := facing * walk_speed if dist > 110.0 else 0.0
-			if waiting:
-				# its turn is over: hang back and watch, swaying
-				want = -facing * walk_speed * 0.8 if dist < wait_distance - 40.0 else 0.0
-				if dist > wait_distance + 120.0:
-					want = facing * walk_speed * 0.6
 			velocity.x = move_toward(velocity.x, want, 500.0 * delta)
-			if _player and _cooldown <= 0.0 and is_on_floor() and not waiting:
+			if _player and _cooldown <= 0.0 and is_on_floor():
 				if dist < 160.0:
 					state = State.SWIPE_UP
 					_timer = 0.5
@@ -148,7 +136,6 @@ func _tick(delta: float) -> void:
 					_cooldown = 0.8  # keep closing in, think again soon
 				if state != State.WALK:
 					velocity.x = 0.0
-					attacks_done += 1
 		State.SWIPE_UP:
 			_swing = minf(_swing + delta / 0.5, 1.0) * 0.6
 			if _timer <= 0.0:
@@ -193,21 +180,7 @@ func _tick(delta: float) -> void:
 		State.MELT:
 			velocity.x = 0.0
 			_melt = minf(_melt + delta / 1.4, 1.0)
-	# waiting dims it and makes its touch harmless; its turn brings both back
-	if waiting or _dim > 0.0:
-		_dim = move_toward(_dim, 1.0 if waiting else 0.0, delta * 3.0)
-		modulate = Color.WHITE.lerp(Color(0.5, 0.48, 0.62), _dim)
-	if not dead and state != State.SLEEP and state != State.WAKE and state != State.MELT:
-		set_harmful(not waiting)
 	move_and_slide()
-
-
-## Its turn in the two-Blot fight (cave_arena.gd).
-func take_turn() -> void:
-	waiting = false
-	attacks_done = 0
-	_cooldown = minf(_cooldown, 0.4)
-	pop("MY TURN!", Color(1.0, 0.85, 0.3), Vector2(0, -170), 28)
 
 
 func _rest(t: float) -> void:

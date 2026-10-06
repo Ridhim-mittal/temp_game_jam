@@ -207,7 +207,7 @@ come from the painting's bright, saturated colours), plus embers, ink drips off 
 Rock: `cave_rock.gd` (`ground` = floor, `one_way` ledges, fire-lit pink lip). Flow: Vesper falls in ->
 ink bats under the overhangs (`ink_bat.gd`: roost, wake together, orbit, flare wings (tell) and swoop 1 (half a bottle),
 pull up at his feet, 2 hp, light scatters them; fly through rock) -> 3 paper spiders -> checkpoint + heart
--> the pit (`cave_arena.gd`): walls rise, two Ink Blots (hp 12 each) wake; each drops its big heart, and when both melt the
+-> the pit (`cave_arena.gd`): walls rise, two Ink Blots (hp 9 each, swipe half a bottle, slam one) wake together; each drops its big heart, and when both melt the
 cave collapses (shake, cracks, falling rocks, white flash, "THE CAVE GIVES WAY..."); `next_scene` = the
 finale below (with none: SHADE AWAITS / TO BE CONTINUED and the main menu).
 
