@@ -92,7 +92,32 @@ It also replays every tutorial challenge on the main path (spike pits are CUTS 2
 rock, so the level's size is unchanged): a spike strip in hall 1, a 450 px dash pit in hall 2
 (needs a double jump plus a dash), and in the bottom room the Sketchbook's Blue Gap and its
 lantern bridge with a sign shadowing the far end. Checkpoints sit only on the path (hall 2 landing,
-gallery, tower floor, cavern, bottom x2); the nook and the side rooms have none.
+gallery, tower floor, cavern, bottom x3, the last just before the boss); the nook and the side rooms have none.
+It ends in the boss arena (room "arena", east of the bottom room): THE SCRIBBLED BEAST
+(`scripts/enemies/scribbled_beast.gd`, run by `scripts/world/beast_arena.gd` on the arena floor at the
+tear it climbs out of). A hulking two-headed scribble (heads with staring white eyes and toothed maws,
+a third eye in its chest, long clawed arms, spindly legs), all frantic pen + pencil strokes redrawn at
+12 fps (InkBatch, one draw call), pale rim from the enemy outline; it carries a SHIELD torn out of the
+gutter (black, the white panel lines down both edges, crossed out) that always faces what it fears
+most: a lit arena lantern, else the raised Ember, else Vesper; hits from that side are blocked
+(`guard_arc`), so light a lantern (`ArenaLanternW/E`, the only lanterns it watches: `arena_lanterns`)
+and hit its open side, or dash through it. Lantern lit for `snuff_delay` -> it lobs an ink glob
+(`beast_glob.gd`, slash it to keep the light). CLAW up close, RUSH across the arena (jump it: it hits
+the wall and is DAZED, shield down), STAGGER every `stagger_every` damage; phase two (half hp): faster,
+red eyes, LEAP slams with floor shockwaves (`beast_shockwave.gd`) and Scribbles dragged up out of the
+tear (group "beast_spawn"). Dying: light breaks out through its cracking shield, it unravels into
+strokes and paper, `defeated`. The arena: intro once a run (~15 s, Enter skips; letterbox, the floor
+rumbles, the tear rips open onto the gutter's dark, the shield comes up first deflecting the lanterns'
+light, claws on the lip, it hauls itself out snuffing both lanterns, three eyes open, ROAR, title card
+"THE SCRIBBLED BEAST", the Writer: "That wasn't supposed to get out." / "...Fine. You were never meant
+to leave this page anyway, Vesper."); after a death a ~3 s short intro (GameState.seen "beast_intro");
+a wall of scribble seals the way back; boss bar; a one-time "LIGHT IT!" tag after 4 blocked hits.
+Ending: the camera frames its death, the Writer furious (red shaking caption, red pulse, pen scratches
+across the panel: "No. No, no, no." / "That is NOT how this page ends."), then the way on opens over
+the tear (level_exit.gd, for now to the main menu: the Eraser chase goes here next). The 2D player's
+`cutscene` flag takes the controls (no input, no damage, the Ember can't rise). Shared:
+`scripts/effects/ink_bits.gd` (paper + ink-splat particles) and `scripts/effects/sfx_synth.gd`
+(synthesised roar, rumble, rip, clang, scritch, splut, thud, screech, whoosh, shatter).
 Drawing cost: in gl_compatibility every draw_colored_polygon / polyline / arc / circle is its own
 draw call, so the depth scenery, trims, ledges, overlay and lanterns draw through
 `scripts/depth/ink_batch.gd` (same draw_* method names, `flush(self)` at the end of `_draw()` =
@@ -272,8 +297,8 @@ those stay at their defaults, settings.gd FIXED).
 ## Checking work
 - Script errors: `godot --headless --path . --quit-after 60 res://<scene>.tscn`
 - Gutter checks (need a display, e.g. `xvfb-run`): `godot --path . --rendering-driver opengl3 -s
-  res://tests/gutter/test_phase1.gd` (also test_phase2, test_phase5, test_levels, test_shop); exit code =
-  failures. test_shop puts the player's Profile back when it's done.
+  res://tests/gutter/test_phase1.gd` (also test_phase2, test_phase5, test_levels, test_shop, and
+  test_beast for the 2D Scribbled Beast fight); exit code = failures. test_shop puts the player's Profile back when it's done.
 - Screenshots: from a script in a temporary scene, call `RenderingServer.force_draw(false)` then
   `get_viewport().get_texture().get_image().save_png(...)`. `--write-movie` stops drawing after a few
   frames when the screen is locked, and hit-stop freezes look far too long in it.

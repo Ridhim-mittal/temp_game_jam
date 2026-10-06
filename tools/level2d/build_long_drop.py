@@ -19,7 +19,7 @@ import os
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 U = 5          # px per map unit
 G = 50         # grid cell, px
-W, H = 1050, 1780   # level bounds in map units (rock fills what is not a room)
+W, H = 1400, 1780   # level bounds in map units (rock fills what is not a room)
 Y0 = 40             # first map row that matters
 
 # zone borders (map y) and their themes: 1 archive, 2 works, 0 cavern
@@ -34,6 +34,7 @@ ROOMS = {
     "side_b": (120, 1060, 260, 110), "door_b": (380, 1120, 50, 50), "shaft3": (760, 1170, 90, 100),
     "cavern": (80, 1270, 780, 150),                       # light puzzle 2: the Pendulum, over the sump
     "sump": (420, 1420, 300, 90), "pit": (100, 1420, 110, 150), "bottom": (100, 1570, 840, 150),
+    "arena": (940, 1520, 440, 200),                       # the Scribbled Beast (boss)
 }
 # solid rock put back inside rooms (applied after ROOMS), then air cut through it again
 SOLIDS = {
@@ -87,6 +88,8 @@ res("Script", "res://scripts/depth/depth_backdrop.gd", "50_backdrop")
 res("Script", "res://scripts/depth/rock_block.gd", "51_rock")
 res("Script", "res://scripts/depth/depth_trim.gd", "52_trim")
 res("Script", "res://scripts/depth/depth_ledge.gd", "53_ledge")
+res("Script", "res://scripts/enemies/scribbled_beast.gd", "60_beast")
+res("Script", "res://scripts/world/beast_arena.gd", "61_arena")
 
 
 def v(x, y):
@@ -422,8 +425,23 @@ node("Sign", "StaticBody2D", "World", [("position", v(ll0 + 346, of - 149)), ("s
 enemy("crawler", lr0 + 300, of - 20)
 lamp(ol + 1400, ot, 320, 260)
 coin_row(lr0 + 200, lr0 + 400, of - 40, 4)
-node("Exit", "Area2D", "World", [("position", v(ol + 3750, of)), ("script", 'ExtResource("17_exit")'),
-     ("target_scene", '"res://scenes/ui/main_menu.tscn"'), ("label", '"THE END OF THE DROP"')])
+checkpoint(ol + 3950, of)                           # before the boss
+heart(ol + 3700, of - 60)
+
+# THE SCRIBBLED BEAST (scribbled_beast.gd, run by beast_arena.gd): it climbs out of a tear in
+# the floor (the gutter) holding a shield torn out of the gutter itself. Two lanterns on posts:
+# it snuffs them as it rises; light one and its shield swings round to the light. The way on
+# (level_exit.gd) opens over the tear after the fight. It watches only these two lanterns.
+al, at, ar, af = px("arena")
+gap = (al + ar) / 2
+lantern(gap - 560, af - 150, 280, chain=0, post=150, lit=True, name="ArenaLanternW")
+lantern(gap + 560, af - 150, 280, chain=0, post=150, lit=True, name="ArenaLanternE")
+node("ScribbledBeast", "CharacterBody2D", "Enemies", [("position", v(gap, af + 600)), ("script", 'ExtResource("60_beast")')])
+node("BeastArena", "Node2D", "World", [("position", v(gap, af)), ("script", 'ExtResource("61_arena")'),
+     ("beast_path", 'NodePath("../../Enemies/ScribbledBeast")'),
+     ("lantern_paths", 'Array[NodePath]([NodePath("../ArenaLanternW"), NodePath("../ArenaLanternE")])'),
+     ("trigger_x", f"{al + 340:g}"), ("barrier_x", f"{al + 30:g}"), ("room_height", f"{af - at:g}"),
+     ("exit_x", f"{gap:g}")])
 
 
 # ------------------------------------------------------------------ write

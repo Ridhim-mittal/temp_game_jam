@@ -153,6 +153,9 @@ const HAZARD_DAMAGE := 2.0  # one ink bottle
 @export var hurt_stun_time := 0.22
 
 var facing := 1
+## True while a cutscene has the controls (beast_arena.gd): no input, no damage,
+## Vesper just comes to a stop and stands.
+var cutscene := false
 var health := 0.0
 var coins := 0
 var can_dash := true
@@ -248,6 +251,14 @@ func _physics_process(delta: float) -> void:
 		return
 
 	_tick_timers(delta)
+	if cutscene:
+		_cancel_charge_for_cutscene()
+		velocity.x = move_toward(velocity.x, 0.0, ground_decel * delta)
+		_apply_gravity(delta)
+		move_and_slide()
+		_was_on_floor = is_on_floor()
+		_update_visuals(delta)
+		return
 	var input_x := Input.get_axis("move_left", "move_right")
 	if Input.is_action_just_pressed("jump"):
 		if is_on_floor() and absf(input_x) < 0.2 and _hurt_timer <= 0.0 and _dash_timer <= 0.0:
@@ -566,6 +577,19 @@ func _start_dash(input_x: float) -> void:
 	_cancel_charge()
 	_crouch = -1.0
 	_squash = Vector2(1.3, 0.75)
+
+
+## A cutscene takes the controls: drop a held charge, dash or heal.
+func _cancel_charge_for_cutscene() -> void:
+	_charge = -1.0
+	_charge_ready = false
+	_heal_t = -1.0
+	_dash_timer = 0.0
+	_attack_timer = 0.0
+	_attack_buffer_timer = 0.0
+	_jump_buffer_timer = 0.0
+	_stop_drill()
+	_stop_whirl()
 
 
 func _post_move(delta: float) -> void:
