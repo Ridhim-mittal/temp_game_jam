@@ -46,8 +46,31 @@ paintings of Shade's City and the Ink Cave (`assets/backgrounds/shades_city.webp
   chars the planks, edges glowing, until they crumble (`_shield`). Strokes boil at 12 fps, one InkBatch.
 
 ## 2D story start (main menu PLAY)
-`cs_book` (scripts/cutscenes/cs_book.gd: ~20 s animated opening, a comic book on a desk opens,
-page one says "I JUST HAD THE CRAZIEST ADVENTURE...", the page turns and the camera dives into the
+`cs_book` (scripts/cutscenes/cs_book.gd: ~28 s animated opening. It sounds like grief and anger: the
+"margins" track (the game's tune, minor and slow: the menu's) plays all through it, the City's own
+LevelMusic bringing "city" in when the level loads; under it rain on the window, the lamp's hum and a
+pen scratching that stops (`_update_room()`), thunder after each lightning flash (`_lightning()`), and
+while the Writer changes the book a growl, a heartbeat that hardens and a bell tolled for the dead
+(`_cues()`). The Writer's desk, a comic book on it, and things that say what he has lost: a big framed
+photo of two brothers (one in Vesper's hat and red scarf, "brothers." under it, a black ribbon over the
+corner: the ending's answer, never explained here), a candle burning by it, the brother's red scarf, the
+ending he tore in two ("AND VESPER CAME HOME.", a red NO across it), drafts crushed into balls, a
+snapped pencil, a pile of earlier issues, a pocket watch, the window's cold light with rain running
+down it. The Writer's hand (shade_hand.gd as a puppet, `drips`
+and `aura` off; he is not named, that stays for the Long Drop) taps the cover, lifts its corner and
+the light throws it back; page one says "I JUST HAD THE CRAZIEST ADVENTURE..." (Vesper); the hand
+comes back with its pen (`_build_jobs()`: timed ink strokes on a page; the nib follows the line and
+hops, lifted, between strokes, the wrist trailing so the hand turns about its pen, its shadow parting
+from it as it lifts: `_update_writer()`, `_pen_state()`; strokes are pressed thin-thick-thin (`NIB`)
+and shine wet behind the nib), reads along the caption, blots out CRAZIEST and writes LAST over it,
+then sketches the Scribbled Beast on the inside of the cover (its lines boil at 12 fps once its red
+eyes are in) and writes THE END beside it, stabbing the full stop in; ink flung off the pen when the
+light throws it back, and out of the book as its cover bursts open, stays on the desk (`_splats`).
+Page one's four panels have a far layer each (sliding towers, pencilled pillars real in the Ember's
+light and a gleam along the spikes, Scribble eyes in the Gutter's dark that shut at the lamp, a
+pencilled city being rubbed out) and the Eraser breaks out over its border (`_paint_breakout()`);
+page two's lower panels are pencil roughs of the Sketchbook, the Long Drop and the Beast. It flicks
+the page over, the camera holds a beat on the pencil city (its stick Vesper blinks) and dives into the
 first panel, which becomes the live City; all drawn in code, sounds synthesised; Esc/Enter skips;
 the old click-through cs_opening is unused) → THE CITY (`scenes/levels/test_level.tscn`, a ~1 min controls tutorial) → glowing
 `panel_door.gd` ("MOVE TO THE NEXT PANEL") → THE SKETCHBOOK (`sketchbook.tscn`, light tutorial) →

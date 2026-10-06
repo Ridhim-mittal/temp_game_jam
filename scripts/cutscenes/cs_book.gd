@@ -1,12 +1,34 @@
 extends Control
-## The opening, fully animated (about 20 s): a comic book lying on a desk at
-## night under a warm lamp. The cover swings open (light and sparks pour out),
-## the camera comes down onto the first page, where the Writer's caption types
-## "I JUST HAD THE CRAZIEST ADVENTURE..." while four little panels ink
-## themselves in (the City, the light, the Gutter in 2.5D, the Eraser), then
-## "BUT NOW... LET'S BEGIN." The page turns and the camera dives into the
-## first panel of the story, which becomes the live City level (scaled into
-## the panel the same way as panel_turn.gd), until it is the game's own panel.
+## The opening, fully animated (about 28 s): a comic book lying on a desk at
+## night under a warm lamp, a framed photo of two brothers behind it (one in
+## Vesper's hat and red scarf, a black ribbon over the corner). The Writer's
+## hand (shade_hand.gd as a puppet, never named here) reaches in and lifts the
+## cover; light and sparks pour out, throwing it back, and the cover swings
+## open. The camera comes down onto the first page, where Vesper's caption
+## types "I JUST HAD THE CRAZIEST ADVENTURE..." while four little panels ink
+## themselves in (the City, the light, the Gutter in 2.5D, the Eraser). Then
+## the hand comes back with its pen: it reads along the caption, blots out
+## CRAZIEST and writes LAST over it, and on the inside of the cover sketches
+## what it has in store: the Scribbled Beast (once it has its red eyes its
+## lines boil, alive) and THE END beside it, the full stop stabbed in. Vesper's
+## "BUT NOW... LET'S BEGIN." types; the hand flicks the page over and the
+## camera dives into the first panel of the story, which becomes the live City
+## level (scaled into the panel the same way as panel_turn.gd), until it is
+## the game's own panel.
+##
+## It sounds like grief and anger: the game's tune slow and minor (the
+## "margins" track) under rain on the window, the lamp's hum and a pen
+## scratching that stops; thunder; and while he changes the book a growl, a
+## heartbeat that hardens and a bell tolled for the dead. Vesper's own music
+## only comes when the City does. The desk is the Writer's: the photo and a
+## candle burning by it, his brother's red scarf, the ending he tore in two
+## ("AND VESPER CAME HOME."), drafts in balls, a snapped pencil, a pile of
+## earlier issues, a pocket watch, the window's cold light with rain on it. Ink flies out of the bursting book and off the
+## pen and stays on the desk. Page one's panels have a far layer each and the
+## Eraser breaks out of its border; page two's lower panels are pencil roughs
+## of what is to come (the Sketchbook, the Long Drop, the Beast); and the
+## camera holds a beat on the pencil city, its stick Vesper blinking, before
+## the ink sweeps across it.
 ##
 ## Everything is drawn in code. The book and the desk are real 3D points run
 ## through a small perspective camera (_proj); pages, the cover and the desk
@@ -20,6 +42,7 @@ const ComicFrame = preload("res://scripts/ui/comic_frame.gd")
 const PlayerArt = preload("res://scripts/player/player_visual.gd")
 const EraserArt = preload("res://scripts/enemies/eraser_art.gd")
 const CrawlerArt = preload("res://scripts/enemies/crawler_visual.gd")
+const ShadeHand = preload("res://scripts/effects/shade_hand.gd")
 const FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
 const HAND = preload("res://assets/fonts/Chewy-Regular.ttf")
 const NEXT := "res://scenes/levels/test_level.tscn"
@@ -40,23 +63,72 @@ const THICK := 16.0
 const TEX := Vector2i(520, 780)   # page textures: 2 px per world unit
 const PSI := -0.16                # the book's angle on the desk
 const LAMP := Vector2(-300, 230)  # centre of the lamp's pool of light (world xy)
+const CANDLE := Vector3(-140, 400, 0)  # the candle burning by the photo (world)
+## The window's cold light across the near right of the desk: a corner of it
+## (world) and the two sides of one of its four panes.
+const WINDOW := Vector3(470, -560, 0.5)
+const PANE_X := Vector3(196, 44, 0)
+const PANE_Y := Vector3(-70, 250, 0)
+## Lightning (seconds; the second is set to the moment he stabs the full stop in).
+const T_FLASH := 0.35
 const SHADOW := Vector3(0.55, -0.3, -1.0)  # light direction for shadows (book space)
 
+## The Writer's hand reaches in (it lifts the cover at T_OPEN).
+const T_HAND := 1.2
 const T_OPEN := Vector2(3.3, 5.7)
 const T_CAP1 := 6.4
 const T_PANELS := [7.5, 8.4, 9.3, 10.2]
 const T_PANEL_INK := 0.75
-const T_CAP2 := 11.4
-const T_TURN := Vector2(13.2, 15.2)
-const T_TOP := 16.4
-const T_LOAD := 16.45
-const T_INK := Vector2(17.0, 17.6)
-const T_END := 19.6
+## The hand comes back with its pen (the jobs in _build_jobs() follow).
+const T_EDIT := 10.9
+const T_CAP2 := 18.6
+const T_TURN := Vector2(20.3, 22.3)
+const T_TOP := 23.5
+const T_LOAD := 23.55
+## (Between T_TOP and T_INK the camera holds on the pencil city: its stick
+## Vesper blinks, waiting to be inked.)
+const T_INK := Vector2(24.6, 25.2)
+const T_END := 27.2
 const T_FADE := 0.4
 const SETTLE_FRAMES := 3
 
 const LINE1 := "I JUST HAD THE CRAZIEST ADVENTURE..."
 const LINE2 := "BUT NOW... LET'S BEGIN."
+## Page one's first caption (page pixels), its two lines, and the word of it
+## the Writer blots out and writes his own over.
+const CAP1_BOX := Rect2(26, 34, 468, 140)
+const CAP1_WORDS := ["I JUST HAD THE", "CRAZIEST ADVENTURE..."]
+const CAP1_PX := 46
+const STRUCK := "CRAZIEST"
+## The Writer's ink: black, his letters and his monsters' eyes blood red.
+const BLOOD := Color(0.96, 0.13, 0.16)
+## His hand: world units per pixel of its art, its turn (the arm comes in
+## from the near right of the desk), the way it leaves, along the forearm,
+## and where its wrist is (shade_hand.gd's art, from the nib).
+const HAND_SIZE := 0.72
+const HAND_TURN := 1.2
+const HAND_OUT := Vector2(0.78, 0.63)
+const WRIST := Vector2(240, -147)
+## The nib taps the cover twice before it hooks the corner (seconds from T_OPEN).
+const TAPS := [-0.64, -0.44]
+## Between two strokes the pen is in the air, and quicker: what a pixel of
+## that costs next to a pixel of ink.
+const HOP := 0.5
+## How hard the nib presses along a stroke: [from, to (shares of its length),
+## share of the line's width]. It lands light, bears down, lifts light.
+const NIB := [[0.0, 0.1, 0.5], [0.1, 0.22, 0.78], [0.22, 0.8, 1.0], [0.8, 0.92, 0.78], [0.92, 1.0, 0.5]]
+## His capitals: pen strokes in a 24 x 30 cell.
+const GLYPHS := {
+	"L": [[Vector2(3, 0), Vector2(2, 30), Vector2(21, 29)]],
+	"A": [[Vector2(0, 30), Vector2(12, 0), Vector2(24, 30)], [Vector2(5, 19), Vector2(19, 18)]],
+	"S": [[Vector2(21, 5), Vector2(14, 0), Vector2(6, 2), Vector2(3, 8), Vector2(7, 14), Vector2(16, 17), Vector2(21, 23),
+		Vector2(17, 29), Vector2(8, 30), Vector2(2, 25)]],
+	"T": [[Vector2(0, 1), Vector2(24, 0)], [Vector2(12, 1), Vector2(11, 30)]],
+	"H": [[Vector2(3, 0), Vector2(2, 30)], [Vector2(21, 0), Vector2(22, 30)], [Vector2(2, 15), Vector2(22, 14)]],
+	"E": [[Vector2(21, 1), Vector2(3, 0), Vector2(2, 30), Vector2(21, 29)], [Vector2(3, 15), Vector2(17, 14)]],
+	"N": [[Vector2(2, 30), Vector2(3, 0), Vector2(21, 30), Vector2(22, 0)]],
+	"D": [[Vector2(3, 0), Vector2(2, 30), Vector2(12, 29), Vector2(20, 23), Vector2(22, 12), Vector2(15, 2), Vector2(3, 0)]],
+}
 ## Page one: the four panels (page pixels).
 const P1_PANELS := [Rect2(26, 196, 225, 200), Rect2(269, 196, 225, 200), Rect2(26, 412, 225, 200), Rect2(269, 412, 225, 200)]
 const P1_TAGS := ["THE CITY", "THE LIGHT", "THE GUTTER?!", "THE ERASER"]
@@ -69,9 +141,14 @@ const KEYS := [
 	[3.3, Vector3(135, 0, 0), 1180.0, 42.0, -14.0, -2.0],
 	[5.7, Vector3(0, 0, 0), 1060.0, 58.0, -5.0, 0.0],
 	[7.2, Vector3(130, 2, THICK), 655.0, 79.0, 0.0, 0.0],
-	[12.8, Vector3(130, -6, THICK), 612.0, 83.0, 1.5, 0.0],
-	[14.8, Vector3(70, 30, THICK), 880.0, 74.0, 0.0, 0.0],
-	[16.4, Vector3(130, 94, THICK), 414.0, 90.0, 0.0, 0.0],
+	[11.3, Vector3(130, 4, THICK), 640.0, 81.0, 0.6, 0.0],
+	[13.7, Vector3(126, 8, THICK), 628.0, 81.0, 0.6, 0.0],  # leaning in over the caption as he changes it
+	# back to see both pages while he sketches on the inside of the cover
+	[14.7, Vector3(14, -6, THICK), 720.0, 80.0, -0.8, 0.0],
+	[18.4, Vector3(20, -8, THICK), 700.0, 81.0, 0.0, 0.0],
+	[19.9, Vector3(130, -6, THICK), 612.0, 83.0, 1.5, 0.0],
+	[21.9, Vector3(70, 30, THICK), 880.0, 74.0, 0.0, 0.0],
+	[23.5, Vector3(130, 94, THICK), 414.0, 90.0, 0.0, 0.0],
 ]
 
 var _t := 0.0
@@ -102,7 +179,28 @@ var _p1: SubViewport
 var _p1b: SubViewport
 var _p2: SubViewport
 var _sheet: SubViewport
+var _photo: SubViewport
+var _draft: SubViewport
 var _p1_nodes: Array = []   # per panel: [clip Control, art nodes...]
+
+# the Writer
+var _hand: Node2D
+var _hand_shadow: Node2D
+var _hand_in := 0.0   # 0 out of frame .. 1 at its work
+var _wrist := Vector2.ZERO  # where its wrist is on screen: it trails the nib
+var _lamp := 1.0      # the lamp's strength: it dips and flickers while his hand is over the desk
+var _jobs: Array = [] # his pen work, in order (_build_jobs())
+var _pen_up := 0.0    # 0 nib on the paper .. 1 lifted
+var _pen_job := -1    # the job and the stroke being inked right now (-1 = none)
+var _pen_stroke := -1
+var _pen_key := -1    # (the stroke the last scratch was for)
+var _scratch_t := 0.0
+var _read_from := Vector2.ZERO  # where the nib starts reading Vesper's caption (page pixels)
+var _blot_t := Vector2.ZERO     # when it blots the word out, and for how long (the page shudders)
+var _stab_t := 0.0              # when it stabs the full stop in
+var _splats: Array = []         # ink that flew, where it landed on the desk: [world point, size, the way it was going]
+var _rain: AudioStreamPlayer    # the room: rain on the window, the lamp's hum
+var _hum: AudioStreamPlayer
 
 # effects
 var _sparks: Array = []   # [pos (book space), vel, life, max_life, kind]
@@ -139,9 +237,23 @@ func _ready() -> void:
 	_wood.add_child(wood_rect)
 	_cover = _make_vp(TEX, _paint_cover, true)
 	_cover_hero(_cover)
+	_build_jobs()
 	_inside = _make_vp(TEX, _paint_inside, true)
+	_inside.render_target_update_mode = SubViewport.UPDATE_ALWAYS  # the Writer sketches on it
+	var sketch := Node2D.new()
+	sketch.set_meta("live", true)
+	sketch.draw.connect(_paint_ink.bind(sketch, "in"))
+	_inside.get_child(0).add_child(sketch)
 	_sheet = _make_vp(Vector2i(400, 300), _paint_sheet, true)
+	_draft = _make_vp(Vector2i(420, 300), _paint_draft, true)
+	_photo = _make_vp(Vector2i(300, 380), _paint_photo, true)
+	_photo_brother(_photo)
 	_p2 = _make_vp(TEX, _paint_p2, true)
+	_p2.render_target_update_mode = SubViewport.UPDATE_ALWAYS  # its pencil Vesper blinks
+	var waiting := Node2D.new()
+	waiting.set_meta("live", true)
+	waiting.draw.connect(_paint_p2_live.bind(waiting))
+	_p2.get_child(0).add_child(waiting)
 	_p1 = _make_vp(TEX, _paint_p1_static, true)
 	_p1.render_target_update_mode = SubViewport.UPDATE_ALWAYS  # its panels and captions move
 	_build_p1_panels()
@@ -149,7 +261,11 @@ func _ready() -> void:
 	cap.draw.connect(_paint_p1_captions.bind(cap))
 	cap.set_meta("live", true)
 	_p1.get_child(0).add_child(cap)
-	_p1b = _make_vp(TEX, func(c: Control): _paper(c, Vector2(TEX), Color(0.93, 0.9, 0.81)), true)
+	var ink := Node2D.new()
+	ink.set_meta("live", true)
+	ink.draw.connect(_paint_ink.bind(ink, "p1"))
+	_p1.get_child(0).add_child(ink)
+	_p1b =_make_vp(TEX, func(c: Control): _paper(c, Vector2(TEX), Color(0.93, 0.9, 0.81)), true)
 	_p1b.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	var through := Node2D.new()
 	through.set_meta("live", true)
@@ -163,6 +279,18 @@ func _ready() -> void:
 	_world = Node2D.new()
 	_world.draw.connect(_draw_world)
 	_stage.add_child(_world)
+	_hand_shadow = Node2D.new()
+	_hand_shadow.draw.connect(_draw_hand_shadow)
+	_hand_shadow.visible = false
+	_stage.add_child(_hand_shadow)
+	_hand = ShadeHand.new()
+	_hand.puppet = true
+	_hand.puppet_turn = HAND_TURN
+	_hand.drips = false
+	_hand.aura = false  # (its shadow is _draw_hand_shadow())
+	_hand.visible = false
+	_stage.add_child(_hand)
+	_hand.z_index = 0  # under the lamp's glow and the vignette (shade_hand.gd sets 40)
 	_glow = Node2D.new()
 	var add := CanvasItemMaterial.new()
 	add.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
@@ -177,6 +305,8 @@ func _ready() -> void:
 	for i in 46:
 		_motes.append([Vector2(rng.randf() * 1280, rng.randf() * 720), rng.randf_range(0.6, 2.2), rng.randf() * TAU, rng.randf_range(4, 14)])
 	_make_sounds()
+	_rain = _room_sound("rain")
+	_hum = _room_sound("hum")
 
 
 func _exit_tree() -> void:
@@ -218,15 +348,16 @@ func _k(t0: float, dur: float) -> float:
 
 
 ## Cover angle: opens with a little overshoot and settles flat.
-func _cover_angle() -> float:
-	var x := _k(T_OPEN.x, T_OPEN.y - T_OPEN.x)
+func _cover_angle(at := -1.0) -> float:
+	var x := clampf(((_t if at < 0.0 else at) - T_OPEN.x) / (T_OPEN.y - T_OPEN.x), 0.0, 1.0)
 	var e := _smoother(x)
 	var settle := sin(clampf((x - 0.82) / 0.18, 0.0, 1.0) * PI) * 0.035
 	return PI * minf(e + settle, 1.0)
 
 
+## (Flicked over: it leaves the hand quicker than it would lift by itself.)
 func _turn() -> float:
-	return _smoother(_k(T_TURN.x, T_TURN.y - T_TURN.x))
+	return _smoother(pow(_k(T_TURN.x, T_TURN.y - T_TURN.x), 0.8))
 
 
 # ------------------------------------------------------------------ frame
@@ -245,8 +376,12 @@ func _process(delta: float) -> void:
 	_update_camera()
 	# a kick when the cover bursts open and when the page flips
 	var kick := 7.0 * exp(-maxf(_t - T_OPEN.x - 0.3, 0.0) * 5.0) * float(_t > T_OPEN.x + 0.3) \
-		+ 3.0 * exp(-maxf(_t - T_TURN.x - 0.2, 0.0) * 6.0) * float(_t > T_TURN.x + 0.2)
+		+ 3.0 * exp(-maxf(_t - T_TURN.x - 0.2, 0.0) * 6.0) * float(_t > T_TURN.x + 0.2) \
+		+ 1.3 * float(_t > _blot_t.x and _t < _blot_t.x + _blot_t.y) \
+		+ 6.0 * exp(-maxf(_t - _stab_t, 0.0) * 8.0) * float(_t > _stab_t)
 	_shake = Vector2(sin(_t * 61.0), cos(_t * 47.0)) * kick if _t < T_TOP else Vector2.ZERO
+	_update_writer(delta)
+	_update_room()
 	_update_sparks(delta)
 	match _stage_n:
 		0:
@@ -268,7 +403,7 @@ func _process(delta: float) -> void:
 				_stage_n = 3
 				_finish(false)
 				return
-	for vp in [_p1, _p1b]:
+	for vp in [_p1, _p1b, _inside, _p2]:
 		for n in vp.get_child(0).find_children("*", "CanvasItem", true, false) + [vp.get_child(0)]:
 			if n.get_meta("live", false):
 				n.queue_redraw()
@@ -308,6 +443,33 @@ func _finish(skipped: bool) -> void:
 
 ## Sounds and one-off effects on the timeline.
 func _cues() -> void:
+	# his grief: the game's tune, minor, slow and far away (the menu's; it
+	# stays until the City loads and its LevelMusic brings Vesper's own in)
+	_once("grief", func():
+		var music := get_node_or_null("/root/Music")
+		if music:
+			music.play("margins", 2.0))
+	# a storm outside: lightning (_lightning()), the thunder a moment behind it
+	_once_at(T_FLASH + 0.7, "thunder", func(): _play("thunder", -10.0, 0.85))
+	_once_at(_stab_t + 0.12, "thunder2", func(): _play("thunder", -4.0, 1.15))
+	# his anger, while he changes the book: a growl as he blots the word out,
+	# a heart that beats harder up to the full stop, a bell for the dead when
+	# LAST is written and when THE END is
+	_once_at(_blot_t.x, "growl", func(): _play("growl", -7.0))
+	_once_at(T_EDIT + 4.0, "dread2", func(): _play("dread", -8.0, 0.9))
+	var beat := 0
+	var at := T_EDIT + 0.5
+	while at < _stab_t - 0.3:
+		var loud := -15.0 + 5.0 * (at - T_EDIT) / (_stab_t - T_EDIT)
+		_once_at(at, "lub%d" % beat, func(): _play("thump", loud, 0.55))
+		_once_at(at + 0.2, "dub%d" % beat, func(): _play("thump", loud - 4.0, 0.48))
+		beat += 1
+		at += lerpf(0.95, 0.7, (at - T_EDIT) / (_stab_t - T_EDIT))
+	_once_at(_jobs[1].t0 + _jobs[1].dur, "toll", func(): _play("toll", -8.0))
+	_once_at(_stab_t + 0.05, "toll2", func(): _play("toll", -6.0, 0.84))
+	# somebody is writing, close by; then the pen stops
+	for i in 3:
+		_once_at(0.15 + i * 0.36, "writing%d" % i, func(): _play("scratch", -15.0 + i * 1.5, [1.15, 0.92, 1.3][i]))
 	for i in 4:
 		var tick := 0.4 + i * 0.85
 		if _t >= tick:
@@ -316,19 +478,23 @@ func _cues() -> void:
 	_once_at(T_OPEN.x + 0.35, "whoosh", func():
 		_play("whoosh", -4.0)
 		_word("WHOOSH!", Vector2(900, 210), 92, GOLD, -0.12))
-	_once_at(T_OPEN.x + 0.5, "music", func():
-		var music := get_node_or_null("/root/Music")
-		if music:
-			music.play("city", 2.5))
 	_once_at(T_OPEN.y - 0.25, "land", func():
 		_play("thump", -10.0)
-		_play("chime", -9.0))
+		_play("lament", -10.0))
 	for i in 4:
 		_once_at(T_PANELS[i], "scratch%d" % i, func(): _play("scratch", -12.0))
 	_once_at(T_PANELS[0] + T_PANEL_INK * 0.6, "thwack", func(): _play("pop", -10.0))
 	_once_at(T_TURN.x, "flip", func():
 		_play("flip", -3.0)
 		_word("FLIP!", Vector2(1010, 300), 74, CAPTION, 0.1))
+	# the Writer's hand: the nib taps the cover; later, his pen at work (its
+	# scratching is played stroke by stroke in _update_writer())
+	for i in TAPS.size():
+		_once_at(T_OPEN.x + TAPS[i], "tap%d" % i, func(): _play("tick", -6.0, 0.6 + i * 0.08))
+	_once_at(T_OPEN.x + 0.34, "spatter", _spatter)
+	_once_at(T_EDIT, "dread", func(): _play("dread", -7.0))
+	_once_at(_stab_t, "stab", func(): _play("thump", -5.0))
+	_once_at(_jobs[0].t0 + 0.1, "skritch", func(): _word("SKRITCH!", Vector2(330, 118), 58, BLOOD, -0.08))
 	_once_at(T_INK.x - 0.4, "dive", func(): _play("dive", -4.0))
 	_once_at(T_INK.x + 0.1, "chime2", func(): _play("chime", -8.0))
 	# typing
@@ -432,7 +598,7 @@ func _projb(p: Vector3) -> Vector2:
 ## Light of the lamp's pool at a world point (0 dark .. ~1.15 in the middle).
 func _pool(p: Vector3) -> float:
 	var d := Vector2(p.x, p.y).distance_to(LAMP)
-	return 0.12 + 1.05 / (1.0 + pow(d / 620.0, 2.4))
+	return (0.12 + 1.05 / (1.0 + pow(d / 620.0, 2.4))) * _lamp
 
 
 func _lit(p: Vector3, k := 1.0) -> Color:
@@ -605,6 +771,414 @@ func _grid_shadow(ci: CanvasItem, grid: Array, on_z: float, x0: float, x1: float
 	RenderingServer.canvas_item_add_triangle_array(ci.get_canvas_item(), idx, pts, cols)
 
 
+# ------------------------------------------------------------- the Writer
+
+## One pen job: ink strokes on a page (page pixels; "p1" = page one, "in" =
+## the inside of the cover), drawn from `t0` over `dur` seconds. The nib
+## follows the wet end of the line and hops, lifted, from one stroke to the
+## next. `snd` is what a stroke sounds like.
+func _job(page: String, t0: float, dur: float, strokes: Array, width: float, col: Color, snd := "scratch", pitch := 1.0) -> Dictionary:
+	var lens := PackedFloat32Array()
+	var starts := PackedFloat32Array()  # how far into the job each stroke begins (ink + hops)
+	var cost := 0.0
+	for si in strokes.size():
+		var st: PackedVector2Array = strokes[si]
+		if si > 0:
+			var before: PackedVector2Array = strokes[si - 1]
+			cost += before[before.size() - 1].distance_to(st[0]) * HOP
+		starts.append(cost)
+		var l := 0.0
+		for i in st.size() - 1:
+			l += st[i].distance_to(st[i + 1])
+		lens.append(l)
+		cost += l
+	var job := {"page": page, "t0": t0, "dur": dur, "strokes": strokes, "lens": lens, "starts": starts, "cost": cost,
+		"width": width, "col": col, "snd": snd, "pitch": pitch}
+	_jobs.append(job)
+	return job
+
+
+## How far into a job the pen is right now (see `starts`).
+func _job_at(job: Dictionary) -> float:
+	return job.cost * clampf((_t - job.t0) / job.dur, 0.0, 1.0)
+
+
+## A scribbled loop round `c`: `turns` times round a wobbling ellipse.
+func _loop(c: Vector2, rx: float, ry: float, turns: float, rng: RandomNumberGenerator, wobble := 0.13) -> PackedVector2Array:
+	var pts := PackedVector2Array()
+	var a0 := rng.randf() * TAU
+	for i in int(turns * 16.0) + 1:
+		var a := a0 + TAU * i / 16.0
+		pts.append(c + Vector2(cos(a) * rx, sin(a) * ry) * (1.0 + rng.randf_range(-wobble, wobble)))
+	return pts
+
+
+## A zigzag from `a` to `b`, `n` strokes swinging `amp` either side.
+func _zigzag(a: Vector2, b: Vector2, n: int, amp: float, rng: RandomNumberGenerator, jitter := 2.0) -> PackedVector2Array:
+	var pts := PackedVector2Array()
+	var side := (b - a).orthogonal().normalized()
+	for i in n + 1:
+		pts.append(a.lerp(b, float(i) / n) + side * (amp if i % 2 == 0 else -amp)
+			+ Vector2(rng.randf_range(-jitter, jitter), rng.randf_range(-jitter, jitter)))
+	return pts
+
+
+## `text` in his capitals (GLYPHS), as pen strokes: `size` times the cell,
+## slanted, from `at` (the top left, in `xf`'s space).
+func _write(text: String, at: Vector2, size: float, xf: Transform2D, rng: RandomNumberGenerator) -> Array:
+	var out := []
+	for ci in text.length():
+		for st: Array in GLYPHS.get(text[ci], []):
+			var pts := PackedVector2Array()
+			for p: Vector2 in st:
+				var q := Vector2(ci * 33.0 + p.x - (p.y - 15.0) * 0.14, p.y)
+				pts.append(xf * (at + (q + Vector2(rng.randf_range(-0.8, 0.8), rng.randf_range(-0.8, 0.8))) * size))
+			out.append(pts)
+	return out
+
+
+## Everything the Writer's pen does, in order, from T_EDIT.
+func _build_jobs() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 41
+	var t := T_EDIT + 1.2
+	# Vesper's caption: he reads along its second line (_pen_state()), then
+	# CRAZIEST is blotted out into a black bar...
+	var cap := Transform2D(-0.02, CAP1_BOX.get_center())  # as _paint_p1_captions() draws it
+	var line_w := FONT.get_string_size(CAP1_WORDS[1], HORIZONTAL_ALIGNMENT_LEFT, -1, CAP1_PX).x
+	var word_w := FONT.get_string_size(STRUCK, HORIZONTAL_ALIGNMENT_LEFT, -1, CAP1_PX).x
+	var base := -CAP1_BOX.size.y * 0.5 + 18.0 + CAP1_PX * 1.95  # the second line's baseline
+	var bar := Rect2(-line_w * 0.5 - 7.0, base - CAP1_PX * 0.8, word_w + 13.0, CAP1_PX * 0.92)
+	var mid := bar.get_center()
+	_read_from = cap * Vector2(line_w * 0.5 + 2.0, base + 6.0)
+	_blot_t = Vector2(t, 0.7)
+	var blot := _job("p1", t, 0.7, [
+		cap * _zigzag(Vector2(bar.position.x, mid.y), Vector2(bar.end.x, mid.y), 13, bar.size.y * 0.5 - 4.0, rng),
+		cap * _zigzag(Vector2(bar.end.x, mid.y), Vector2(bar.position.x, mid.y), 5, 5.0, rng)], 10.0, INK, "scratch", 0.7)
+	var edge := PackedVector2Array()
+	for i in 9:
+		edge.append(cap * Vector2(lerpf(bar.position.x, bar.end.x, i / 8.0), bar.position.y + rng.randf_range(-2.5, 2.5)))
+	for i in 9:
+		edge.append(cap * Vector2(lerpf(bar.end.x, bar.position.x, i / 8.0), bar.end.y + rng.randf_range(-2.5, 2.5)))
+	blot["bar"] = edge
+	t += 0.7 + 0.15
+	# ...and LAST written over it, in his red
+	_job("p1", t, 0.9, _write("LAST", mid - Vector2(33.0 * 4.0 - 9.0, 30.0) * 0.5, 1.0, cap, rng), 5.0, BLOOD, "scratch", 1.25)
+	t += 0.9 + 0.9  # across to the inside of the cover, where it hangs a moment, thinking
+	# there: the Scribbled Beast as he means to draw it (two heads, long clawed arms, spindly legs)
+	var o := Vector2(170, 338)
+	var beast := [_loop(o + Vector2(-46, -66), 31, 28, 2.6, rng, 0.2), _loop(o + Vector2(40, -74), 29, 27, 2.6, rng, 0.2),
+		_zigzag(o + Vector2(-70, -54), o + Vector2(-24, -52), 7, 7.0, rng, 1.0),
+		_zigzag(o + Vector2(18, -62), o + Vector2(62, -60), 7, 7.0, rng, 1.0),
+		_loop(o + Vector2(0, 14), 58, 64, 3.3, rng, 0.2),
+		_zigzag(o + Vector2(-44, 44), o + Vector2(40, -18), 9, 30.0, rng, 5.0)]  # hatched in, hard
+	for sx: float in [-1.0, 1.0]:
+		var hand := o + Vector2(sx * 106, 90)
+		for pass_n in 2:  # gone over twice
+			var arm := PackedVector2Array([o + Vector2(sx * 52, -4), o + Vector2(sx * 94, 20), o + Vector2(sx * 114, 62), hand])
+			var leg := PackedVector2Array([o + Vector2(sx * 24, 72), o + Vector2(sx * 31, 112), o + Vector2(sx * 50, 118)])
+			for pts: PackedVector2Array in [arm, leg]:
+				for i in pts.size():
+					pts[i] += Vector2(rng.randf_range(-4, 4), rng.randf_range(-4, 4)) * pass_n
+				beast.append(pts)
+		for d: Vector2 in [Vector2(-16, 18), Vector2(0, 24), Vector2(16, 18)]:
+			beast.append(PackedVector2Array([hand, hand + d]))
+	var body := _job("in", t, 1.85, beast, 3.6, Color(INK, 0.95), "scratch", 0.9)
+	body["think"] = 0.38
+	t += 1.85 + 0.1
+	# its eyes, stabbed in (four, and the one in its chest): with them it is
+	# alive, and its lines boil like a monster's in the game
+	var eyes := []
+	for e: Vector2 in [Vector2(-56, -74), Vector2(-37, -76), Vector2(31, -82), Vector2(50, -80)]:
+		eyes.append(_loop(o + e, 3.0, 3.0, 1.2, rng, 0.05))
+	eyes.append(_loop(o + Vector2(0, 8), 6.5, 6.5, 1.6, rng, 0.05))
+	var looks := _job("in", t, 0.45, eyes, 4.5, BLOOD, "pop", 1.5)
+	looks["glow"] = true
+	looks["boil"] = t + 0.45
+	body["boil"] = t + 0.45
+	t += 0.45 + 0.15
+	# beside it, how the book ends, underlined twice...
+	var stamp := Transform2D(-0.07, Vector2(322, 300))
+	var end := _write("THE", Vector2.ZERO, 1.2, stamp, rng) + _write("END", Vector2(0, 46), 1.2, stamp, rng)
+	end.append(stamp * PackedVector2Array([Vector2(-6, 94), Vector2(112, 92)]))
+	end.append(stamp * PackedVector2Array([Vector2(110, 102), Vector2(-4, 104)]))
+	_job("in", t, 0.9, end, 4.2, BLOOD, "scratch", 1.2)
+	t += 0.9 + 0.22
+	# ...and a full stop, stabbed in so hard the ink bursts
+	var dot := stamp * Vector2(130, 80)
+	var burst := [_loop(dot, 3.5, 3.5, 1.5, rng, 0.1)]
+	for i in 9:
+		var d := Vector2.from_angle(TAU * i / 9.0 + rng.randf_range(-0.25, 0.25))
+		burst.append(PackedVector2Array([dot + d * 4.0, dot + d * rng.randf_range(10.0, 24.0)]))
+	_stab_t = t
+	_job("in", t, 0.09, burst, 5.0, BLOOD, "pop", 0.7)["hold"] = dot
+
+
+## His ink on a page, as far as the pen has got.
+func _paint_ink(c: Node2D, page: String) -> void:
+	var frame := int(_t * 12.0)
+	for ji in _jobs.size():
+		var job: Dictionary = _jobs[ji]
+		if job.page != page or _t < job.t0:
+			continue
+		if job.has("bar"):
+			c.draw_colored_polygon(job.bar, Color(INK, smoothstep(0.3, 1.0, (_t - job.t0) / job.dur)))
+		var at := _job_at(job)
+		# a finished monster's lines boil (redrawn 12 times a second, as in the game)
+		var boil: float = 1.7 * _k(job.boil, 0.3) if job.has("boil") else 0.0
+		for si in job.strokes.size():
+			var drawn: float = at - job.starts[si]
+			if drawn <= 0.0:
+				break
+			var st: PackedVector2Array = job.strokes[si]
+			if boil > 0.0:
+				st = st.duplicate()
+				for i in st.size():
+					st[i] += _hash2(ji * 7919 + si * 131 + i + frame * 977) * boil
+			if job.has("glow"):  # an eye burns
+				var mid := Vector2.ZERO
+				for q in st:
+					mid += q
+				mid /= st.size()
+				c.draw_circle(mid, 5.0 + job.lens[si] * 0.22, Color(BLOOD, 0.2 + 0.09 * sin(_t * 7.0 + si * 1.9)))
+			_stroke(c, st, drawn, job.lens[si], job.width, job.col)
+
+
+## One stroke as far as it is drawn (`drawn` of its `full` pixels), pressed
+## as NIB says, and still wet and shining just behind the nib.
+func _stroke(c: Node2D, pts: PackedVector2Array, drawn: float, full: float, width: float, col: Color) -> void:
+	var bands: Array = NIB if full > 36.0 else [[0.0, 1.0, 1.0]]  # (a short one is one touch)
+	var tip := pts[0]
+	for band: Array in bands:
+		if drawn <= band[0] * full:
+			break
+		var part := _slice(pts, band[0] * full, minf(drawn, band[1] * full))
+		if part.size() < 2:
+			continue
+		var w: float = width * band[2]
+		c.draw_polyline(part, col, w, true)
+		c.draw_circle(part[0], w * 0.5, col)
+		tip = part[part.size() - 1]
+		c.draw_circle(tip, w * 0.5, col)
+	if drawn < full:
+		var wet := _slice(pts, maxf(drawn - 44.0, 0.0), drawn)
+		if wet.size() >= 2:
+			c.draw_polyline(wet, Color(1, 1, 1, 0.3), maxf(width * 0.3, 1.2), true)
+		c.draw_circle(tip, width * 0.62, col)  # the bead of ink at the nib
+
+
+## The piece of a polyline between `a` and `b` pixels along it.
+func _slice(pts: PackedVector2Array, a: float, b: float) -> PackedVector2Array:
+	var out := PackedVector2Array()
+	var at := 0.0
+	for i in pts.size() - 1:
+		var d := pts[i].distance_to(pts[i + 1])
+		var lo := maxf(a, at)
+		var hi := minf(b, at + d)
+		if hi > lo:
+			if out.is_empty():
+				out.append(pts[i].lerp(pts[i + 1], (lo - at) / d))
+			out.append(pts[i].lerp(pts[i + 1], (hi - at) / d))
+		at += d
+		if at >= b:
+			break
+	return out
+
+
+## A steady little random offset for `n` (-1 .. 1 each way).
+func _hash2(n: int) -> Vector2:
+	return Vector2(fposmod(sin(n * 12.9898) * 43758.5453, 1.0), fposmod(sin(n * 78.233) * 24634.6345, 1.0)) * 2.0 - Vector2.ONE
+
+
+## The first `length` pixels of a polyline (all of it, if it is shorter).
+func _cut(pts: PackedVector2Array, length: float) -> PackedVector2Array:
+	var out := PackedVector2Array([pts[0]])
+	for i in pts.size() - 1:
+		var d := pts[i].distance_to(pts[i + 1])
+		if d >= length:
+			out.append(pts[i].lerp(pts[i + 1], length / maxf(d, 0.001)))
+			return out
+		out.append(pts[i + 1])
+		length -= d
+	return out
+
+
+## A point of a page (page pixels) in book space.
+func _page_point(page: String, p: Vector2) -> Vector3:
+	if page == "in":  # the open cover lies to the left of the spine
+		return Vector3(p.x * 0.5 - BW, BH * 0.5 - p.y * 0.5, 1.6)
+	return Vector3(p.x * 0.5, BH * 0.5 - p.y * 0.5, THICK + 0.6)
+
+
+## The pen once its work has begun: [the nib in book space, 0 on the paper ..
+## 1 lifted]. On the wet end of the line being drawn (then _pen_job and
+## _pen_stroke say which), or in the air: reading, thinking, or on its way to
+## the next line.
+func _pen_state() -> Array:
+	_pen_job = -1
+	_pen_stroke = -1
+	var from := Vector3.ZERO
+	var from_t := T_EDIT
+	for i in _jobs.size():
+		var job: Dictionary = _jobs[i]
+		if _t < job.t0:
+			var first := _page_point(job.page, job.strokes[0][0])
+			if i == 0:
+				# the nib runs back along Vesper's line as he reads it, stops over
+				# the word, and comes down on it
+				var read := _ease((_t - T_EDIT - 0.6) / maxf(job.t0 - 0.3 - T_EDIT - 0.6, 0.01))
+				return [_page_point(job.page, _read_from).lerp(first, read), 0.75 * (1.0 - _ease((_t - job.t0 + 0.12) / 0.12))]
+			var think: float = job.get("think", 0.0)
+			var k := _ease((_t - from_t) / maxf(job.t0 - think - from_t, 0.01))
+			if think <= 0.0:
+				return [from.lerp(first, k), sin(k * PI)]
+			# it gets there and hangs over the paper, circling, before it starts
+			var h := clampf((_t - job.t0 + think) / think, 0.0, 1.0)
+			var round_it := Vector3(cos(h * TAU * 1.5), sin(h * TAU * 1.5), 0.0) * 6.0 * sin(h * PI)
+			return [from.lerp(first, k) + round_it, sin(k * PI * 0.5) * (1.0 - _ease((h - 0.75) / 0.25)) * 0.85]
+		if _t <= job.t0 + job.dur:
+			if job.has("hold"):  # a stab: the nib stays where it struck
+				_pen_job = i
+				_pen_stroke = 0
+				return [_page_point(job.page, job.hold), 0.0]
+			var at := _job_at(job)
+			for si in job.strokes.size():
+				var st: PackedVector2Array = job.strokes[si]
+				if at < job.starts[si]:  # hopping over to this stroke
+					var before: PackedVector2Array = job.strokes[si - 1]
+					var a := before[before.size() - 1]
+					var h0: float = job.starts[si - 1] + job.lens[si - 1]
+					var hop := _ease((at - h0) / maxf(job.starts[si] - h0, 0.001))
+					return [_page_point(job.page, a.lerp(st[0], hop)), sin(hop * PI) * minf(a.distance_to(st[0]) / 40.0, 1.0) * 0.8]
+				if at <= job.starts[si] + job.lens[si] or si == job.strokes.size() - 1:
+					_pen_job = i
+					_pen_stroke = si
+					var part := _cut(st, at - job.starts[si])
+					return [_page_point(job.page, part[part.size() - 1]), 0.0]
+		if job.has("hold"):
+			from = _page_point(job.page, job.hold)
+		else:
+			var last: PackedVector2Array = job.strokes[job.strokes.size() - 1]
+			from = _page_point(job.page, last[last.size() - 1])
+		from_t = job.t0 + job.dur
+	return [from, 0.0]
+
+
+## The corner of the cover he lifts (at time `at`), and the edge of page one
+## he flicks over (world).
+func _cover_corner(at: float) -> Vector3:
+	return _turn_grid(_cover_angle(at) / PI, THICK + 1.0, 1.2, 0.18, 18, 8)[18][6]
+
+
+func _page_edge() -> Vector3:
+	return _turn_grid(_turn(), THICK + 0.2, 2.0, 0.75)[22][6]
+
+
+## Ease out with a little overshoot: an arriving hand settles back.
+func _back(x: float) -> float:
+	x = clampf(x, 0.0, 1.0) - 1.0
+	return 1.0 + x * x * (1.8 * x + 0.8)
+
+
+## Ink flung off the pen as the light throws the hand back: drops that fly
+## out over the desk and stay where they land (_splats).
+func _spatter() -> void:
+	var w := _cover_corner(T_OPEN.x + 0.34)
+	var from := Vector3(w.dot(_bx), w.dot(_by), w.z + 14.0)  # (book space, as the sparks are)
+	for i in 16:
+		var v := Vector3(randf_range(150, 520), randf_range(-380, 40), randf_range(120, 330))
+		_sparks.append([from, v, 2.5, 2.5, 1, randf_range(1.4, 3.6)])
+
+
+## The Writer's hand, its pen's sounds and the lamp it dims.
+func _update_writer(delta: float) -> void:
+	var goal := Vector3.ZERO   # where the nib is, world
+	var reach := 0.0           # 0 out of frame .. 1 there
+	var up := 0.0              # 0 nib down .. 1 lifted
+	var flex := 0.5            # finger curl
+	var shove := Vector2.ZERO  # thrown about (screen)
+	var lit := 0.0             # the book's light on it
+	_pen_job = -1
+	var done: float = _jobs[-1].t0 + _jobs[-1].dur
+	if _t < T_EDIT:
+		# it comes in over the cover, fingers drumming, taps it twice with the
+		# nib and hooks the corner up; the light that pours out throws it back
+		var burst := T_OPEN.x + 0.34
+		reach = _back((_t - T_HAND) / (T_OPEN.x - 0.85 - T_HAND))
+		goal = _cover_corner(minf(_t, burst))
+		up = 1.0 - _ease((_t - T_OPEN.x + 0.24) / 0.16)
+		for tap: float in TAPS:
+			up = minf(up, absf(_t - T_OPEN.x - tap) / 0.09)
+		flex = 0.6 + 0.3 * (1.0 - up) + 0.14 * sin(_t * 17.0) * up
+		if _t > burst:
+			var jerk := _ease((_t - burst) / 0.12)
+			var leave := _ease((_t - burst - 0.45) / 0.4)
+			shove = (HAND_OUT * 180.0 + Vector2(0, -50)) * jerk + Vector2(sin(_t * 71.0), cos(_t * 83.0)) * 5.0 * jerk * (1.0 - leave)
+			reach = 1.0 - leave
+			up = jerk
+			flex = -0.35  # fingers thrown open
+			lit = jerk * (1.0 - leave)
+	elif _t < done:
+		reach = _back((_t - T_EDIT) / 0.6)
+		var pen := _pen_state()
+		goal = _bk(pen[0])
+		up = pen[1]
+		flex = 0.55 if _pen_job < 0 else 0.86 + 0.08 * sin(_t * 41.0)
+	else:
+		# the nib stays pressed where it stabbed, then it goes over to the edge
+		# of page one, drums its fingers there, flicks the page over and is gone
+		var k := _ease((_t - done - 0.28) / 0.75)
+		var hook := _k(T_TURN.x - 0.2, 0.2)
+		var leave := _ease((_t - T_TURN.x - 0.46) / 0.45)
+		goal = _bk(_pen_state()[0]).lerp(_page_edge(), k)
+		up = maxf(sin(k * PI), 0.4 * k * (1.0 - hook))
+		reach = 1.0 - leave
+		shove = Vector2(-30, -70) * sin(leave * PI)  # it follows the flick through
+		flex = 0.5 + 0.4 * hook - 0.7 * leave + 0.16 * sin(_t * 15.0) * floorf(k) * (1.0 - hook)
+		if k <= 0.0:
+			flex = 1.0
+	# the pen on the paper: a scratch for each stroke (and on through the long ones), a stab for an eye
+	if _pen_job >= 0:
+		var job: Dictionary = _jobs[_pen_job]
+		var key := _pen_job * 1000 + _pen_stroke
+		var fresh := key != _pen_key
+		_pen_key = key
+		_scratch_t -= delta
+		if _scratch_t <= 0.0 or (fresh and (job.snd != "scratch" or _scratch_t < 0.16)):
+			_play(job.snd, -8.0, job.pitch * randf_range(0.85, 1.05))
+			_scratch_t = 0.3
+	else:
+		_pen_key = -1
+	var seen := reach > 0.002
+	var s := HAND_SIZE * FOCAL / maxf((goal - _cam).dot(_cf), 1.0) * (1.0 + 0.05 * up)
+	var nib := _proj(goal + Vector3(0, 0, 22.0 * up)) + HAND_OUT * (1.0 - reach) * 1000.0 + shove
+	# the wrist trails the nib, so the hand turns about its pen as it writes instead of sliding stiffly
+	var rest := nib + (WRIST * s).rotated(HAND_TURN)
+	_wrist = _wrist.lerp(rest, 1.0 - exp(-delta * 10.0)) if seen and _hand.visible else rest
+	_hand_in = clampf(reach, 0.0, 1.0)
+	_pen_up = up
+	_lamp = 1.0 - _hand_in * (0.13 + 0.05 * sin(_t * 23.0) * sin(_t * 7.3))
+	_hand.visible = seen
+	_hand.hand_scale = s
+	_hand.puppet_nib = nib
+	_hand.puppet_turn = HAND_TURN + clampf((rest - nib).angle_to(_wrist - nib) * 0.75, -0.26, 0.26)
+	_hand.puppet_flex = flex
+	_hand.modulate = Color.WHITE.lerp(Color(1.7, 1.45, 1.05), lit)
+	_hand_shadow.visible = seen
+	_hand_shadow.queue_redraw()
+
+
+## The hand's shadow on the desk and the pages: it parts from the hand as the nib lifts.
+func _draw_hand_shadow() -> void:
+	var s: float = _hand.hand_scale
+	var off := Vector2(16, 20) * s * (0.5 + 1.3 * _pen_up)
+	# along the pen, the fingers, the wrist and the forearm (shade_hand.gd's art: x, y, radius)
+	for b: Vector3 in [Vector3(70, -62, 44), Vector3(130, -90, 74), Vector3(200, -130, 88), Vector3(338, -196, 82),
+			Vector3(437, -245, 92), Vector3(535, -294, 100)]:
+		_radial(_hand_shadow, _hand.puppet_nib + (Vector2(b.x, b.y) * s).rotated(_hand.puppet_turn) + off, b.z * s,
+			Color(0.01, 0.0, 0.03, 0.22))
+
+
 # ------------------------------------------------------------------ world
 
 func _draw_world() -> void:
@@ -618,6 +1192,10 @@ func _draw_world() -> void:
 			row.append(Vector3(lerpf(-1900, 1900, i / 16.0), lerpf(1700, -1100, j / 16.0), 0))
 		desk.append(row)
 	_grid_surface(w, _wood.get_texture(), desk)
+	_draw_splats(w)
+	_frame(w, Vector3(-310, 445, 0))
+	_candle(w)
+	_scarf(w)
 	# a loose sheet of character sketches, the pencil, the eraser, ink, the pen
 	var sheet := []
 	var sc := Vector3(-470, 120, 0.4)
@@ -630,14 +1208,46 @@ func _draw_world() -> void:
 		sheet.append(row)
 	_soft_shadow(w, [sc + sx * -200 + sy * 150, sc + sx * 200 + sy * 150, sc + sx * 200 + sy * -150, sc + sx * -200 + sy * -150], 6.0, 0.35)
 	_grid_surface(w, _sheet.get_texture(), sheet)
+	_watch(w, Vector3(250, 340, 0))
 	_mug(w, Vector3(560, 380, 0))
+	_stack(w, Vector3(770, 190, 0))
 	_ink_bottle(w, Vector3(430, 150, 0))
 	_rod(w, Vector3(330, 40, 4), Vector3(520, -170, 4), 4.0, Color(0.1, 0.09, 0.12), "pen")
 	_rod(w, Vector3(-560, -90, 6), Vector3(-300, -260, 6), 6.5, Color(1.0, 0.78, 0.18), "pencil")
 	_eraser(w, Vector3(-420, -330, 0))
 	_shavings(w)
+	# what he threw away: the ending he tore up, drafts in balls, a pencil snapped in two
+	_torn(w, _draft.get_texture(), Vector3(-130, -480, 0), 0.22, Vector2(310, 222))
+	_crumple(w, Vector3(150, -335, 0), 34.0, 3)
+	_crumple(w, Vector3(235, -430, 0), 27.0, 7)
+	_crumple(w, Vector3(650, -150, 0), 31.0, 12)
+	_crumple(w, Vector3(-650, -330, 0), 30.0, 19)
+	_crumple(w, Vector3(120, 470, 0), 26.0, 25)
+	_stub(w, Vector3(330, -500, 5), Vector3(410, -462, 5), false)
+	_stub(w, Vector3(430, -470, 5), Vector3(500, -520, 5), true)
 	# the book
 	_book(w)
+
+
+## Ink that flew and landed on the desk: each a blot and the smaller drops it
+## threw on ahead of itself. One draw call for all of them.
+func _draw_splats(w: Node2D) -> void:
+	if _splats.is_empty():
+		return
+	var pts := PackedVector2Array()
+	var idx := PackedInt32Array()
+	var flat := clampf(absf(_cf.z), 0.25, 1.0)
+	for sp in _splats:
+		for j in 3:
+			var at: Vector3 = sp[0] + sp[2] * (j * (j + 1.0) * sp[1] * 1.9)
+			var r: float = sp[1] * 2.3 / (1.0 + j * 1.1) * FOCAL / maxf((at - _cam).dot(_cf), 1.0)
+			var c := _proj(at)
+			var first := pts.size()
+			pts.append(c)
+			for k in 8:
+				pts.append(c + Vector2(cos(TAU * k / 8.0) * r, sin(TAU * k / 8.0) * r * flat))
+				idx.append_array([first, first + 1 + k, first + 1 + (k + 1) % 8])
+	RenderingServer.canvas_item_add_triangle_array(w.get_canvas_item(), idx, pts, PackedColorArray([Color(0.03, 0.02, 0.05, 0.9)]))
 
 
 func _soft_shadow(ci: CanvasItem, pts3: Array, lift: float, alpha: float) -> void:
@@ -742,6 +1352,220 @@ func _rod(w: Node2D, a: Vector3, b: Vector3, r: float, col: Color, kind: String)
 		w.draw_line(pa + n * ra * 0.4, pb + n * rb * 0.4, Color(1, 1, 1, 0.25), 1.5)
 		_fill(w, PackedVector2Array([pb + n * rb, tip, pb - n * rb]), Color(0.8, 0.78, 0.72) * lit)  # steel nib
 		w.draw_line(pb, tip, Color(0.15, 0.12, 0.2), 1.2)
+
+
+## The framed photo standing at the back of the desk, in the lamp's light,
+## leaning on its strut and looking at the chair: the biggest thing on it.
+func _frame(w: Node2D, base: Vector3) -> void:
+	var size := Vector2(236, 298)
+	var face := Vector3(-0.56, -0.83, 0.0).normalized()
+	var right := Vector3(-face.y, face.x, 0.0)
+	var up := Vector3(0, 0, 1) * cos(0.24) - face * sin(0.24)
+	var corner := func(u: float, v: float) -> Vector3:
+		return base + right * (u - 0.5) * size.x + up * (1.0 - v) * size.y
+	var cast := Vector3(SHADOW.x, SHADOW.y, 0).rotated(Vector3(0, 0, 1), PSI)
+	var tl: Vector3 = corner.call(0.0, 0.0)
+	var tr: Vector3 = corner.call(1.0, 0.0)
+	_poly3(w, [corner.call(0.0, 1.0), corner.call(1.0, 1.0), Vector3(tr.x, tr.y, 0.3) + cast * tr.z, Vector3(tl.x, tl.y, 0.3) + cast * tl.z],
+		Color(0, 0, 0, 0.45))
+	var prop: Vector3 = corner.call(0.5, 0.3)
+	w.draw_line(_proj(prop), _proj(base - face * 105.0), Color(0.07, 0.04, 0.03), 4.0)
+	# the thickness of its wood (the side and the top we can see)
+	var back := -face * 12.0
+	for edge: Array in [[corner.call(1.0, 0.0), corner.call(1.0, 1.0)], [corner.call(0.0, 0.0), corner.call(1.0, 0.0)]]:
+		_poly3(w, [edge[0], edge[1], edge[1] + back, edge[0] + back], Color(0.12, 0.06, 0.03))
+	var grid := []
+	for i in 4:
+		var row := []
+		for j in 4:
+			row.append(corner.call(i / 3.0, j / 3.0))
+		grid.append(row)
+	_grid_surface(w, _photo.get_texture(), grid, false, 1.12)
+	var rim := PackedVector2Array()
+	for c: Array in [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0], [0.0, 0.0]]:
+		rim.append(_proj(corner.call(c[0], c[1])))
+	w.draw_polyline(rim, Color(INK, 0.9), 2.5)
+	# the lamp on its glass
+	_fill(w, PackedVector2Array([_proj(corner.call(0.16, 0.12)), _proj(corner.call(0.34, 0.12)), _proj(corner.call(0.2, 0.66)),
+		_proj(corner.call(0.13, 0.66))]), Color(1.0, 0.95, 0.85, 0.08 * _pool(base)))
+
+
+## A candle burning down beside the photo (its flame and glow are in _draw_glow()).
+func _candle(w: Node2D) -> void:
+	var c := _cyl_screen(CANDLE, 19, 56)
+	var b: Vector2 = c[0]
+	var t: Vector2 = c[1]
+	var rx: float = c[2]
+	var ry: float = c[3]
+	var lit := _pool(CANDLE) * 1.1
+	_fill(w, _ellipse(b + Vector2(rx * 0.5, ry * 0.4), rx * 1.5, ry * 1.5), Color(0, 0, 0, 0.4))
+	_fill(w, _ellipse(b, rx * 1.7, ry * 1.7, 14), Color(0.78, 0.72, 0.58) * lit)  # wax run down and set on the desk
+	_fill(w, PackedVector2Array([b + Vector2(-rx, 0), t + Vector2(-rx, 0), t + Vector2(rx, 0), b + Vector2(rx, 0)]), Color(0.93, 0.88, 0.74) * lit)
+	_fill(w, _ellipse(b, rx, ry), Color(0.93, 0.88, 0.74) * lit)
+	for k in 3:  # drips down its side
+		var dx := (k - 1) * rx * 0.6
+		w.draw_line(t + Vector2(dx, 0), t.lerp(b, 0.3 + k * 0.2) + Vector2(dx, 0), Color(1.0, 0.97, 0.88) * lit, maxf(rx * 0.22, 1.0))
+	_fill(w, _ellipse(t, rx, ry), Color(1.0, 0.95, 0.8) * lit)
+	_fill(w, _ellipse(t, rx * 0.5, ry * 0.5), Color(1.0, 0.8, 0.45))  # the melted well, lit from inside
+	w.draw_line(t, _proj(CANDLE + Vector3(0, 0, 62)), Color(0.1, 0.07, 0.05), maxf(rx * 0.12, 1.0))
+
+
+## His brother's red scarf, laid in front of the photo: a long soft strip,
+## its folds catching the lamp, frayed at the end.
+func _scarf(w: Node2D) -> void:
+	var red := Color(0.86, 0.13, 0.1)
+	var mids := []
+	for i in 15:
+		var u := i / 14.0
+		mids.append(Vector3(lerpf(-486.0, -196.0, u), 376.0 - 50.0 * u + sin(u * 7.0) * 13.0, 1.0))
+	var a_side := []
+	var b_side := []
+	for i in 15:
+		var along: Vector3 = mids[mini(i + 1, 14)] - mids[maxi(i - 1, 0)]
+		var n := Vector3(-along.y, along.x, 0).normalized() * 16.0 * (0.6 + 0.4 * sqrt(sin(clampf(i / 14.0, 0.02, 0.98) * PI)))
+		a_side.append(mids[i] + n)
+		b_side.append(mids[i] - n)
+	_soft_shadow(w, [a_side[0], a_side[7], a_side[14], b_side[14], b_side[7], b_side[0]], 5.0, 0.3)
+	for i in 14:
+		var lit := _pool(mids[i]) * (0.84 + 0.16 * sin(i * 1.3))
+		_poly3(w, [a_side[i], a_side[i + 1], b_side[i + 1], b_side[i]], Color(red.r * lit, red.g * lit, red.b * lit))
+	var edge := PackedVector2Array()
+	for i in 15:
+		edge.append(_proj(a_side[i]))
+	for i in range(14, -1, -1):
+		edge.append(_proj(b_side[i]))
+	edge.append(edge[0])
+	w.draw_polyline(edge, Color(0.25, 0.02, 0.03, 0.8), 1.5)
+	for k in 5:  # its frayed end
+		var from: Vector3 = mids[14] + Vector3(0, -10 + k * 5, 0)
+		w.draw_line(_proj(from), _proj(from + Vector3(20, -8 + k * 3, 0)), Color(red.r, red.g, red.b, 0.9) * _pool(from), 1.8)
+
+
+## A page torn in two, its halves lying apart: `tex` runs across both, split
+## down a ragged line.
+func _torn(w: Node2D, tex: Texture2D, c: Vector3, turn: float, size: Vector2) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 23
+	var rows := 9
+	var tear := PackedFloat32Array()
+	for j in rows + 1:
+		tear.append(0.5 + rng.randf_range(-0.03, 0.03) + (0.022 if j % 2 == 0 else -0.022))
+	var along := Vector3(cos(turn), sin(turn), 0)
+	var halves := []  # [points, uvs, colours, indices] each
+	for half in 2:
+		var a := turn + (half - 0.5) * 0.2
+		var ex := Vector3(cos(a), sin(a), 0)
+		var ey := Vector3(-sin(a), cos(a), 0)
+		var at := c + along * ((half - 0.5) * 52.0) + Vector3(0, -22.0 * half, 0.6)
+		var pts := PackedVector2Array()
+		var uvs := PackedVector2Array()
+		var cols := PackedColorArray()
+		var idx := PackedInt32Array()
+		var outline := []
+		for j in rows + 1:
+			var v := float(j) / rows
+			for u: float in ([0.0, tear[j]] if half == 0 else [tear[j], 1.0]):
+				var q := at + ex * (u - 0.5) * size.x + ey * (0.5 - v) * size.y
+				pts.append(_proj(q))
+				uvs.append(Vector2(u, v))
+				cols.append(_lit(q))
+				if j == 0 or j == rows:
+					outline.append(q)
+			if j < rows:
+				idx.append_array([j * 2, j * 2 + 1, j * 2 + 3, j * 2, j * 2 + 3, j * 2 + 2])
+		_soft_shadow(w, [outline[0], outline[1], outline[3], outline[2]], 4.0, 0.22)
+		halves.append([pts, uvs, cols, idx])
+	for h: Array in halves:  # (both shadows first: neither falls on the other half)
+		RenderingServer.canvas_item_add_triangle_array(w.get_canvas_item(), h[3], h[0], h[2], h[1], PackedInt32Array(),
+			PackedFloat32Array(), tex.get_rid())
+
+
+## A draft crushed into a ball and thrown down.
+func _crumple(w: Node2D, c: Vector3, r: float, seed_n: int) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed_n
+	var mid := c + Vector3(0, 0, r * 0.75)
+	var k: float = FOCAL / maxf((mid - _cam).dot(_cf), 1.0)
+	var at := _proj(mid)
+	var floor_at := _proj(c + Vector3(SHADOW.x, SHADOW.y, 0) * r * 0.5)
+	_fill(w, _ellipse(floor_at, r * k * 1.25, r * k * 1.25 * clampf(absf(_cf.z), 0.25, 1.0), 12), Color(0, 0, 0, 0.4))
+	var lit := _pool(c)
+	var rim := PackedVector2Array()
+	for i in 10:
+		rim.append(at + Vector2.from_angle(TAU * i / 10.0 + rng.randf_range(-0.15, 0.15)) * r * k * rng.randf_range(0.74, 1.06))
+	var heart := at + Vector2(rng.randf_range(-0.25, 0.25), rng.randf_range(-0.25, 0.25)) * r * k
+	for i in 10:  # its facets: some turned to the lamp, some away
+		var shade := (0.62 + 0.36 * rng.randf()) * lit
+		w.draw_colored_polygon(PackedVector2Array([heart, rim[i], rim[(i + 1) % 10]]), Color(0.93 * shade, 0.89 * shade, 0.78 * shade))
+	for i in 10:
+		w.draw_line(heart, rim[i].lerp(heart, rng.randf_range(0.1, 0.5)), Color(0.3, 0.26, 0.24, 0.45), 1.0)
+	w.draw_polyline(rim + PackedVector2Array([rim[0]]), Color(INK, 0.8), 1.5)
+	if seed_n % 2 == 1:  # a line of his red pen showing on one
+		w.draw_line(rim[2].lerp(heart, 0.4), rim[6].lerp(heart, 0.3), Color(0.85, 0.15, 0.14, 0.8), 1.6)
+
+
+## Half of a pencil he snapped (`point`: the half with its point on).
+func _stub(w: Node2D, a: Vector3, b: Vector3, point: bool) -> void:
+	var off := Vector3(SHADOW.x, SHADOW.y, 0) * a.z * 1.4
+	var pa := _proj(a)
+	var pb := _proj(b)
+	var r := 6.5 * FOCAL / maxf((a - _cam).dot(_cf), 1.0)
+	var n := (pb - pa).orthogonal().normalized() * r
+	var sa := _proj(a - Vector3(0, 0, a.z) + off)
+	var sb := _proj(b - Vector3(0, 0, b.z) + off)
+	_fill(w, PackedVector2Array([sa + n, sb + n, sb - n, sa - n]), Color(0, 0, 0, 0.35))
+	var lit := _lit(a)
+	var body := Color(1.0 * lit.r, 0.78 * lit.g, 0.18 * lit.b)
+	_fill(w, PackedVector2Array([pa + n, pb + n, pb - n, pa - n]), body)
+	w.draw_line(pa, pb, body.lightened(0.3), maxf(r * 0.5, 1.0))
+	var along := (pb - pa).normalized() * r
+	# the broken end: splinters of pale wood
+	_fill(w, PackedVector2Array([pa + n, pa - along * 1.6 + n * 0.3, pa - along * 0.5, pa - along * 1.9 - n * 0.5, pa - n]), Color(0.9, 0.74, 0.52) * lit)
+	if point:
+		var tip := pb + along * 6.0
+		_fill(w, PackedVector2Array([pb + n, tip, pb - n]), Color(0.86, 0.68, 0.48) * lit)
+		_fill(w, PackedVector2Array([pb.lerp(tip, 0.65) + n * 0.35, tip, pb.lerp(tip, 0.65) - n * 0.35]), Color(0.2, 0.2, 0.22))
+	else:
+		_fill(w, PackedVector2Array([pb + n, pb - n, pb + along * 2.2 - n * 0.9, pb + along * 2.2 + n * 0.9]), Color(0.95, 0.5, 0.55) * lit)
+
+
+## Earlier issues of the comic in a loose pile (he has written it for years).
+func _stack(w: Node2D, c: Vector3) -> void:
+	for i in 4:
+		var a: float = 0.5 + [0.0, 0.16, -0.1, 0.07][i]
+		var ex := Vector3(cos(a), sin(a), 0)
+		var ey := Vector3(-sin(a), cos(a), 0)
+		var at := c + Vector3([0, 14, -8, 5][i], [0, -6, 9, 2][i], 3.0 + i * 7.0)
+		var grid := []
+		for u in 3:
+			var row := []
+			for v in 3:
+				row.append(at + ex * (u / 2.0 - 0.5) * 200.0 + ey * (0.5 - v / 2.0) * 300.0)
+			grid.append(row)
+		_soft_shadow(w, [grid[0][0], grid[2][0], grid[2][2], grid[0][2]], 9.0, 0.4)
+		_grid_surface(w, _cover.get_texture(), grid, false, 0.62 + i * 0.1)
+		var rim := PackedVector2Array([_proj(grid[0][0]), _proj(grid[2][0]), _proj(grid[2][2]), _proj(grid[0][2]), _proj(grid[0][0])])
+		w.draw_polyline(rim, Color(INK, 0.85), 1.5)
+
+
+## A pocket watch lying open, its chain trailing off: the ticking.
+func _watch(w: Node2D, c: Vector3) -> void:
+	var k: float = FOCAL / maxf((c - _cam).dot(_cf), 1.0)
+	var flat := clampf(absf(_cf.z), 0.25, 1.0)
+	var at := _proj(c + Vector3(0, 0, 4))
+	var lit := _pool(c)
+	var chain := PackedVector2Array()
+	for i in 12:
+		chain.append(_proj(c + Vector3(30 + i * 13.0, 18 + sin(i * 0.9) * 16.0 + i * 5.0, 1)))
+	w.draw_polyline(chain, Color(0.75, 0.58, 0.25) * lit, maxf(2.5 * k, 1.0))
+	_fill(w, _ellipse(at + Vector2(5, 5) * k, 40 * k, 40 * k * flat), Color(0, 0, 0, 0.4))
+	_fill(w, _ellipse(at, 38 * k, 38 * k * flat), Color(0.78, 0.6, 0.26) * lit)
+	_fill(w, _ellipse(at, 31 * k, 31 * k * flat), Color(0.96, 0.93, 0.84) * lit)
+	for i in 12:
+		var d := Vector2(sin(TAU * i / 12.0), -cos(TAU * i / 12.0) * flat)
+		w.draw_line(at + d * 25.0 * k, at + d * 30.0 * k, Color(INK, 0.8), maxf(1.5 * k, 1.0))
+	for hand: Array in [[TAU * 0.92, 17.0, 2.6], [TAU * 0.19, 25.0, 1.8], [TAU * floorf(_t) / 60.0, 27.0, 1.0]]:  # (it is late)
+		w.draw_line(at, at + Vector2(sin(hand[0]), -cos(hand[0]) * flat) * hand[1] * k, Color(0.75, 0.1, 0.1) if hand[2] == 1.0 else INK, maxf(hand[2] * k, 1.0))
 
 
 func _eraser(w: Node2D, c: Vector3) -> void:
@@ -860,7 +1684,7 @@ func _ellipse(c: Vector2, rx: float, ry: float, n := 24) -> PackedVector2Array:
 func _update_sparks(delta: float) -> void:
 	var opening := _t > T_OPEN.x + 0.2 and _t < T_OPEN.y + 0.4
 	var turning := _t > T_TURN.x + 0.4 and _t < T_TURN.y
-	var rng_rate := 70.0 if opening else (22.0 if turning else (4.0 if _t > T_OPEN.y and _t < T_TURN.y else 0.0))
+	var rng_rate := 70.0 if opening else (22.0 if turning else (4.0 * (1.0 - _hand_in) if _t > T_OPEN.y and _t < T_TURN.y else 0.0))
 	var n := int(rng_rate * delta + randf())
 	for i in n:
 		var kind := 0  # sparkles (ink drops read as holes on the page)
@@ -870,16 +1694,68 @@ func _update_sparks(delta: float) -> void:
 			v.z *= 1.3
 		var life := randf_range(0.8, 1.8)
 		_sparks.append([p, v, life, life, kind, randf_range(1.5, 4.0)])
+	# ink thrown out of the book as the cover bursts open, outwards from its
+	# edges: it lands on the desk and stays (_splats)
+	if _t > T_OPEN.x + 0.3 and _t < T_OPEN.x + 1.1:
+		for i in int(46.0 * delta + randf()):
+			var a := randf() * TAU
+			var d := Vector3(cos(a), sin(a), 0.0)
+			_sparks.append([Vector3(BW * 0.5 + d.x * BW * 0.45, d.y * BH * 0.45, THICK + 4.0),
+				d * randf_range(180, 560) + Vector3(0, 0, randf_range(160, 380)), 2.5, 2.5, 1, randf_range(1.2, 4.2)])
 	for s in _sparks:
 		s[0] += s[1] * delta
 		s[1].z -= (120.0 if s[4] == 0 else 520.0) * delta
 		s[1] *= 1.0 - 0.6 * delta
 		s[2] -= delta
+	for s in _sparks:
+		if s[4] == 1 and s[0].z <= 0.5 and s[2] > 0.0:  # a drop of ink lands and stays
+			if _splats.size() < 70:
+				_splats.append([_bk(Vector3(s[0].x, s[0].y, 0.4)), s[5], _bk(Vector3(s[1].x, s[1].y, 0.0).normalized())])
+			s[2] = 0.0
 	_sparks = _sparks.filter(func(s): return s[2] > 0.0 and s[0].z > -2.0)
+
+
+## 0..1: lightning outside, a flash and its flicker (at the start, and when
+## he stabs the full stop in).
+func _lightning() -> float:
+	var out := 0.0
+	for at: float in [T_FLASH, _stab_t + 0.02]:
+		var d := _t - at
+		if d > 0.0:
+			out = maxf(out, maxf(exp(-d * 16.0), 0.75 * exp(-(d - 0.16) * 20.0) * float(d > 0.16)))
+	return minf(out, 1.0)
 
 
 func _draw_glow() -> void:
 	var g := _glow
+	# the window: its four panes lie cold across the near right of the desk,
+	# rain running down them; lightning fills them, and the room
+	var flash := _lightning()
+	for i in 2:
+		for j in 2:
+			var o := WINDOW + PANE_X * (i * 1.08) + PANE_Y * (j * 1.06)
+			var pane := PackedVector2Array([_proj(o), _proj(o + PANE_X), _proj(o + PANE_X + PANE_Y), _proj(o + PANE_Y)])
+			var far := 0.045 + 0.02 * sin(_t * 1.7 + i * 2.0 + j) + 0.4 * flash
+			g.draw_polygon(pane, PackedColorArray([Color(0.4, 0.58, 1.0, far * 1.5), Color(0.4, 0.58, 1.0, far * 1.5),
+				Color(0.4, 0.58, 1.0, far * 0.7), Color(0.4, 0.58, 1.0, far * 0.7)]))
+	for k in 16:
+		var u := fposmod(k * 0.377, 1.0) * 2.08
+		var fall := fposmod(_t * (0.16 + (k % 5) * 0.05) + k * 0.61, 1.0)
+		var top := WINDOW + PANE_X * u + PANE_Y * (2.06 * (1.0 - fall))
+		g.draw_line(_proj(top), _proj(top - PANE_Y * 0.16), Color(0.55, 0.7, 1.0, 0.07 * sin(fall * PI)), 2.0)
+	if flash > 0.01:
+		g.draw_rect(Rect2(0, 0, 1280, 720), Color(0.5, 0.62, 1.0, 0.2 * flash))
+	# the candle by the photo
+	var wick := CANDLE + Vector3(0, 0, 60)
+	var ck: float = FOCAL / maxf((wick - _cam).dot(_cf), 1.0)
+	var lick := 0.85 + 0.1 * sin(_t * 11.0) + 0.05 * sin(_t * 27.0)
+	var tip := _proj(wick + Vector3(sin(_t * 6.3) * 2.0, 0, 26.0 * lick))
+	var foot := _proj(wick)
+	_radial(g, foot, 210.0 * ck * lick, Color(1.0, 0.62, 0.25, 0.2))
+	var side := (tip - foot).orthogonal().normalized() * 7.0 * ck
+	g.draw_colored_polygon(PackedVector2Array([foot - side, foot.lerp(tip, 0.45) - side * 1.25, tip, foot.lerp(tip, 0.45) + side * 1.25, foot + side]),
+		Color(1.0, 0.72, 0.25, 0.9))
+	g.draw_colored_polygon(PackedVector2Array([foot - side * 0.5, tip.lerp(foot, 0.4), foot + side * 0.5]), Color(1.0, 0.95, 0.8, 0.9))
 	# the lamp: a warm cone from off the top left and its pool on the desk
 	var pool := _proj(Vector3(LAMP.x, LAMP.y, 0))
 	_radial(g, pool, 760.0, Color(1.0, 0.72, 0.4, 0.09))
@@ -939,7 +1815,7 @@ func _draw_top() -> void:
 		c.draw_circle(p, r, INK)
 		c.draw_circle(p + Vector2(-r * 0.3, -r * 0.3), r * 0.3, Color(1, 1, 1, 0.4))
 	# vignette, warmer at the lamp side
-	var edge := Color(0.0, 0.0, 0.0, 0.7)
+	var edge := Color(0.0, 0.0, 0.0, 0.7 + 0.2 * _hand_in)  # closes in a little under the Writer's hand
 	var clear := Color(0, 0, 0, 0)
 	c.draw_polygon(PackedVector2Array([Vector2(0, 0), Vector2(1280, 0), Vector2(1280, 150), Vector2(0, 150)]), PackedColorArray([edge, edge, clear, clear]))
 	c.draw_polygon(PackedVector2Array([Vector2(0, 570), Vector2(1280, 570), Vector2(1280, 720), Vector2(0, 720)]), PackedColorArray([clear, clear, edge, edge]))
@@ -1131,6 +2007,115 @@ func _paint_inside(c: Control) -> void:
 	c.draw_string(HAND, Vector2(70, 672), "finish this one...", HORIZONTAL_ALIGNMENT_LEFT, -1, 26, Color(INK, 0.6))
 
 
+## The photo in the frame: two brothers in deep sepia, the City behind them.
+## The small one holds a sketchbook; the tall one (_photo_brother()) wears
+## Vesper's hat and scarf, the only colour left in it. A black ribbon is tied
+## over the corner, and "brothers." is written under it in the Writer's hand.
+func _paint_photo(c: Control) -> void:
+	var s := Vector2(300, 380)
+	c.draw_rect(Rect2(Vector2.ZERO, s), Color(0.15, 0.07, 0.03))
+	c.draw_rect(Rect2(6, 6, s.x - 12, s.y - 12), Color(0.44, 0.24, 0.1), false, 7.0)
+	c.draw_rect(Rect2(13, 13, s.x - 26, s.y - 26), Color(0.24, 0.12, 0.05), false, 4.0)
+	c.draw_rect(Rect2(18, 18, s.x - 36, s.y - 36), Color(0.95, 0.74, 0.3), false, 2.5)  # gilt
+	c.draw_rect(Rect2(21, 21, s.x - 42, s.y - 42), Color(0.9, 0.85, 0.7))              # the mount
+	var ph := Rect2(34, 34, s.x - 68, s.y - 92)
+	c.draw_polygon(PackedVector2Array([ph.position, Vector2(ph.end.x, ph.position.y), ph.end, Vector2(ph.position.x, ph.end.y)]),
+		PackedColorArray([Color(0.86, 0.68, 0.42), Color(0.8, 0.6, 0.36), Color(0.5, 0.33, 0.18), Color(0.56, 0.38, 0.2)]))
+	c.draw_circle(ph.position + Vector2(52, 50), 26.0, Color(0.97, 0.86, 0.6, 0.85))  # a low sun
+	var ground := ph.end.y - 46.0
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 17
+	var x := ph.position.x
+	while x < ph.end.x - 8.0:  # the City, far off
+		var bw := minf(rng.randf_range(20, 40), ph.end.x - x)
+		var bh := rng.randf_range(50, 150)
+		c.draw_rect(Rect2(x, ground - bh, bw, bh), Color(0.4, 0.27, 0.16, 0.9))
+		for wy in range(int(ground - bh + 8), int(ground - 8), 16):
+			if rng.randf() < 0.5:
+				c.draw_rect(Rect2(x + 5, wy, 5, 7), Color(0.95, 0.8, 0.5, 0.7))
+		x += bw + rng.randf_range(2, 8)
+	c.draw_rect(Rect2(ph.position.x, ground, ph.size.x, ph.end.y - ground), Color(0.27, 0.17, 0.1))
+	# the small brother: messy hair, a sketchbook under his arm, a pencil in his fist
+	var dark := Color(0.12, 0.07, 0.04)
+	var coat := Color(0.36, 0.24, 0.15)
+	var f := Vector2(98, ground + 10.0)
+	for lx: float in [-7.0, 8.0]:
+		c.draw_line(f + Vector2(lx, 0), f + Vector2(lx * 0.8, -40), dark, 8.0)
+		c.draw_circle(f + Vector2(lx + 3.0, 0), 5.5, dark)
+	c.draw_colored_polygon(PackedVector2Array([f + Vector2(-19, -36), f + Vector2(20, -36), f + Vector2(15, -98), f + Vector2(-14, -98)]), coat)
+	c.draw_polyline(PackedVector2Array([f + Vector2(-19, -36), f + Vector2(20, -36), f + Vector2(15, -98), f + Vector2(-14, -98), f + Vector2(-19, -36)]), dark, 2.0)
+	c.draw_circle(f + Vector2(1, -118), 23.0, Color(0.97, 0.85, 0.64))
+	c.draw_arc(f + Vector2(1, -118), 23.0, 0, TAU, 20, dark, 2.0)
+	c.draw_arc(f + Vector2(0, -122), 21.0, PI * 1.02, PI * 1.98, 14, dark, 10.0)
+	for k in 5:
+		c.draw_line(f + Vector2(-16 + k * 8, -138), f + Vector2(-20 + k * 9, -149 - (k % 2) * 5), dark, 3.5)
+	c.draw_circle(f + Vector2(8, -118), 3.0, dark)
+	c.draw_circle(f + Vector2(18, -118), 3.0, dark)
+	c.draw_arc(f + Vector2(12, -109), 7.0, 0.3, PI - 0.3, 8, dark, 2.5)
+	c.draw_set_transform(f + Vector2(8, -80), -0.2)
+	c.draw_rect(Rect2(0, 0, 31, 40), Color(0.96, 0.9, 0.74))
+	c.draw_rect(Rect2(0, 0, 31, 40), dark, false, 2.5)
+	c.draw_set_transform(Vector2.ZERO)
+	c.draw_line(f + Vector2(-9, -90), f + Vector2(16, -60), coat.darkened(0.3), 8.0)
+	c.draw_line(f + Vector2(16, -62), f + Vector2(35, -88), Color(0.86, 0.62, 0.22), 4.0)
+	# an old photo: dark at the edges
+	for k in 5:
+		c.draw_rect(ph.grow(-k * 4.0), Color(0.1, 0.05, 0.02, 0.13), false, 8.0)
+	c.draw_rect(ph, dark, false, 2.0)
+	c.draw_string(HAND, Vector2(96, s.y - 30), "brothers.", HORIZONTAL_ALIGNMENT_LEFT, -1, 27, Color(0.24, 0.13, 0.07))
+	# the mourning ribbon over the corner
+	c.draw_colored_polygon(PackedVector2Array([Vector2(s.x - 104, 0), Vector2(s.x - 62, 0), Vector2(s.x, 62), Vector2(s.x, 104)]),
+		Color(0.02, 0.01, 0.03))
+	c.draw_line(Vector2(s.x - 90, 0), Vector2(s.x, 90), Color(1, 1, 1, 0.12), 2.0)
+
+
+func _photo_brother(vp: SubViewport) -> void:
+	var b: Node2D = PlayerArt.new()
+	b.position = Vector2(200, 300)
+	b.scale = Vector2(-2.55, 2.55)  # turned to his brother
+	b.cloak_color = Color(0.2, 0.12, 0.07)
+	b.cloak_rim = Color(0.46, 0.32, 0.2)
+	b.mask_color = Color(0.98, 0.9, 0.74)
+	b.hat_color = Color(0.11, 0.06, 0.04)
+	b.scarf_color = Color(0.92, 0.14, 0.1)
+	b.band_color = Color(0.92, 0.14, 0.1)
+	b.page_color = Color(0.82, 0.7, 0.5)
+	b.pencil_color = Color(0.6, 0.46, 0.28)
+	b.eye_color = Color(0.12, 0.07, 0.04)
+	vp.get_child(0).add_child(b)
+
+
+## The page he tore in two (_torn()): the ending he first wrote, where
+## Vesper comes home, and his red NO across it.
+func _paint_draft(c: Control) -> void:
+	var s := Vector2(420, 300)
+	_paper(c, s, Color(0.95, 0.93, 0.86))
+	c.draw_rect(Rect2(12, 12, s.x - 24, s.y - 24), Color(PENCIL, 0.7), false, 2.0)
+	var cap := Rect2(28, 24, s.x - 56, 58)
+	c.draw_rect(cap.grow(3.0), INK)
+	c.draw_rect(cap, CAPTION)
+	var line := "AND VESPER CAME HOME."
+	var lw := FONT.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, 36).x
+	c.draw_string(FONT, Vector2((s.x - lw) * 0.5, cap.position.y + 43), line, HORIZONTAL_ALIGNMENT_LEFT, -1, 36, INK)
+	# a house with a light on, and him walking up to it
+	var pc := Color(PENCIL, 0.75)
+	c.draw_line(Vector2(24, 250), Vector2(s.x - 24, 250), pc, 1.5)
+	c.draw_rect(Rect2(250, 160, 110, 90), pc, false, 1.8)
+	c.draw_polyline(PackedVector2Array([Vector2(240, 162), Vector2(305, 112), Vector2(370, 162)]), pc, 1.8)
+	c.draw_rect(Rect2(292, 200, 26, 50), pc, false, 1.5)
+	c.draw_rect(Rect2(326, 178, 22, 22), Color(1.0, 0.85, 0.4, 0.75))
+	c.draw_rect(Rect2(326, 178, 22, 22), pc, false, 1.5)
+	_stick(c, Vector2(150, 250), 1.7, 0.08, 1)
+	var end_w := FONT.get_string_size("THE END", HORIZONTAL_ALIGNMENT_LEFT, -1, 30).x
+	c.draw_string(FONT, Vector2(s.x - end_w - 34, s.y - 22), "THE END", HORIZONTAL_ALIGNMENT_LEFT, -1, 30, Color(INK, 0.85))
+	# NO.
+	var red := Color(0.86, 0.1, 0.1, 0.9)
+	c.draw_set_transform(Vector2(96, 236), -0.2)
+	c.draw_string(HAND, Vector2.ZERO, "NO", HORIZONTAL_ALIGNMENT_LEFT, -1, 150, red)
+	c.draw_set_transform(Vector2.ZERO)
+	c.draw_polyline(PackedVector2Array([Vector2(40, 96), Vector2(380, 128), Vector2(60, 150), Vector2(372, 190), Vector2(80, 214)]), red, 4.0)
+
+
 func _paint_sheet(c: Control) -> void:
 	var s := Vector2(400, 300)
 	_paper(c, s, Color(0.95, 0.94, 0.9))
@@ -1166,16 +2151,145 @@ func _paint_p2(c: Control) -> void:
 		c.draw_rect(Rect2(x, r.end.y - 70 - h, w, h), Color(PENCIL, 0.5), false, 1.2)
 		x += w + rng.randf_range(4, 14)
 	c.draw_line(Vector2(r.position.x, r.end.y - 70), Vector2(r.end.x, r.end.y - 70), Color(PENCIL, 0.8), 1.5)
-	c.draw_arc(Vector2(r.position.x + 60, r.end.y - 92), 9, 0, TAU, 12, Color(PENCIL, 0.8), 1.5)
-	c.draw_line(Vector2(r.position.x + 50, r.end.y - 102), Vector2(r.position.x + 70, r.end.y - 103), Color(PENCIL, 0.8), 2.0)
-	c.draw_line(Vector2(r.position.x + 60, r.end.y - 84), Vector2(r.position.x + 60, r.end.y - 70), Color(PENCIL, 0.8), 1.5)
-	_border(c, r, 4.0)
-	# the rest of the page: roughs, still to be drawn
-	for pr in [Rect2(26, 350, 225, 200), Rect2(269, 350, 225, 200), Rect2(26, 568, 468, 180)]:
-		c.draw_rect(pr, Color(0.98, 0.96, 0.9))
-		for k in 6:
-			c.draw_line(pr.position + Vector2(10 + k * 34, pr.size.y - 12), pr.position + Vector2(40 + k * 30, 20 + k * 9), Color(PENCIL, 0.25), 1.0)
-		c.draw_rect(pr, Color(PENCIL, 0.6), false, 1.5)
+	_border(c, r, 4.0)  # (its pencil Vesper is drawn live: _paint_p2_live())
+	# the rest of the page: the story still to come, roughed out in pencil
+	_rough_sketchbook(c, Rect2(26, 350, 225, 200))
+	_rough_long_drop(c, Rect2(269, 350, 225, 200))
+	_rough_beast(c, Rect2(26, 568, 468, 180))
+
+
+## Page two, live: the pencil Vesper in the first panel. He blinks while he
+## waits to be inked (twice in the held beat before the ink comes).
+func _paint_p2_live(c: Node2D) -> void:
+	var shut := false
+	for b: float in [T_TURN.y - 0.35, T_TOP + 0.35, T_TOP + 0.8]:
+		shut = shut or (_t > b and _t < b + 0.13)
+	_stick(c, Vector2(P2_PANEL.position.x + 62, P2_PANEL.end.y - 70), 1.2, 0.05 * sin(_t * 1.3), 2 if shut else 1, _t)
+
+
+## A pencil stick-figure Vesper: hat, round head, a red scarf (as on the
+## sketch sheet). `at` = his feet, `k` his size; `eyes` 0 none, 1 open, 2 shut;
+## `wave` moves his scarf.
+func _stick(c: CanvasItem, at: Vector2, k: float, lean := 0.0, eyes := 0, wave := 0.0) -> void:
+	var pc := Color(PENCIL, 0.85)
+	c.draw_set_transform(at, lean, Vector2(k, k))
+	c.draw_line(Vector2(0, -10), Vector2(-5, 0), pc, 1.5)
+	c.draw_line(Vector2(0, -10), Vector2(5, 0), pc, 1.5)
+	c.draw_line(Vector2(0, -10), Vector2(0, -22), pc, 1.5)
+	c.draw_polyline(PackedVector2Array([Vector2(-2, -22), Vector2(-13, -19 + sin(wave * 5.0) * 1.5), Vector2(-22, -23 + sin(wave * 5.0 + 1.3) * 2.5)]),
+		Color(0.85, 0.3, 0.25, 0.85), 2.2)
+	c.draw_arc(Vector2(0, -31), 9.0, 0, TAU, 16, pc, 1.5)
+	c.draw_line(Vector2(-13, -39), Vector2(13, -40), pc, 2.0)
+	c.draw_rect(Rect2(-7, -50, 14, 10), pc, false, 1.5)
+	for ex: float in [2.5, 6.5]:
+		if eyes == 1:
+			c.draw_circle(Vector2(ex, -31), 1.3, pc)
+		elif eyes == 2:
+			c.draw_line(Vector2(ex - 1.5, -31), Vector2(ex + 1.5, -31), pc, 1.0)
+	c.draw_set_transform(Vector2.ZERO)
+
+
+## A rough panel on page two: blank paper in a pencil box, the diagonals an
+## artist rules in blue to find its middle, its number circled in the corner.
+func _rough_box(c: CanvasItem, r: Rect2, number: String) -> void:
+	c.draw_rect(r, Color(0.98, 0.96, 0.9))
+	c.draw_line(r.position, r.end, Color(0.4, 0.6, 0.95, 0.14), 1.0)
+	c.draw_line(Vector2(r.end.x, r.position.y), Vector2(r.position.x, r.end.y), Color(0.4, 0.6, 0.95, 0.14), 1.0)
+	c.draw_rect(r, Color(PENCIL, 0.6), false, 1.5)
+	c.draw_arc(r.position + Vector2(17, 17), 10.0, 0, TAU, 14, Color(PENCIL, 0.55), 1.2)
+	c.draw_string(HAND, r.position + Vector2(12, 23), number, HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color(PENCIL, 0.85))
+
+
+## Page two, panel 2: the Sketchbook. A bridge that is only sketched, real
+## where his light falls, over spikes.
+func _rough_sketchbook(c: CanvasItem, r: Rect2) -> void:
+	_rough_box(c, r, "2")
+	var o := r.position
+	var pc := Color(PENCIL, 0.55)
+	c.draw_rect(Rect2(o + Vector2(1, 150), Vector2(57, 49)), pc, false, 1.3)
+	c.draw_rect(Rect2(o + Vector2(167, 150), Vector2(57, 49)), pc, false, 1.3)
+	var x := 60.0
+	while x < 164.0:
+		c.draw_polyline(PackedVector2Array([o + Vector2(x, 199), o + Vector2(x + 6.5, 183), o + Vector2(x + 13, 199)]), pc, 1.2)
+		x += 13.0
+	var ember := o + Vector2(120, 96)
+	for k in 6:
+		var cell := Rect2(o + Vector2(60 + k * 17.5, 143), Vector2(16, 8))
+		if absf(cell.get_center().x - ember.x) < 30.0:
+			c.draw_rect(cell, Color(PENCIL, 0.2))
+			c.draw_rect(cell, Color(PENCIL, 0.85), false, 1.6)
+		else:
+			c.draw_dashed_line(cell.position, Vector2(cell.end.x, cell.position.y), pc, 1.0, 3.0)
+			c.draw_dashed_line(Vector2(cell.position.x, cell.end.y), cell.end, pc, 1.0, 3.0)
+	_stick(c, o + Vector2(108, 143), 0.95)
+	c.draw_line(o + Vector2(110, 122), ember + Vector2(-2, 4), Color(PENCIL, 0.85), 1.4)  # his arm, the Ember held up
+	c.draw_circle(ember, 4.0, Color(0.95, 0.6, 0.2, 0.55))
+	c.draw_arc(ember, 4.0, 0, TAU, 10, Color(PENCIL, 0.85), 1.0)
+	for k in 8:
+		var d := Vector2.from_angle(TAU * k / 8.0 + 0.2)
+		c.draw_line(ember + d * 8.0, ember + d * 14.0, pc, 1.0)
+	c.draw_arc(ember, 47.0, 0, TAU, 40, Color(PENCIL, 0.28), 1.0)  # how far it reaches
+	c.draw_line(o + Vector2(26, 150), o + Vector2(26, 114), pc, 1.5)  # a lantern on the near bank
+	c.draw_rect(Rect2(o + Vector2(19, 98), Vector2(14, 16)), pc, false, 1.3)
+	c.draw_string(HAND, o + Vector2(62, 34), "light makes it real", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(PENCIL, 0.8))
+
+
+## Page two, panel 3: the Long Drop. A shaft, ledges stepping down it, and
+## him falling.
+func _rough_long_drop(c: CanvasItem, r: Rect2) -> void:
+	_rough_box(c, r, "3")
+	var o := r.position
+	var pc := Color(PENCIL, 0.55)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 9
+	for wall: float in [76.0, 152.0]:
+		var side := -1.0 if wall < 100.0 else 1.0
+		var line := PackedVector2Array()
+		for i in 11:
+			line.append(o + Vector2(wall + rng.randf_range(-3, 3), 1.0 + i * 19.8))
+		c.draw_polyline(line, pc, 1.6)
+		for i in 9:  # rock, hatched
+			c.draw_line(o + Vector2(wall + side * 5.0, 8 + i * 21), o + Vector2(wall + side * 24.0, 24 + i * 21), Color(PENCIL, 0.28), 1.0)
+	for k in 4:
+		var lx := 78.0 if k % 2 == 0 else 120.0
+		c.draw_line(o + Vector2(lx, 42 + k * 42), o + Vector2(lx + 30, 42 + k * 42), Color(PENCIL, 0.8), 2.2)
+	_stick(c, o + Vector2(118, 130), 0.9, 0.55)
+	for k in 4:  # how fast
+		c.draw_line(o + Vector2(98 + k * 9, 38 + (k % 2) * 9), o + Vector2(98 + k * 9, 70 + (k % 2) * 9), Color(PENCIL, 0.35), 1.0)
+	c.draw_line(o + Vector2(196, 44), o + Vector2(196, 158), pc, 1.6)  # down
+	c.draw_polyline(PackedVector2Array([o + Vector2(189, 148), o + Vector2(196, 160), o + Vector2(203, 148)]), pc, 1.6)
+	c.draw_string(HAND, o + Vector2(156, 186), "a LONG way", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(PENCIL, 0.8))
+
+
+## Page two, panel 4: the Beast, as a shape only: a hulk with two heads gone
+## over and over in pencil, its eyes left empty for the ink, and him very
+## small in front of it.
+func _rough_beast(c: CanvasItem, r: Rect2) -> void:
+	_rough_box(c, r, "4")
+	var o := r.position
+	var pc := Color(PENCIL, 0.5)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 13
+	var ground := 160.0
+	c.draw_line(o + Vector2(8, ground), o + Vector2(r.size.x - 8, ground), Color(PENCIL, 0.6), 1.3)
+	var b := o + Vector2(322, 96)
+	for k in 17:  # shaded in with the side of the pencil
+		var hx := -72.0 + k * 9.0
+		var half := 52.0 * sqrt(maxf(1.0 - pow(hx / 80.0, 2.0), 0.0))
+		c.draw_line(b + Vector2(hx - 9, 8 + half), b + Vector2(hx + 9, 8 - half), Color(PENCIL, 0.2), 2.5)
+	for pass_n in 3:
+		c.draw_polyline(_loop(b + Vector2(0, 8), 80, 54, 1.07, rng, 0.07), pc, 1.2)
+		c.draw_polyline(_loop(b + Vector2(-50, -50), 30, 26, 1.07, rng, 0.09), pc, 1.2)
+		c.draw_polyline(_loop(b + Vector2(44, -56), 28, 25, 1.07, rng, 0.09), pc, 1.2)
+	for arm: Array in [[Vector2(-72, 0), Vector2(-130, 20), Vector2(-154, 50)], [Vector2(74, -4), Vector2(120, 28), Vector2(114, 60)]]:
+		c.draw_polyline(PackedVector2Array([b + arm[0], b + arm[1], b + arm[2]]), Color(PENCIL, 0.7), 1.8)
+		for d: Vector2 in [Vector2(-10, 10), Vector2(-1, 14), Vector2(8, 11)]:
+			c.draw_line(b + arm[2], b + arm[2] + d, Color(PENCIL, 0.7), 1.3)
+	for e: Vector2 in [Vector2(-60, -54), Vector2(-42, -56), Vector2(36, -60), Vector2(54, -58)]:
+		c.draw_arc(b + e, 4.5, 0, TAU, 10, Color(PENCIL, 0.85), 1.3)
+	_stick(c, o + Vector2(98, ground), 0.8)
+	c.draw_line(o + Vector2(101, ground - 17), o + Vector2(128, ground - 30), Color(PENCIL, 0.85), 1.5)  # his sword, out
+	c.draw_string(HAND, o + Vector2(36, 36), "the big one", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(PENCIL, 0.8))
 
 
 func _border(c: CanvasItem, r: Rect2, w: float, a := 1.0) -> void:
@@ -1213,10 +2327,10 @@ func _paint_p1_captions(c: Node2D) -> void:
 		if _t < t0 - 0.2:
 			continue
 		var a := clampf((_t - t0 + 0.2) / 0.25, 0.0, 1.0)
-		var box := Rect2(26, 34, 468, 140) if line == 0 else Rect2(70, 638, 380, 104)
-		var px := 46 if line == 0 else 44
+		var box := CAP1_BOX if line == 0 else Rect2(70, 638, 380, 104)
+		var px := CAP1_PX if line == 0 else 44
 		var text: String = LINE1 if line == 0 else LINE2
-		var words := ["I JUST HAD THE", "CRAZIEST ADVENTURE..."] if line == 0 else ["BUT NOW...", "LET'S BEGIN."]
+		var words: Array = CAP1_WORDS if line == 0 else ["BUT NOW...", "LET'S BEGIN."]
 		c.draw_set_transform(box.get_center(), -0.02 if line == 0 else 0.025, Vector2(a, a))
 		var r := Rect2(-box.size * 0.5, box.size)
 		c.draw_rect(Rect2(r.position + Vector2(6, 7), r.size), Color(INK, 0.35))
@@ -1283,6 +2397,27 @@ func _build_p1_panels() -> void:
 		frame.set_meta("live", true)
 		frame.draw.connect(_paint_panel_frame.bind(frame, i))
 		root.add_child(frame)
+	var out := Node2D.new()  # over the borders
+	out.set_meta("live", true)
+	out.draw.connect(_paint_breakout.bind(out))
+	root.add_child(out)
+
+
+## Where the Eraser is in its panel: scrubbing side to side, wider once the
+## panel is inked.
+func _eraser_x(t: float) -> float:
+	return 100.0 + sin(t * 6.0) * (46.0 + 18.0 * _ease((t - T_PANEL_INK) / 0.6))
+
+
+## Over the panels' borders: once its panel is inked the Eraser won't stay in
+## it. It swells, and its scrubbing carries its claws out across the gutter.
+func _paint_breakout(c: Node2D) -> void:
+	var t := _panel_t(3)
+	if t < T_PANEL_INK:
+		return
+	var grow := _ease((t - T_PANEL_INK) / 0.6)
+	EraserArt.draw(c, Transform2D(0.0, Vector2.ONE * (0.38 + 0.08 * grow), 0.0, P1_PANELS[3].position + Vector2(_eraser_x(t), 190.0 + 3.0 * grow)),
+		{"time": _t, "rubbing": 1.0, "roar": 0.7})
 
 
 func _panel_t(i: int) -> float:
@@ -1301,21 +2436,43 @@ func _paint_panel_bg(c: Node2D, i: int) -> void:
 				var a := -0.9 + k * 0.22 + t * 0.05
 				c.draw_colored_polygon(PackedVector2Array([Vector2(s.x * 0.5, s.y * 1.1), Vector2(s.x * 0.5, s.y * 1.1) + Vector2.from_angle(a - PI * 0.5) * 400 + Vector2(12, 0),
 					Vector2(s.x * 0.5, s.y * 1.1) + Vector2.from_angle(a - PI * 0.5) * 400 - Vector2(12, 0)]), Color(1, 1, 1, 0.18))
+			var slide := maxf(t, 0.0) * 7.0
+			for k in 11:  # far towers, paler, sliding by behind the near ones
+				var n := k + int(slide / 26.0)
+				var far_h := 112.0 + (n * 53 % 70)
+				var far := Rect2(k * 26 - 14 - fmod(slide, 26.0), s.y - 34 - far_h, 20, far_h)
+				c.draw_rect(far, Color(0.74, 0.72, 0.96, 0.8))
+				c.draw_rect(far, Color(1, 1, 1, 0.35), false, 1.0)
 			var cols := [Color(0.95, 0.45, 0.65), Color(0.55, 0.45, 0.85), Color(0.95, 0.6, 0.75), Color(0.4, 0.55, 0.9)]
 			for k in 7:
 				var h := 60.0 + (k * 37 % 70)
 				c.draw_rect(Rect2(k * 34 - 6, s.y - 34 - h, 30, h), cols[k % 4])
 				c.draw_rect(Rect2(k * 34 - 6, s.y - 34 - h, 30, h), Color(INK, 0.8), false, 1.5)
+				for j in 3:  # its windows, going on and off
+					if sin(t * 2.6 + k * 2.1 + j * 1.7) > 0.1:
+						c.draw_rect(Rect2(k * 34 + (j % 2) * 12, s.y - 34 - h + 12 + j * 15, 6, 8), Color(1.0, 0.95, 0.6, 0.9))
 			c.draw_rect(Rect2(0, s.y - 34, s.x, 34), Color(0.18, 0.14, 0.26))
 		1:  # the light: a sketch bridge over spikes, held up by the Ember
 			c.draw_rect(Rect2(Vector2.ZERO, s), Color(0.1, 0.09, 0.2))
+			var ember_x := 50.0 + fmod(t * 34.0, 140.0)
+			var by := 152.0
+			for k in 4:  # behind: pencilled pillars, real only where the Ember's light falls
+				var pil := Rect2(14.0 + k * 58.0, 36, 26, by - 36)
+				var real := clampf(1.0 - absf(pil.get_center().x - ember_x) / 75.0, 0.0, 1.0)
+				c.draw_rect(pil, Color(0.5, 0.42, 0.62, 0.6 * real))
+				c.draw_rect(pil, Color(0.8, 0.8, 0.92, 0.16 + 0.5 * real), false, 1.0)
+				c.draw_arc(Vector2(pil.get_center().x, 36), 13, PI, TAU, 10, Color(0.8, 0.8, 0.92, 0.16 + 0.5 * real), 1.0)
+			var gleam := fmod(maxf(t, 0.0) * 85.0, s.x + 120.0) - 40.0  # runs along the spikes' points
 			var x := 0.0
 			while x < s.x:
 				c.draw_colored_polygon(PackedVector2Array([Vector2(x, s.y), Vector2(x + 9, s.y - 22), Vector2(x + 18, s.y)]), Color(1.0, 0.86, 0.2))
 				c.draw_polyline(PackedVector2Array([Vector2(x, s.y), Vector2(x + 9, s.y - 22), Vector2(x + 18, s.y)]), INK, 1.5)
+				var g := clampf(1.0 - absf(x + 9.0 - gleam) / 24.0, 0.0, 1.0)
+				if g > 0.0:
+					var tip := Vector2(x + 9, s.y - 22)
+					c.draw_line(tip - Vector2(7 * g, 0), tip + Vector2(7 * g, 0), Color(1, 1, 1, g), 1.5)
+					c.draw_line(tip - Vector2(0, 9 * g), tip + Vector2(0, 9 * g), Color(1, 1, 1, g), 1.5)
 				x += 18.0
-			var ember_x := 50.0 + fmod(t * 34.0, 140.0)
-			var by := 152.0
 			for k in 12:
 				var cx := 6.0 + k * 18.0
 				var lit := absf(cx + 9 - ember_x) < 70.0
@@ -1347,8 +2504,11 @@ func _paint_panel_bg(c: Node2D, i: int) -> void:
 			c.draw_rect(Rect2(Vector2.ZERO, s), Color(0.98, 0.96, 0.9))
 			for k in 10:
 				c.draw_line(Vector2(k * 26, s.y), Vector2(k * 26 + 60, 30), Color(PENCIL, 0.35), 1.0)
-			var rub := sin(t * 6.0)
-			var ex := 112 + rub * 46
+			for k in 6:  # behind it, a pencilled city it is rubbing out
+				var tower := 50.0 + (k * 41 % 70)
+				c.draw_rect(Rect2(k * 37 + 5, 186 - tower, 28, tower), Color(PENCIL, 0.45), false, 1.2)
+			c.draw_line(Vector2(0, 186), Vector2(s.x, 186), Color(PENCIL, 0.5), 1.2)
+			var ex := _eraser_x(t)
 			c.draw_rect(Rect2(ex - 60 - 50, 98, 200 * clampf(t / 1.5, 0.0, 1.0) + 40, 44), Color(0.99, 0.98, 0.95))  # rubbed clean
 
 
@@ -1399,12 +2559,22 @@ func _paint_panel_fx(c: Node2D, i: int) -> void:
 			# darkness at the top (the Gutter is dark)
 			c.draw_polygon(PackedVector2Array([Vector2.ZERO, Vector2(s.x, 0), Vector2(s.x, 40), Vector2(0, 40)]),
 				PackedColorArray([Color(0, 0, 0, 0.9), Color(0, 0, 0, 0.9), Color(0, 0, 0, 0), Color(0, 0, 0, 0)]))
+			# Scribbles watching from the dark: eyes that shut when the lamp comes their way
+			var lamp_x := _iso(sin(t * 1.1) * 2.4, cos(t * 0.8) * 1.6, s).x
+			for k in 6:
+				var e := Vector2(24.0 + k * 36.0 + (k % 2) * 6.0, 15.0 + (k * 7 % 13)) if k < 5 else Vector2(13, 78)
+				var open := clampf(absf(e.x - lamp_x) / 34.0 - 0.5, 0.0, 1.0) * clampf((t - 0.9 - k * 0.12) / 0.3, 0.0, 1.0)
+				if fmod(t + k * 0.77, 2.6) < 0.1:
+					open = 0.0  # a blink
+				for sx: float in [-1.0, 1.0]:
+					c.draw_colored_polygon(PackedVector2Array([e + Vector2(sx * 8.0, -2.5 * open), e + Vector2(sx * 1.5, 0.5 * open),
+						e + Vector2(sx * 2.5, 2.5 * open), e + Vector2(sx * 8.0, 0.5)]), Color(1, 1, 1, 0.9 * minf(open * 3.0, 1.0)))
 		3:
-			var rub := sin(t * 6.0)
-			var ex := 112 + rub * 46
+			var ex := _eraser_x(t)
 			# SHADE'S ERASER (eraser_art.gd, the same as in the game), scrubbing the panel out
 			c.draw_colored_polygon(PackedVector2Array([Vector2(ex - 60, 186), Vector2(ex + 60, 186), Vector2(ex + 50, 192), Vector2(ex - 50, 192)]), Color(INK, 0.25))
-			EraserArt.draw(c, Transform2D(0.0, Vector2.ONE * 0.38, 0.0, Vector2(ex, 190)), {"time": _t, "rubbing": 1.0, "roar": 0.7})
+			if t < T_PANEL_INK:  # (once its panel is inked it is drawn over the border: _paint_breakout())
+				EraserArt.draw(c, Transform2D(0.0, Vector2.ONE * 0.38, 0.0, Vector2(ex, 190)), {"time": _t, "rubbing": 1.0, "roar": 0.7})
 			for k in 7:  # crumbs
 				var cp := Vector2(ex + sin(_t * 9.0 + k) * 70.0, 160 + fmod(_t * 60.0 + k * 13.0, 40.0))
 				c.draw_circle(cp, 2.5, Color(0.9, 0.5, 0.55))
@@ -1457,13 +2627,37 @@ func _make_sounds() -> void:
 		"tick": _wav(_tick()), "thump": _wav(_thump()), "whoosh": _wav(_whoosh(0.9, 400.0, 2400.0)),
 		"chime": _wav(_chime()), "scratch": _wav(_scratch()), "type": _wav(_type_click()),
 		"flip": _wav(_flip()), "dive": _wav(_whoosh(1.3, 300.0, 5000.0)), "pop": _wav(_pop_snd()),
+		"dread": _wav(_dread()), "rain": _wav(_rain_snd(), true), "hum": _wav(_hum_snd(), true),
+		"thunder": _wav(_thunder()), "toll": _wav(_toll()), "growl": _wav(_growl()), "lament": _wav(_lament()),
 	}
 
 
-func _play(snd: String, db: float) -> void:
+## A sound of the room that goes on and on (it loops; _update_room() sets its level).
+func _room_sound(snd: String) -> AudioStreamPlayer:
+	var p := AudioStreamPlayer.new()
+	p.stream = _sounds[snd]
+	p.volume_db = -60.0
+	add_child(p)
+	p.play()
+	return p
+
+
+## The room: rain on the window and the lamp's hum, under the slow minor
+## tune. The rain eases a little once the book is open; the hum swells and
+## stutters while the Writer's hand is over the desk; both are gone by the dive.
+func _update_room() -> void:
+	var out := 1.0 - _ease((_t - T_TOP) / 1.2)
+	var rain := _ease(_t / 0.5) * lerpf(1.0, 0.6, _ease((_t - T_OPEN.x - 0.5) / 2.5)) * out
+	_rain.volume_db = -15.0 + linear_to_db(maxf(rain, 0.001))
+	var hum := _ease(_t / 0.5) * (0.55 + 0.9 * _hand_in * (0.75 + 0.25 * signf(sin(_t * 23.0) * sin(_t * 7.3)))) * out
+	_hum.volume_db = -29.0 + linear_to_db(maxf(hum, 0.001))
+
+
+func _play(snd: String, db: float, pitch := 1.0) -> void:
 	var p := AudioStreamPlayer.new()
 	p.stream = _sounds[snd]
 	p.volume_db = db
+	p.pitch_scale = pitch
 	p.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(p)
 	p.play()
@@ -1473,7 +2667,7 @@ func _play(snd: String, db: float) -> void:
 const RATE := 22050
 
 
-func _wav(s: PackedFloat32Array) -> AudioStreamWAV:
+func _wav(s: PackedFloat32Array, loops := false) -> AudioStreamWAV:
 	var data := PackedByteArray()
 	data.resize(s.size() * 2)
 	for i in s.size():
@@ -1483,6 +2677,9 @@ func _wav(s: PackedFloat32Array) -> AudioStreamWAV:
 	w.mix_rate = RATE
 	w.stereo = false
 	w.data = data
+	if loops:
+		w.loop_mode = AudioStreamWAV.LOOP_FORWARD
+		w.loop_end = s.size()
 	return w
 
 
@@ -1560,6 +2757,107 @@ func _pop_snd() -> PackedFloat32Array:
 		var t := float(i) / RATE
 		ph += TAU * lerpf(300.0, 90.0, t / 0.25) / RATE
 		s.append(sin(ph) * exp(-t * 18.0) * 0.8 + randf_range(-1, 1) * exp(-t * 80.0) * 0.5)
+	return s
+
+
+## Rain on the window (loops): a soft hiss, drops tapping the glass.
+func _rain_snd() -> PackedFloat32Array:
+	var n := int(RATE * 3.2)
+	var s := PackedFloat32Array()
+	s.resize(n)
+	var lp := 0.0
+	var low := 0.0
+	for i in n:
+		lp += (randf_range(-1, 1) - lp) * 0.42  # the top rolled off
+		low += (lp - low) * 0.02                # and the rumble taken out
+		s[i] = (lp - low) * (0.3 + 0.05 * sin(TAU * 2.0 * i / n))
+	for d in 44:
+		var at := randi() % (n - 800)
+		var f := randf_range(900.0, 2600.0)
+		var amp := randf_range(0.04, 0.2)
+		for j in 700:
+			s[at + j] += sin(TAU * f * j / RATE) * exp(-j / 85.0) * amp
+	# the end runs on into the start, so the loop has no seam
+	var x := int(RATE * 0.2)
+	for i in x:
+		s[i] = lerpf(s[n - x + i], s[i], float(i) / x)
+	s.resize(n - x)
+	return s
+
+
+## The lamp's hum (loops): mains buzz, a little dirty.
+func _hum_snd() -> PackedFloat32Array:
+	var s := PackedFloat32Array()
+	for i in RATE:
+		var t := float(i) / RATE
+		s.append((sin(TAU * 100.0 * t) * 0.5 + sin(TAU * 200.0 * t) * 0.24 + sin(TAU * 300.0 * t) * 0.13
+			+ sin(TAU * 500.0 * t) * 0.06) * 0.6)
+	return s
+
+
+## Thunder: a crack, then a long uneven roll.
+func _thunder() -> PackedFloat32Array:
+	var s := PackedFloat32Array()
+	var a := 0.0
+	var b := 0.0
+	for i in int(RATE * 2.8):
+		var t := float(i) / RATE
+		a += (randf_range(-1, 1) - a) * 0.03
+		b += (a - b) * 0.06
+		var roll := exp(-t * 1.1) * (0.55 + 0.45 * sin(t * 9.0 + 3.0 * sin(t * 2.3)))
+		s.append(clampf((b * 14.0 + randf_range(-1, 1) * exp(-t * 26.0) * 0.5) * minf(t / 0.03, 1.0) * roll, -1.0, 1.0))
+	return s
+
+
+## A bell tolled once, low and long: for the dead.
+func _toll() -> PackedFloat32Array:
+	var s := PackedFloat32Array()
+	var parts := [[146.8, 1.0, 1.1], [174.7, 0.5, 1.5], [293.7, 0.5, 2.0], [369.0, 0.28, 2.8]]  # hum, a minor third, its octave, a sour upper
+	for i in int(RATE * 2.6):
+		var t := float(i) / RATE
+		var v := 0.0
+		for q: Array in parts:
+			v += sin(TAU * q[0] * t) * q[1] * exp(-t * q[2])
+		s.append(v * 0.4 * minf(t / 0.004, 1.0))
+	return s
+
+
+## His anger, low in the throat: two rough notes grinding against each other.
+func _growl() -> PackedFloat32Array:
+	var s := PackedFloat32Array()
+	var n := 0.0
+	for i in int(RATE * 1.0):
+		var t := float(i) / RATE
+		n += (randf_range(-1, 1) - n) * 0.02
+		var v := clampf(sin(TAU * 55.0 * t) * 2.6, -1.0, 1.0) * 0.5 + clampf(sin(TAU * 58.3 * t) * 2.2, -1.0, 1.0) * 0.4
+		s.append(v * (0.7 + n * 4.0) * pow(sin(minf(t, 1.0) * PI), 0.7) * 0.6)
+	return s
+
+
+## Three notes falling down a minor chord, slowly: the light finds the photo.
+func _lament() -> PackedFloat32Array:
+	var s := PackedFloat32Array()
+	var notes := [880.0, 698.5, 587.3]
+	for i in int(RATE * 2.4):
+		var t := float(i) / RATE
+		var v := 0.0
+		for k in notes.size():
+			var t0 := k * 0.34
+			if t > t0:
+				v += (sin(TAU * notes[k] * (t - t0)) + 0.3 * sin(TAU * notes[k] * 2.0 * (t - t0))) * exp(-(t - t0) * 2.3) * 0.2
+		s.append(v)
+	return s
+
+
+## A low, uneasy swell under the Writer's pen (two notes a semitone apart, beating).
+func _dread() -> PackedFloat32Array:
+	var s := PackedFloat32Array()
+	var dur := 4.5
+	for i in int(RATE * dur):
+		var t := float(i) / RATE
+		var env := pow(sin(minf(t / dur, 1.0) * PI), 1.5)
+		s.append((sin(TAU * 55.0 * t) * 0.45 + sin(TAU * 110.0 * t) * 0.3 + sin(TAU * 116.5 * t) * 0.24
+			+ sin(TAU * 164.8 * t) * 0.08) * env * 0.7)
 	return s
 
 
