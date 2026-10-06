@@ -291,9 +291,6 @@ func _unhandled_input(event: InputEvent) -> void:
 func _physics_process(delta: float) -> void:
 	if dead:
 		return
-	if Input.is_action_just_pressed("restart"):
-		_reload()
-		return
 
 	_tick_timers(delta)
 	var input_x := Input.get_axis("move_left", "move_right")
@@ -1252,11 +1249,6 @@ func _die() -> void:
 	t.tween_property(visual, "modulate:a", 0.0, 0.6)
 	await get_tree().create_timer(0.75, true, false, true).timeout
 	DeathScreen.open(get_tree())  # RESTART (last checkpoint pen) or MAIN MENU
-
-
-func _reload() -> void:
-	Engine.time_scale = 1.0
-	get_tree().reload_current_scene()
 
 
 # ------------------------------------------------------------------- juice

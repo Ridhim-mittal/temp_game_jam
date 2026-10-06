@@ -32,6 +32,8 @@
 [ext_resource type="Script" path="res://scripts/world/panel_door.gd" id="44_door"]
 [ext_resource type="Script" path="res://scripts/ui/comic_frame.gd" id="45_frame"]
 [ext_resource type="Script" path="res://scripts/ui/narration.gd" id="46_narration"]
+[ext_resource type="Script" path="res://scripts/world/city_block.gd" id="47_cityblock"]
+[ext_resource type="Script" path="res://scripts/world/city_ledge.gd" id="48_cityledge"]
 
 [node name="TestLevel" type="Node2D"]
 
@@ -41,32 +43,32 @@
 
 [node name="Ground1" type="StaticBody2D" parent="World"]
 position = Vector2(290, 850)
-script = ExtResource("3_block")
+script = ExtResource("47_cityblock")
 size = Vector2(1060, 500)
 
 [node name="Wall1" type="StaticBody2D" parent="World"]
 position = Vector2(-200, 250)
-script = ExtResource("3_block")
+script = ExtResource("47_cityblock")
 size = Vector2(80, 1700)
 
 [node name="Step1" type="StaticBody2D" parent="World"]
 position = Vector2(660, 550)
-script = ExtResource("3_block")
+script = ExtResource("47_cityblock")
 size = Vector2(200, 100)
 
 [node name="Platform1" type="StaticBody2D" parent="World"]
 position = Vector2(960, 412)
-script = ExtResource("3_block")
+script = ExtResource("47_cityblock")
 size = Vector2(200, 24)
 
 [node name="Platform2" type="StaticBody2D" parent="World"]
 position = Vector2(1260, 482)
-script = ExtResource("3_block")
+script = ExtResource("47_cityblock")
 size = Vector2(200, 24)
 
 [node name="Ground2" type="StaticBody2D" parent="World"]
 position = Vector2(1600, 850)
-script = ExtResource("3_block")
+script = ExtResource("47_cityblock")
 size = Vector2(1560, 500)
 
 [node name="Spikes1" type="StaticBody2D" parent="World"]
@@ -78,16 +80,9 @@ size = Vector2(160, 24)
 position = Vector2(2300, 600)
 script = ExtResource("18_pen")
 
-[node name="Caption1" type="Node2D" parent="World"]
-z_index = 5
-position = Vector2(1960, 330)
-script = ExtResource("43_caption")
-text = "HURT? STAND STILL AND HOLD F:\nLIGHT OR LIFE. YOUR EMBER BECOMES INK."
-tilt = -0.03
-
 [node name="PitFloor1" type="StaticBody2D" parent="World"]
 position = Vector2(2530, 950)
-script = ExtResource("3_block")
+script = ExtResource("47_cityblock")
 size = Vector2(300, 300)
 
 [node name="PitSpikes1" type="StaticBody2D" parent="World"]
@@ -97,30 +92,23 @@ size = Vector2(300, 24)
 
 [node name="Ground3" type="StaticBody2D" parent="World"]
 position = Vector2(3190, 850)
-script = ExtResource("3_block")
+script = ExtResource("47_cityblock")
 size = Vector2(1020, 500)
 
 [node name="Plank1" type="StaticBody2D" parent="World"]
 position = Vector2(2980, 498)
-script = ExtResource("11_oneway")
+script = ExtResource("48_cityledge")
 size = Vector2(180, 16)
 
 [node name="Plank2" type="StaticBody2D" parent="World"]
 position = Vector2(3220, 398)
-script = ExtResource("11_oneway")
+script = ExtResource("48_cityledge")
 size = Vector2(180, 16)
 
 [node name="Plank3" type="StaticBody2D" parent="World"]
 position = Vector2(3460, 498)
-script = ExtResource("11_oneway")
+script = ExtResource("48_cityledge")
 size = Vector2(160, 16)
-
-[node name="Caption2" type="Node2D" parent="World"]
-z_index = 5
-position = Vector2(2560, 360)
-script = ExtResource("43_caption")
-text = "OUT OF REACH?\nHOLD ATTACK, THEN LET GO:\nINK FLIES FURTHER THAN A SWORD."
-tilt = -0.03
 
 [node name="Heart1" type="Area2D" parent="World"]
 position = Vector2(3220, 350)
@@ -134,7 +122,7 @@ next_title = "THE SKETCHBOOK"
 
 [node name="Wall2" type="StaticBody2D" parent="World"]
 position = Vector2(3740, 250)
-script = ExtResource("3_block")
+script = ExtResource("47_cityblock")
 size = Vector2(80, 1700)
 
 [node name="Coins" type="Node2D" parent="."]
@@ -249,20 +237,10 @@ live_areas = Array[Rect2]([Rect2(-240, -1200, 4020, 1860), Rect2(2380, 590, 300,
 
 [node name="Narration1" type="CanvasLayer" parent="."]
 script = ExtResource("46_narration")
-text = "VESPER STARTS OUT IN A CITY INFECTED BY EVIL MONSTERS. HE FIGHTS THEM OFF WITH THE LIGHT AND HIS SWORD."
+text = "MONSTERS HAD OVERRUN THE CITY. VESPER HAD HIS SWORD, AND HIS LIGHT."
 trigger_x = -1e+09
 
 [node name="Narration2" type="CanvasLayer" parent="."]
 script = ExtResource("46_narration")
-text = "THESE MONSTERS HAD INFESTED EVERY STREET OF THE CITY. ONE SWING OF THE SWORD SENT THEM SCATTERING."
-trigger_x = 1350
-
-[node name="Narration3" type="CanvasLayer" parent="."]
-script = ExtResource("46_narration")
-text = "THE CITY WAS COMING APART, ONE PANEL AT A TIME. WHERE THE STREET BROKE, VESPER LEAPT."
-trigger_x = 2250
-
-[node name="Narration4" type="CanvasLayer" parent="."]
-script = ExtResource("46_narration")
-text = "AND AT THE EDGE OF THE PAGE, A DOOR OF LIGHT WAS WAITING."
+text = "AT THE EDGE OF THE PAGE, A DOOR OF LIGHT WAS WAITING."
 trigger_x = 3150

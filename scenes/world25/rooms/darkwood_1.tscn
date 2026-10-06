@@ -272,3 +272,11 @@ transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -4.00, 0
 [node name="HalfDrawn4" parent="Enemies" instance=ExtResource("half_drawn")]
 transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -8.00, 0.05, 4.00)
 
+
+[node name="Scribble5" parent="Enemies" instance=ExtResource("scribble")]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, 8.00, 0.05, -3.00)
+
+
+[node name="Scribble6" parent="Enemies" instance=ExtResource("scribble")]
+transform = Transform3D(1.0000, 0, 0.0000, 0, 1, 0, -0.0000, 0, 1.0000, -10.00, 0.05, 0.50)
+

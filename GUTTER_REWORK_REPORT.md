@@ -323,6 +323,45 @@ are untouched.
       - The sketched bridge in level 3 inks in as pieces of paper gutter, with pencil posts
         and a ruled ink line for rails.
 
+17. **The dead zone** (your next notes, after the broken-nib-grave image):
+    - **Graves are broken nibs,** like the image. Each is a giant fountain-pen nib, greyed
+      and patched with rust, curved across like a real nib, its point snapped off in a
+      jagged break. It has a breather hole and a slit, and ink bleeds from the break down
+      its face. An epitaph is scratched in ("REST IN INK", "THE INK RUNS DRY",
+      "UNFINISHED"...). It leans in a mound of dug earth wrapped in thorny brambles, with an
+      ink puddle at its foot and now and then a torn page lying in the dirt.
+    - **No more pencils, quills or the ink-blob drafts:**
+      - The pine rings are bare dead trees.
+      - The giant trunks are dead trunks with snapped branches.
+      - Stumps are split dead stumps.
+      - The pencil totems in levels 3 and 4, and the giant pencils over the comic page, are
+        giant broken nibs.
+    - **No books:** the stairs are stone again, and the book stacks are broken stone
+      pillars.
+    - **Ways on are broken portals:** a dark, cracked, ragged walkway between broken ink
+      kerbs, with torn scraps hanging off it, ending in two cracked pillars snapped at
+      different heights and a broken lintel. A faint seam of light runs in each pillar. The
+      hub's bridge and level 3's inked bridge are the same dark walkway; that bridge has
+      leaning iron posts with a sagging bar.
+    - **Gutter to gutter:** the room change never leaves the dark now. The screen tears down
+      the middle and its halves part and grey. You run down a black slit between greyed,
+      faded, torn dead panels, with dust drifting and the line of light behind tiny Vesper.
+      Then the slit clears onto the next room and the two walls part. There's no comic page
+      or panel any more.
+    - **The lamps are back** to the original stone braziers with flames, and the gates'
+      stone-post lanterns are back too. (The desk lamp script is kept but unhooked.)
+    - **Ground symbols are cryptic and scary.** The pen nib, quill, speech bubble, POW burst
+      and question mark are gone. In their place are a stitched mouth, claw marks, the death
+      rune, a broken seal, a screaming face, a handprint and a ring of thorns. The eye now has
+      a slit pupil and lashes. The ritual rings' centre is an eye in an inverted triangle of
+      thorns instead of a big nib.
+    - **Worn and torn everywhere:**
+      - The fence is a broken wrought-iron fence: spear-topped bars leaning, some bent or
+        missing, the top rail snapped.
+      - Pins are rusty.
+      - Rocks are grimy and chipped.
+      - The comic page under level 1 has faded to a yellowed grey.
+
 ## Tuning knobs
 
 | What | Where |
@@ -340,9 +379,11 @@ are untouched.
 | Background | `room.gd` `backdrop` (on/off) and `_build_backdrop()` |
 | Lamp spacing / feel | `haunt_lamp.gd` `_steer()` (accel), `_separation()` |
 | Gate timing / colour | `gate.gd`: `DRAW_TIME` (0.8 s), `lantern_color` |
-| Gutter look | `scripts/world25/gutter_strip.gd`: `PAPER`, `INK`, `PANEL` (side panels' width), `BOARD` (the upright panels) |
-| Trip down the gutter | `scripts/world25/gutter_transition.gd`: `T_SHRINK`, `T_DIVE`, `T_RUN`, `T_OUT`, `T_INK`, `T_OPEN` (timings), `ROWS` (rows run down), `Z_SLIT` (zoom in the slit), the caption in `_draw_front()` |
-| Desk lamps | `scripts/clearing/desk_lamp.gd` (shape, colours); per lamp `brazier.gd` `pedestal_height` (size), `flame_color` / `core_color` (bulb), `light_energy`, `light_range`, `light_radius` |
+| Ways on (look) | `scripts/world25/gutter_strip.gd`: `STONE`, `INK`, `SCRAP`, `PILLAR` (the portal pillars' size) |
+| Gutter to gutter | `scripts/world25/gutter_transition.gd`: `T_TEAR`, `T_RUN0`, `T_RUN`, `T_CLEAR`, `T_OPEN0`, `T_OPEN` (timings), `SLIT` (slit width), `TRAVEL` (screens run), `DEAD` (panel greys) |
+| Nib graves | `scripts/world25/broken_nib.gd`: `STEEL`, `RUST`, size and break height in `build()`; `biome_props.gd` `EPITAPHS`, brambles in `_bramble()` |
+| Ground symbols | `shaders/world25/writers_marks.gdshaderinc` (`writers_mark()`, `writers_seal()` for the ring centre) |
+| Backdrop fade | `comic_page.gdshader` `faded` (0.7) |
 | Lamp per zone | `data/haunt/*.tres` (`haunt_profile.gd`): lamps, grace, seek_speed, circle_radius, strike_every, telegraph, erase_fill, lose_after, can_damage, strike_erase, linger, the Writer's lines |
 | Lamp per room | `room.gd` `haunt_scale`, `haunt_lamps` (-1 = profile), `haunt_enabled`; set in `tools/rooms25/build_rooms.py` (`r.haunt_scale`, `r.haunt_lamps`) |
 | Spawn protection | `clearing_player.gd`: `spawn_protection` (2 s) |
@@ -392,7 +433,7 @@ These ran with Godot 4.7-stable under Xvfb with software OpenGL.
   - The Spine's lamp never damages or strikes.
   - The circles glide, with no jumps between physics ticks. The limit is 1 unit per test
     tick: the Rubbing Room's lamps glide onto their marks at up to 0.6.
-- **`tests/gutter/test_levels.gd`: 51/51 checks.**
+- **`tests/gutter/test_levels.gd`: 51/51 checks** (rerun after round 17).
   - The gates chain hub → 1 → 2 → 3 → 4, and none leads to a retired room.
   - The hub's way on is at the back of the terrace and the archway is gone. Walking out
     through it starts the trip down the gutter with the game held still. It arrives in the
@@ -459,9 +500,9 @@ These ran with Godot 4.7-stable under Xvfb with software OpenGL.
 
 ## Not verified
 
-- **The trip down the gutter at full speed:** it is timed to take about 3 s plus loading.
-  Here it took about 12 s, because every frame is drawn on the CPU and the animation never
-  skips frames. It was checked frame by frame in screenshots.
+- **The gutter-to-gutter trip at full speed:** it is timed to take about 2.5 s plus
+  loading. Here it took about 12 s, because every frame is drawn on the CPU and the
+  animation never skips frames. It was checked frame by frame in screenshots.
 - **Frame rate:** 60 fps on real hardware. This machine renders on the CPU, so frame rate
   means nothing here.
 - **Audio:** the gate chime. It is synthesised in code, and this machine has no audio

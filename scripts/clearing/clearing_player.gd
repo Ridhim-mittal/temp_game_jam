@@ -886,7 +886,7 @@ func _stop_whirl() -> void:
 	_lantern = null
 
 
-## The Prism Saber's blade is light: it cuts unseen Half-Drawn.
+## The Prism Saber's blade is light (its hits stun).
 func light_blade() -> bool:
 	return _weapon == "prism"
 
@@ -1166,15 +1166,11 @@ func _in_lantern_light() -> bool:
 
 
 ## True when the raised Ember's light reaches `point` (the unfinished
-## Scribbles only show, and can only be cut, inside it).
+## Scribbles only show, and can only be cut, inside it). Only the raised
+## Ember (right click) counts, not the Lantern Flail's whirl.
 func ember_reveals(point: Vector3) -> bool:
 	if dead:
 		return false
-	if _whirl >= 0.0:
-		# the whirling lantern's light shows them too
-		var w := point - global_position
-		if Vector2(w.x, w.z).length() < _whirl_reach() + 1.2 and absf(w.y) < 3.0:
-			return true
 	if not ember_raised:
 		return false
 	var d := point - global_position

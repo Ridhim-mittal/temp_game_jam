@@ -41,9 +41,9 @@ const LATER := {
 		{"id": "ember", "word": "EMBER", "keys": [["RMB", "ember"]], "hold": 0.8, "when": "near_light"},
 		{"id": "wall", "word": "WALL JUMP", "keys": [["SPACE", "jump"]], "when": "on_wall"},
 		# hold attack past player.gd's charge_time (0.6 s), let go: an ink wave flies out
-		{"id": "inkwave", "word": "LONG-RANGE INK WAVE", "keys": [["LMB", "attack"]], "hold": 0.7, "when": "near_flyer"},
+		{"id": "inkwave", "word": "INK WAVE", "keys": [["LMB", "attack"]], "hold": 0.7, "when": "near_flyer"},
 		# light or life (player.gd): pour a third of the Ember into half a bottle of ink
-		{"id": "heal", "word": "HEAL: YOUR LIGHT BECOMES INK", "keys": [["F", "heal"]], "hold": 1.0, "when": "hurt_2d"},
+		{"id": "heal", "word": "HEAL", "keys": [["F", "heal"]], "hold": 1.0, "when": "hurt_2d"},
 	],
 	"25d": [
 		{"id": "ember25", "word": "EMBER", "keys": [["RMB", "flash"]], "hold": 0.8, "when": "near_monster"},
@@ -64,7 +64,9 @@ var only := PackedStringArray()  # steps this level teaches (empty = all)
 var player: Node
 var story: Node  # story_ui.gd: the tutorial waits while it talks
 var host: Node
-## Height of the key on screen (0..1); higher in 2.5D to clear the player.
+## Height of the key on screen (0..1): high in 2.5D to clear the player; low
+## in 2D, under Vesper's feet (the 2D camera keeps him above the middle), so
+## it never covers the monsters, platforms or the Writer's captions above.
 var center_y := 0.3
 
 var _basics: Array = []  # basic steps not done yet
@@ -109,7 +111,7 @@ static func start(host_node: Node, the_player: Node, the_mode: String, story_ui:
 	t.story = story_ui
 	t.host = host_node
 	t.only = only_steps
-	t.center_y = 0.25 if the_mode == "25d" else 0.3
+	t.center_y = 0.25 if the_mode == "25d" else 0.76
 	layer.add_child(t)
 	host_node.add_child.call_deferred(layer)
 
@@ -392,7 +394,7 @@ func _tray_slot(s: Dictionary) -> Vector2:
 		if o == s:
 			break
 		x += w + gap
-	return Vector2(x + _keys_size(s, TRAY_SCALE).x * 0.5, size.y - 78.0)
+	return Vector2(x + _keys_size(s, TRAY_SCALE).x * 0.5, size.y - (78.0 if mode == "25d" else 44.0))
 
 
 ## What the caps of a step show: its keys, or its controller button.

@@ -1,9 +1,9 @@
 shader_type spatial;
 // A ritual circle burnt into the ground (altar.gd, biome_props.gd
 // RITUAL_CIRCLE): two outer rings, a band of the Writer's marks
-// (writers_marks.gdshaderinc: ink drops, nibs, quills, the Ember, proofing
-// and comic marks) that turns slowly the other way, an inner ring and a
-// great pen nib in the middle. The lines glow and pulse, each mark
+// (writers_marks.gdshaderinc: the watching eye, stitched mouths, claw marks,
+// the death rune, ...) that turns slowly the other way, an inner ring and a
+// great seal in the middle (an eye in an inverted triangle of thorns). The lines glow and pulse, each mark
 // flickering on its own. Unshaded, so it burns through the dark.
 render_mode unshaded, cull_disabled, depth_draw_never, shadows_disabled, specular_disabled, fog_disabled;
 
@@ -27,9 +27,9 @@ void fragment() {
 	float d = abs(r - 0.96);
 	d = min(d, abs(r - 0.9));
 	d = min(d, abs(r - 0.62));
-	// the Writer's nib in the middle, turning slowly
+	// the great seal in the middle (an eye in a triangle of thorns), turning slowly
 	vec2 s = rot(TIME * spin) * p;
-	d = min(d, writers_nib(s));
+	d = min(d, writers_seal(s));
 	float lines = 1.0 - smoothstep(w * 0.5, w, d);
 	// sigils in the band between the rings, turning the other way
 	float band = 0.0;

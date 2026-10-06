@@ -50,7 +50,7 @@ const WORD_COLORS := [Color(1.0, 0.85, 0.25), Color(0.95, 0.3, 0.25), Color(0.98
 ## below, mist, rising embers, heaps of crumpled drafts and ink statues in the void
 ## (SIGIL, _build_backdrop), or a comic book in the 2D levels' look (COMIC,
 ## _build_comic_backdrop): a page of panels far below, torn-out panels and
-## sound-effect words floating round the floor, giant pencils, paper dust.
+## sound-effect words floating round the floor, giant broken nibs, paper dust.
 @export var backdrop := true
 enum BackdropStyle { SIGIL, COMIC }
 @export var backdrop_style := BackdropStyle.SIGIL
@@ -350,8 +350,9 @@ func _build_backdrop(b: Resource) -> void:
 
 ## The COMIC backdrop: the Gutter seen as what it is, the margin of a comic
 ## book. A printed page of panels far below (comic_page.gdshader), torn-out
-## panels and sound-effect words drifting round the floor, two giant pencils
-## leaning over the page as if still drawing it, and paper dust rising.
+## panels and sound-effect words drifting round the floor, two giant broken
+## nibs (biome_props PENCIL_TOTEM) sunk in the dark over the page, and paper
+## dust rising.
 func _build_comic_backdrop() -> void:
 	var c := camera_bounds.get_center()
 	var span := maxf(camera_bounds.size.x, camera_bounds.size.y) + 40.0
@@ -370,7 +371,7 @@ func _build_comic_backdrop() -> void:
 	page.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	page.position = Vector3(c.x, -22.0, c.y - 6.0)
 	holder.add_child(page)
-	# torn-out panels, sound words and pencils in the void round the floor
+	# torn-out panels, sound words and broken nibs in the void round the floor
 	var rng := RandomNumberGenerator.new()
 	rng.seed = room_id.hash()
 	var half := camera_bounds.size * 0.5 + Vector2(8.0, 6.5)
@@ -398,7 +399,7 @@ func _build_comic_backdrop() -> void:
 		placed += 1
 		if placed >= 9:
 			break
-	for k in 2:
+	for k in 2:  # giant broken nibs
 		var pencil := Node3D.new()
 		pencil.set_script(BiomeProps)
 		var side := -1.0 if k == 0 else 1.0

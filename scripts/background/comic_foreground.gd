@@ -1,8 +1,9 @@
 @tool
 extends Node2D
 ## Foreground silhouettes that pass IN FRONT of the player (Hollow Knight's
-## strongest depth cue): street lamps with glowing heads and light cones,
-## railings and rubble. Sparse, dark and only along the bottom of the screen
+## strongest depth cue): railings and rubble (street lamps with glowing heads
+## and light cones only with `lamps` on: they reach up into the playfield and
+## hid signs like the panel door's). Sparse, dark and only along the bottom of the screen
 ## so they frame the action without hiding it. Put inside a ComicParallax
 ## with scroll_scale > 1 and a z_index above the playfield.
 
@@ -17,6 +18,8 @@ const ComicView = preload("res://scripts/background/comic_view.gd")
 @export var rim_color := Color(0.6, 0.4, 0.95)
 @export var lamp_color := Color(1.0, 0.9, 0.55)
 @export_range(0.0, 1.0) var empty_chance := 0.3
+## Tall street lamps in the foreground. Off: their slots get a railing instead.
+@export var lamps := false
 
 var _last_xf := Transform2D()
 var _time := 0.0
@@ -47,8 +50,11 @@ func _draw() -> void:
 		var x := (i + rng.randf_range(0.2, 0.8)) * slot_width
 		match rng.randi() % 3:
 			0:
-				_draw_lamp(x, rng)
-				_visible_lamp = true
+				if lamps:
+					_draw_lamp(x, rng)
+					_visible_lamp = true
+				else:
+					_draw_railing(x, rng)
 			1:
 				_draw_railing(x, rng)
 				_draw_rubble(x + rng.randf_range(80.0, 160.0), rng)

@@ -5,8 +5,8 @@ extends RefCounted
 ## white dome shade tipped down over the base, a white cable looping down
 ## the arm, and when it's on a warm bulb glowing in the shade and a soft
 ## cone of light falling to the floor.
-## Shared by brazier.gd (the lights and lanterns) and gate.gd (the lamps
-## either side of a way on).
+## Unhooked: the Gutter's lights went back to braziers (brazier.gd) and the
+## gates' stone-post lanterns; kept in case a desk ever wants one.
 ##
 ##   var lamp := DeskLamp.build(root, Vector3.ZERO, 1.0, 0.0, warm, core)
 ##   lamp.on (Node3D: bulb glow + beam; show when lit), lamp.light (OmniLight3D)

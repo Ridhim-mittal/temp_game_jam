@@ -25,7 +25,7 @@ camera_bounds = Rect2(-28, -27, 40, 37)
 default_spawn = Vector3(2.5, 0.05, 3)
 title = "The Spine"
 subtitle = "The fold between the pages"
-enter_captions = "Page one. A clean sheet, a warm lamp, and... wait. Where are you?|This isn't a panel. This is the margin. Nothing I drew is supposed to be down here.|Those scribbles are old mistakes. Swat them away and find the way out."
+enter_captions = "Page one. A clean sheet, a warm lamp, and... wait. Where are you?|This isn't a panel. This is the margin. Nothing I drew is supposed to be down here.|Those scribbles are old mistakes, and they bite. Swat them away and find the way out.|A red scratch on the floor means a claw is coming: dash out of its line, or hold right click and light it up."
 clear_captions = "Good. The cave is open. Go on, I'm right behind you."
 
 [node name="Island" type="Node3D" parent="."]
@@ -502,10 +502,34 @@ seed = 50
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0.05, 3)
 sight_range = 5.5
 
+[node name="Scribble2" parent="Enemies" instance=ExtResource("18_scribble")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0.05, -5)
+sight_range = 5.5
+
 [node name="Scribble3" parent="Enemies" instance=ExtResource("18_scribble")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0.05, 2)
 sight_range = 5.5
 
+[node name="Scribble4" parent="Enemies" instance=ExtResource("18_scribble")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0.05, -3)
+sight_range = 5.5
+
+[node name="Scribble5" parent="Enemies" instance=ExtResource("18_scribble")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 0.05, 3)
+sight_range = 5.5
+
 [node name="Scribble6" parent="Enemies" instance=ExtResource("18_scribble")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21, 0.05, -1.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -19, 0.05, 2.5)
+sight_range = 5.5
+
+[node name="Scribble7" parent="Enemies" instance=ExtResource("18_scribble")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -26, 0.05, 4)
+sight_range = 5.5
+
+[node name="Scribble8" parent="Enemies" instance=ExtResource("18_scribble")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 2.93, -25)
+sight_range = 5.5
+
+[node name="Scribble9" parent="Enemies" instance=ExtResource("18_scribble")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 2.93, -23)
 sight_range = 5.5

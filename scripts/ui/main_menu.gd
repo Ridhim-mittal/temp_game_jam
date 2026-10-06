@@ -383,11 +383,22 @@ func _leave(it: Dictionary) -> void:
 		if it.target == "":
 			get_tree().quit()
 		else:
-			if it.label == "PLAY":  # a new run always teaches the controls again
-				var profile := get_node_or_null("/root/Profile")
-				if profile:
-					profile.reset_tutorials("2d.")
+			var profile := get_node_or_null("/root/Profile")
+			if profile and _starts_run(it.label):
+				profile.new_run()  # the coins come back, so the purse starts at 0
+			if it.label == "PLAY" and profile:  # a new run always teaches the controls again
+				profile.reset_tutorials("2d.")
 			get_tree().change_scene_to_file(it.target))
+
+
+## PLAY and the chapters start a new run; SETTINGS doesn't.
+func _starts_run(label: String) -> bool:
+	if label == "PLAY":
+		return true
+	for c in CHAPTERS:
+		if c[0] == label and not c[1].begins_with("@"):
+			return true
+	return false
 
 
 # ----------------------------------------------------------------- drawing
