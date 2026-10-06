@@ -558,11 +558,22 @@ func _build_ui() -> void:
 func _spawn_player(world: Node) -> void:
 	var at := default_spawn
 	var face := Vector3(0, 0, 1)  # towards the camera
+	var arrived := false
 	if world and world.entry_gate != "":
 		for g in get_tree().get_nodes_in_group("gate"):
 			if is_ancestor_of(g) and g.gate_id == world.entry_gate:
 				at = g.arrival_point()
 				face = g.global_basis.z  # walked in through it: face into the room
+				arrived = true
+				break
+	if not arrived:
+		# no gate to arrive at (CONTINUE, a chapter, a reload): the room's own way
+		# in, not `default_spawn`, which can lie out over a gap (wastes_gap's is the
+		# middle of its sketched bridge: every death dropped him back into the chasm)
+		for g in get_tree().get_nodes_in_group("gate"):
+			if is_ancestor_of(g) and g.entry_only:
+				at = g.arrival_point()
+				face = g.global_basis.z
 				break
 	player = PLAYER_SCENE.instantiate()
 	player.position = at

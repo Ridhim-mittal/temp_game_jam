@@ -45,6 +45,8 @@ const PROMPT_FONT = preload("res://assets/fonts/Bangers-Regular.ttf")
 const ART_RUN_SPEED := 300.0  # player_visual.gd's full-run speed, px/s
 const MASK_WORLD := 1
 const MASK_ENEMY := 4  # physics layer 3
+## How far round him the ground must be solid to count as safe to come back to.
+const SAFE_REACH := 0.7
 const HIT_WORDS := ["THWACK!", "SLASH!", "POW!", "WHAM!", "SHNK!"]
 
 ## How a swing looks: Vesper swings the platformer's nib-sword (sword.gd)
@@ -1331,20 +1333,34 @@ func take_damage(amount: int, from_pos: Vector3) -> void:
 		_die()
 
 
-## Remembers solid, permanent ground to come back to after a fall.
+## Remembers solid, permanent ground to come back to after a fall: only where
+## the ground under him and all round him (`SAFE_REACH`) is solid and can't
+## vanish. (Judged by what he last touched, an island's lip with him already
+## over a sketched bridge counted as safe: put back there he fell straight
+## through the unfinished planks again, and again, until he died.)
+
 func _track_safe_ground(delta: float) -> void:
 	_safe_timer -= delta
 	if _safe_timer > 0.0 or not is_on_floor():
 		return
 	_safe_timer = 0.25
-	var below := get_last_slide_collision()
-	for i in get_slide_collision_count():
-		var c := get_slide_collision(i)
-		if c.get_normal().y > 0.6:
-			below = c
-	if below and below.get_collider() and below.get_collider().is_in_group("drawn"):
-		return  # never respawn on something that can vanish
+	for off: Vector3 in [Vector3.ZERO, Vector3(SAFE_REACH, 0, 0), Vector3(-SAFE_REACH, 0, 0),
+			Vector3(0, 0, SAFE_REACH), Vector3(0, 0, -SAFE_REACH)]:
+		if not _solid_under(global_position + off):
+			return
 	_safe_pos = global_position
+
+
+## Permanent ground just under `at` (not a drawn bridge's plank, which can be
+## pencil, or something that isn't there at all).
+func _solid_under(at: Vector3) -> bool:
+	var from := at + Vector3(0, 0.5, 0)
+	var q := PhysicsRayQueryParameters3D.create(from, at + Vector3(0, -1.2, 0), MASK_WORLD, [get_rid()])
+	var hit := get_world_3d().direct_space_state.intersect_ray(q)
+	if hit.is_empty() or hit.normal.y < 0.6:
+		return false
+	var body: Object = hit.collider
+	return body != null and not (body is Node and (body.is_in_group("drawn") or body.is_in_group("drawn_bridge")))
 
 
 ## Fell through a vanished bridge (or off the world): back to safe ground,
@@ -1377,7 +1393,10 @@ func _die() -> void:
 	if not _model:
 		create_tween().tween_property(sprite, "modulate:a", 0.0, 0.5)
 	await get_tree().create_timer(1.6).timeout
+	if not _solid_under(_spawn) and _solid_under(_safe_pos):
+		_spawn = _safe_pos  # never back to a spawn with nothing under it
 	global_position = _spawn
+	_safe_pos = _spawn  # (a fall now brings him back here, not to where he died)
 	velocity = Vector3.ZERO
 	health = max_health
 	health_changed.emit(health, max_health)
